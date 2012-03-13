@@ -1,0 +1,26 @@
+<html>
+<body>
+<h1>xmlbin</h1>
+<p>
+A fast, reasonably compact, parse-free, recursive format for XML data.
+</p>
+<p>
+fast - for what?  XPath eval, and I/O
+
+compact - not much different from text XML
+
+recursive - so that elements can be chopped out as results, but no need for
+modification otherwise.  Could leave some dangling out-of-bounds
+references.
+</p>
+<p>
+  Namespace-awareness can be controlled independently by the document and
+  by the processor.  If a namespace-aware document is encountered by a
+  namespace-unaware processor, the processor becomes namespace-aware.  If
+  an aware processor encounters an unaware document, it applies an identity
+  prefix->namespace URI mapping in order to make the document become aware.
+</p>
+
+</body>
+</html>
+

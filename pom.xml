@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>solr-xpath</groupId>
   <artifactId>solr-xpath</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1</version>
   <dependencies>
   	<dependency>
   		<groupId>jaxen</groupId>
@@ -51,6 +51,4 @@
         </plugin>
     </plugins>
   </build>
-  <plugins>
-  </plugins>
 </project>

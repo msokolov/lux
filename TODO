@@ -1,12 +1,15 @@
 * Testing
 ** Document Set
+using hamlet for lucene tests, solr config + fake docs for solr
 ** Query Set
+evolving
 ** Performance Measurement
 * Basic Implementation
 ** Lucene-only implementation 
 This will be better for testing, for performance optimization, etc. and should help us keep a cleaner API
 *** implement querying from LuXPath?
-** Filtering
+** Filtering in Solr
+This is done to first order
 *** Handle documents that match the query, but don't match the xpath
 *** Handle result sets that require multiple pages of documents
 *** Handle documents that return multiple nodes
@@ -25,14 +28,17 @@ through an entire large result set.
 ** Counting
 count (//foo)
 *** need to handle functions at outermost scope
+expressions like (//foo)[1] too
 ** cleanup API, rename classes
+This is better now - but still not sure about LuXPath
 once we have a few implementations done, revisit the naming
 * Solr integration
 ** namespaces
 *** in QParser config
 *** in query localnames
 ** marshal XML types
-preserve xpath result types (nodes and xdm atomic types) across Solr's comms
+preserve xpath result types (nodes and xdm atomic types) across Solr's
+comms This is a bit better now.  But too much parsing/unparsing.
 ** configure XPathSearchComponent, XPathQParser, LuxProcessor
 *** xml field name
 *** namespace-aware
@@ -40,6 +46,8 @@ for parser and update processor
 * Administrivia
 ** svn
 ** domain/namespace
+lux.* is unavailable
+luxpath.net/org are available
 ** distribution
 * Fancier XPath
 ** external variable binding

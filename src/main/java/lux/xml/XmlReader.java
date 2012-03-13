@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.Reader;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -57,6 +58,10 @@ public class XmlReader {
 
     public void addHandler (StAXHandler handler) {
         handlers.add (handler);
+    }
+    
+    public List<StAXHandler> getHandlers () {
+        return handlers;
     }
 
     /**

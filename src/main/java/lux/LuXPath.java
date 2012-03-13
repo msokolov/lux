@@ -1,13 +1,28 @@
 package lux;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.stream.XMLStreamException;
+
+import lux.xml.JDOMBuilder;
+import lux.xml.XmlReader;
+
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.FieldSelector;
+import org.apache.lucene.document.FieldSelectorResult;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.Collector;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Scorer;
 import org.jaxen.BaseXPath;
 import org.jaxen.Context;
 import org.jaxen.JaxenException;
 import org.jaxen.Navigator;
-import org.jaxen.jdom.DocumentNavigator;
 import org.jaxen.expr.Expr;
+import org.jaxen.jdom.DocumentNavigator;
 
 /**
  * Executes XPath queries against a Lux (Lucene XML) datastore.
@@ -46,19 +61,111 @@ public abstract class LuXPath extends BaseXPath
      */
     protected List<?> selectNodesForContext(Context context) throws JaxenException
     {
-        if (context instanceof Collection) {
-        	XPathQuery xpq = getQuery (getRootExpr(), context);
-        	// TODO exec the query against lucene
-        	if (xpq.isMinimal()) {
+        if (context instanceof QueryContext) {
+            ArrayList<Object> results = new ArrayList<Object>();
+        	QueryContext queryContext = (QueryContext) context;
+        	IndexSearcher searcher = queryContext.getSearcher();        	
+            XPathQuery xpq = getQuery (getRootExpr(), context);
+            try {
+                System.out.println ("xpath: " + xpq.getXPath()+ "; query: " + xpq.getQuery());
+                XPathCollector collector = new XPathCollector(queryContext, results);
+                searcher.search (xpq.getQuery(), collector);
+                System.out.println ("matched " + collector.getDocCount()); 
+            } catch (IOException e) {
+               if (e.getCause() instanceof JaxenException)
+                   throw ((JaxenException) e.getCause());
+               throw new JaxenException (e);
+            }
+        	//if (xpq.isMinimal()) {
         		// TODO return the query results as a list of values
         		// of the appropriate type
-        	}
-        	// TODO: foreach result, execute the xpath against it as a document and return the 
-        	// resulting nodes
-        	return null;
+        	//}
+        	return results;
         } else {
             return super.selectNodesForContext (context);
         }
+    }
+
+    private org.jdom.Document getXmlDocument(XmlReader xmlReader) {
+        return ((JDOMBuilder)xmlReader.getHandlers().get(0)).getDocument();
+    }
+    
+    final static class SingleFieldSelector implements FieldSelector {
+        
+        private final String fieldName;
+        
+        SingleFieldSelector (String fieldName) {
+            this.fieldName = fieldName;
+        }
+
+        public FieldSelectorResult accept(String fieldName) {
+            return this.fieldName.equals(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
+        }
+        
+    }
+    
+    public boolean dontParse = false; // for testing oNLY!
+    
+    class XPathCollector extends Collector {
+
+        private IndexReader reader;
+        private final QueryContext queryContext;
+        private final List<Object> results;
+        private int docCount = 0;
+        
+        XPathCollector (QueryContext context, List<Object> results) {
+            this.queryContext = context;
+            this.results = results;
+        }
+        
+        @Override
+        public void setScorer(Scorer scorer) throws IOException {
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void collect(int doc) throws IOException {
+            Document document = reader.document(doc, new SingleFieldSelector(queryContext.getXmlFieldName()));
+            String xml = document.get(queryContext.getXmlFieldName());
+            ++ docCount;
+            if (dontParse) {
+                results.add (xml);
+                return; // simulate effect of parse-free xpath eval returning an entire document
+            }
+            XmlReader xmlReader = getXmlReader();
+            try {
+                xmlReader.read(new StringReader (xml));
+            } catch (XMLStreamException e) {
+                throw new IOException (e);
+            }
+            try {
+                results.addAll(selectNodes(getXmlDocument(xmlReader)));
+            } catch (JaxenException e) {
+                throw new IOException (e);
+            }            
+        }
+
+        @Override
+        public void setNextReader(IndexReader reader, int docBase) throws IOException {
+            this.reader = reader;
+        }
+
+        @Override
+        public boolean acceptsDocsOutOfOrder() {
+            return true;
+        }
+        
+        public int getDocCount () {
+            return docCount;
+        }
+        
+    }
+    
+    private XmlReader getXmlReader () {
+        XmlReader reader = new XmlReader();
+        JDOMBuilder builder = new JDOMBuilder();
+        reader.addHandler(builder);
+        return reader;
     }
     
     protected abstract XPathQuery getQuery (Expr expr, Context context) throws JaxenException;

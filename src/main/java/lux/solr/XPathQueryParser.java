@@ -49,11 +49,11 @@ public class XPathQueryParser extends QParserPlugin {
             // TODO: namespace mappings from params/localParams?
             try {
                 luXPath = new LuXPathBasic(qstr);
+                luXPath.setAttrQNameField(attNameFieldName);
+                luXPath.setElementQNameField(eltNameFieldName);
             } catch (JaxenException e) {
                 parseError = e.getMessage();
             }
-            luXPath.setAttrQNameField(attNameFieldName);
-            luXPath.setElementQNameField(eltNameFieldName);
         }
 
         @Override

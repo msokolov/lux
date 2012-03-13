@@ -40,74 +40,78 @@ public class LuXPathBasicTest {
 
     @Test public void testElementPaths () throws Exception {
 
-        assertQuery ("foo", "lux_elt_name:foo", false, ValueType.ELEMENT);
+        assertQuery ("foo", "lux_elt_name_ms:foo", false, ValueType.ELEMENT);
 
-        assertQuery ("//foo", "lux_elt_name:foo", true, ValueType.ELEMENT);
+        assertQuery ("//foo", "lux_elt_name_ms:foo", true, ValueType.ELEMENT);
 
-        assertQuery ("/*/foo", "lux_elt_name:foo", false, ValueType.ELEMENT);
+        assertQuery ("/*/foo", "lux_elt_name_ms:foo", false, ValueType.ELEMENT);
 
         // TODO: understand what this path means!
-        // assertQuery ("node()[.//foo]", "lux_elt_name:foo", true, ValueType.DOCUMENT);
+        // assertQuery ("node()[.//foo]", "lux_elt_name_ms:foo", true, ValueType.DOCUMENT);
         
-        assertQuery ("(/)[.//foo]", "lux_elt_name:foo", true, ValueType.DOCUMENT);
+        assertQuery ("(/)[.//foo]", "lux_elt_name_ms:foo", true, ValueType.DOCUMENT);
         
         // In XPath 2 we could do this:
-        // assertQuery ("document-node()[.//foo]", "lux_elt_name:foo", true, ValueType.DOCUMENT);
+        // assertQuery ("document-node()[.//foo]", "lux_elt_name_ms:foo", true, ValueType.DOCUMENT);
         
         // or this:
-        // assertQuery ("//foo/root()", "lux_elt_name:foo", true, ValueType.DOCUMENT);
+        // assertQuery ("//foo/root()", "lux_elt_name_ms:foo", true, ValueType.DOCUMENT);
         
-        assertQuery ("/foo//*", "lux_elt_name:foo", false, ValueType.ELEMENT);
+        assertQuery ("/foo//*", "lux_elt_name_ms:foo", false, ValueType.ELEMENT);
 
-        assertQuery ("foo/text()", "lux_elt_name:foo", false, ValueType.TEXT);
+        assertQuery ("foo/text()", "lux_elt_name_ms:foo", false, ValueType.TEXT);
     }
 
     @Test public void testAttributePaths () throws Exception {
         // FIXME: compute minimality properly for attributes
         
-        assertQuery ("//*/@attr", "lux_att_name:attr", true, ValueType.ATTRIBUTE);
+        assertQuery ("//*/@attr", "lux_att_name_ms:attr", true, ValueType.ATTRIBUTE);
         
-        assertQuery ("//node()/@attr", "lux_att_name:attr", true, ValueType.ATTRIBUTE);
+        assertQuery ("//node()/@attr", "lux_att_name_ms:attr", true, ValueType.ATTRIBUTE);
 
-        assertQuery ("//*[@attr]", "lux_att_name:attr", true, ValueType.ELEMENT);
+        assertQuery ("//*[@attr]", "lux_att_name_ms:attr", true, ValueType.ELEMENT);
 
-        assertQuery ("(/)[.//*/@attr]", "lux_att_name:attr", true, ValueType.DOCUMENT);
+        assertQuery ("(/)[.//*/@attr]", "lux_att_name_ms:attr", true, ValueType.DOCUMENT);
     }
 
     @Test public void testElementAttributePaths () throws Exception {
         
-        assertQuery ("foo/@id", "+lux_elt_name:foo +lux_att_name:id", false, ValueType.ATTRIBUTE);
+        assertQuery ("foo/@id", "+lux_elt_name_ms:foo +lux_att_name_ms:id", false, ValueType.ATTRIBUTE);
 
-        assertQuery ("foo/@*", "lux_elt_name:foo", false, ValueType.ATTRIBUTE);
+        assertQuery ("foo/@*", "lux_elt_name_ms:foo", false, ValueType.ATTRIBUTE);
     }
 
     @Test public void testTwoElementPaths () throws Exception {
         
-        assertQuery ("foo/bar", "+lux_elt_name:foo +lux_elt_name:bar", false, ValueType.ELEMENT);
+        assertQuery ("foo/bar", "+lux_elt_name_ms:foo +lux_elt_name_ms:bar", false, ValueType.ELEMENT);
 
-        assertQuery ("foo//bar", "+lux_elt_name:foo +lux_elt_name:bar", false, ValueType.ELEMENT);
+        assertQuery ("foo//bar", "+lux_elt_name_ms:foo +lux_elt_name_ms:bar", false, ValueType.ELEMENT);
         
-        assertQuery ("foo/bar[1]", "+lux_elt_name:foo +lux_elt_name:bar", false, ValueType.ELEMENT);
+        assertQuery ("foo/bar[1]", "+lux_elt_name_ms:foo +lux_elt_name_ms:bar", false, ValueType.ELEMENT);
 
-        assertQuery ("foo|bar", "lux_elt_name:foo lux_elt_name:bar", false, ValueType.ELEMENT);
+        assertQuery ("foo|bar", "lux_elt_name_ms:foo lux_elt_name_ms:bar", false, ValueType.ELEMENT);
 
-        assertQuery ("//foo|//bar", "lux_elt_name:foo lux_elt_name:bar", true, ValueType.ELEMENT);
+        assertQuery ("//foo|//bar", "lux_elt_name_ms:foo lux_elt_name_ms:bar", true, ValueType.ELEMENT);
 
-        //assertQuery ("//foo/root()|//bar/root()", "lux_elt_name:foo lux_elt_name:bar", true, ValueType.DOCUMENT);
+        //assertQuery ("//foo/root()|//bar/root()", "lux_elt_name_ms:foo lux_elt_name_ms:bar", true, ValueType.DOCUMENT);
 
-        assertQuery ("(/)[.//foo][.//bar]", "+lux_elt_name:bar +lux_elt_name:foo", true, ValueType.DOCUMENT);
+        assertQuery ("(/)[.//foo][.//bar]", "+lux_elt_name_ms:bar +lux_elt_name_ms:foo", true, ValueType.DOCUMENT);
     }
 
     @Test public void testMultiElementPaths () throws Exception {
         assertQuery ("foo/title | bar/title | baz/title", 
-                     "(+lux_elt_name:foo +lux_elt_name:title) ((+lux_elt_name:bar +lux_elt_name:title) (+lux_elt_name:baz +lux_elt_name:title))", false, ValueType.ELEMENT);
+                     "(+lux_elt_name_ms:foo +lux_elt_name_ms:title) ((+lux_elt_name_ms:bar +lux_elt_name_ms:title) (+lux_elt_name_ms:baz +lux_elt_name_ms:title))", false, ValueType.ELEMENT);
 
     }
 
     @Test public void testElementValue () throws Exception {
-        assertQuery ("foo[.='content']", "lux_elt_name:foo", false, ValueType.ELEMENT);
+        assertQuery ("foo[.='content']", "lux_elt_name_ms:foo", false, ValueType.ELEMENT);
 
-        assertQuery ("foo[bar='content']", "+lux_elt_name:bar +lux_elt_name:foo", false, ValueType.ELEMENT);
+        assertQuery ("foo[bar='content']", "+lux_elt_name_ms:bar +lux_elt_name_ms:foo", false, ValueType.ELEMENT);
+    }
+    
+    @Test public void testAtomicResult () throws Exception {
+        assertQuery ("number(/doc/test[1])", "+lux_elt_name_ms:doc +lux_elt_name_ms:test", false, ValueType.VALUE);
     }
 
     public void assertQuery (String xpath, String luq, boolean isMinimal, ValueType valueType) throws JaxenException {

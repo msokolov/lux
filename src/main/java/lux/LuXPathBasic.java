@@ -7,16 +7,31 @@ import lux.XPathQuery.ValueType;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.jaxen.saxpath.Axis;
 import org.jaxen.Context;
 import org.jaxen.JaxenException;
-import org.jaxen.expr.*;
+import org.jaxen.expr.AllNodeStep;
+import org.jaxen.expr.BinaryExpr;
+import org.jaxen.expr.Expr;
+import org.jaxen.expr.FilterExpr;
+import org.jaxen.expr.FunctionCallExpr;
+import org.jaxen.expr.LocationPath;
+import org.jaxen.expr.NameStep;
+import org.jaxen.expr.PathExpr;
+import org.jaxen.expr.Predicate;
+import org.jaxen.expr.Predicated;
+import org.jaxen.expr.Step;
+import org.jaxen.expr.TextNodeStep;
+import org.jaxen.expr.UnaryExpr;
+import org.jaxen.expr.UnionExpr;
+import org.jaxen.saxpath.Axis;
 
 public class LuXPathBasic extends LuXPath {
 	
-    private boolean namespaceAware = false;    private String attrQNameField = "lux_att_name";
-    private String elementQNameField = "lux_elt_name";
+    private boolean namespaceAware = false;
+    private String attrQNameField = "lux_att_name_ms";
+    private String elementQNameField = "lux_elt_name_ms";
 
     /**
      * @return whether element and attribute names (QNames) are processed in a namespace-aware manner.
@@ -34,7 +49,8 @@ public class LuXPathBasic extends LuXPath {
      * 
      * <p>Operating without namespace awareness breaks conformance with
      * widely-accepted XML standards.  However in almost all cases it
-     * provides identical results with less effort.</p>
+     * provides identical results more naturally, with less confusion
+     * and less effort.</p>
      * 
      * <p>In either case, the setting must match the index configuration in
      * order to get sensible results.<p>
@@ -53,12 +69,22 @@ public class LuXPathBasic extends LuXPath {
 
     @Override
     public XPathQuery getQuery(Expr expr, Context context) throws JaxenException {
-        XPathQuery query = getRootQuery(expr, context);
+        XPathQuery query;
+        if (context instanceof QueryContext) {
+            Query contextQuery = ((QueryContext)context).getQuery();
+            query = getGenericQuery(expr, context);
+            if (contextQuery != null) {
+                query.addQuery(contextQuery, Occur.MUST);
+            }
+        } else {
+            // Strip the query from the QueryContext so we don't apply it multiple times
+            query = getGenericQuery(expr, new Context (context.getContextSupport()));
+        }
         query.setXPath(this);
         return query;
     }
 
-    private XPathQuery getRootQuery(Expr expr, Context context) throws JaxenException {
+    private XPathQuery getGenericQuery(Expr expr, Context context) throws JaxenException {
         if (expr == null) {
             return XPathQuery.EMPTY;
         }
@@ -76,6 +102,9 @@ public class LuXPathBasic extends LuXPath {
         }
         if (expr instanceof UnaryExpr) {
             return getQuery ((UnaryExpr) expr, context);
+        }
+        if (expr instanceof FunctionCallExpr) {
+            return getQuery ((FunctionCallExpr) expr, context);
         }
         // FunctionCallExpr
         // LiteralExpr
@@ -126,6 +155,22 @@ public class LuXPathBasic extends LuXPath {
 
     protected XPathQuery getQuery (UnaryExpr unaryExpr, Context context) throws JaxenException {
         return getQuery (unaryExpr.getExpr(), context);
+    }
+    
+    protected XPathQuery getQuery (FunctionCallExpr funcallExpr, Context context) throws JaxenException {
+        if (funcallExpr.getPrefix().isEmpty()) {
+            // If this is a built-in XPath 1.0 function, its results can only be a 
+            // function of its arguments, and its result type must be atomic.
+            // Otherwise, it could have side effects or sources of data we don't know about,
+            // and could return nodes??
+            XPathQuery query = new XPathQuery(new MatchAllDocsQuery(), true, ValueType.ATOMIC);
+            for (Object o : funcallExpr.getParameters()) {
+                Expr expr = (Expr) o;
+                query = query.combine(getQuery (expr, context), Occur.SHOULD);
+            }
+            return query;
+        }
+        return XPathQuery.UNINDEXED;
     }
 
     protected XPathQuery getQuery (LocationPath locationPath, Context context) throws JaxenException {

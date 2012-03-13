@@ -30,7 +30,7 @@ import org.apache.lucene.search.Weight;
 @SuppressWarnings("deprecation")
 public class XPathQuery extends Query {
 
-    private final Query query;
+    private Query query;
     private XPath xpath;
     private final boolean isMinimal;
     private final ValueType valueType;
@@ -157,6 +157,13 @@ public class XPathQuery extends Query {
         return ValueType.VALUE;
     }
     
+    public void addQuery (Query contextQuery, Occur occur) {
+        BooleanQuery bq = new BooleanQuery ();
+        bq.add (contextQuery, Occur.MUST);
+        bq.add (query, Occur.MUST);
+        query = bq;
+    }
+    
     public String toString () {
         return query.toString();
     }
@@ -178,6 +185,7 @@ public class XPathQuery extends Query {
         return query.rewrite (reader);
     }
 
+    // return an XPathQuery??
     public Query combine(Query[] queries) {
         return query.combine (queries);
     }

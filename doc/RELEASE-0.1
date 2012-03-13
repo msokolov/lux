@@ -1,0 +1,21 @@
+We have a working XPath/Solr/Lucene integration that allows you to query
+using XPath against xml stored in a lucene index.  
+
+At its heart is an extension of org.jaxen.XPath, LuXPath (TBD:
+net.lux.XPath?). Passing a QueryContext (which accepts a Lucene Query)
+causes the XPath to be evaluated against all documents which match the
+query.
+
+The Solr integration consists of a QParserPlugin, UpdateProcessor and
+SearchHandler/Component. This integration is not formally complete, but
+some important implementation details remain.  Namely, pagination and
+offset calculations need to be done, and this is complicated by the need to
+map between document counts and XPath result counts.  We plan to provide
+paging on XPath results; currently you can request the first N results
+only.
+
+Optimizations.
+
+An attempt is made to retrieve only documents that will match the XPath.
+For now this is done using QName indexes only.
+
