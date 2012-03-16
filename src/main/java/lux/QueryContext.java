@@ -32,5 +32,5 @@ public class QueryContext extends Context {
     public String getXmlFieldName () {
         return xmlFieldName;
     }
-
+    
 }

@@ -33,6 +33,7 @@ import org.jdom.filter.ElementFilter;
 import org.jdom.output.XMLOutputter;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class SearchTest {
@@ -41,6 +42,17 @@ public class SearchTest {
     private static IndexSearcher searcher;
     private static final Version luceneVersion = Version.LUCENE_34;
     private static int totalDocs;
+    // This means there is exactly one result returned per document matching the query,
+    // making the query more easily pageable using solr/lucene paging, and making the search count accurate
+    private static int QUERY_EXACT = 0x00000001;
+    // This means "filtering" is not required; the query returns an aggregate, like count
+    // or it returns documents or uris, or in general anything that can be computed without
+    // examining the contents of the document using xpath.
+    private static int QUERY_FILTER_FREE = 0x00000002;
+    // The query retrieves only documents that actually produce results - no smaller set of 
+    // documents would suffice.  This is a necessary, but not sufficient, condition for EXACT.
+    // It's not clear if there are any benefits to just being minimal, though? 
+    private static int QUERY_MINIMAL = 0x00000004;
     
     @BeforeClass public static void setUp () throws Exception {
         // create an in-memory Lucene index, index some content
@@ -101,7 +113,7 @@ public class SearchTest {
         indexWriter.addDocument(doc);
     }
     
-    @Test 
+    @Ignore @Test
     public void testTimer () throws Exception {
         // 6.2 seconds + -> 6636*20/6.2 = 21,000 results per/sec!
         for (int i = 0; i < 20; i++) {
@@ -109,7 +121,7 @@ public class SearchTest {
         }
     }
     
-    @Test public void testTimeNoParse () throws Exception {
+    @Ignore @Test public void testTimeNoParse () throws Exception {
         // 0.4 sec!! -> 15X speedup
         // This is an upper bound on what we could expect from using non-parsed XML storage
         // saving us a parse-and-create OM step inside the query evaluator
@@ -125,13 +137,27 @@ public class SearchTest {
     
     @Test
     public void testSearchAllDocs() throws Exception {
-        List<?> results = searchx("/");
+        List<?> results = assertSearch("/", QUERY_EXACT);
         assertEquals (totalDocs, results.size());
+        
+        results = assertSearch ("count(/)", QUERY_FILTER_FREE);
+        assertEquals (Double.valueOf(totalDocs), (Double)results.get(0));
     }
-
+    
     private List<?> searchx(String query) throws JaxenException {
+        return assertSearch (query, 0);
+    }
+    
+    private List<?> assertSearch(String query, int props) throws JaxenException {
         LuXPath xpath = new LuXPathBasic (query);
-        return (List<?>) xpath.evaluate(new QueryContext(new ContextSupport(), searcher));
+        List<?> results = (List<?>) xpath.evaluate(new QueryContext(new ContextSupport(), searcher));
+        if ((props & QUERY_EXACT) != 0) {
+            assertEquals (results.size(), xpath.getQueryStats().docCount);
+        }
+        if ((props & QUERY_FILTER_FREE) != 0) {
+            assertTrue ((xpath.getQueryStats().collectionTime + 1) / (xpath.getQueryStats().totalTime + 1.0) < 0.01);
+        }
+        return results;
     }
     
     @Test
@@ -155,7 +181,15 @@ public class SearchTest {
     
     @Test
     public void testSearchAllSceneDocs() throws Exception {
-        List<?> results = searchx("(/)[.//SCENE]");
+        List<?> results = assertSearch("(/)[.//SCENE]", QUERY_EXACT);
+        // every SCENE, in its ACT and in the PLAY
+        assertEquals (elementCounts.get("SCENE") + elementCounts.get("ACT") + 1, results.size());
+    }
+    
+    @Test @Ignore
+    public void testSearchAllSceneDocsRoot() throws Exception {
+        // This syntax is not supported by XPath 1.0
+        List<?> results = assertSearch(".//SCENE/fn:root()", QUERY_EXACT);
         // every SCENE, in its ACT and in the PLAY
         assertEquals (elementCounts.get("SCENE") + elementCounts.get("ACT") + 1, results.size());
     }

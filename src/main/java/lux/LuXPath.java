@@ -29,6 +29,9 @@ import org.jaxen.jdom.DocumentNavigator;
  */
 public abstract class LuXPath extends BaseXPath
 {
+    
+    private QueryStats queryStats;
+    
     /**
      * Creates an XPathSolr backed by the default org.w3c.DOM-based XPath
      * Navigator implementation.
@@ -62,24 +65,23 @@ public abstract class LuXPath extends BaseXPath
     protected List<?> selectNodesForContext(Context context) throws JaxenException
     {
         if (context instanceof QueryContext) {
+            long t = System.nanoTime();
             ArrayList<Object> results = new ArrayList<Object>();
         	QueryContext queryContext = (QueryContext) context;
         	IndexSearcher searcher = queryContext.getSearcher();        	
             XPathQuery xpq = getQuery (getRootExpr(), context);
             try {
-                System.out.println ("xpath: " + xpq.getXPath()+ "; query: " + xpq.getQuery());
+                queryStats = new QueryStats();
                 XPathCollector collector = new XPathCollector(queryContext, results);
                 searcher.search (xpq.getQuery(), collector);
-                System.out.println ("matched " + collector.getDocCount()); 
+                queryStats.totalTime = System.nanoTime() - t;
+                queryStats.docCount = collector.getDocCount();
+                queryStats.query = xpq.getQuery().toString();
             } catch (IOException e) {
                if (e.getCause() instanceof JaxenException)
                    throw ((JaxenException) e.getCause());
                throw new JaxenException (e);
             }
-        	//if (xpq.isMinimal()) {
-        		// TODO return the query results as a list of values
-        		// of the appropriate type
-        	//}
         	return results;
         } else {
             return super.selectNodesForContext (context);
@@ -125,9 +127,16 @@ public abstract class LuXPath extends BaseXPath
         @SuppressWarnings("unchecked")
         @Override
         public void collect(int doc) throws IOException {
+            long t = System.nanoTime();
+            ++ docCount;
+
+            //if (xpq.isMinimal()) {
+                // TODO return the query results as a list of values
+                // of the appropriate type and maybe don't even retrieve documents?
+            //}
+            
             Document document = reader.document(doc, new SingleFieldSelector(queryContext.getXmlFieldName()));
             String xml = document.get(queryContext.getXmlFieldName());
-            ++ docCount;
             if (dontParse) {
                 results.add (xml);
                 return; // simulate effect of parse-free xpath eval returning an entire document
@@ -142,7 +151,9 @@ public abstract class LuXPath extends BaseXPath
                 results.addAll(selectNodes(getXmlDocument(xmlReader)));
             } catch (JaxenException e) {
                 throw new IOException (e);
-            }            
+            }
+            t = System.nanoTime() - t;
+            queryStats.collectionTime += t;
         }
 
         @Override
@@ -159,6 +170,38 @@ public abstract class LuXPath extends BaseXPath
             return docCount;
         }
         
+    }
+    
+    /**
+     * A class that holds statistics about the last query execution
+     */
+    public class QueryStats {
+        /**
+         * the number of documents that matched the lucene query. If XPath was executed (there wasn't
+         * a short-circuited eval of some sort), this number of XML documents will have been retrieved
+         * from the database and processed.
+         */
+        public int docCount;
+        
+        /**
+         * time spent collecting results (parsing and computing xpath, mostly), in nanoseconds
+         */
+        public long collectionTime;
+        
+        /*
+         * total time to evaluate the query and produce results, in nanoseconds
+         */
+        public long totalTime;
+        
+        /**
+         * A description of the work done prior to collection; usu. the Lucene Query generated from the XPath and used to retrieve a set of candidate
+         * documents for evaluation.
+         */
+        public String query;
+    }
+    
+    public QueryStats getQueryStats() {
+        return queryStats;
     }
     
     private XmlReader getXmlReader () {

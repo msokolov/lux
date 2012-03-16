@@ -99,4 +99,5 @@ format directly if we implement xpath on the client using it (for the xml
 mapper) and if we can interface it to saxon somehow.
 
 Hmm -- look at using TinyTree directly; it implements these ideas already,
-and could slot in to saxon directly, of course.
+and could slot in to saxon directly, of course.  Seems easy to create.  No
+save/load method?  Maybe in the commercial package?
