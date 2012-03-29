@@ -1299,15 +1299,28 @@
        by SearchHandler) or in LocalParams
     -->
     
-  <queryParser name="xpath" class="lux.solr.XPathQueryParser" />
+  <queryParser name="xpath" class="lux.solr.XPathQueryPlugin" />
   
-  <searchComponent name="xpath" class="lux.solr.XPathSearchComponent">
+  <searchComponent name="saxon" class="lux.solr.SaxonComponent">
     <str name="xmlFieldName">xml_text</str>
   </searchComponent>
   
-  <requestHandler name="/xpath" class="lux.solr.XPathSearchHandler">
+  <searchComponent name="jaxen" class="lux.solr.JaxenComponent">
+    <str name="xmlFieldName">xml_text</str>
+  </searchComponent>
+  
+  <requestHandler name="/xpathj" class="solr.SearchHandler">
     <arr name="components">
-      <str>xpath</str>
+      <str>jaxen</str>
+      <str>stats</str>
+      <str>debug</str>
+      <!-- highlight? facet? -->
+    </arr>
+  </requestHandler>
+  
+    <requestHandler name="/xpaths" class="solr.SearchHandler">
+    <arr name="components">
+      <str>saxon</str>
       <str>stats</str>
       <str>debug</str>
       <!-- highlight? facet? -->

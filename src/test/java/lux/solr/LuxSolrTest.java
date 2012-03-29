@@ -1,6 +1,8 @@
 package lux.solr;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -20,9 +22,13 @@ import org.apache.solr.core.CoreContainer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class LuxSolrTest {
+public abstract class LuxSolrTest {
     
     private static SolrServer solr;
+    
+    public abstract String getXPathEngine ();
+    
+    public abstract String getSolrSearchPath ();
     
     @BeforeClass public static void setup () throws Exception {
         System.setProperty("solr.solr.home", "solr");
@@ -58,11 +64,11 @@ public class LuxSolrTest {
     @Test public void testXPathSearch() throws Exception {
         // test search using standard search query handler, custom query parser
         assertXPathSearchCount (1, 1, "element", "config", "//config");
-        assertXPathSearchCount (35, 1, "element", "abortOnConfigurationError", "/config/*");
+        assertXPathSearchCount (37, 1, "element", "abortOnConfigurationError", "/config/*");
     }
     
     @Test public void testAtomicResult () throws Exception {
-        assertXPathSearchCount (10, 100, "number", "1.0", "number(/doc/test[1])");
+        assertXPathSearchCount (10, 100, "xs:double", "1", "number(/doc/test[1])");
     }
     
     @Test public void testFirstPage () throws Exception {
@@ -75,19 +81,43 @@ public class LuxSolrTest {
     
     @Test public void testPaging () throws Exception {
         // make the searcher page past the first 10 documents to find 10 xpath matches
-        assertXPathSearchCount (10, 100, "element", "doc", "//doc[number(test) > 5]");
+        assertXPathSearchCount (10, 100, "element", "doc", "//doc[test[number(.) > 5]]");
     }
     
-    private void assertQueryCount (int count, String query) throws SolrServerException {
+    @Test public void testQueryMismatch () throws Exception {
+        SolrQuery q = new SolrQuery("lux_elt_name_ms:config");
+        q.setParam("qt", getSolrSearchPath());
+        q.setParam("defType", "lucene");
+        // send an ordinary Lucene query to the XPathSearchComponent
+        try {
+            solr.query (q);
+            assertFalse (true);
+        } catch (SolrServerException e) {            
+        }
+    }
+    
+    @Test
+    public void testSyntaxError () throws Exception {
+        try {
+            assertQueryCount(0, "{!type=xpath}hey bad boy");
+            assertTrue ("expected ParseException to be thrown for syntax error", false);
+        } catch (SolrServerException e) {
+        }
+    }
+    
+    protected void assertQueryCount (int count, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
+        q.setParam("engine", getXPathEngine());
         QueryResponse rsp = solr.query (q);
         assertEquals (count, rsp.getResults().getNumFound());
     }
     
-    private void assertXPathSearchCount (int count, int docCount, String type, String value, String query) throws SolrServerException {
+    protected void assertXPathSearchCount (int count, int docCount, String type, String value, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setParam("qt", "/xpath");
+        q.setParam("qt", getSolrSearchPath());
+        q.setParam("engine", getXPathEngine());
         q.setRows(10);
+        q.setStart(0);
         QueryResponse rsp = solr.query (q);
         long docMatches = rsp.getResults().getNumFound();
         assertEquals (docCount, docMatches);

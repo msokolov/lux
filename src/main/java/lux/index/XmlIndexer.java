@@ -9,7 +9,6 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.jaxen.util.SingletonList;
 import org.jdom.Document;
 import org.jdom.output.XMLOutputter;
 
@@ -91,7 +90,7 @@ public class XmlIndexer {
             return pathMapper.getPathCounts().keySet();
         }
         if (xmlFieldName.equals(fieldName) && isOption(SERIALIZE_XML)) {
-            return new SingletonList(jdomSerializer.outputString(getJDOM()));
+            return Collections.singletonList(jdomSerializer.outputString(getJDOM()));
         }
         return Collections.EMPTY_SET;
     }

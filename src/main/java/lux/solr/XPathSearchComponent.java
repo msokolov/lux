@@ -1,16 +1,13 @@
 package lux.solr;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.xml.stream.XMLStreamException;
-
 import lux.XPathQuery;
-import lux.xml.JDOMBuilder;
-import lux.xml.XmlReader;
+import lux.api.Evaluator;
+import lux.api.Expression;
+import lux.api.LuxException;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.Query;
@@ -26,23 +23,31 @@ import org.apache.solr.search.DocIterator;
 import org.apache.solr.search.DocList;
 import org.apache.solr.search.QueryParsing;
 import org.apache.solr.search.SolrIndexSearcher;
-import org.jaxen.JaxenException;
-import org.jaxen.XPath;
-import org.jdom.Element;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
+import org.apache.solr.search.SortSpec;
 
-public class XPathSearchComponent extends QueryComponent {
+/*
+ * dependencies:
+ * xml storage - field names
+ * xml document model creation from field values - make generic
+ * xpath evaluation - use evaluator
+ */
+public abstract class XPathSearchComponent extends QueryComponent {
     
-    private SolrIndexSearcher searcher;
-    private IndexSchema schema;
-    private Set<String> fields = new HashSet<String>();
-    private String xmlFieldName = "xml_text";
-    private XMLOutputter xmlOutputter = new XMLOutputter();
+    protected SolrIndexSearcher searcher;
+    protected IndexSchema schema;
+    protected Set<String> fields = new HashSet<String>();
+    protected String xmlFieldName = "xml_text";
+    protected Evaluator evaluator;
     
-    public XPathSearchComponent() {
-        xmlOutputter.setFormat(Format.getCompactFormat().setOmitDeclaration(true));
+    public XPathSearchComponent() {        
+        evaluator = createEvaluator();
     }
+   
+    public abstract Evaluator createEvaluator ();
+    
+    public abstract Object buildDocument (String xml);
+    
+    public abstract void addResult(NamedList<Object> xpathResults, Object result);
 
     public void prepare(ResponseBuilder rb) throws IOException {
         // TODO: update start position since multiple xpaths could result from each document
@@ -75,14 +80,19 @@ public class XPathSearchComponent extends QueryComponent {
         // are supposed to be documents, we can just reference whatever the search matched
         DocList docs = (DocList) rb.rsp.getValues().get("response");
         NamedList<Object> xpathResults = new NamedList<Object>();
-        while (docs.size() > 0) {
+        int start = rb.req.getParams().getInt(CommonParams.START, 0);
+        while (docs.offset() + docs.size() > start) {
             getXPathResults (rb, xpathResults);
             if (xpathResults.size() >= rb.getQueryCommand().getLen()) {
                 break;
             }
-            // We need more documents
-            int start = rb.req.getParams().getInt(CommonParams.START, 1);
-            overrideParamValue(rb, CommonParams.START, start + docs.size());
+            // We need more documents            
+            // 
+            start += docs.size();
+            overrideParamValue(rb, CommonParams.START, start);
+            rb.setSortSpec(new SortSpec (rb.getSortSpec().getSort(), start, 10));
+            rb.rsp.getValues().remove("response");
+            // broken - not advancing??
             super.process(rb);
             docs = (DocList) rb.rsp.getValues().get("response");
         }
@@ -103,15 +113,12 @@ public class XPathSearchComponent extends QueryComponent {
         if (! (query instanceof XPathQuery)) {
             throw new SolrException (ErrorCode.BAD_REQUEST, "XPathSearchComponent got a Query that is not an XPath");                
         }
-        XPath xpath = ((XPathQuery)query).getXPath();
+        Expression xpath = ((XPathQuery)query).getExpression();
         DocList docs = (DocList) rb.rsp.getValues().get("response");
         int len = rb.getQueryCommand().getLen();
         DocIterator docIter = docs.iterator();
         if(searcher == null) searcher = rb.req.getSearcher();
-        if(schema == null) schema = rb.req.getSchema(); 
-        XmlReader reader = new XmlReader ();
-        JDOMBuilder jdomBuilder = new JDOMBuilder ();
-        reader.addHandler(jdomBuilder);
+        if(schema == null) schema = rb.req.getSchema();
         while (xpathResults.size() < len) {
             if (docIter.hasNext() == false) {
                 break;
@@ -120,49 +127,18 @@ public class XPathSearchComponent extends QueryComponent {
             Document doc = searcher.doc(id, fields);
             String xml = doc.get(xmlFieldName );
             try {
-                reader.read(new StringReader (xml));
-            } catch (XMLStreamException e) {
-               throw new IOException (e);
+                Object xmlDoc = buildDocument (xml);
+                getXPathResults(xpathResults, xpath, xmlDoc);
+            } catch (LuxException e) {
+                throw new SolrException (ErrorCode.BAD_REQUEST, e);
             }
-            org.jdom.Document jdom = jdomBuilder.getDocument();
-            getXPathResults(xpathResults, xpath, jdom);
         }
     }
 
-    private void getXPathResults(NamedList<Object> xpathResults, XPath xpath, org.jdom.Document jdom) throws IOException {
+    private void getXPathResults(NamedList<Object> xpathResults, Expression xpath, Object doc) throws IOException {
         Object xpathResult;
-        try {
-            xpathResult = xpath.evaluate(jdom);
-        } catch (JaxenException e) {
-            throw new IOException (e);
-        }
-        if (xpathResult instanceof Collection) {
-            Collection<?> c = (Collection<?>) xpathResult;
-            for (Object result :  c) {
-                addResult (xpathResults, result);
-            }
-        } else {
-            addResult (xpathResults, xpathResult);
-        }
-    }
-    
-    private void addResult(NamedList<Object> xpathResults, Object result) {
-        // TODO: review XPath 1.0 types and make sure we're covering them
-        if (result instanceof Element) {
-            xpathResults.add("element", xmlOutputter.outputString((Element) result));
-        } else if (result instanceof org.jdom.Attribute) {
-            xpathResults.add ("attribute", ((org.jdom.Attribute)result).getValue());
-        } else if (result instanceof org.jdom.Text) {
-            xpathResults.add ("text", result.toString());
-        } else if (result instanceof org.jdom.Document) {
-            xpathResults.add ("document", xmlOutputter.outputString((org.jdom.Document) result));
-        } else if (result instanceof Integer) {
-            xpathResults.add ("int", result);
-        } else if (result instanceof Double) {
-            xpathResults.add ("number", result);
-        } else {
-            xpathResults.add("string", result.toString());
-        }
+        xpathResult = evaluator.evaluate(xpath, doc); 
+        addResult (xpathResults, xpathResult);        
     }
     
     public static final String COMPONENT_NAME = "xpath";

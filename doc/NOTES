@@ -1,0 +1,133 @@
+* Saxon notes
+** parse/eval hooks for extension/query rewriting
+*** ExpressionParser accepts a CodeInjector
+Set a CodeInjector which can be used to modify or wrap expressions on the
+tree as the expression is parsed and the tree is constructed. This is
+typically used to add tracing code.
+*** ExpressionParser.parse accepts a user-supplied StaticContext/Configuration
+This can provide function bindings, and represent the lux context generally
+So we could for example replace certain functions with our own
+implementations that provide simplify() methods which are aware of query
+context.  These would either simplify down to the builtin system function,
+or they'd simplify to a query-based implementation.
+*** Optimizer performs some very specific optimizations
+This doesn't look like a useful general-purpose extension point - it
+represents Saxon EE optimizations
+*** ExpressionVisitor
+visitor.simplify() is called when compiling, after parsing
+
+If we provided our own ExpressionVisitor, it could have knowledge of
+certain simplifications and apply them.  But this isn't really feasible as
+ExpressionVisitor is created using a static utility method which is called
+all over saxon.
+
+*** StaticQueryContext
+can override compileQuery, set a CodeInjector
+*** StaticContext
+This provides the function library, for example.  But is not really
+involved in parsing or compile-time optimization.
+
+** more implementation notes
+This is hard to do w/Jaxen b/c we would really like to supply our own
+Expression objects for this purpose, and that's not possible due to an
+overly rigid constructor in JaxenHandler.  So we would need to start
+modifying Jaxen.
+
+In Saxon, my first thought was to do this using a CodeInjector, which
+provides a way to come in sideways and completely rewrite part of the parse
+tree, after parsing.  But it is associated with tracing and its use seems
+to come with some possibly unwanted side effects, like disabling
+promotions?  ExpressionVisitor looks like a hook, but isn't really - it's
+more of a utility class.  
+
+So the best possibility here is to supply our own FunctionLibrary - can we
+do that?  It looks as if we would have to extend StaticQueryContext,
+provide our own compileQuery method (copying - it's a short method) and
+creating our own version of QueryModule that overrides getFunctionLibrary()
+- this comes with a scary warning, though.  This is all do-able, but
+limited to functions.  If we wanted to be able to rewrite aribtrary
+expressions (which we do!), we'd need some other mechanism.  And this is
+looking really painful in Saxon.  It's really not designed for this kind of
+extensibility, is it?  XQueryExpression, which is what you actually
+execute, is immutable and locked down in various ways.  
+
+Expression you can walk and visit, but you can't really do anything with
+that directly.  Still one possibility is to walk the Expression tree,
+rewriting into a new tree, say, and then output the new query as a string -
+rewrite it literally, as source code.  But we could use some other parser
+for that?  There are two that I've found - an ANTLR one, and a JavaCC one.
+
+** AST Visitor implementation
+We want to be able to visit an AST in an implementation-independent way so
+we can separate our optimization logic from a dependency on a parser
+library's classes (Saxon or Jaxen, say) when the parsers effectively render
+the same or very similar ASTs.  We also want to allow for the possibility
+that different parsers will model the same expression in slightly different
+ways.
+
+Create a Visitor interface with visit(Expression)
+
+Optimizer implements Visitor with visit(E) for each Expression class E
+
+Create a class E for each expression type, with an "accept" method that
+calls visit(E) and visit(EC) for each of its children.
+
+We want an optimization framework that replaces expressions with a combined
+query/evaluate operation.  In LuXPathBasic we generate a single query for
+an entire expression during a tree walk, leaving the expression itself
+unchanged.  But we would like to be able to optimize sub-expressions in the
+same way: this will be needed for more complex trees, like XQuery.  So if
+we introduce an XQuery/XPath search function that combines a query and a
+"client-side" expression, we can perform optimizations by replacing
+subexpressions with calls to this function.
+
+We'll need to make:
+
+Expr optimize (Expr)
+
+Function search(Query, Expr)
+
+We can implement optimize using an ExprVisitor: what this would do is wrap
+a saxon or jaxen expression in an appropriate kind of Expr, call
+Expr.accept(optimizer), which in turn calls optimizer.accept (ExprX expr)
+where ExprX is the specific Expr type.  Optimizer would maintain some state as it walks the tree (a stack of Exprs, a Query it is accumulating)
+
+Or we can pre-create the tree of Exprs, give them our own optimize method
+and avoid the whole visitor insanity.  Although visitor is nice since we
+can have different optimization schemes depending on the indexing config.
+Still - the idea of pre-creating the Expr tree is nice since it makes it
+possible for an optimize method to inspect the child expressions, as for
+example we may need to do when optimizing LocationPath.
+
+One way to escape from this abstraction nightmare is to convert the xquery
+to another form, say XQueryX, implement the rewriting rules there, and then
+convert back again.  Or we can equally do that with another java Tree
+representation using our own Expr classes.
+
+So:
+
+1) Create a mirror Expr tree (with untyped links back to the saxon or jaxen
+tree) 
+
+2) visit/walk/optimize our own Expr tree
+
+BUT WAIT
+
+We can provide our own Optimizer.  Saxon attempts to optimize every path
+expression trying to replace it with a call to key().  That's actually a
+really nice place to put in a search() function call.
+
+THEN AGAIN 
+
+In the end the Optimizer approach turned out to be a failure, since Saxon
+doesn't optimize everything, and we really want to walk the entire parse
+tree.
+
+And in the interest of expediency, I gave up on abstracting the Expression
+tree.  It was going to be a huge amount of wrapper code.  Also there is
+some divergence between the AST models in jaxen and saxon that would have
+to be accounted for.  And I doubt whether jaxen support is really worth
+maintaining in the long run.  Unfortunately tight coupling to the parse
+tree leads to some significant code duplication (in the key part of our
+work) if we want to support multiple expression parsers.
+

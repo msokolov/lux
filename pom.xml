@@ -4,6 +4,13 @@
   <artifactId>solr-xpath</artifactId>
   <version>0.1</version>
   <dependencies>
+    <dependency>
+        <groupId>net.sf.saxon</groupId>
+        <artifactId>saxon</artifactId>
+        <version>9.4.0</version>
+        <scope>system</scope>
+        <systemPath>${project.basedir}/lib/saxon9he.jar</systemPath>
+    </dependency>
   	<dependency>
   		<groupId>jaxen</groupId>
   		<artifactId>jaxen</artifactId>

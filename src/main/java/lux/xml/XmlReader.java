@@ -14,15 +14,14 @@ import javax.xml.stream.XMLStreamReader;
 
 /**
  * Reads XML and passes events to a brigade of StAXHandlers Essentially
- * turns StAX into push model parser a'la SAX, but we need to use woodstox
- * for its superior whitespace handling.
+ * turns StAX into push model parser a'la SAX.
  * 
  * @author sokolov
  *
  */
 public class XmlReader {
 
-    private static XMLInputFactory inputFactory;
+    private XMLInputFactory inputFactory;
 
     private ArrayList<StAXHandler> handlers = new ArrayList<StAXHandler>();
 
@@ -87,5 +86,6 @@ public class XmlReader {
             handler.handleEvent (in, event);
         }
     }
+    
 }
 

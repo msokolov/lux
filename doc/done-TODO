@@ -72,6 +72,12 @@ so we can do highlighting.
 *** integration test framework
 loads documents, evaluates query, timings
 ** a complete working implementation
+* Saxon notes
+no Saxon code mods so you can use the standard HE distro
+** basic search tests implemented
+using string storage / parse into TinyTree
+*** Lucene test
+*** Solr test
 * implementation notes on using Jaxen
 consider saxon which provides XPath 2.0? Maybe for version 2...  It turns
 out Jaxen <> javax.xml.xpath, which is bundled w/Oracle JRE now.  But JRE

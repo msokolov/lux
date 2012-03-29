@@ -1,0 +1,151 @@
+* High-level goals
+** optimize searching
+xpath analysis yielding index operations as much as possible
+** compelling use cases
+It's easier to make the case when you have a stack including search api,
+gui etc.  Nevertheless we do offer the core capability: data storage (no
+transactions), automatic indexing, query via xpath and retrieval of nodes,
+values and documents.  Might be nice to extend the solr admin with a query
+interface?  The next step of course is an xquery app server, etc.
+Integration w/Oxygen?
+** other optimizations
+*** reduce parsing/serialization time
+*** xpath execution time
+** xpath 2
+** xquery
+** updates?
+* Saxon integration
+** use tinytree for storage
+Could use Ptree if you have saxon-PE+.  Or could build a replacement (maybe
+for in house use, but don't release).
+** TinyTree in ifpress
+** check whether our code works w/9.1 (Saxon B) ?
+* Test Coverage
+Leverage XQTS ?
+** Is there a useful XPath-only subset?
+I don't see that
+** Label the tests with expected optimizations
+*** query text
+This will depend on the indexes available and the query plan chosen.
+*** facts
+minimal, exact, counting: Is it possible to compute these emprically?  It's
+certainly possible to disprove a fact by finding a counter-example.  There
+may not be sufficient documents for this in the XQTS?
+*** possible strategy
+**** baseline from Saxon
+Run the XQTS using Saxon alone, executing each expressions against the
+entire collection of test documents, recording the results
+**** test using Lux
+Run the XQTS in the same way using Lux and compare results (and time, of
+course).
+**** optimize and repeat
+Apply additional optimizations where possible
+* optimize XPath searching
+There are a few more things we can optimize using the "basic" indexing setup
+** pre-evaluate some functions, like aggregates:
+
+In cases where we can do this (argument expression is evaluated in the
+QueryContext, ie there is no current node, or the argument is the
+collection() function), rewrite/wrap/intercept the function to an internal
+method (lux:count) that we implement by recursing into a nested query/eval.
+
+Perform static analysis of the argument expression(s) to see if they can be
+retrieved minimally by query.  If we can prove that the db query result
+count will equal the expression result count, then we can replace the
+count() expression with an (indexed, more efficient) query-count()
+expression.  exists() and not() can be computed as count()>0 and count()=0,
+and we can short-circuit evaluation in the result collector.
+
+This could also hold for max/min when we have an appropriate field.  Maybe
+we can even help out w/aggregates like sum/avg?
+
+More complex would be something like: count(//a) + count(//b) ?
+
+*** root()
+*** count()
+across multiple documents
+*** node-uri(), document-uri()
+** optimize pagination when we know that #count=#estimate
+eg where a sequence will always return one result per document, and we know
+that we can match the documents exactly by query.  For example:
+*** /descendant::foo[1] or /descendant::foo[last()]
+If we had accurate element counts/positions we could extend this to any
+constant expression in the predicate.  Also expressions with position() =
+same
+* Advanced Indexing techniques
+** index paths
+** index text and values
+parameterize existing indexing classes
+** index XML structure
+* Testing
+** Document Set
+using hamlet for lucene tests, solr config + fake docs for solr
+** Query Set
+evolving
+** Performance Measurement
+* Plans
+** xquery abstraction
+either commit to Saxon, incorporate some other freer better parser(?), or
+build an XQuery abstraction layer.  Problems w/tying to Saxon: work w/8.7?
+9.1? changes in API could make it difficult to track.  How important is
+this?  Licensing doesn't seem to be an issue?  Review Mozilla license, but
+if we are committed to open source there's no problem?  If we do commit to
+saxon (seems like the best way to focus on indexing and query optos?),
+should probably scrap Jaxen support, or stop extending its tests.  Already
+the Lucene and Solr integration is too tied to the specific impl.
+Alternatively, see this as an oppty to build a good abstraction layer.
+** benchmark framework
+Eventually will want to scale up, perform repeats, report timings in a
+better way, etc.  For now unit tests seem fine.
+** indexer/query generator plugin
+To make it easier to choose which indexes to use, this should be pluggable.
+Indexers can either be event-driven or xpath-based (post processed).
+
+Then query optos can be global (single lucene query followed by xquery), or
+combined for more complex xquery.
+* Basic Implementation
+** SOLR Pagination
+when start > 1, change doc-start = 1 and scan forward
+*** opto when query minimal
+then set doc-start = start
+**** minimal document results, or minimal counts only
+can skip XPath step entirely
+*** cache result navigation info in Solr
+if we've computed which document contains xpath X position A, and a request
+comes in for xpath X position B, and B > A, we can start at A and scan
+forward.  This can be a very small cache.  The idea is that one consumer is
+skipping around in a result set.  The main case is to optimize is scanning
+through an entire large result set.
+** Counting
+count (//foo)
+*** need to handle functions at outermost scope
+expressions like (//foo)[1] too
+** cleanup API, rename classes
+This is better now - but still not sure about LuXPath
+once we have a few implementations done, revisit the naming
+* Solr integration
+** namespaces
+*** in QParser config
+*** in query localnames
+** marshal XML types
+preserve xpath result types (nodes and xdm atomic types) across Solr's
+comms This is a bit better now.  But too much parsing/unparsing.
+** configure XPathSearchComponent, XPathQParser, LuxProcessor
+*** xml field name
+*** namespace-aware
+for parser and update processor
+* Administrivia
+** svn
+** domain/namespace
+lux.* is unavailable
+luxpath.net/org are available
+** distribution
+* Highlighting
+* desiderata
+** XML namespaces
+Don't pollute queries with horrible namespace declarations.  Allow
+namespaces to be declared in configuration only.  Also allow namespace
+support to be disabled, in which case index QNames directly.
+** sorting
+only document order for now; XPath doesn't allow for any other sort order,
+but of course we would like to sort the documents too...
