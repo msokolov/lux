@@ -8,12 +8,21 @@ transactions), automatic indexing, query via xpath and retrieval of nodes,
 values and documents.  Might be nice to extend the solr admin with a query
 interface?  The next step of course is an xquery app server, etc.
 Integration w/Oxygen?
-** other optimizations
+** learn indexes
+grow xpath; determine salient dimensions by #matches - some, all or none.
+** learn storage strategy
+chunk documents by size; guided by learned paths
 *** reduce parsing/serialization time
 *** xpath execution time
 ** xpath 2
 ** xquery
 ** updates?
+* Learning
+Iterative expression generator using the term vocabulary (values and node
+names) from the data set.
+** extract the vocabulary
+** generate expressions
+*** re-inject terms at every level
 * Saxon integration
 ** use tinytree for storage
 Could use Ptree if you have saxon-PE+.  Or could build a replacement (maybe
@@ -21,9 +30,33 @@ for in house use, but don't release).
 ** TinyTree in ifpress
 ** check whether our code works w/9.1 (Saxon B) ?
 * Test Coverage
-Leverage XQTS ?
-** Is there a useful XPath-only subset?
-I don't see that
+** Leverage XQTS ?
+Is there a useful XPath-only subset? I don't see that
+** expression generator
+1. start with a fixed set of QNames and literals
+
+2. assign a fixed probability to each expression and to the termination condition
+3. generate random expressions!
+
+Use a seed, and a number of expressions to generate a predictable run
+*** baseline evaluation
+Evaluate the expression across a set of documents using a reference system.
+Keep track of the number of documents that generate non-empty results, the
+total number of results, and the number of different results.  Classify the
+expressions as: empty, constant, single-valued (per doc), across all the
+documents
+*** query-optimized evaluation
+Re-evaluate the same expression using the query optimizer.  
+**** Ensure the results are the same.
+**** check for optimization
+Simply compare evaluation speed; but also calculate a predicted
+optimization and compare.  We'd expect expressions to optimize well if they
+don't match many documents, or if they are constant, and maybe if they're
+single-valued.
+**** Keep statistics
+1. ERRORS flag any queries with incorrect results
+2. SURPRISES queries that optimize more or less than expected
+3. GOODNESS overall improvement due to optimization
 ** Label the tests with expected optimizations
 *** query text
 This will depend on the indexes available and the query plan chosen.

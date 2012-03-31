@@ -1,0 +1,105 @@
+The story of Lux
+
+I needed a rich scalable open-source XML query capability.  I looked at
+smoe existing technologies, like eXist and baseX, and these are very
+appealing.  But I had made a significant technical investment in Lucene and
+Saxon and wanted to see how much leverage I could get from "mashup" of my
+two favorite systems.  Maybe the whole would be greater.
+
+Lucene provides great scalability, search and even storage, albeit without
+a real ACID capability.  But for document storage that's fine.  Business
+rules don't really rely on ACID.  Nice to have, but not a deal-breaker.  On
+top of that though the query language doesn't allow for the detail of xpath
+or xquery.
+
+Saxon provides high-quality XQuery/XPath evaluation but its indexing
+capabilities are transient, designed to support XSLT's key() function, and
+really only apply to a single document.
+
+I set out to build some indexes to support a rudimentary query tool,
+creating element/attribute name indexes and path indexes and coupled that
+with Saxon using an xquery function to run xquery on the query results and
+displayed them in a little gui.  This enabled some coarse database
+exploration, and was already a huge leap forward from grep.
+
+Lux was born as an independent effort to extrapolate from these modest
+beginnings to provide a more robust indexing capability to support XQuery.
+I was interested in generating optimized Lucene queries from XQuery
+directly without the need to call a special function, so I wrote some code
+to do that using first Jaxen and then Saxon's parse trees as input.
+
+Then I began to wonder how to test and improve the basic system that was
+beginning to work.  What I was looking for was a collection of queries that
+represented common use cases.  If I could optimize those, presumably other
+similar queries would see performance gains too.  The difficulty of testing
+and improving the performance of expression evaluation is that the number
+of possible expressions is truly infinite, and not so easily classified.
+
+I looked at XQTS, but it wasn't really ideal for a couple of reasons: I
+wanted to start working only with XPath and work my way up to a more
+complete XQuery optimizer, but XQTS really requires XQuery.  Even if I
+decided to grapple with that, the XQTS queries are not really designed to
+test querying a collection of documents.  They might be bent to that
+purpose, but it would take work.
+
+I cast about for ideas, and it occurred to me that perhaps generating
+random queries would provide better coverage.  I ginned up a random
+expression generator, but as you might expect, the queries it produced were
+garbage for the most part.  Then I thought maybe I could filter the queries
+by applying them to a test dataset and see which ones actually matched
+something.  If a query matches all documents, or no documents, then it is
+not really providing any discriminatory value: in some sense it doesn't
+tell you anything about the documents that match.
+
+Then I had what felt like an insight: If we could guide the query
+generation process using knowledge of the data after query generation, why
+not do it *during* the query generation process so that we'd be guaranteed
+to end up with a query that had some discriminatory value.  The randomness
+would no longer be necessary.  I envisioned a process that would:
+
+1. Generate *all* possible minimal expressions given some controlled
+vocabulary of primitives (integers, strings, and node names)
+
+2. Prune these based on a metric computed from the results
+
+3. Spawn a second generation using the elements of the first generation as
+operands or sub-expressions, and repeat.
+
+Essentially a language-learning algorithm where the meaning of expressions
+derive from their ability to classify documents and fragments.
+
+Eventually, we could even consider learning an ideal index configuration,
+and even a storage strategy from the information represented by the
+language model for a particular dataset.
+
+It turns out of course that as with anything of interest, others have done
+work in this area: in fact there is a considerable body of literature in
+the field of machine learning and data mining addressing these topics.
+
+So I skimmed some literature, but rapidly tired of that.
+
+---------------------
+
+Implementing the query generation, it was helpful to apply some heuristics
+to cut down the search space.  I started with a collection of primitives:
+terms and axis expressions (ie node test combined with an axis).  I made a
+breadth parameter that would control the number of (randomly-selected)
+element names and terms (words) that would be used as primitives.
+
+Then in order to generate the first round of composite expressions, I
+considered only the child and descendant axes: other axes won't match
+starting at a document, or in the case of descendant-or-child, are
+redundant.
+
+A prefilter stage eliminates any expressions that don't depend on the
+context, (which Saxon very helpfully computes); these are effectively
+constant and won't be discriminative.  We need to keep constants as
+building blocks for other queries, but the primitives should be enough.
+
+An interesting theoretical question is whether the generator will generate
+all possible queries given the set of primitives.  We tried to make it so,
+but it's hard to test.
+
+Evaluating the remaining queries, about half generate compilation errors,
+runtime errors, or warnings to the effect that they are silly and can never
+match anything.

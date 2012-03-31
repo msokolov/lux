@@ -11,6 +11,7 @@ import lux.api.ValueType;
 import net.sf.saxon.expr.*;
 import net.sf.saxon.expr.parser.Optimizer;
 import net.sf.saxon.expr.parser.Token;
+import net.sf.saxon.expr.sort.IntComplementSet;
 import net.sf.saxon.expr.sort.IntIterator;
 import net.sf.saxon.expr.sort.IntSet;
 import net.sf.saxon.expr.sort.IntUniversalSet;
@@ -206,9 +207,12 @@ public class LuxOptimizer extends Optimizer {
                             ? ValueType.DOCUMENT : ValueType.NODE;
                 }
                 return new XPathQuery (null, new MatchAllDocsQuery(), XPathQuery.MINIMAL, type);
+            } else if (nameCodes instanceof IntComplementSet) {
+                // match all names *except* some set
+                return XPathQuery.UNINDEXED;
             }
             BooleanQuery bq = new BooleanQuery ();
-            IntIterator nameCodesIter = nodeTest.getRequiredNodeNames().iterator();
+            IntIterator nameCodesIter = nameCodes.iterator();
             while (nameCodesIter.hasNext()) {
                 bq.add(nodeNameTermQuery(axis, nameCodesIter.next()), Occur.SHOULD);
             }

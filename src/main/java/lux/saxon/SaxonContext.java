@@ -13,6 +13,10 @@ public class SaxonContext extends QueryContext implements Context {
     public SaxonContext (IndexSearcher searcher) {
        super (searcher);
     }
+    public SaxonContext (IndexSearcher searcher, XdmItem contextItem) {
+        super (searcher);
+        this.contextItem = contextItem;
+     }
 
     public String getXmlFieldName() {
         return "xml_text";
