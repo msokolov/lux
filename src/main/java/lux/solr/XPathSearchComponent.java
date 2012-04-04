@@ -47,7 +47,7 @@ public abstract class XPathSearchComponent extends QueryComponent {
     
     public abstract Object buildDocument (String xml);
     
-    public abstract void addResult(NamedList<Object> xpathResults, Object result);
+    public abstract void addResult(NamedList<Object> xpathResults, Iterable<?> result);
 
     public void prepare(ResponseBuilder rb) throws IOException {
         // TODO: update start position since multiple xpaths could result from each document
@@ -136,8 +136,7 @@ public abstract class XPathSearchComponent extends QueryComponent {
     }
 
     private void getXPathResults(NamedList<Object> xpathResults, Expression xpath, Object doc) throws IOException {
-        Object xpathResult;
-        xpathResult = evaluator.evaluate(xpath, doc); 
+        Iterable<?> xpathResult = evaluator.iterate(xpath, doc); 
         addResult (xpathResults, xpathResult);        
     }
     

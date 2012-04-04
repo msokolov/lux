@@ -1,28 +1,30 @@
 package lux.gen;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.Random;
-
-import net.sf.saxon.expr.Expression;
-import net.sf.saxon.s9api.XdmNode;
-import net.sf.saxon.s9api.XdmValue;
-
-import org.apache.commons.chain.web.MapEntry;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import lux.SearchBase;
 import lux.SearchTest;
+import lux.XPathQuery;
 import lux.api.Evaluator;
 import lux.api.LuxException;
+import lux.api.ResultSet;
+import lux.api.ValueType;
 import lux.saxon.Saxon;
 import lux.saxon.SaxonContext;
+import lux.saxon.SaxonExpr;
+import net.sf.saxon.expr.Expression;
+import net.sf.saxon.s9api.XdmNode;
+
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermEnum;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Learns discriminative XPath expressions 
@@ -50,7 +52,7 @@ public class Learner extends SearchBase {
         terms.close(); 
     }
     
-    @Test 
+    @Test @Ignore
     public void testTermCounts () {
         System.out.println ("total docs=" + totalDocs);
         System.out.println ("total distinct terms=" + termCounts.size());
@@ -62,7 +64,7 @@ public class Learner extends SearchBase {
         */
     }
     
-    @Test 
+    @Test @Ignore
     public void testGenerateQuery () {
         ExprGen gen = new ExprGen(termCounts.keySet().toArray(new String[0]), elementCounts.keySet().toArray(new String[0]), new Random(), 2, 2);
         ExprBreeder breeder = new ExprBreeder(gen);
@@ -82,45 +84,104 @@ public class Learner extends SearchBase {
         System.out.println ("generated " + count + " expressions");
     }
     
-    @Test 
+    @Test @Ignore
     public void testEvalGenerated () {
         // evaluate all of a first query generation; this will determine the Lucene queryFor each,
         // but evaluates against a single document instance.
         Saxon saxon = new Saxon();
         XdmNode hamlet = (XdmNode) saxon.getBuilder().build(new InputStreamReader (SearchTest.class.getClassLoader().getResourceAsStream("lux/hamlet.xml")));
         saxon.setContext(new SaxonContext(searcher, hamlet));
-        ExprGen gen = new ExprGen(termCounts.keySet().toArray(new String[0]), elementCounts.keySet().toArray(new String[0]), new Random(), 2, 2);
-        gen.setSaxon (saxon);
+        evalGenerated (saxon, false);
+    }
+    
+    @Test @Ignore
+    public void testSearchGenerated () {
+        // evaluate all of a first query generation, running queries against Lucene.
+        Saxon saxon = new Saxon();
+        saxon.setContext(new SaxonContext(searcher));        
+        evalGenerated (saxon, true);
+    }
+    
+    private void evalGenerated (Saxon saxon, boolean validateResults) {
+        ExprGen gen = new ExprGen(termCounts.keySet().toArray(new String[0]), elementCounts.keySet().toArray(new String[0]), 
+                    new Random(), saxon, 2, 2);
         ExprBreeder breeder = new ExprBreeder(gen);
         int count = 0;
-        int errors = 0;
+        int compilationErrors = 0;
+        int runtimeErrors = 0;
         int docs = 0;
+        int nonempty = 0;
         int results = 0;
         int empties = 0;
+        int singletons = 0;
+        int minimal_correct = 0;
+        int minimal_incorrect = 0;
         for (Expression expr : breeder) {
             // filter out expressions that don't depend on anything; they are constant, effectively
             if (expr.computeDependencies() == 0)
+                // TODO: optimize this when evaluating
                 continue;
             ++count;
+            String exprString = expr.toString().replaceAll("lastItem(.*)","($1)[last()]");
+            SaxonExpr saxonExpr=null;
             try {
-                XdmValue result = (XdmValue) saxon.evaluate(saxon.compile(expr.toString()));
-                if (result.size() > 0) {
-                    docs ++;
-                    results += result.size();
+                saxonExpr = saxon.compile(exprString);
+            } catch (LuxException e) {
+                System.err.println (e.getMessage());
+                ++ compilationErrors;
+                continue;
+            }
+            try {
+                ResultSet<?> result = saxon.evaluate(saxonExpr);
+                boolean isDocQuery = saxonExpr.getXPathQuery().getResultType().equals(ValueType.DOCUMENT);
+                int ndocs = 0;
+                int nresults = result.size();
+                if (nresults > 0) {
+                    ++nonempty;
+                    if (saxon.getQueryStats() != null) {
+                        ndocs = saxon.getQueryStats().docCount;
+                    } else {
+                        ndocs = 1;
+                    }
+                    results += nresults;
+                    if (result.size() == 1) {
+                        singletons ++;
+                        if (saxonExpr.getXPathQuery().isMinimal() && isDocQuery) {
+                            System.out.println ("minimal: " + expr);                            
+                            ++minimal_correct;
+                        }
+                    } else {
+                        if (saxonExpr.getXPathQuery().isMinimal() && isDocQuery) {
+                            ++minimal_incorrect;
+                            System.out.println ("not minimal: " + expr);
+                        }
+                    }
                 } else {
                     empties ++;
                 }
+                System.out.println (ndocs + " " + nresults + " " + expr);
+                docs += ndocs;
+                if (validateResults) {
+                    SaxonExpr baseline = new SaxonExpr (saxonExpr.getXPathExecutable(), 
+                            new XPathQuery (null, new MatchAllDocsQuery(), 0, saxonExpr.getXPathQuery().getResultType()));
+                    result = saxon.evaluate(baseline);
+                    assertEquals ("result count mismatch when filtered by query: " + saxonExpr.getSearchQuery(), result.size(), nresults);
+                }
             } catch (LuxException e) {
-                System.err.println (e.getMessage());
-                ++ errors;
+                //System.err.println (e.getMessage() + " in " + expr);
+                ++ runtimeErrors;
             }
         }
         System.out.println ("evaluated " + count + " expressions");
         System.out.println (empties + " of those returned no results");
-        System.out.println ("generated " + errors + " errors");
+        System.out.println ("generated " + compilationErrors + " compilation errors");
+        System.out.println ("generated " + runtimeErrors + " runtime errors");
         System.out.println ("matched " + docs + " documents");
         System.out.println ("retrieved " + results + " results");
-        assertEquals (count, docs + empties + errors);
+        System.out.println (singletons + " had a single result");
+        System.out.println ("of those, " + minimal_correct+ " were predicted");
+        System.out.println ("there were " + minimal_incorrect + " incorrect predictions of single-result queries");
+        assertEquals (count, nonempty + empties + compilationErrors + runtimeErrors);
     }
 
     @Override

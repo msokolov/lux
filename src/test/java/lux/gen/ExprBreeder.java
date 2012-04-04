@@ -4,12 +4,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
+import net.sf.saxon.expr.ArithmeticExpression;
+import net.sf.saxon.expr.BinaryExpression;
+import net.sf.saxon.expr.ContextSwitchingExpression;
 import net.sf.saxon.expr.Expression;
+import net.sf.saxon.expr.FilterExpression;
+import net.sf.saxon.expr.IdentityComparison;
 import net.sf.saxon.expr.Literal;
 import net.sf.saxon.expr.SlashExpression;
+import net.sf.saxon.expr.VennExpression;
 import net.sf.saxon.om.Axis;
+import net.sf.saxon.type.BuiltInAtomicType;
 import net.sf.saxon.type.ItemType;
 import net.sf.saxon.type.Type;
+import net.sf.saxon.type.TypeHierarchy;
 import net.sf.saxon.value.Int64Value;
 
 /** Grows expressions by generating, culling, and combining expressions.
@@ -45,11 +53,29 @@ public class ExprBreeder implements Iterable<Expression> {
     }
 
     private boolean invalidExpression(Expression expr) {
-        if (expr instanceof SlashExpression) {
+        TypeHierarchy th = generator.getSaxon().getConfig().getTypeHierarchy();
+        if (expr instanceof SlashExpression || expr instanceof FilterExpression) {
             // don't apply axes to atomic values or text nodes
-            ItemType itemType = ((SlashExpression)expr).getControllingExpression().getItemType (generator.getSaxon().getConfig().getTypeHierarchy());
+            ItemType itemType = ((ContextSwitchingExpression)expr).getControllingExpression().getItemType (th);
             if (itemType.isPlainType() || itemType.getPrimitiveType() == Type.TEXT) {
                 // TODO: check for attribute, processing instruction, namespace?
+                return true;
+            }
+        }
+        if (expr instanceof IdentityComparison || expr instanceof VennExpression) {
+            // TODO: prevent these from being generated in the first place
+            BinaryExpression bin = (BinaryExpression) expr;
+            Expression [] operands = bin.getOperands();
+            if (operands[0].getItemType(th).isPlainType() || operands[1].getItemType(th).isPlainType()) {
+                return true;
+            }
+        }
+        if (expr instanceof ArithmeticExpression) {
+            // TODO: prevent these from being generated in the first place
+            BinaryExpression bin = (BinaryExpression) expr;
+            Expression [] operands = bin.getOperands();
+            // make sure both operands are not known to be non-numeric
+            if (operands[0].getItemType(th) == BuiltInAtomicType.STRING || operands[1].getItemType(th) == BuiltInAtomicType.STRING) {
                 return true;
             }
         }

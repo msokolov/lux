@@ -10,7 +10,7 @@ import lux.saxon.Saxon;
 
 import net.sf.saxon.expr.*;
 import net.sf.saxon.expr.parser.Token;
-import net.sf.saxon.functions.*;
+//import net.sf.saxon.functions.*;
 import net.sf.saxon.om.Axis;
 import net.sf.saxon.om.NamePool;
 import net.sf.saxon.pattern.NameTest;
@@ -29,7 +29,7 @@ public class ExprGen {
     private final Random random;
     private final String[] terms;
     private final String[] tags;
-    private Saxon saxon;
+    private final Saxon saxon;
     // limit on the number of levels in the generated expression trees
     private final int depth;
     // limit on the number of different terms and tags used to generate expressions
@@ -45,8 +45,8 @@ public class ExprGen {
         new ExprTemplate (FilterExpression.class, 1, ArgType.EXPR, ArgType.expr (3)),
         new ExprTemplate (FilterExpression.class, 1, ArgType.EXPR, ArgType.EXPR),
         new ExprTemplate (GeneralComparison.class, 1, ArgType.EXPR, ArgType.ints (new int[] {Token.EQUALS, Token.NE, Token.LT, Token.GT, Token.LE, Token.GE }), ArgType.EXPR),
-        new ExprTemplate (IdentityComparison.class, 1, ArgType.EXPR,ArgType.ints (new int[] { Token.IS, Token.PRECEDES, Token.FOLLOWS }), ArgType.EXPR),
-        new ExprTemplate (IntegerRangeTest.class, 1, ArgType.EXPR, ArgType.expr (3), ArgType.expr (100)),
+        new ExprTemplate (IdentityComparison.class, 1, ArgType.NODE, ArgType.ints (new int[] { Token.IS, Token.PRECEDES, Token.FOLLOWS }), ArgType.NODE),
+        //new ExprTemplate (IntegerRangeTest.class, 1, ArgType.EXPR, ArgType.expr (3), ArgType.expr (100)),
         new ExprTemplate (LastItemExpression.class, 1, ArgType.EXPR),
         // we should have some node literals
         // and an empty literal
@@ -79,15 +79,20 @@ public class ExprGen {
     }
     
     public ExprGen (String[] terms, String[] tags, Random random, int depth, int breadth) {
+        this (terms, tags, random, new Saxon(), depth, breadth);
+    }
+    
+    public ExprGen (String[] terms, String[] tags) {
+        this (terms, tags, new Random(), 5, 5);
+    }
+
+    public ExprGen(String[] terms, String[] tags, Random random, Saxon saxon, int depth, int breadth) {
         this.terms = terms;
         this.tags = tags;
         this.random = random;
         this.depth = depth;
         this.breadth = breadth;
-    }
-    
-    public ExprGen (String[] terms, String[] tags) {
-        this (terms, tags, new Random(), 5, 5);
+        this.saxon = saxon;
     }
 
     public Expression next () {
@@ -266,6 +271,7 @@ public class ExprGen {
         int [] values;
                 
         static final ArgType EXPR = new ArgType (ValueType.EXPR);
+        static final ArgType NODE = new ArgType (ValueType.EXPR);
         static final ArgType STRING = new ArgType (ValueType.STRING);
         static final ArgType STRING_VALUE = new ArgType (ValueType.STRING_VALUE);
         static final ArgType INT = new ArgType (ValueType.INT);
@@ -403,7 +409,7 @@ public class ExprGen {
         }
         
     }
-
+    
     public int getTemplateCount() {
         return templates.length;
     }
@@ -418,10 +424,6 @@ public class ExprGen {
 
     public Saxon getSaxon() {
         return saxon;
-    }
-
-    public void setSaxon(Saxon saxon) {
-        this.saxon = saxon;
     }
 
 }

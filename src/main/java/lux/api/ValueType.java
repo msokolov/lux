@@ -2,7 +2,7 @@ package lux.api;
 
 public enum ValueType {
     VALUE(false, false), DOCUMENT(true, false), NODE(true, false), ELEMENT(true, false), ATTRIBUTE(true, false), 
-        TEXT(true, false), ATOMIC(false, true), STRING(false, true), INT(false, true), NUMBER(false, true);
+        TEXT(true, false), ATOMIC(false, true), STRING(false, true), INT(false, true), NUMBER(false, true), BOOLEAN(false, true);
 
     public final boolean isNode;
     public final boolean isAtomic;

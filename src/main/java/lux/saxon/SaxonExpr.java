@@ -3,26 +3,41 @@ package lux.saxon;
 import lux.XPathQuery;
 import lux.api.ValueType;
 import net.sf.saxon.Configuration;
-import net.sf.saxon.type.ItemType;
-import net.sf.saxon.type.Type;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XdmItem;
-import net.sf.saxon.s9api.XdmValue;
+import net.sf.saxon.type.ItemType;
+import net.sf.saxon.type.Type;
 
 public class SaxonExpr implements lux.api.Expression {
 
     private XPathExecutable xpath;
     private XPathQuery query;
     
+    /**
+     * Construct a SaxonExpr from an xpath expression using the LuxOptimizer, which is stored away in the Saxon.
+     * @param xpath
+     * @param saxon
+     */
     public SaxonExpr (XPathExecutable xpath, Saxon saxon) {
         this.xpath = xpath;
         query = saxon.getConfig().getOptimizer().queryFor (this);
         ValueType valueType = getValueType(xpath.getUnderlyingExpression().getInternalExpression(), saxon.getConfig());
         if (valueType != null)
             query.restrictType(valueType);
+    }
+    
+    /**
+     * Construct a SaxonExpr from the given xpath and query.  If these are not compatible, incorrect
+     * evaluating this may return incorrect results.  This method is for testing purposes only.
+     * @param xpath
+     * @param query
+     */
+    public SaxonExpr (XPathExecutable xpath, XPathQuery query) {
+        this.xpath = xpath;
+        this.query = query;
     }
     
     public static ValueType getValueType (Expression expr, Configuration config) {
@@ -54,14 +69,19 @@ public class SaxonExpr implements lux.api.Expression {
         return query;
     }
 
+    /**
+     * @return the Lucene query, as a string.  This is usually in a form that can be searched when 
+     * parsed using the standard Lucene query parser, but in some cases may not be.  @see Query.toString()
+     */
     public String getSearchQuery() {
         return query.toString();
     }
 
-    public XdmValue evaluate(XdmItem contextItem) throws SaxonApiException {
+    public XdmResultSet evaluate(XdmItem contextItem) throws SaxonApiException {
         XPathSelector eval = xpath.load();
-        eval.setContextItem(contextItem);
-        return eval.evaluate();
+        if (contextItem != null)
+            eval.setContextItem(contextItem);
+        return new XdmResultSet (eval.evaluate());
     }
 
 }

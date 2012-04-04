@@ -58,6 +58,9 @@ public class LuxOptimizer extends Optimizer {
      *
      * TODO: refactor the control mechanism and implement a brigade of optimizers, each with knowledge of some index
      * they can rewrite the expression tree, modify the lucene query, and set facts.
+     * 
+     * Note this method will only be called with one of the known expression types when that expression
+     * is the outermost expression, ie at the top of the syntax tree.
      */
     public XPathQuery queryFor (Expression expr) {
         if (expr instanceof AxisExpression) {
@@ -70,7 +73,13 @@ public class LuxOptimizer extends Optimizer {
             return queryFor ((FilterExpression) expr);
         }
         if (expr instanceof FunctionCall) {
-            return queryFor ((FunctionCall) expr);
+            // If this is a not() expression, change the "sign" of the Occur in the query - we only want to retrieve
+            // documents that contradict the not expression
+            XPathQuery q = queryFor ((FunctionCall) expr);
+            if (expr instanceof NotFn) {
+                ((BooleanQuery)q.getQuery()).getClauses()[0].setOccur(Occur.MUST);
+            }
+            return q;
         }
         if (expr instanceof UnaryExpression) {
             return queryFor ((UnaryExpression) expr);
@@ -149,9 +158,12 @@ public class LuxOptimizer extends Optimizer {
             // but we assume the context node will always be a document
             query.restrictType(ValueType.DOCUMENT);
         }
-        else if (funcall instanceof Count || funcall instanceof NotFn || funcall instanceof Exists) {
+        else if (funcall instanceof Count) {
             query.setFact(XPathQuery.COUNTING, true);
             query.setType(ValueType.ATOMIC);
+        }
+        else if (funcall instanceof NotFn || funcall instanceof Exists) {
+            query.setType(ValueType.BOOLEAN);
         }
         else {
             ValueType returnType = SaxonExpr.getValueType(funcall, config);

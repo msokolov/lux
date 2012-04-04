@@ -52,11 +52,11 @@ public class QueryTest {
     }
     
     @Test public void testNot () throws Exception {
-        assertQuery ("not(//foo)", "-lux_elt_name_ms:foo", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC);        
+        assertQuery ("not(//foo)", "+lux_elt_name_ms:foo", XPathQuery.MINIMAL, ValueType.BOOLEAN);        
     }
     
     @Test public void testExists () throws Exception {
-        assertQuery ("exists(//foo)", "lux_elt_name_ms:foo", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC);        
+        assertQuery ("exists(//foo)", "lux_elt_name_ms:foo", XPathQuery.MINIMAL, ValueType.BOOLEAN);
     }
     
     public static void assertQuery (String xpath, String luq, boolean isMinimal, ValueType valueType) {

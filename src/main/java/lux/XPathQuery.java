@@ -27,10 +27,6 @@ import org.apache.lucene.search.Weight;
  * We're not allowed to miss a document, though. Some evaluators that return the
  * correct doc set still may need additional evaluation though if the results
  * are not to be documents.
- * 
- * Q: is there some reason these should be immutable?  They aren't really at the moment
- * because Query has setBoost().  And making the fields here immutable causes us to have to 
- * create some extra instances during optimization.
  */
 public class XPathQuery extends Query {
 
@@ -246,7 +242,11 @@ public class XPathQuery extends Query {
     }
 
     public Query rewrite(IndexReader reader) throws IOException {
-        return query.rewrite (reader);
+        Query rq = query.rewrite (reader);
+        if (rq == null) {
+            System.err.println ("query.rewrite returned null for: " + this);
+        }
+        return rq;
     }
 
     // return an XPathQuery??

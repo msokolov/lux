@@ -2,12 +2,11 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
 
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.QueryStats;
+import lux.api.ResultSet;
 import lux.api.ValueType;
 import lux.xml.XmlBuilder;
 
@@ -20,7 +19,7 @@ public class XPathCollector extends Collector {
 
     private final Evaluator evaluator;
     private final Expression expr;
-    private final List<Object> results;
+    private final ResultList<Object> results;
     private final QueryStats queryStats;
     private final int start;
     private final int size;
@@ -41,14 +40,19 @@ public class XPathCollector extends Collector {
      */
     public XPathCollector (Evaluator evaluator, Expression expr, int start, int size, QueryStats queryStats) {
         this.evaluator = evaluator;
-        this.results = new ArrayList<Object>();
+        this.results = new ResultList<Object>();
         this.queryStats = queryStats;
         this.expr = expr;
-        this.size = size;
         resultsAreDocuments = expr.getXPathQuery().getResultType().equals(ValueType.DOCUMENT);
         isCounting = expr.getXPathQuery().isFact(XPathQuery.COUNTING);
         isMinimal = expr.getXPathQuery().isFact(XPathQuery.MINIMAL);
         this.start = (isCounting ? Integer.MAX_VALUE : start);
+        if (expr.getXPathQuery().getResultType() == ValueType.BOOLEAN) {
+            // Short-circuit evaluation of boolean expressions across the whole query set
+            this.size = 1;
+        } else {
+            this.size = size;
+        }
     }
     
     /** Create a result collector for the given expression that collects all results */
@@ -106,7 +110,7 @@ public class XPathCollector extends Collector {
         return docCount;
     }
 
-    public List<Object> getResults() {
+    public ResultSet<Object> getResults() {
         if (isCounting && results.size() == 0) {
             if (isMinimal) {
                 results.add(Double.valueOf(docCount));

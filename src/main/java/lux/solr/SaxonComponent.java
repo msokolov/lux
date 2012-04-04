@@ -10,7 +10,6 @@ import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
-import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.value.BooleanValue;
 import net.sf.saxon.value.DoubleValue;
 import net.sf.saxon.value.FloatValue;
@@ -31,10 +30,9 @@ public class SaxonComponent extends XPathSearchComponent {
     }
 
     @Override
-    public void addResult(NamedList<Object> xpathResults, Object result) {
-        XdmValue value = (XdmValue) result;
-        for (XdmItem item : value) {
-            addResult (xpathResults, item);
+    public void addResult(NamedList<Object> xpathResults, Iterable<?> result) {
+        for (Object item : result) {
+            addResult (xpathResults, (XdmItem) item);
         }
     }
     

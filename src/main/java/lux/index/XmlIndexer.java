@@ -50,7 +50,7 @@ public class XmlIndexer {
     public XmlIndexer (int options) {
         this ();
         this.options = options;
-        if (isOption (BUILD_JDOM) | isOption(SERIALIZE_XML)) {
+        if (isOption (BUILD_JDOM) || isOption(SERIALIZE_XML)) {
          // build a JDOM in case we want to index XPaths
             jdomBuilder = new JDOMBuilder();
             xmlReader.addHandler (jdomBuilder);
@@ -67,7 +67,7 @@ public class XmlIndexer {
     }
 
     private boolean isOption (int option) {
-        return (options | option) != 0;
+        return (options & option) != 0;
     }
     
     public void index (Reader xml) throws XMLStreamException {

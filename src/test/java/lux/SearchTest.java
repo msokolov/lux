@@ -9,6 +9,7 @@ import java.util.List;
 
 import lux.api.Evaluator;
 import lux.api.LuxException;
+import lux.api.QueryStats;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public abstract class SearchTest extends SearchBase {
         return assertSearch (query, 0);
     }
     
-    private List<?> assertSearch(String query, int props) throws LuxException {
+    protected List<?> assertSearch(String query, int props) throws LuxException {
         Evaluator eval = getEvaluator();
         Object result = eval.evaluate(eval.compile(query));
         List<?> results;
@@ -50,17 +51,20 @@ public abstract class SearchTest extends SearchBase {
         } else {
             results = Collections.singletonList(result);
         }
-        if ((props & QUERY_EXACT) != 0) {
-            assertEquals (results.size(), eval.getQueryStats().docCount);
-        }
-        if ((props & QUERY_MINIMAL) != 0) {
-            // this is not the same as minimal, but is implied by it:
-            assertTrue (results.size() >= eval.getQueryStats().docCount);
-            // in addition we'd need to show that every document produced at least one result
-        }
-        if ((props & QUERY_FILTER_FREE) != 0) {
-            // if we spend < 1% of our time in the collector, we didn't do a lot of xquery evaluation
-            assertTrue ((eval.getQueryStats().collectionTime + 1) / (eval.getQueryStats().totalTime + 1.0) < 0.01);
+        QueryStats stats = eval.getQueryStats();
+        if (stats != null) {
+            if ((props & QUERY_EXACT) != 0) {
+                assertEquals (results.size(), stats.docCount);
+            }
+            if ((props & QUERY_MINIMAL) != 0) {
+                // this is not the same as minimal, but is implied by it:
+                assertTrue (results.size() >= stats.docCount);
+                // in addition we'd need to show that every document produced at least one result
+            }
+            if ((props & QUERY_FILTER_FREE) != 0) {
+                // if we spend < 1% of our time in the collector, we didn't do a lot of xquery evaluation
+                assertTrue ((stats.collectionTime + 1) / (eval.getQueryStats().totalTime + 1.0) < 0.01);
+            }
         }
         return results;
     }
@@ -107,4 +111,5 @@ public abstract class SearchTest extends SearchBase {
         } catch (LuxException e) {
         }
     }
+
 }

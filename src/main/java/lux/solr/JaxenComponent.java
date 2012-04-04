@@ -1,20 +1,19 @@
 package lux.solr;
 
 import java.io.StringReader;
-import java.util.Collection;
 
 import javax.xml.stream.XMLStreamException;
-
-import org.apache.solr.common.util.NamedList;
-import org.jdom.Element;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
 
 import lux.api.Evaluator;
 import lux.api.LuxException;
 import lux.jaxen.JaxenEvaluator;
 import lux.xml.JDOMBuilder;
 import lux.xml.XmlReader;
+
+import org.apache.solr.common.util.NamedList;
+import org.jdom.Element;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 
 public class JaxenComponent extends XPathSearchComponent {
 
@@ -44,15 +43,16 @@ public class JaxenComponent extends XPathSearchComponent {
         }
     }
     
-    public void addResult(NamedList<Object> xpathResults, Object result) {
-        // TODO: review XPath 1.0 types and make sure we're covering them
-        if (result instanceof Collection) {
-            Collection<?> c = (Collection<?>) result;
-            for (Object o :  c) {
-                addResult (xpathResults, o);
-            }
+    @Override
+    public void addResult(NamedList<Object> xpathResults, Iterable<?> result) {
+        for (Object o : result) {
+            addResult (xpathResults, o);
         }
-        else if (result instanceof Element) {
+    }
+    
+    public void addResult (NamedList<Object> xpathResults, Object result) {
+        // TODO: review XPath 1.0 types and make sure we're covering them
+        if (result instanceof Element) {
             xpathResults.add("element", xmlOutputter.outputString((Element) result));
         } else if (result instanceof org.jdom.Attribute) {
             xpathResults.add ("attribute", ((org.jdom.Attribute)result).getValue());

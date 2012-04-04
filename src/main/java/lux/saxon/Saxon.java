@@ -2,16 +2,17 @@ package lux.saxon;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.List;
 
 import javax.xml.transform.stream.StreamSource;
 
+import lux.ShortCircuitException;
 import lux.XPathQuery;
 import lux.XPathCollector;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.QueryStats;
+import lux.api.ResultSet;
 import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
@@ -55,19 +56,19 @@ public class Saxon extends Evaluator  {
     }
 
     @Override
-    public Object evaluate(Expression expr) {
+    public ResultSet<?> evaluate(Expression expr) {
         return evaluate (expr, getContext().getContextItem());       
     }
     
     @Override
-    public Object evaluate(Expression expr, Object contextItem) {
+    public ResultSet<?> evaluate(Expression expr, Object contextItem) {
         return iterate (expr, contextItem);
     }
 
     @Override
-    public Iterable<?> iterate(Expression expr, Object contextItem) { 
+    public ResultSet<?> iterate(Expression expr, Object contextItem) { 
         SaxonExpr saxonExpr = (SaxonExpr) expr;
-        if (contextItem == null) {
+        if (contextItem == null && saxonExpr.getXPathQuery().getQuery() != null) {
             return evaluateQuery(saxonExpr, getContext());
         }
         try {
@@ -77,7 +78,7 @@ public class Saxon extends Evaluator  {
         }
     }
 
-    private List<Object> evaluateQuery(SaxonExpr saxonExpr, SaxonContext context) {
+    private ResultSet<?> evaluateQuery(SaxonExpr saxonExpr, SaxonContext context) {
         // TODO: include a context query 
         // Query query = queryContext.getQuery();
         long t = System.nanoTime();
@@ -89,6 +90,8 @@ public class Saxon extends Evaluator  {
             searcher.search (xpq.getQuery(), collector);
         } catch (IOException e) {
             throw new LuxException("error searching for query: " + xpq, e);
+        } catch (ShortCircuitException e) {
+            // we didn't need to collect all the results
         }
         queryStats.totalTime = System.nanoTime() - t;
         queryStats.docCount = collector.getDocCount();
