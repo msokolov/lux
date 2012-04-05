@@ -1,5 +1,5 @@
 * High-level goals
-** optimize searching
+** provide optimized XML-aware searching
 xpath analysis yielding index operations as much as possible
 ** compelling use cases
 It's easier to make the case when you have a stack including search api,
@@ -17,6 +17,10 @@ chunk documents by size; guided by learned paths
 ** xpath 2
 ** xquery
 ** updates?
+* Lux search function
+As a short-cut to full XQuery optimization, allow the user to embed lucene
+queries in their XQuery using a search function.  Must provide direct
+access to indexes, possibly with some syntax sugar.
 * Learning
 Iterative expression generator using the term vocabulary (values and node
 names) from the data set.

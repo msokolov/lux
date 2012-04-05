@@ -1,15 +1,24 @@
 package lux.api;
 
 public enum ValueType {
-    VALUE(false, false), DOCUMENT(true, false), NODE(true, false), ELEMENT(true, false), ATTRIBUTE(true, false), 
-        TEXT(true, false), ATOMIC(false, true), STRING(false, true), INT(false, true), NUMBER(false, true), BOOLEAN(false, true);
+    VALUE(false), DOCUMENT("document-node"), NODE("node"), ELEMENT("element"), ATTRIBUTE("attribute"), 
+        TEXT("text"), COMMENT("comment"), PROCESSING_INSTRUCTION("processing-instruction"),
+        ATOMIC(true), STRING(true), INT(true), NUMBER(true), BOOLEAN(true);
 
     public final boolean isNode;
     public final boolean isAtomic;
+    public final String nodeTest;
 
-    ValueType(boolean isNode, boolean isAtomic) {
-        this.isNode = isNode;
+    ValueType(String nodeTest) {
+        this.isNode = true;
+        this.isAtomic = false;
+        this.nodeTest = nodeTest;
+    }
+
+    ValueType(boolean isAtomic) {
         this.isAtomic = isAtomic;
+        isNode = false;
+        nodeTest = null;
     }
     
     /**
