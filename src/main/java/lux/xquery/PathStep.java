@@ -2,7 +2,6 @@ package lux.xquery;
 
 public class PathStep extends Aex {
     public enum Axis {
-        private final String name;
 
         Self("self"), Child("child"), Parent("parent"), 
             Descendant("descendant"), DescendantSelf("descendant-or-self"),
@@ -10,6 +9,8 @@ public class PathStep extends Aex {
             Preceding("preceding"), Following("following"),
             PrecedingSibling("preceding-sibling"), FollowingSibling("following-sibling"),
             Attribute("attribute");
+
+        private final String name;
 
         Axis (String name) {
             this.name = name;            
@@ -24,9 +25,9 @@ public class PathStep extends Aex {
     private final NodeTest nodeTest;
 
     public PathStep (Axis axis, NodeTest nodeTest) {
+        super (Type.PathStep);
         this.axis = axis;
         this.nodeTest = nodeTest;
-        type = Type.PathStep;
     }
 
     public Axis getAxis () {

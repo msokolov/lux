@@ -22,7 +22,17 @@ public class SaxonSearchTest extends SearchTest {
     
     @Test
     public void testTextComparison () {
-        String xpath = "(descendant::element(SCNDESCR) >= descendant::text())";
+        // This fails because our baseline checks the condition for each document, and for each document,
+        // the expression returns either true(), or false(), so the number of results = the number of documents
+        // Our 'optimized' query retrieves just those documents (2 of them) containing SCNDESCR, and returns true()
+        // (or maybe false?) for each of them, yielding 2 results.
+        //
+        // What we should be doing is considering each sequence as spanning the entire collection of documents
+        // and returning a single result (true()).
+        //
+            //  See discussion in doc/NOTES
+        
+        String xpath = "descendant::element(SCNDESCR) >= descendant::text()";
         Saxon saxon = getEvaluator();
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);

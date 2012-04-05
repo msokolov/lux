@@ -131,3 +131,80 @@ maintaining in the long run.  Unfortunately tight coupling to the parse
 tree leads to some significant code duplication (in the key part of our
 work) if we want to support multiple expression parsers.
 
+-----------
+
+REVISIT
+
+Looking at expressions like:
+
+count(//foo/root()) + count (//bar/root())
+
+makes it seems as if we would really like to do query-based optimization on
+subexpressions, and we still don't have a good framework for this w/Saxon
+other than an external expression re-write followed by a recompile.
+
+but hm wouldn't 
+
+count (//foo) + count (//bar) possibly be *worse* as two independent
+queries?  WHat if there was a lot of overlap between docs with foo's and
+bar's?  Then you'd potentially end up retrieving many docs twice.
+
+Logically we want to consider each absolute sub-expression (when the
+context item is undefined, or is a query/collection) as a separate query.
+This would make it possible to optimize arbitrarily deep expressions.
+
+But perhaps we give up on that, combine their queries into one and then
+collect the results for all in parallel?
+
+        
+A naive (but unscalable) implementation is to retrieve the entirety of both sequences and hand those off to the evaluator.
+        
+One good implementation is to insert a search function for each sequence,
+         run two independent queries and allow the evaluator to pull
+         results lazily, short-circuiting when it can compute a result.
+         However, Lucene exposes only a push API for retrieving results
+         (the Collector).  And inserting functions requires a total
+         xpath/query rewrite and recompile (the compiled saxon expression
+         is immutable, I think?)
+         
+Here, the order of evaluation can be critical - in the example given, one
+         sequence returns 2 items and the other one, all the items in the
+         database: clearly one will want to drive the iteration by the
+         smaller sequence.  This would have to be done using some kind of
+         statistics-driven query rewriting.
+        
+A related idea is to combine the queries for the two sequences (ie fetch
+         all docs that have SCNDESCR or text()), and evaluate the sequences
+         in parallel.  This would also require some kind of co-routining /
+         multi-threading to solve the push-me-pull-you problem.  This
+         avoids the need to insert search functions in the expression and
+         recompile, but has all the same control flow issues.
+        
+Or consider that the Solr querying process is in some macro sense,
+         re-entrant, in that you can request a page of results at a time.
+         But this seems to just be pushing the same problem off to another
+         level, since the evaluator is not re-entrant.
+
+Finally: we could subclass IndexSearcher and provide a pull method based on
+a DocIdSetIterator, which provides a pull API for retrieving matching docs.
+This sounds neat, but could be kind of hairy?
+
+Conclusions: 
+
+1. We should run a separate query for each independent sequence in order to
+pave the way for decent join optimization down the road.  Otherwise we're
+essentially committed to treating every combination of multiple sequences
+(queries) as a total cross-product with a post-filter in the evaluation
+step.
+
+This implies more aggressive expression-rewriting, and the only reasonable
+way forward there is to generate our own expression tree, rewrite it,
+reserialize to xquery, and recompile.
+
+2. Writing iterator-style access to IndexSearcher doesn't look too bad.
+The loops are not deeply buried; they are either directly in user-callable
+methods in IndexSearcher, or maybe one or two calls down in an
+"expert-level" method, and in one case down in Scorer.
+
+Wheras writing the thread coordination / circular buffer to couple
+Collector with Saxonseems a bit scarier.

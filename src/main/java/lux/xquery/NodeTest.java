@@ -1,6 +1,6 @@
 package lux.xquery;
 
-import java.xml.QName;
+import javax.xml.namespace.QName;
 import lux.api.ValueType;
 
 public class NodeTest {
@@ -53,28 +53,33 @@ public class NodeTest {
     }
 
     public String toString () {
-        if (type == NODE || type == COMMENT || type == TEXT) {
+        switch (type) {
+        case NODE: case COMMENT: case TEXT:
             return type.nodeTest + "()";
-        }
-        if (type == ELEMENT || type == ATTRIBUTE) {
+        case ELEMENT: case ATTRIBUTE:
             if (name == null) {
                 return type.nodeTest + "()";
             }
             return qnameString (name);
-        }
-        if (type == DOCUMENT) {
+        case DOCUMENT:
             if (name == null) {
                 return type.nodeTest + "()";
-            } else {
-                return type.nodeTest + '(' + qnameString (name) + ')';
             }
+            return type.nodeTest + '(' + qnameString (name) + ')';        
+        case PROCESSING_INSTRUCTION:
+            if (name == null) {
+                return type.nodeTest + "()";
+            }
+            return type.nodeTest + '(' + name.getLocalPart() + ')';
+        default:
+            throw new IllegalArgumentException ("invalid node type " + type);
         }
     }
 
     private static final String qnameString (QName qname) {
         if (qname.getPrefix ().equals ("")) {
-            return qname.getLocalName();
+            return qname.getLocalPart();
         }
-        return qname.getPrefix() + ':' + qname.getLocalName();
+        return qname.getPrefix() + ':' + qname.getLocalPart();
     }
 }

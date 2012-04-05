@@ -1,5 +1,6 @@
 package lux.saxon;
 
+import lux.ResultList;
 import lux.XPathQuery;
 import lux.api.ValueType;
 import net.sf.saxon.Configuration;
@@ -77,7 +78,7 @@ public class SaxonExpr implements lux.api.Expression {
         return query.toString();
     }
 
-    public XdmResultSet evaluate(XdmItem contextItem) throws SaxonApiException {
+    public ResultList<?> evaluate(XdmItem contextItem) throws SaxonApiException {
         XPathSelector eval = xpath.load();
         if (contextItem != null)
             eval.setContextItem(contextItem);

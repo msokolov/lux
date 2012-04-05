@@ -4,9 +4,9 @@ import java.util.Iterator;
 
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
-import lux.api.ResultSet;
+import lux.ResultList;
 
-public class XdmResultSet implements ResultSet<XdmItem> {
+public class XdmResultSet extends ResultList<XdmItem> {
     private XdmValue value;
     public XdmResultSet(XdmValue value) {
         this.value = value;

@@ -4,7 +4,7 @@ package lux.xquery;
  * An abstract expression
  */
 
-public class Aex {
+public abstract class Aex {
 
     enum Type {
         PathStep, Predicate, Unary, Binary, 
@@ -13,13 +13,17 @@ public class Aex {
             };
 
     private final Type type;
+    
+    protected Aex (Type type) {
+        this.type = type;
+    }
 
     /** The type of this expression; most types will correspond one-one
      * with a Java class which must be a subclass of Aex, but this
      * enumerated value provides an integer equivalent that should be
      * useful for efficient switch operations, encoding and the like.
      */
-    public getType () {
+    public Type getType () {
         return type;
     }
 

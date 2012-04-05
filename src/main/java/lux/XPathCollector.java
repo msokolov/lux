@@ -6,7 +6,6 @@ import java.io.StringReader;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.QueryStats;
-import lux.api.ResultSet;
 import lux.api.ValueType;
 import lux.xml.XmlBuilder;
 
@@ -110,7 +109,7 @@ public class XPathCollector extends Collector {
         return docCount;
     }
 
-    public ResultSet<Object> getResults() {
+    public ResultList<Object> getResults() {
         if (isCounting && results.size() == 0) {
             if (isMinimal) {
                 results.add(Double.valueOf(docCount));

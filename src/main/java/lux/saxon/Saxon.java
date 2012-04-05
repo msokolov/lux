@@ -5,6 +5,7 @@ import java.io.Reader;
 
 import javax.xml.transform.stream.StreamSource;
 
+import lux.ResultList;
 import lux.ShortCircuitException;
 import lux.XPathQuery;
 import lux.XPathCollector;
@@ -12,7 +13,6 @@ import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.QueryStats;
-import lux.api.ResultSet;
 import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
@@ -56,17 +56,17 @@ public class Saxon extends Evaluator  {
     }
 
     @Override
-    public ResultSet<?> evaluate(Expression expr) {
+    public ResultList<?> evaluate(Expression expr) {
         return evaluate (expr, getContext().getContextItem());       
     }
     
     @Override
-    public ResultSet<?> evaluate(Expression expr, Object contextItem) {
+    public ResultList<?> evaluate(Expression expr, Object contextItem) {
         return iterate (expr, contextItem);
     }
 
     @Override
-    public ResultSet<?> iterate(Expression expr, Object contextItem) { 
+    public ResultList<?> iterate(Expression expr, Object contextItem) { 
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         if (contextItem == null && saxonExpr.getXPathQuery().getQuery() != null) {
             return evaluateQuery(saxonExpr, getContext());
@@ -78,7 +78,7 @@ public class Saxon extends Evaluator  {
         }
     }
 
-    private ResultSet<?> evaluateQuery(SaxonExpr saxonExpr, SaxonContext context) {
+    private ResultList<?> evaluateQuery(SaxonExpr saxonExpr, SaxonContext context) {
         // TODO: include a context query 
         // Query query = queryContext.getQuery();
         long t = System.nanoTime();
