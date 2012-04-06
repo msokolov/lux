@@ -1,6 +1,6 @@
-package lux.xquery;
+package lux.xpath;
 
-public class PathStep extends Aex {
+public class PathStep extends AbstractExpression {
     public enum Axis {
 
         Self("self"), Child("child"), Parent("parent"), 

@@ -13,9 +13,13 @@ public class SaxonBasicQueryTest extends BasicQueryTest {
     
     // Saxon switches the operand order
     @Test public void testUnion () throws Exception {
-        assertQuery ("foo|bar", "lux_elt_name_ms:bar lux_elt_name_ms:foo", false, ValueType.ELEMENT);        
+        assertQuery ("foo|bar", "lux_elt_name_ms:bar lux_elt_name_ms:foo", false, ValueType.ELEMENT);
 
         assertQuery ("//foo|//bar", "lux_elt_name_ms:bar lux_elt_name_ms:foo", true, ValueType.ELEMENT);
+    }
+    
+    @Test public void testSequence () throws Exception {
+        assertQuery ("(foo,bar,baz)", "lux_elt_name_ms:bar lux_elt_name_ms:foo lux_elt_name_ms:baz", false, ValueType.ELEMENT);
     }
     
     @Test public void testMatchNone () throws Exception {

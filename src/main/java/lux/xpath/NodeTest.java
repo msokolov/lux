@@ -1,6 +1,5 @@
-package lux.xquery;
+package lux.xpath;
 
-import javax.xml.namespace.QName;
 import lux.api.ValueType;
 
 public class NodeTest {
@@ -60,12 +59,12 @@ public class NodeTest {
             if (name == null) {
                 return type.nodeTest + "()";
             }
-            return qnameString (name);
+            return type.nodeTest + '(' + name.toString() + ')';
         case DOCUMENT:
             if (name == null) {
                 return type.nodeTest + "()";
             }
-            return type.nodeTest + '(' + qnameString (name) + ')';        
+            return type.nodeTest + '(' + name.toString() + ')';        
         case PROCESSING_INSTRUCTION:
             if (name == null) {
                 return type.nodeTest + "()";
@@ -74,12 +73,5 @@ public class NodeTest {
         default:
             throw new IllegalArgumentException ("invalid node type " + type);
         }
-    }
-
-    private static final String qnameString (QName qname) {
-        if (qname.getPrefix ().equals ("")) {
-            return qname.getLocalPart();
-        }
-        return qname.getPrefix() + ':' + qname.getLocalPart();
     }
 }
