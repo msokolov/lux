@@ -33,7 +33,8 @@ public class Predicate extends AbstractExpression {
         return new Predicate (base.optimize(), filter.optimize());
     }
 */
-    public void accept(Visitor<AbstractExpression> visitor) {
+    public void accept(ExpressionVisitor visitor) {
+        super.acceptSubs(visitor);
         visitor.visit(this);
     }
 

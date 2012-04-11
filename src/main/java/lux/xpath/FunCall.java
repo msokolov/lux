@@ -15,10 +15,17 @@ public class FunCall extends AbstractExpression {
         return name.toString() + Sequence.seqAsString(",", subs);
     }
     
+    public QName getQName() {
+        return name;
+    }
+    
     // TODO: move this elsewhere?
+    public static String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
     public static QName luxSearchQName = new QName ("net.lux", "lux", "search");
-
-    public void accept(Visitor<AbstractExpression> visitor) {
+    public static QName notQName = new QName (FN_NAMESPACE, "", "not");
+    
+    public void accept(ExpressionVisitor visitor) {
+        super.acceptSubs(visitor);
         visitor.visit(this);
     }
 }

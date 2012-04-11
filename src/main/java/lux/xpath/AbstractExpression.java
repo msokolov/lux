@@ -6,7 +6,7 @@ package lux.xpath;
  * This class and its subclasses represent XPath expressions.  Their toString() methods return valid XPath.
  */
 
-public abstract class AbstractExpression implements Visitable<AbstractExpression> {
+public abstract class AbstractExpression implements Visitable {
     
     protected AbstractExpression subs[];
 
@@ -30,6 +30,12 @@ public abstract class AbstractExpression implements Visitable<AbstractExpression
      */
     public Type getType () {
         return type;
+    }
+    
+    public void acceptSubs (ExpressionVisitor visitor) {
+        for (AbstractExpression sub : getSubs()) {
+            sub.accept (visitor);
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 package lux.xpath;
 
-public interface Visitable<T> {
-    void accept (Visitor<T> visitor);
+public interface Visitable {
+    void accept (ExpressionVisitor visitor);
 }

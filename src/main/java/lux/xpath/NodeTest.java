@@ -50,6 +50,10 @@ public class NodeTest {
     public ValueType getType () {
         return type;
     }
+    
+    public QName getQName() {
+        return name;
+    }
 
     public String toString () {
         switch (type) {

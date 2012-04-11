@@ -37,7 +37,8 @@ public class Sequence extends AbstractExpression {
         return first;
     }
 
-    public void accept(Visitor<AbstractExpression> visitor) {
+    public void accept(ExpressionVisitor visitor) {
+        super.acceptSubs(visitor);
         visitor.visit(this);
     }
 }

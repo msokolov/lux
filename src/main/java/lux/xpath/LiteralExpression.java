@@ -16,7 +16,6 @@ public class LiteralExpression extends AbstractExpression {
     
     public LiteralExpression (Object value) {
         super(Type.Literal);
-        subs = new AbstractExpression[0];
         this.value = value;
         if (value != null) {
             valueType = computeType (value);
@@ -57,7 +56,7 @@ public class LiteralExpression extends AbstractExpression {
         return value.toString();
     }
 
-    public void accept(Visitor<AbstractExpression> visitor) {
+    public void accept(ExpressionVisitor visitor) {
         visitor.visit(this);
     }
 }

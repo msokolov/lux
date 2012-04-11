@@ -20,5 +20,11 @@ public class QName extends javax.xml.namespace.QName {
         }
         return getPrefix() + ':' + getLocalPart();
     }
+    
+    public String getClarkName () {
+      if (getNamespaceURI().isEmpty())
+          return getLocalPart();
+       return '{' + getNamespaceURI() + "}:" + getLocalPart();
+    }
 
 }

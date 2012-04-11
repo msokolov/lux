@@ -4,7 +4,6 @@ public class Root extends AbstractExpression {
 
     public Root () {
         super (Type.Root);
-        subs = new AbstractExpression[0];
     }
     
     @Override
@@ -16,7 +15,7 @@ public class Root extends AbstractExpression {
         return true;
     }
 
-    public void accept(Visitor<AbstractExpression> visitor) {
+    public void accept(ExpressionVisitor visitor) {
         visitor.visit(this);
     }
 }
