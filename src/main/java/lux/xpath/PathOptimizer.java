@@ -54,20 +54,28 @@ public class PathOptimizer extends ExpressionVisitor {
     // like //a/root().  in this case 
     public void visit(PathExpression pathExpr) {
         System.out.println ("visit path " + pathExpr);
-        XPathQuery lq = pop();
         XPathQuery rq = pop();
+        XPathQuery lq = pop();
         XPathQuery query = combineQueries (lq,  Occur.MUST, rq, Occur.MUST, rq.getResultType());
         push(query);
     }
     
     public void visit(PathStep step) {
         QName name = step.getNodeTest().getQName();
+        Axis axis = step.getAxis();
+        boolean isMinimal = (axis == Axis.Descendant|| axis == Axis.DescendantSelf|| axis == Axis.Attribute);
         XPathQuery query;
-        if (name == null) {           
-            query = new XPathQuery (null, new MatchAllDocsQuery(), 0, step.getNodeTest().getType());
+        if (name == null) {
+            ValueType type = step.getNodeTest().getType();
+            if (axis == Axis.Self && type == ValueType.NODE || type == ValueType.VALUE) {
+                // if axis==self and the type is loosely specified, use the prevailing type
+                // TODO: handle this when combining queries?
+                type = getQuery().getResultType();
+            }
+            query = new XPathQuery (null, new MatchAllDocsQuery(), getQuery().getFacts(), type);
         } else {
             TermQuery termQuery = nodeNameTermQuery(step.getAxis(), name);
-            query = new XPathQuery (null, termQuery, 0, step.getNodeTest().getType());
+            query = new XPathQuery (null, termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType());
         }
        push(query);
     }
@@ -93,37 +101,34 @@ public class PathOptimizer extends ExpressionVisitor {
     public void visit(Dot dot) {
     }
 
-
     @Override
     public void visit(BinaryOperation op) {
         // TODO Auto-generated method stub
         
     }
 
-
     @Override
     public void visit(LiteralExpression literal) {
-        // TODO Auto-generated method stub
-        
+        push (XPathQuery.MATCH_NONE);
     }
-
 
     @Override
     public void visit(Predicate predicate) {
+        XPathQuery filterQuery = pop();
+        XPathQuery baseQuery = pop();
+        push (baseQuery.combine(filterQuery, Occur.MUST));
+        System.out.println ("visit predicate " + predicate);
+    }
+
+    @Override
+    public void visit(Sequence sequence) {
         // TODO Auto-generated method stub
         
     }
 
 
     @Override
-    public void visit(Sequence predicate) {
-        // TODO Auto-generated method stub
-        
-    }
-
-
-    @Override
-    public void visit(SetOperation predicate) {
+    public void visit(SetOperation expr) {
         // TODO Auto-generated method stub
         
     }
