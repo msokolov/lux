@@ -57,7 +57,7 @@ rewriting into a new tree, say, and then output the new query as a string -
 rewrite it literally, as source code.  But we could use some other parser
 for that?  There are two that I've found - an ANTLR one, and a JavaCC one.
 
-** AST Visitor implementation
+* AST Visitor implementation
 We want to be able to visit an AST in an implementation-independent way so
 we can separate our optimization logic from a dependency on a parser
 library's classes (Saxon or Jaxen, say) when the parsers effectively render
@@ -208,3 +208,4 @@ methods in IndexSearcher, or maybe one or two calls down in an
 
 Wheras writing the thread coordination / circular buffer to couple
 Collector with Saxonseems a bit scarier.
+

@@ -11,4 +11,8 @@ public class Dot extends AbstractExpression {
         return ".";
     }
 
+    public void accept(Visitor<AbstractExpression> visitor) {
+        visitor.visit(this);
+        subs = new AbstractExpression[0];
+    }
 }

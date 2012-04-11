@@ -49,10 +49,10 @@ public class TestSerialization {
         assertEquals ("attribute(*:foo)", new NodeTest (ValueType.ATTRIBUTE, starfoo).toString().toString());
 
         assertEquals ("document-node()", new NodeTest (ValueType.DOCUMENT, null).toString().toString());
-        assertEquals ("document-node(foo)", new NodeTest (ValueType.DOCUMENT, foo).toString().toString());
-        assertEquals ("document-node(foo:bar)", new NodeTest (ValueType.DOCUMENT, foobar).toString().toString());
-        assertEquals ("document-node(foo:*)", new NodeTest (ValueType.DOCUMENT, foostar).toString().toString());
-        assertEquals ("document-node(*:foo)", new NodeTest (ValueType.DOCUMENT, starfoo).toString().toString());
+        assertEquals ("document-node(element(foo))", new NodeTest (ValueType.DOCUMENT, foo).toString().toString());
+        assertEquals ("document-node(element(foo:bar))", new NodeTest (ValueType.DOCUMENT, foobar).toString().toString());
+        assertEquals ("document-node(element(foo:*))", new NodeTest (ValueType.DOCUMENT, foostar).toString().toString());
+        assertEquals ("document-node(element(*:foo))", new NodeTest (ValueType.DOCUMENT, starfoo).toString().toString());
 
         assertEquals ("comment()", new NodeTest (ValueType.COMMENT, null).toString().toString());
         assertEquals ("comment()", new NodeTest (ValueType.COMMENT, foo).toString().toString());

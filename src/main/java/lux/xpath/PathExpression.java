@@ -2,18 +2,29 @@ package lux.xpath;
 
 public class PathExpression extends AbstractExpression {
     
-    private AbstractExpression lhs;
-    private AbstractExpression rhs;
-    
+    // TODO: specialize to PathStep args?
     public PathExpression (AbstractExpression lhs, AbstractExpression rhs) {
         super (Type.PathExpression);
-        this.lhs = lhs;
-        this.rhs = rhs;
+        subs = new AbstractExpression[2];
+        subs[0] = lhs;
+        subs[1] = rhs;
     }
 
     @Override
     public String toString() {
-        return lhs.toString() + '/' + rhs.toString();
+        return subs[0].toString() + '/' + subs[1].toString();
+    }
+    
+    /**
+     * Whenever we see a new absolute context (/, collection(), search()), its dependent 
+     * expressions are a possible target for optimizarion.
+     * @return whether the lhs of this path is an expression returning Documents.
+     */
+    public boolean isAbsolute() {
+       return subs[0].isAbsolute();
     }
 
+    public void accept(Visitor<AbstractExpression> visitor) {
+        visitor.visit(this);
+    }
 }

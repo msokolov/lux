@@ -33,6 +33,7 @@ public class Saxon extends Evaluator  {
     private Processor processor;
     private XPathCompiler xpathCompiler;
     private SaxonBuilder saxonBuilder;
+    private SaxonTranslator translator;
     private static Config config;
     
     public Saxon() {
@@ -42,6 +43,7 @@ public class Saxon extends Evaluator  {
         processor = new Processor (config);
         xpathCompiler = processor.newXPathCompiler();
         saxonBuilder = new SaxonBuilder();
+        translator = new SaxonTranslator(config);
     }
 
     @Override
@@ -126,6 +128,10 @@ public class Saxon extends Evaluator  {
                throw new LuxException(e);
             }
         }
+    }
+
+    public SaxonTranslator getTranslator() {
+        return translator;
     }
 
 }

@@ -18,9 +18,13 @@ chunk documents by size; guided by learned paths
 ** xquery
 ** updates?
 * Lux search function
-As a short-cut to full XQuery optimization, allow the user to embed lucene
-queries in their XQuery using a search function.  Must provide direct
-access to indexes, possibly with some syntax sugar.
+Execute a lucene query, returning documents (or maybe later, nodes), and
+execute an xpath(later: xquery) on those, accumulating results and
+returning those.  This should be a user-callable function, so the user can
+embed lucene queries in their XQuery using a search function.  Must provide
+direct access to indexes, possibly with some syntax sugar.  But we also use
+this internally when optimizing.
+** optimize absolute (rooted) context-free expressions
 * Learning
 Iterative expression generator using the term vocabulary (values and node
 names) from the data set.

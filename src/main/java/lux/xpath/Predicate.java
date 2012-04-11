@@ -2,25 +2,39 @@ package lux.xpath;
 
 public class Predicate extends AbstractExpression {
     
-    private final AbstractExpression base;
-    private final AbstractExpression filter;
-    
     public Predicate (AbstractExpression base, AbstractExpression filter) {
         super (Type.Predicate);
-        this.base = base;
-        this.filter = filter;
+        subs = new AbstractExpression[] { base, filter };
     }
     
     public String toString () {
-        return base.toString() + '[' + filter.toString() + ']';
+        return subs[0].toString() + '[' + subs[1].toString() + ']';
     }
     
     public AbstractExpression getBase() {
-        return base;
+        return subs[0];
     }
 
     public AbstractExpression getFilter() {
-        return filter;
+        return subs[1];
+    }
+    
+    /*
+    public AbstractExpression optimize () {
+        // TODO: implement this for BinaryOperation, FunCall, Sequence, SetOperation and 
+        // Unary 
+        if (filter.isAbsolute()) {
+            Query query = getQuery (filter);
+            if (query != null) {
+                FunCall search = new FunCall(FunCall.luxSearchQName, filter.optimize());            
+                return new Predicate (base.optimize(), search);
+            }
+        }
+        return new Predicate (base.optimize(), filter.optimize());
+    }
+*/
+    public void accept(Visitor<AbstractExpression> visitor) {
+        visitor.visit(this);
     }
 
 }

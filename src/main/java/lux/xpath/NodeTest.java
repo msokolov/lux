@@ -64,7 +64,7 @@ public class NodeTest {
             if (name == null) {
                 return type.nodeTest + "()";
             }
-            return type.nodeTest + '(' + name.toString() + ')';        
+            return type.nodeTest + "(element(" + name.toString() + "))";        
         case PROCESSING_INSTRUCTION:
             if (name == null) {
                 return type.nodeTest + "()";

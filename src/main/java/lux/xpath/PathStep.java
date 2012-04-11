@@ -26,6 +26,7 @@ public class PathStep extends AbstractExpression {
 
     public PathStep (Axis axis, NodeTest nodeTest) {
         super (Type.PathStep);
+        subs = new AbstractExpression[0];
         this.axis = axis;
         this.nodeTest = nodeTest;
     }
@@ -41,4 +42,9 @@ public class PathStep extends AbstractExpression {
     public String toString () {
         return axis.toString() + "::" + nodeTest.toString();
     }
+    
+    public void accept(Visitor<AbstractExpression> visitor) {
+        visitor.visit(this);
+    }
+    
 }

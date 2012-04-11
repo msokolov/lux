@@ -4,37 +4,56 @@ package lux.saxon;
  Optimizer that rewrites some path expressions as lux:search() calls.
  */
 
+import java.util.ArrayList;
+
+import lux.api.LuxException;
 import lux.api.ValueType;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
 import lux.xpath.FunCall;
+import lux.xpath.LiteralExpression;
 import lux.xpath.PathExpression;
 import lux.xpath.PathStep;
 import lux.xpath.Predicate;
 import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
+import lux.xpath.BinaryOperation.Operator;
+import lux.xpath.UnaryMinus;
 import net.sf.saxon.expr.AxisExpression;
 import net.sf.saxon.expr.BinaryExpression;
+import net.sf.saxon.expr.CompareToIntegerConstant;
 import net.sf.saxon.expr.ContextItemExpression;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.FilterExpression;
+import net.sf.saxon.expr.FirstItemExpression;
 import net.sf.saxon.expr.FunctionCall;
+import net.sf.saxon.expr.LastItemExpression;
 import net.sf.saxon.expr.Literal;
+import net.sf.saxon.expr.NegateExpression;
 import net.sf.saxon.expr.RootExpression;
 import net.sf.saxon.expr.SlashExpression;
+import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.expr.UnaryExpression;
+import net.sf.saxon.expr.ParentNodeExpression;
 import net.sf.saxon.expr.instruct.Block;
 import net.sf.saxon.expr.parser.Token;
-import net.sf.saxon.expr.sort.IntComplementSet;
-import net.sf.saxon.expr.sort.IntIterator;
 import net.sf.saxon.expr.sort.IntSet;
 import net.sf.saxon.expr.sort.IntUniversalSet;
+import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Axis;
+import net.sf.saxon.om.Item;
+import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.pattern.CombinedNodeTest;
+import net.sf.saxon.pattern.DocumentNodeTest;
 import net.sf.saxon.pattern.NodeTest;
+import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.type.Type;
+import net.sf.saxon.value.AtomicValue;
+import net.sf.saxon.value.Cardinality;
+import net.sf.saxon.value.Value;
 
 /**
  *
@@ -64,6 +83,15 @@ public class SaxonTranslator {
         if (expr instanceof FunctionCall) {
             return exprFor ((FunctionCall) expr);
         }
+        if (expr instanceof FirstItemExpression) {
+            return exprFor ((FirstItemExpression) expr);
+        }
+        if (expr instanceof LastItemExpression) {
+            return exprFor ((LastItemExpression) expr);
+        }
+        if (expr instanceof NegateExpression) {
+            return exprFor ((NegateExpression) expr);
+        }
         if (expr instanceof UnaryExpression) {
             return exprFor ((UnaryExpression) expr);
         }
@@ -79,10 +107,16 @@ public class SaxonTranslator {
         if (expr instanceof ContextItemExpression) {
             return new Dot();
         }
-        if (expr instanceof Block) {
-            return exprFor ((Block) expr);
+        if (expr instanceof ParentNodeExpression) {
+            return new PathStep(PathStep.Axis.Parent, new lux.xpath.NodeTest(ValueType.NODE));
         }
-        throw new IllegalArgumentException("unhandled expression type: " + expr.toString());
+        if (expr instanceof Block) {
+            return exprFor (((Block) expr).getChildren());
+        }
+        if (expr instanceof CompareToIntegerConstant) {
+            return exprFor ((CompareToIntegerConstant) expr);
+        }
+        throw new IllegalArgumentException("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
     }
     
     private Predicate exprFor (FilterExpression expr) {
@@ -97,9 +131,60 @@ public class SaxonTranslator {
         return new PathExpression(lq, rq);
     }
     
-    private FunCall exprFor (FunctionCall funcall) {
-        QName qname = qnameFor (funcall.getFunctionName());
-        return new FunCall (qname, exprFor (funcall.getArguments()));
+    private static final StructuredQName itemAtQName = new StructuredQName("", NamespaceConstant.SAXON, "item-at");
+    private static final StructuredQName reverseQName = new StructuredQName("", NamespaceConstant.FN, "reverse");
+    
+    private AbstractExpression exprFor (FunctionCall funcall) {
+        if (funcall.getFunctionName().equals (itemAtQName)) {
+            return new Predicate (exprFor (funcall.getArguments()[0]), 
+                    exprFor(funcall.getArguments()[1]));
+        }
+        else if (funcall.getFunctionName().equals (reverseQName)) {
+            // Saxon wraps a call to reverse() around reverse axis expressions; its axis expression
+            // always returns items in axis (reverse) order, unlike an xpath axis expression, whose results
+            // are returned in different order depending on the context
+            Expression arg = funcall.getArguments()[0];
+            if ((arg.getSpecialProperties() & StaticProperty.REVERSE_DOCUMENT_ORDER) != 0 ||
+                    (! Cardinality.allowsMany(arg.getCardinality()))) {
+                // if (arg instanceof AxisExpression && (!Axis.isForwards[((AxisExpression) arg).getAxis()])) {
+                // wrap in a sequence so as to preserve document order using an expression that will serialize
+                // to an appropriate xpath syntax 
+                return new Sequence (exprFor (arg));
+            }        
+        }
+        Expression[] args = funcall.getArguments();
+        AbstractExpression[] aargs = new AbstractExpression[args.length];
+        for (int i = 0; i < args.length; i++) {
+            aargs[i] = exprFor (args[i]);
+        }
+        return new FunCall (qnameFor (funcall.getFunctionName()), aargs);
+    }
+    
+    private AbstractExpression exprFor (Literal literal) {
+        // This could be a sequence!!
+        Value<?> value = literal.getValue();
+        try {
+            int len = value.getLength();
+            if (len == 0) {
+                return new LiteralExpression();
+            }
+            if (len > 1) {
+                ArrayList<LiteralExpression> items = new ArrayList<LiteralExpression>();
+                SequenceIterator<?> iter = value.iterate();
+                Item<?> member;
+                while ((member = iter.next()) != null) {
+                    if (member instanceof AtomicValue) {
+                        items.add(new LiteralExpression (Value.convertToJava(member)));
+                    } else {
+                        throw new LuxException ("unsupported node in a literal sequence: " + literal.toString());
+                    }                    
+                }
+                return new Sequence (items.toArray(new LiteralExpression[0]));
+            }
+            return new LiteralExpression(Value.convertToJava(value.asItem()));
+        } catch (XPathException e) {
+            throw new LuxException (e);
+        }        
     }
     
     private QName qnameFor(StructuredQName name) {
@@ -131,9 +216,43 @@ public class SaxonTranslator {
         case Axis.CHILD: axis = PathStep.Axis.Child; break;
         default: throw new IllegalArgumentException("Unsupported axis in expression: " + expr.toString());
         }
-        NodeTest nodeTest = expr.getNodeTest();
+        AbstractExpression ae = exprFor (axis, expr.getNodeTest());
+        /*
+        if (!Axis.isForwards[expr.getAxis()]) {
+            ae = new FunCall (new QName("reverse"), ae);
+        }
+        */
+        return ae;
+    }
+    
+    private BinaryOperation exprFor (PathStep.Axis axis, CombinedNodeTest nodeTest) {
+        CombinedNodeTest combinedNodeTest = (CombinedNodeTest) nodeTest;
+        NodeTest[] tests = combinedNodeTest.getComponentNodeTests();
+        BinaryOperation.Operator op = operatorFor(combinedNodeTest.getOperator());            
+        return new BinaryOperation (exprFor(axis, tests[0]), op, exprFor(axis, tests[1]));
+    }
+    
+    private lux.xpath.NodeTest nodeTestFor (DocumentNodeTest nodeTest) {
+        NodeTest elementTest = nodeTest.getElementTest();
+        int nameCode = elementTest.getFingerprint();
+        return new lux.xpath.NodeTest (ValueType.DOCUMENT, qnameForNameCode(nameCode));
+    }
+
+    private QName qnameForNameCode(int nameCode) {
+        StructuredQName sqname = config.getNamePool().getStructuredQName(nameCode);
+        QName name = new QName (sqname.getURI(), sqname.getLocalPart(), sqname.getPrefix());
+        return name;
+    }
+    
+    private AbstractExpression exprFor (PathStep.Axis axis, NodeTest nodeTest) {
         if (nodeTest == null) {
             return new PathStep (axis, new lux.xpath.NodeTest(ValueType.NODE));
+        }
+        if (nodeTest instanceof DocumentNodeTest) {
+            return new PathStep (axis, nodeTestFor ((DocumentNodeTest) nodeTest));
+        }
+        if (nodeTest instanceof CombinedNodeTest) {
+            return exprFor (axis, (CombinedNodeTest) nodeTest);
         }
         int nameCode = nodeTest.getFingerprint();
         ValueType nodeType;
@@ -145,27 +264,32 @@ public class SaxonTranslator {
         case Type.DOCUMENT: nodeType = ValueType.DOCUMENT; break;
         case Type.PROCESSING_INSTRUCTION: nodeType = ValueType.PROCESSING_INSTRUCTION; break;
         case Type.COMMENT: nodeType = ValueType.COMMENT; break;
-        default: throw new IllegalArgumentException("Unsupported node type in expression: " + expr.toString());
+        default: throw new IllegalArgumentException("Unsupported node type in node test: " + nodeTest.toString());
         }
         if (nameCode >= 0) { // matches a single node name 
-            StructuredQName sqname = config.getNamePool().getStructuredQName(nameCode);
-            QName name = new QName (sqname.getURI(), sqname.getLocalPart(), sqname.getPrefix());
-            return new PathStep (axis, new lux.xpath.NodeTest (nodeType, name));
+            return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qnameForNameCode(nameCode)));
         } else { // matches multiple node names
             IntSet nameCodes = nodeTest.getRequiredNodeNames();
             if (nameCodes == IntUniversalSet.getInstance()) {
-                return new PathStep (axis, new lux.xpath.NodeTest (nodeType));                
-            } else if (nameCodes instanceof IntComplementSet) {
-                // FIXME: implement as a set operation
-                throw new IllegalArgumentException("Unsupported expression: " + expr.toString());
+                return new PathStep (axis, new lux.xpath.NodeTest (nodeType));
+            } 
+            throw new IllegalArgumentException("Unsupported node test: " + nodeTest.toString());
+            // I think we are already handling this case as "CombinedNodeTest" above?
+            /*
+            else if (nameCodes instanceof IntComplementSet) {
+                // I think we are already handling this case as "CombinedNodeTest" above?
+                throw new IllegalArgumentException("Unsupported node test: " + nodeTest.toString());
+            } else if (nameCodes instanceof IntEmptySet) {
+                throw new IllegalArgumentException("Unsupported node test: " + nodeTest.toString());
             }
             IntIterator nameCodesIter = nameCodes.iterator();
+            ArrayList<AbstractExpression> tests = new ArrayList<AbstractExpression>();
             while (nameCodesIter.hasNext()) {
-                // TODO: implement how exactly?? is this something like node()[self::x or self::y]?
-                // StructuredQName sqname = config.getNamePool().getStructuredQName(nameCodesIter.next());
+                tests.add(new PathStep (axis, new lux.xpath.NodeTest(ValueType.ELEMENT, qnameForNameCode(nameCodesIter.next()))));
             }
-            throw new IllegalArgumentException("Unsupported expression: " + expr.toString());
-        }        
+            return new SetOperation (Operator.UNION, tests.toArray(new AbstractExpression[0]));
+            */
+        }    
     }
     
     /*
@@ -186,44 +310,71 @@ public class SaxonTranslator {
     // TODO: specialize
     private AbstractExpression exprFor (BinaryExpression expr) {
         Expression [] operands = expr.getOperands();
-        BinaryOperation.Operator op;
-        switch (expr.getOperator()) {
-        case Token.AND: op = BinaryOperation.Operator.AND; break;
-        case Token.OR: op = BinaryOperation.Operator.OR; break;
-        case Token.INTERSECT: op = BinaryOperation.Operator.INTERSECT; break;
-        case Token.EXCEPT: op = BinaryOperation.Operator.EXCEPT; break;
-        case Token.UNION: op = BinaryOperation.Operator.UNION; break;
-        case Token.PLUS: op = BinaryOperation.Operator.ADD; break;
-        case Token.MINUS: op = BinaryOperation.Operator.SUB; break;
-        case Token.MULT: op = BinaryOperation.Operator.MUL; break;
-        case Token.DIV: op = BinaryOperation.Operator.DIV; break;
-        case Token.IDIV: op = BinaryOperation.Operator.IDIV; break;
-        case Token.MOD: op = BinaryOperation.Operator.MOD; break;
-        case Token.EQUALS: op = BinaryOperation.Operator.EQ; break;
-        case Token.NE: op = BinaryOperation.Operator.NE; break;
-        case Token.LT: op = BinaryOperation.Operator.LT; break;
-        case Token.GT: op = BinaryOperation.Operator.GT; break;
-        case Token.LE: op = BinaryOperation.Operator.LE; break;
-        case Token.GE: op = BinaryOperation.Operator.GE; break;
-        case Token.FEQ: op = BinaryOperation.Operator.AEQ; break;
-        case Token.FNE: op = BinaryOperation.Operator.ANE; break;
-        case Token.FLT: op = BinaryOperation.Operator.ALT; break;
-        case Token.FLE: op = BinaryOperation.Operator.ALE; break;
-        case Token.FGT: op = BinaryOperation.Operator.AGT; break;
-        case Token.FGE: op = BinaryOperation.Operator.AGE; break;
-        case Token.IS: op = BinaryOperation.Operator.IS; break;
-        case Token.PRECEDES: op = BinaryOperation.Operator.BEFORE; break;
-        case Token.FOLLOWS: op = BinaryOperation.Operator.AFTER; break;
-        default: throw new IllegalArgumentException("Unsupported operator in expression: " + expr.toString());
-        }
+        BinaryOperation.Operator op = operatorFor(expr.getOperator());
         return new BinaryOperation (exprFor(operands[0]), op, exprFor(operands[1]));
     }
+
+    private BinaryOperation.Operator operatorFor(int op) {
+        switch (op) {
+        case Token.AND: return BinaryOperation.Operator.AND;
+        case Token.OR: return BinaryOperation.Operator.OR;
+        case Token.INTERSECT: return BinaryOperation.Operator.INTERSECT;
+        case Token.EXCEPT: return BinaryOperation.Operator.EXCEPT;
+        case Token.UNION: return BinaryOperation.Operator.UNION;
+        case Token.PLUS: return BinaryOperation.Operator.ADD;
+        case Token.MINUS: return BinaryOperation.Operator.SUB;
+        case Token.MULT: return BinaryOperation.Operator.MUL;
+        case Token.DIV: return BinaryOperation.Operator.DIV;
+        case Token.IDIV: return BinaryOperation.Operator.IDIV;
+        case Token.MOD: return BinaryOperation.Operator.MOD;
+        case Token.EQUALS: return BinaryOperation.Operator.EQ;
+        case Token.NE: return BinaryOperation.Operator.NE;
+        case Token.LT: return BinaryOperation.Operator.LT;
+        case Token.GT: return BinaryOperation.Operator.GT;
+        case Token.LE: return BinaryOperation.Operator.LE;
+        case Token.GE: return BinaryOperation.Operator.GE;
+        case Token.FEQ: return BinaryOperation.Operator.AEQ;
+        case Token.FNE: return BinaryOperation.Operator.ANE;
+        case Token.FLT: return BinaryOperation.Operator.ALT;
+        case Token.FLE: return BinaryOperation.Operator.ALE;
+        case Token.FGT: return BinaryOperation.Operator.AGT;
+        case Token.FGE: return BinaryOperation.Operator.AGE;
+        case Token.IS: return BinaryOperation.Operator.IS;
+        case Token.PRECEDES: return BinaryOperation.Operator.BEFORE;
+        case Token.FOLLOWS: return BinaryOperation.Operator.AFTER;
+        default: throw new IllegalArgumentException("Unsupported operator: " + op);
+        }
+    }
+    
+    private AbstractExpression exprFor (FirstItemExpression expr) {
+        return new Predicate (exprFor (expr.getBaseExpression()), new LiteralExpression (1));
+    }
+    
+    private AbstractExpression exprFor (LastItemExpression expr) {
+        return new Predicate (exprFor (expr.getBaseExpression()), new FunCall (new QName("last")));
+    }
+    
+    private AbstractExpression exprFor (NegateExpression expr) {
+        return new UnaryMinus(exprFor (expr.getBaseExpression()));
+    }
+    
+    /*
+    private AbstractExpression exprFor (CastExpression expr) {
+        
+    }
+    */
     
     // UnaryExpression includes First/LastItemFilters 
     // also unary -/+ ?
     private AbstractExpression exprFor (UnaryExpression expr) {
-        throw new IllegalArgumentException("Unsupported operator in expression: " + expr.toString());
-        // return exprFor (expr.getBaseExpression());
+        // DocumentSorter does not need representation
+        return exprFor (expr.getBaseExpression());
+    }
+    
+    private AbstractExpression exprFor (CompareToIntegerConstant comp) {
+        Operator op = operatorFor (comp.getComparisonOperator());
+        long num = comp.getComparand();
+        return new BinaryOperation  (exprFor (comp.getOperand()), op, new LiteralExpression (num));
     }
 
 }

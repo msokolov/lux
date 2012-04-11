@@ -6,13 +6,15 @@ package lux.xpath;
  * This class and its subclasses represent XPath expressions.  Their toString() methods return valid XPath.
  */
 
-public abstract class AbstractExpression {
+public abstract class AbstractExpression implements Visitable<AbstractExpression> {
+    
+    protected AbstractExpression subs[];
 
     enum Type {
         PathExpression, PathStep, Predicate, Binary, 
         // these are types of Binary: we'll split them out when we need to
         // SetOperation, Comparison, AtomicComparison, MathOperation,
-        Literal, Root, Dot, FunctionCall, Sequence            
+        Literal, Root, Dot, FunctionCall, Sequence, UnaryMinus            
     };
 
     private final Type type;
@@ -22,7 +24,7 @@ public abstract class AbstractExpression {
     }
 
     /** The type of this expression; most types will correspond one-one
-     * with a Java class which must be a subclass of Aex, but this
+     * with a Java class which must be a subclass of AbstractExpression, but this
      * enumerated value provides an integer equivalent that should be
      * useful for efficient switch operations, encoding and the like.
      */
@@ -34,13 +36,17 @@ public abstract class AbstractExpression {
      * The sub-expressions of this expression. Most have 0, 1, or 2.  Only
      * functions can have variable numbers of sub-expressions (arguments).
      */
-    // public abstract Aex [] getSubs();
-
-    // Aex optimize();
+    public AbstractExpression [] getSubs() {
+        return subs;
+    }
 
     /** Subclasses must implement the toString() method 
     * @return the expression, as valid XPath 
     */
     public abstract String toString();
+
+    public boolean isAbsolute() {
+        return false;
+    }
 
 }

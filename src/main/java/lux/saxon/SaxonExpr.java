@@ -3,7 +3,6 @@ package lux.saxon;
 import lux.ResultList;
 import lux.XPathQuery;
 import lux.api.ValueType;
-import lux.xpath.AbstractExpression;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.s9api.SaxonApiException;

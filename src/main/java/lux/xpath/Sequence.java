@@ -1,33 +1,43 @@
 package lux.xpath;
 
 public class Sequence extends AbstractExpression {
-
-    private AbstractExpression[] contents;
     
     public Sequence (AbstractExpression ... contents) {
         super (Type.Sequence);
-        this.contents = contents;
+        subs = contents;
     }
     
     @Override
     public String toString() {
-        return seqAsString(contents);
+        return seqAsString(",", subs);
     }
     
-    static final String seqAsString (AbstractExpression ... contents) {
+    static final String seqAsString (String separator, AbstractExpression ... contents) {
         StringBuilder buf = new StringBuilder ();
         buf.append('(');
+        appendSeq(buf, contents, separator);
+        buf.append (')');
+        return buf.toString();
+    }
+
+    static boolean appendSeq(StringBuilder buf, AbstractExpression[] contents, String separator) {
         boolean first = true;
         for (AbstractExpression arg : contents) {
             if (first) {
                 first = false;
             } else {
-                buf.append(',');
+                buf.append(separator);
             }
-            buf.append (arg);
+            if (arg.getType() == Type.Sequence) {
+                appendSeq (buf, arg.getSubs(), separator);
+            } else {
+                buf.append (arg);
+            }
         }
-        buf.append (')');
-        return buf.toString();
+        return first;
     }
 
+    public void accept(Visitor<AbstractExpression> visitor) {
+        visitor.visit(this);
+    }
 }

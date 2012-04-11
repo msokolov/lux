@@ -3,8 +3,6 @@ package lux.xpath;
 
 public class BinaryOperation extends AbstractExpression {
     
-    private final AbstractExpression operand1;
-    private final AbstractExpression operand2;
     private final Operator operator;
     
     public enum Operator {
@@ -34,25 +32,27 @@ public class BinaryOperation extends AbstractExpression {
     
     public BinaryOperation (AbstractExpression op1, Operator operator, AbstractExpression op2) {
         super (Type.Binary);
-        this.operand1 = op1;
-        this.operand2 = op2;
+        subs = new AbstractExpression[] { op1, op2 };
         this.operator = operator;
     }
     
     public String toString () {
-        return '(' + operand1.toString() + ' ' + operator.toString() + ' ' + operand2.toString() + ')';
+        return '(' + subs[0].toString() + ' ' + operator.toString() + ' ' + subs[1].toString() + ')';
     }
     
     public AbstractExpression getOperand1() {
-        return operand1;
+        return subs[0];
     }
 
     public AbstractExpression getOperand2() {
-        return operand2;
+        return subs[1];
     }
     
     public Operator getOperator () {
         return operator;
     }
 
+    public void accept(Visitor<AbstractExpression> visitor) {
+        visitor.visit(this);
+    }
 }
