@@ -7,7 +7,7 @@ public class SetOperation extends AbstractExpression {
     private final Operator operator;    
     
     public SetOperation (Operator operator, AbstractExpression ... ops) {
-        super (Type.Binary);
+        super (Type.SetOperation);
         subs = ops;
         this.operator = operator;
     }

@@ -100,7 +100,7 @@ public class TestSerialization {
         LiteralExpression two = new LiteralExpression (2);
         LiteralExpression pi = new LiteralExpression (3.14);
         assertEquals ("(2 * 3.14)", new BinaryOperation(two, Operator.MUL, pi).toString());
-        assertEquals ("(\"foo\" = \"foo\")", new BinaryOperation(foo, Operator.EQ, foo).toString());
+        assertEquals ("(\"foo\" = \"foo\")", new BinaryOperation(foo, Operator.EQUALS, foo).toString());
     }
     
     @Test public void testRootToString () {

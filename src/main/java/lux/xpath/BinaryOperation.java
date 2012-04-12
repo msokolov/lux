@@ -13,7 +13,7 @@ public class BinaryOperation extends AbstractExpression {
         // arithmetic operators
         ADD("+"), SUB("-"), MUL("*"), DIV("div"), IDIV("idiv"), MOD("mod"),
         // general comparisons
-        EQ("="), NE("!="), LT("<"), GT(">"), LE("<="), GE(">="), 
+        EQUALS("="), NE("!="), LT("<"), GT(">"), LE("<="), GE(">="), 
         // atomic comparisons
         AEQ("eq"), ANE("ne"), ALT("lt"), ALE("le"), AGT("gt"), AGE("ge"),
         // node operators

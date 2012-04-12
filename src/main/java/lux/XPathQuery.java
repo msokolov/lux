@@ -134,7 +134,7 @@ public class XPathQuery extends Query {
      * @return the combined query
      */
     public XPathQuery combine(XPathQuery precursor, Occur occur) {
-        ValueType combinedType = occur == Occur.SHOULD ? promoteType(this.valueType, precursor.valueType) : this.valueType;
+        ValueType combinedType = occur == Occur.SHOULD ? valueType.promote(precursor.valueType) : this.valueType;
         return combine(occur, precursor, occur, combinedType);
     }
 
@@ -204,23 +204,6 @@ public class XPathQuery extends Query {
 
     public boolean isEmpty() {
         return this == MATCH_ALL || this == MATCH_NONE;
-    }
-
-    /**
-     * @return the most specific type that includes both atype and btype.
-     * @param atype
-     *            a type
-     * @param btype
-     *            another type
-     */
-    private static ValueType promoteType(ValueType atype, ValueType btype) {
-        if (atype == btype)
-            return atype;
-        if (atype.isNode && btype.isNode)
-            return ValueType.NODE;
-        if (atype.isAtomic && btype.isAtomic)
-            return ValueType.ATOMIC;
-        return ValueType.VALUE;
     }
     
     public String toString () {

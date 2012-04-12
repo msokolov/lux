@@ -67,10 +67,14 @@ public class PathOptimizer extends ExpressionVisitor {
         XPathQuery query;
         if (name == null) {
             ValueType type = step.getNodeTest().getType();
-            if (axis == Axis.Self && type == ValueType.NODE || type == ValueType.VALUE) {
+            if (axis == Axis.Self && (type == ValueType.NODE || type == ValueType.VALUE)) {
                 // if axis==self and the type is loosely specified, use the prevailing type
                 // TODO: handle this when combining queries?
                 type = getQuery().getResultType();
+            }
+            else if (axis == Axis.AncestorSelf && (type == ValueType.NODE || type == ValueType.VALUE)
+                    && getQuery().getResultType() == ValueType.DOCUMENT) {
+                type = ValueType.DOCUMENT;
             }
             query = new XPathQuery (null, new MatchAllDocsQuery(), getQuery().getFacts(), type);
         } else {
@@ -99,12 +103,47 @@ public class PathOptimizer extends ExpressionVisitor {
     
     @Override
     public void visit(Dot dot) {
+        // FIXME - should have value type=VALUE?
+        push(XPathQuery.MATCH_ALL);
     }
 
     @Override
     public void visit(BinaryOperation op) {
-        // TODO Auto-generated method stub
-        
+        System.out.println ("visit binary op " + op);
+        XPathQuery rq = pop();
+        XPathQuery lq = pop();
+        ValueType type = null;
+        Occur occur = Occur.SHOULD;
+        switch (op.getOperator()) {
+        case AND: 
+            occur = Occur.MUST;
+        case OR:
+        case EQUALS: case NE: case LT: case GT: case LE: case GE:
+            type = ValueType.BOOLEAN;
+            break;
+        case ADD: case SUB: case DIV: case MUL: case IDIV: case MOD:
+            type = ValueType.ATOMIC;
+            // TODO: verify that casting an empty sequence to an operand of an operator expeciting atomic values raises an error
+            occur = Occur.MUST;
+            break;
+        case AEQ: case ANE: case ALT: case ALE: case AGT: case AGE:
+            type = ValueType.BOOLEAN;
+            occur = Occur.MUST;
+            break;
+        case INTERSECT: case IS: case BEFORE: case AFTER:
+            occur = Occur.MUST;
+        case UNION:
+            break;
+        case EXCEPT:
+            type = lq.getResultType().promote (rq.getResultType());
+            push (combineQueries(lq, Occur.MUST, rq, Occur.MUST_NOT, type));
+            return;
+        }
+        XPathQuery query = lq.combine(rq, occur);
+        if (type != null) {
+            query.setType(type);
+        }
+        push (query);
     }
 
     @Override
@@ -116,14 +155,22 @@ public class PathOptimizer extends ExpressionVisitor {
     public void visit(Predicate predicate) {
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
-        push (baseQuery.combine(filterQuery, Occur.MUST));
+        XPathQuery query = baseQuery.combine(filterQuery, Occur.MUST);
+        if (filterQuery.getResultType().isAtomic) {
+            // in this case we can't predict whether the predicate will be satisfied
+            query.setFact(XPathQuery.MINIMAL, false);
+        }
+        push (query);
         System.out.println ("visit predicate " + predicate);
     }
 
     @Override
     public void visit(Sequence sequence) {
-        // TODO Auto-generated method stub
-        
+        XPathQuery query = pop();
+        for (int i = sequence.getSubs().length - 1; i > 0; i--) {
+            query = pop().combine(query, Occur.SHOULD);
+        }
+        push (query);
     }
 
 

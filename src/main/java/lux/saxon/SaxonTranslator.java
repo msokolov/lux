@@ -327,7 +327,7 @@ public class SaxonTranslator {
         case Token.DIV: return BinaryOperation.Operator.DIV;
         case Token.IDIV: return BinaryOperation.Operator.IDIV;
         case Token.MOD: return BinaryOperation.Operator.MOD;
-        case Token.EQUALS: return BinaryOperation.Operator.EQ;
+        case Token.EQUALS: return BinaryOperation.Operator.EQUALS;
         case Token.NE: return BinaryOperation.Operator.NE;
         case Token.LT: return BinaryOperation.Operator.LT;
         case Token.GT: return BinaryOperation.Operator.GT;

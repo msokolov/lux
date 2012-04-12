@@ -56,4 +56,18 @@ public enum ValueType {
         }
         return VALUE;
     }
+    
+    /**
+     * @return the most specific type that includes both this and the other type.
+     * @param type the other type
+     */
+    public ValueType promote(ValueType type) {
+        if (this == type)
+            return this;
+        if (isNode && type.isNode)
+            return ValueType.NODE;
+        if (isAtomic && type.isAtomic)
+            return ValueType.ATOMIC;
+        return ValueType.VALUE;
+    }
 }
