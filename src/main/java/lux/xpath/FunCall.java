@@ -1,13 +1,17 @@
 package lux.xpath;
 
+import lux.api.ValueType;
+
 public class FunCall extends AbstractExpression {
 
-    private QName name;
+    private final QName name;
+    private final ValueType returnType;
 
-    public FunCall (QName name, AbstractExpression ... arguments) {
+    public FunCall (QName name, ValueType returnType, AbstractExpression ... arguments) {
         super (Type.FunctionCall);
         this.name = name;
         this.subs = arguments;
+        this.returnType = returnType;
     }
     
     @Override
@@ -28,4 +32,9 @@ public class FunCall extends AbstractExpression {
         super.acceptSubs(visitor);
         visitor.visit(this);
     }
+
+    public ValueType getReturnType() {
+        return returnType;
+    }
+
 }

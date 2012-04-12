@@ -10,6 +10,7 @@ import lux.api.LuxException;
 import lux.api.ValueType;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
+import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.Dot;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
@@ -19,7 +20,6 @@ import lux.xpath.Predicate;
 import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
-import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.UnaryMinus;
 import net.sf.saxon.expr.AxisExpression;
 import net.sf.saxon.expr.BinaryExpression;
@@ -32,15 +32,16 @@ import net.sf.saxon.expr.FunctionCall;
 import net.sf.saxon.expr.LastItemExpression;
 import net.sf.saxon.expr.Literal;
 import net.sf.saxon.expr.NegateExpression;
+import net.sf.saxon.expr.ParentNodeExpression;
 import net.sf.saxon.expr.RootExpression;
 import net.sf.saxon.expr.SlashExpression;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.expr.UnaryExpression;
-import net.sf.saxon.expr.ParentNodeExpression;
 import net.sf.saxon.expr.instruct.Block;
 import net.sf.saxon.expr.parser.Token;
 import net.sf.saxon.expr.sort.IntSet;
 import net.sf.saxon.expr.sort.IntUniversalSet;
+import net.sf.saxon.functions.StandardFunction;
 import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Axis;
 import net.sf.saxon.om.Item;
@@ -50,6 +51,7 @@ import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.DocumentNodeTest;
 import net.sf.saxon.pattern.NodeTest;
 import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.type.ItemType;
 import net.sf.saxon.type.Type;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.Cardinality;
@@ -157,9 +159,30 @@ public class SaxonTranslator {
         for (int i = 0; i < args.length; i++) {
             aargs[i] = exprFor (args[i]);
         }
-        return new FunCall (qnameFor (funcall.getFunctionName()), aargs);
+        ValueType returnType = valueTypeForItemType (StandardFunction.getFunction
+                (funcall.getFunctionName().getDisplayName(), aargs.length).itemType);
+        return new FunCall (qnameFor (funcall.getFunctionName()), returnType, aargs);
     }
     
+    private ValueType valueTypeForItemType(ItemType itemType) {
+        if (itemType.isAtomicType()) {
+            // TODO: Make finer type distinctions among atomic types? 
+            return ValueType.ATOMIC;
+        }
+        NodeTest nodeTest = (NodeTest) itemType;
+        switch (nodeTest.getPrimitiveType()) {
+        case Type.NODE: return ValueType.NODE;
+        case Type.ELEMENT: return ValueType.ELEMENT;
+        case Type.TEXT: return ValueType.TEXT;
+        case Type.ATTRIBUTE: return ValueType.ATTRIBUTE;
+        case Type.DOCUMENT: return ValueType.DOCUMENT;
+        case Type.PROCESSING_INSTRUCTION: return ValueType.PROCESSING_INSTRUCTION;
+        case Type.COMMENT: return ValueType.COMMENT;
+        }
+        // could be a function type? or namespace()?
+        return ValueType.VALUE;
+    }
+
     private AbstractExpression exprFor (Literal literal) {
         // This could be a sequence!!
         Value<?> value = literal.getValue();
@@ -255,17 +278,7 @@ public class SaxonTranslator {
             return exprFor (axis, (CombinedNodeTest) nodeTest);
         }
         int nameCode = nodeTest.getFingerprint();
-        ValueType nodeType;
-        switch (nodeTest.getPrimitiveType()) {
-        case Type.NODE: nodeType = ValueType.NODE; break;
-        case Type.ELEMENT: nodeType = ValueType.ELEMENT; break;
-        case Type.TEXT: nodeType = ValueType.TEXT; break;
-        case Type.ATTRIBUTE: nodeType = ValueType.ATTRIBUTE; break;
-        case Type.DOCUMENT: nodeType = ValueType.DOCUMENT; break;
-        case Type.PROCESSING_INSTRUCTION: nodeType = ValueType.PROCESSING_INSTRUCTION; break;
-        case Type.COMMENT: nodeType = ValueType.COMMENT; break;
-        default: throw new IllegalArgumentException("Unsupported node type in node test: " + nodeTest.toString());
-        }
+        ValueType nodeType = valueTypeForItemType(nodeTest);
         if (nameCode >= 0) { // matches a single node name 
             return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qnameForNameCode(nameCode)));
         } else { // matches multiple node names
@@ -351,7 +364,7 @@ public class SaxonTranslator {
     }
     
     private AbstractExpression exprFor (LastItemExpression expr) {
-        return new Predicate (exprFor (expr.getBaseExpression()), new FunCall (new QName("last")));
+        return new Predicate (exprFor (expr.getBaseExpression()), new FunCall (new QName("last"), ValueType.VALUE));
     }
     
     private AbstractExpression exprFor (NegateExpression expr) {

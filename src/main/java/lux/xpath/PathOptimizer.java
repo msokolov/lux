@@ -2,15 +2,14 @@ package lux.xpath;
 
 import java.util.LinkedList;
 
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
-
 import lux.XPathQuery;
 import lux.api.ValueType;
 import lux.xpath.PathStep.Axis;
+
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.TermQuery;
 
 public class PathOptimizer extends ExpressionVisitor {
 
@@ -85,9 +84,11 @@ public class PathOptimizer extends ExpressionVisitor {
     }
     
     public void visit(FunCall funcall) {
+        Occur occur = Occur.SHOULD;
         if (funcall.getQName().equals(FunCall.notQName)) {
-            ((BooleanQuery)getQuery().getQuery()).getClauses()[0].setOccur(Occur.MUST);
+            occur = Occur.MUST;
         }
+        combineTopQueries(funcall.getSubs().length, occur, funcall.getReturnType());
     }
         
     private static final XPathQuery combineQueries(XPathQuery lq, Occur loccur, XPathQuery rq, Occur roccur, ValueType valueType) {
@@ -114,26 +115,38 @@ public class PathOptimizer extends ExpressionVisitor {
         XPathQuery lq = pop();
         ValueType type = null;
         Occur occur = Occur.SHOULD;
+        boolean minimal = false;
         switch (op.getOperator()) {
+        
         case AND: 
             occur = Occur.MUST;
         case OR:
+            minimal = true;
         case EQUALS: case NE: case LT: case GT: case LE: case GE:
             type = ValueType.BOOLEAN;
             break;
+            
         case ADD: case SUB: case DIV: case MUL: case IDIV: case MOD:
             type = ValueType.ATOMIC;
             // TODO: verify that casting an empty sequence to an operand of an operator expeciting atomic values raises an error
             occur = Occur.MUST;
             break;
+            
         case AEQ: case ANE: case ALT: case ALE: case AGT: case AGE:
             type = ValueType.BOOLEAN;
             occur = Occur.MUST;
             break;
-        case INTERSECT: case IS: case BEFORE: case AFTER:
+            
+        case IS: case BEFORE: case AFTER:
+            occur = Occur.MUST;
+            break;
+            
+        case INTERSECT:
             occur = Occur.MUST;
         case UNION:
+            minimal = true;
             break;
+            
         case EXCEPT:
             type = lq.getResultType().promote (rq.getResultType());
             push (combineQueries(lq, Occur.MUST, rq, Occur.MUST_NOT, type));
@@ -142,6 +155,9 @@ public class PathOptimizer extends ExpressionVisitor {
         XPathQuery query = lq.combine(rq, occur);
         if (type != null) {
             query.setType(type);
+        }
+        if (minimal == false) {
+            query.setFact(XPathQuery.MINIMAL, false);
         }
         push (query);
     }
@@ -156,23 +172,36 @@ public class PathOptimizer extends ExpressionVisitor {
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         XPathQuery query = baseQuery.combine(filterQuery, Occur.MUST);
+        /* FIXME
+            // in the case that this is a numeric expression (int range expression)
+             // we can't predict whether the predicate will be satisfied
         if (filterQuery.getResultType().isAtomic) {
-            // in this case we can't predict whether the predicate will be satisfied
             query.setFact(XPathQuery.MINIMAL, false);
         }
+        */
         push (query);
         System.out.println ("visit predicate " + predicate);
     }
 
     @Override
     public void visit(Sequence sequence) {
+        combineTopQueries (sequence.getSubs().length, Occur.SHOULD);
+    }
+
+    private void combineTopQueries (int n, Occur occur) {
+        combineTopQueries (n, occur, null);
+    }
+
+    private void combineTopQueries (int n, Occur occur, ValueType valueType) {
         XPathQuery query = pop();
-        for (int i = sequence.getSubs().length - 1; i > 0; i--) {
-            query = pop().combine(query, Occur.SHOULD);
+        for (int i = 0; i < n-1; i++) {
+            query = pop().combine(query, occur);
+        }
+        if (valueType != null) {
+            query.setType(valueType);
         }
         push (query);
     }
-
 
     @Override
     public void visit(SetOperation expr) {

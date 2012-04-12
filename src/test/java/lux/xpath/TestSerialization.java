@@ -112,10 +112,10 @@ public class TestSerialization {
     }
     
     @Test public void testFunctionCallToString() {
-        FunCall fun = new FunCall (new QName("foo"), new LiteralExpression ("bar"));
+        FunCall fun = new FunCall (new QName("foo"), ValueType.VALUE, new LiteralExpression ("bar"));
         assertEquals ("foo(\"bar\")", fun.toString());
 
-        FunCall fun2 = new FunCall (new QName("foo"), new LiteralExpression ("bar"), new LiteralExpression("baz"));
+        FunCall fun2 = new FunCall (new QName("foo"), ValueType.VALUE, new LiteralExpression ("bar"), new LiteralExpression("baz"));
         assertEquals ("foo(\"bar\",\"baz\")", fun2.toString());        
     }
     
