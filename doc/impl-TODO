@@ -1,0 +1,6 @@
+* move to translator-based implementation
+do we care about continuing support for Jaxen?
+** get query tests working w/SaxonTranslator
+** scrap LuxOptimizer 
+The original Saxon implementation would be replaced by the translator-based
+one.

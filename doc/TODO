@@ -2,12 +2,10 @@
 ** provide optimized XML-aware searching
 xpath analysis yielding index operations as much as possible
 ** compelling use cases
-It's easier to make the case when you have a stack including search api,
-gui etc.  Nevertheless we do offer the core capability: data storage (no
-transactions), automatic indexing, query via xpath and retrieval of nodes,
-values and documents.  Might be nice to extend the solr admin with a query
-interface?  The next step of course is an xquery app server, etc.
-Integration w/Oxygen?
+All the xml db use cases
+** differentiators
+Cheap, lightweight, highly scalable; strong focus on query optimization
+leverages best-of-breed indexing and xquery evaluation w/Lucene and Saxon.
 ** learn indexes
 grow xpath; determine salient dimensions by #matches - some, all or none.
 ** learn storage strategy

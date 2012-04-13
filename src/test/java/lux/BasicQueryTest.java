@@ -83,6 +83,8 @@ public abstract class BasicQueryTest {
         
         assertQuery ("/foo//*", Q_FOO, false, ValueType.ELEMENT);
 
+        assertQuery ("/foo", Q_FOO, false, ValueType.ELEMENT);
+        
         assertQuery ("foo/text()", Q_FOO, false, null);
     }
 

@@ -38,6 +38,7 @@ public class PathOptimizer extends ExpressionVisitor {
     
     public void visit(AbstractExpression expr) {
         System.out.println ("visit " + expr);
+        expr.accept (this);
     }
     
     public void visit (Root expr) {
@@ -198,7 +199,10 @@ public class PathOptimizer extends ExpressionVisitor {
             query = pop().combine(query, occur);
         }
         if (valueType != null) {
-            query.setType(valueType);
+            if (query.isImmutable())
+                query = new XPathQuery(null, query.getQuery(), query.getFacts(), valueType);
+            else
+                query.setType(valueType);
         }
         push (query);
     }

@@ -54,6 +54,9 @@ public class Saxon extends Evaluator  {
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + exprString, e);
         }
+        if (translator != null)
+            return new SaxonExpr(xpath, translator);
+        // TODO: re-enable LuxOptimizer for test?
         return new SaxonExpr(xpath, this);
     }
 
@@ -86,6 +89,7 @@ public class Saxon extends Evaluator  {
         long t = System.nanoTime();
         IndexSearcher searcher = context.getSearcher();            
         XPathQuery xpq = saxonExpr.getXPathQuery();
+        System.out.println ("executing xpath query: " + xpq);
         queryStats = new QueryStats();
         XPathCollector collector = new XPathCollector(this, saxonExpr, queryStats);
         try {

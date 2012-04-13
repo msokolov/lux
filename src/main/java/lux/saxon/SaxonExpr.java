@@ -3,6 +3,8 @@ package lux.saxon;
 import lux.ResultList;
 import lux.XPathQuery;
 import lux.api.ValueType;
+import lux.xpath.AbstractExpression;
+import lux.xpath.PathOptimizer;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -18,7 +20,9 @@ public class SaxonExpr implements lux.api.Expression {
     private XPathQuery query;
     
     /**
-     * Construct a SaxonExpr from an xpath expression using the LuxOptimizer, which is stored away in the Saxon.
+     * Construct a SaxonExpr from an xpath expression using the Saxon's LuxOptimizer 
+     * to generate an XPathQuery.
+     * 
      * @param xpath
      * @param saxon
      */
@@ -28,6 +32,20 @@ public class SaxonExpr implements lux.api.Expression {
         ValueType valueType = getValueType(xpath.getUnderlyingExpression().getInternalExpression(), saxon.getConfig());
         if (valueType != null)
             query.restrictType(valueType);
+    }
+    
+    /**
+     * Construct a SaxonExpr from an xpath expression using the Saxon's SaxonTranslator, 
+     * which is stored away in the Saxon.
+     * @param xpath
+     * @param saxon
+     */
+    public SaxonExpr (XPathExecutable xpath, SaxonTranslator translator) {
+        this.xpath = xpath;
+        AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
+        PathOptimizer optimizer = new PathOptimizer();
+        expr.accept(optimizer);
+        query = optimizer.getQuery();
     }
     
     /**

@@ -17,13 +17,6 @@ import org.junit.Test;
 public abstract class SearchTest extends SearchBase {
     
     @Test
-    public void testIndexSetup() throws Exception {
-        // This test serves only to separate the timing of the initialization phase
-        // from the timings of the subsequent tests.  JUnit runners tend to 
-        // report the indexing time as part of the time of the firs test.
-    }
-    
-    @Test
     public void testSearchAllDocs() throws Exception {
         List<?> results = assertSearch("/", QUERY_EXACT);
         assertEquals (totalDocs, results.size());
@@ -63,7 +56,7 @@ public abstract class SearchTest extends SearchBase {
             }
             if ((props & QUERY_FILTER_FREE) != 0) {
                 // if we spend < 1% of our time in the collector, we didn't do a lot of xquery evaluation
-                assertTrue ((stats.collectionTime + 1) / (eval.getQueryStats().totalTime + 1.0) < 0.01);
+                assertTrue ("query is not filter free", (stats.collectionTime + 1) / (eval.getQueryStats().totalTime + 1.0) < 0.01);
             }
         }
         return results;
