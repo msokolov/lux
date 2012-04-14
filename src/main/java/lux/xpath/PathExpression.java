@@ -12,6 +12,9 @@ public class PathExpression extends AbstractExpression {
 
     @Override
     public String toString() {
+        if (subs[0] instanceof Root) {
+            return '/' + subs[1].toString();
+        }
         return subs[0].toString() + '/' + subs[1].toString();
     }
     
@@ -25,7 +28,7 @@ public class PathExpression extends AbstractExpression {
     }
 
     public void accept(ExpressionVisitor visitor) {
-        super.acceptSubs(visitor);
+        acceptSubs(visitor);
         visitor.visit(this);
     }
 }

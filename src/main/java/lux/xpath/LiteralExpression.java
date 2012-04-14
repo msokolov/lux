@@ -42,6 +42,10 @@ public class LiteralExpression extends AbstractExpression {
         return valueType;
     }
 
+    public Object getValue() {
+        return value;
+    }
+    
     @Override
     public String toString() {
         if (value == null) {

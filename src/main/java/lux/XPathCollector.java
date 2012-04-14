@@ -3,8 +3,6 @@ package lux;
 import java.io.IOException;
 import java.io.StringReader;
 
-import lux.api.Evaluator;
-import lux.api.Expression;
 import lux.api.QueryStats;
 import lux.api.ValueType;
 import lux.xml.XmlBuilder;
@@ -16,16 +14,14 @@ import org.apache.lucene.search.Scorer;
 
 public class XPathCollector extends Collector {
 
-    private final Evaluator evaluator;
-    private final Expression expr;
     private final ResultList<Object> results;
     private final QueryStats queryStats;
     private final int start;
     private final int size;
+    private final XmlBuilder builder;
     private int docCount = 0;
     private int resultCount = 0;
     private IndexReader reader;
-    private boolean resultsAreDocuments;
     private boolean isCounting;
     private boolean isMinimal;
     
@@ -37,16 +33,14 @@ public class XPathCollector extends Collector {
      * @param size the size of the result page; no more than size results will be collected
      * @param queryStats query stats will be deposited here
      */
-    public XPathCollector (Evaluator evaluator, Expression expr, int start, int size, QueryStats queryStats) {
-        this.evaluator = evaluator;
+    public XPathCollector (XPathQuery query, int start, int size, XmlBuilder builder, QueryStats queryStats) {
         this.results = new ResultList<Object>();
         this.queryStats = queryStats;
-        this.expr = expr;
-        resultsAreDocuments = expr.getXPathQuery().getResultType().equals(ValueType.DOCUMENT);
-        isCounting = expr.getXPathQuery().isFact(XPathQuery.COUNTING);
-        isMinimal = expr.getXPathQuery().isFact(XPathQuery.MINIMAL);
+        this.builder = builder;
+        isCounting = query.isFact(XPathQuery.COUNTING);
+        isMinimal = query.isFact(XPathQuery.MINIMAL);
         this.start = (isCounting ? Integer.MAX_VALUE : start);
-        if (expr.getXPathQuery().getResultType() == ValueType.BOOLEAN) {
+        if (query.getResultType() == ValueType.BOOLEAN) {
             // Short-circuit evaluation of boolean expressions across the whole query set
             this.size = 1;
         } else {
@@ -55,8 +49,8 @@ public class XPathCollector extends Collector {
     }
     
     /** Create a result collector for the given expression that collects all results */
-    public XPathCollector (Evaluator evaluator, Expression expr, QueryStats queryStats) {
-        this (evaluator, expr, 1, Integer.MAX_VALUE, queryStats);
+    public XPathCollector (XPathQuery query, XmlBuilder builder, QueryStats queryStats) {
+        this (query, 1, Integer.MAX_VALUE, builder, queryStats);
     }
     
     @Override
@@ -69,30 +63,23 @@ public class XPathCollector extends Collector {
         if (isCounting && isMinimal) {
             return;
         }
+        if (docCount < start) {
+            return;
+        }
+            
         long t = System.nanoTime();
         
-        String xmlFieldName = evaluator.getContext().getXmlFieldName();
-        //DocumentBuilder builder = saxon.getBuilder();
-        XmlBuilder builder = evaluator.getBuilder();
+        String xmlFieldName = "xml_text";
         Document document = reader.document(docnum, new SingleFieldSelector(xmlFieldName));
         String xml = document.get(xmlFieldName);
         Object doc;
         doc = builder.build(new StringReader (xml));
-        if (resultsAreDocuments) {
-            results.add (doc);
-        } else {
-            for (Object item : evaluator.iterate(expr, doc)) {
-                ++resultCount;
-                if (resultCount >= start) {
-                    results.add(item);
-                    if (results.size() >= size) {
-                        throw new ShortCircuitException();
-                    }
-                }
-            }
-        }
+        results.add (doc);
         t = System.nanoTime() - t;
         queryStats.collectionTime += t;
+        if (results.size() >= size) {
+            throw new ShortCircuitException();
+        }
     }
 
     @Override
@@ -109,7 +96,7 @@ public class XPathCollector extends Collector {
         return docCount;
     }
 
-    public ResultList<Object> getResults() {
+    public ResultList<?> getResults() {
         if (isCounting && results.size() == 0) {
             if (isMinimal) {
                 results.add(Double.valueOf(docCount));

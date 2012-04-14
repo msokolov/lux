@@ -1,6 +1,7 @@
 package lux.xpath;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import lux.XPathQuery;
 import lux.api.ValueType;
@@ -11,9 +12,25 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TermQuery;
 
+/**
+ * Prepares an XPath expression tree for indexed execution against a
+ * Lux data store.
+ *
+ * The general strategy here is to consider each expression in isolation,
+ * determining whether it imposes any restriction on its context, and then
+ * to compose such constraints into queries, execute the queries and
+ * evaluate the expressions against the resulting document. An expression
+ * that can only be satisfied in the context of a document matching an
+ * index query imposes such a constraint.  The queries are composed
+ * according to the semantics of the expressions and functions.  Absolute
+ * sequences (occurrences of /) generally inhibit query composition; a
+ * query is generated for each absolute expression (more precisely, for
+ * each expression containing a / - and some functions like lux:search(),
+ * collection(), etc.
+ */
 public class PathOptimizer extends ExpressionVisitor {
 
-    private LinkedList<XPathQuery> queryStack;
+    private ArrayList<XPathQuery> queryStack;
     //private AbstractExpression expr;
     
     private final String attrQNameField = "lux_att_name_ms";
@@ -22,23 +39,29 @@ public class PathOptimizer extends ExpressionVisitor {
     private static final XPathQuery MATCH_ALL_QUERY = XPathQuery.MATCH_ALL;
     
     public PathOptimizer() {
-        queryStack = new LinkedList<XPathQuery>();
-        queryStack.push(MATCH_ALL_QUERY);
+        queryStack = new ArrayList<XPathQuery>();
+        push(MATCH_ALL_QUERY);
     }
     
-   
-    /*
-     public AbstractExpression optimized () {
-        if (queryStack.isEmpty()) {
-            return expr;
-        }
-        return new FunCall (FunCall.luxSearchQName, new LiteralExpression(getQuery().toString()), expr);
-    }
-    */
-    
-    public void visit(AbstractExpression expr) {
+    /**
+     * Prepares an XPath expression tree for indexed execution against a
+     * Lux data store.  Inserts calls to lux:search that execute queries
+     * selecting a set of documents against which the expression, or some
+     * of its sub-expressions, are evaluated.  The queries will always
+     * select a superset of the documents that actually contribute results
+     * so that the result is the same as if the expression was evaluated
+     * against all the documents in collection() as its context (sequence
+     * of context items?).
+     *
+     * @param expr the expression to optimize
+     */
+    public AbstractExpression optimize(AbstractExpression expr) {
         System.out.println ("visit " + expr);
         expr.accept (this);
+        if (!queryStack.isEmpty() && expr.isAbsolute()) {
+            return expr.replaceRoot(createSearchCall(pop()));
+        }
+        return expr;
     }
     
     public void visit (Root expr) {
@@ -84,14 +107,94 @@ public class PathOptimizer extends ExpressionVisitor {
        push(query);
     }
     
+    /**
+     * TODO: some operations *commute with lux:search*.  In those cases, we do better to wrap the search around
+     * this expression, rather than around each of its children.  Basically we want to "pull up" the search operation 
+     * to the highest allowable level.
+     * 
+     * Each absolute subexpression S is wrapped by a call to search(), effectively replacing it
+     * with search(QS)/S, where QS is the query derived corresponding to S
+     * @param expr an expression
+     */
+    protected void injectSearch(AbstractExpression expr) {
+        AbstractExpression[] subs = expr.getSubs();
+        int n = 0;
+        for (int i = 0; i < subs.length; i ++) {
+            if (subs[i].isAbsolute()) {
+                int j = subs.length - i - 1;
+                FunCall search = getSearchCall(j);
+                queryStack.add (j, MATCH_ALL_QUERY);
+                subs[i] = subs[i].replaceRoot (search);
+                ++n;
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            push (MATCH_ALL_QUERY);
+        }
+    }
+
+
+    
+    /**
+     * If a function F is emptiness-preserving, in other words F(a,b,c...)
+     * is empty ( =()) if *any* of its arguments are empty, and is
+     * non-empty if *all* of its arguments are non-empty, then its
+     * argument's queries are combined with Occur.MUST.  This is the
+     * default case, and such functions are not mapped explicitly in
+     * fnArgParity.
+     *
+     * If the converse is true, ie the function returns empty when *any* of
+     * its args are non-empty and non-empty when *all* of its args are
+     * empty, we map it as Occur.MUST_NOT.  
+     *
+     * If the function returns empty when all of its arguments are empty,
+     * and may return a value when not all of its arguments are empty, then
+     * we would combine the arguments queries with Occur.SHOULD.  But does
+     * this occur for any of the standard XPath 2 functions?
+     *
+     * In other cases, like deep-equal(), which always returns something
+     * whether its arguments exist or not, no restriction can be imposed on
+     * the allowable context items, so no optimization is attempted, and a
+     * match-all query is generated.
+     *
+     * count() (and maybe max(), min(), and avg()?) is optimized as a
+     * special case.
+     */
+
     public void visit(FunCall funcall) {
-        Occur occur = Occur.SHOULD;
-        if (funcall.getQName().equals(FunCall.notQName)) {
+        injectSearch(funcall);
+        Occur occur;
+        QName name = funcall.getQName();
+        if (! name.getNamespaceURI().isEmpty()) {            
+            // we know nothing about this function
+            occur = Occur.SHOULD;
+        }
+        // a built-in XPath 2 function
+        if (fnArgParity.containsKey(name.getLocalPart())) {
+            occur = fnArgParity.get(name.getLocalPart());
+        } else {
             occur = Occur.MUST;
         }
         combineTopQueries(funcall.getSubs().length, occur, funcall.getReturnType());
+        if (name.getLocalPart().equals ("count")) {
+            getQuery().setFact (XPathQuery.COUNTING, true);
+        }
     }
-        
+
+    // FIXME: fill out the rest of this table
+    protected static HashMap<String, Occur> fnArgParity = new HashMap<String, Occur>();
+    static {
+        fnArgParity.put("collection", null);
+        fnArgParity.put("doc", null);
+        fnArgParity.put("uri-collection", null);
+        fnArgParity.put("unparsed-text", null);
+        fnArgParity.put("generate-id", null);
+        fnArgParity.put("deep-equal", null);
+        fnArgParity.put("error", null);
+        fnArgParity.put("empty", Occur.MUST_NOT);
+        // fnArgParity.put("not", Occur.MUST);
+    };
+    
     private static final XPathQuery combineQueries(XPathQuery lq, Occur loccur, XPathQuery rq, Occur roccur, ValueType valueType) {
         return lq.combine(loccur, rq, roccur, valueType);
     }
@@ -112,6 +215,7 @@ public class PathOptimizer extends ExpressionVisitor {
     @Override
     public void visit(BinaryOperation op) {
         System.out.println ("visit binary op " + op);
+        injectSearch(op);
         XPathQuery rq = pop();
         XPathQuery lq = pop();
         ValueType type = null;
@@ -129,17 +233,18 @@ public class PathOptimizer extends ExpressionVisitor {
             
         case ADD: case SUB: case DIV: case MUL: case IDIV: case MOD:
             type = ValueType.ATOMIC;
-            // TODO: verify that casting an empty sequence to an operand of an operator expeciting atomic values raises an error
-            occur = Occur.MUST;
+            // Casting an empty sequence to an operand of an operator expeciting atomic values raises an error
+            // and to be properly error-preserving we use SHOULD here
+            // occur = Occur.MUST
             break;
             
         case AEQ: case ANE: case ALT: case ALE: case AGT: case AGE:
             type = ValueType.BOOLEAN;
-            occur = Occur.MUST;
+            // occur = Occur.MUST;
             break;
             
         case IS: case BEFORE: case AFTER:
-            occur = Occur.MUST;
+            // occur = Occur.MUST;
             break;
             
         case INTERSECT:
@@ -171,21 +276,31 @@ public class PathOptimizer extends ExpressionVisitor {
     @Override
     public void visit(Predicate predicate) {
         XPathQuery filterQuery = pop();
-        XPathQuery baseQuery = pop();
-        XPathQuery query = baseQuery.combine(filterQuery, Occur.MUST);
-        /* FIXME
-            // in the case that this is a numeric expression (int range expression)
-             // we can't predict whether the predicate will be satisfied
-        if (filterQuery.getResultType().isAtomic) {
-            query.setFact(XPathQuery.MINIMAL, false);
+        if (predicate.getFilter().isAbsolute()) {
+            predicate.getFilter().replaceRoot(createSearchCall(filterQuery));
+            filterQuery = XPathQuery.MATCH_ALL;
         }
-        */
+        XPathQuery baseQuery = pop();
+        XPathQuery query = baseQuery.combine(filterQuery, Occur.MUST);        
+        // This is a counting expr if its base expr is
+        query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
         push (query);
         System.out.println ("visit predicate " + predicate);
+    }
+    
+    private FunCall getSearchCall (int i) {
+        XPathQuery query = queryStack.get(queryStack.size() - i - 1);
+        return createSearchCall(query);
+    }
+    
+    private FunCall createSearchCall(XPathQuery query) {
+        return new FunCall (FunCall.luxSearchQName, ValueType.DOCUMENT, 
+                new LiteralExpression(query.toString()));
     }
 
     @Override
     public void visit(Sequence sequence) {
+        injectSearch(sequence);
         combineTopQueries (sequence.getSubs().length, Occur.SHOULD);
     }
 
@@ -198,7 +313,7 @@ public class PathOptimizer extends ExpressionVisitor {
         for (int i = 0; i < n-1; i++) {
             query = pop().combine(query, occur);
         }
-        if (valueType != null) {
+        if (valueType != null && valueType != query.getResultType()) {
             if (query.isImmutable())
                 query = new XPathQuery(null, query.getQuery(), query.getFacts(), valueType);
             else
@@ -220,17 +335,16 @@ public class PathOptimizer extends ExpressionVisitor {
         
     }
 
-    public XPathQuery pop() {
-        return queryStack.pop();
-    }
-    
-    public void push(XPathQuery query) {
-        queryStack.push(query);
-    }
-    
     public XPathQuery getQuery() {        
-        return queryStack.getFirst();
+        return queryStack.get(queryStack.size()-1);
     }
-
+    
+    void push (XPathQuery query) {
+        queryStack.add(query);
+    }
+    
+    XPathQuery pop () {
+        return queryStack.remove(queryStack.size()-1);
+    }
 
 }

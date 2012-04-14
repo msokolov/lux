@@ -1,19 +1,16 @@
 package lux.saxon;
 
-import java.io.IOException;
 import java.io.Reader;
 
 import javax.xml.transform.stream.StreamSource;
 
 import lux.ResultList;
-import lux.ShortCircuitException;
-import lux.XPathQuery;
-import lux.XPathCollector;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
-import lux.api.QueryStats;
 import lux.xml.XmlBuilder;
+import lux.xpath.AbstractExpression;
+import lux.xpath.PathOptimizer;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -21,15 +18,12 @@ import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XdmItem;
 
-import org.apache.lucene.search.IndexSearcher;
-
 /**
  * Implementation of a lux query/expression evaluator using Saxon
  *
  */
 public class Saxon extends Evaluator  {
-    
-    // private ExpressionParser parser;
+
     private Processor processor;
     private XPathCompiler xpathCompiler;
     private SaxonBuilder saxonBuilder;
@@ -41,7 +35,9 @@ public class Saxon extends Evaluator  {
             config = new Config();
         }
         processor = new Processor (config);
+        processor.registerExtensionFunction(new LuxSearch(this));
         xpathCompiler = processor.newXPathCompiler();
+        xpathCompiler.declareNamespace("lux", "lux");
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
     }
@@ -54,10 +50,16 @@ public class Saxon extends Evaluator  {
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + exprString, e);
         }
-        if (translator != null)
-            return new SaxonExpr(xpath, translator);
-        // TODO: re-enable LuxOptimizer for test?
-        return new SaxonExpr(xpath, this);
+
+        AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
+        PathOptimizer optimizer = new PathOptimizer();
+        expr = optimizer.optimize(expr);
+        try {
+            xpath = xpathCompiler.compile(expr.toString());
+         } catch (SaxonApiException e) {
+             throw new LuxException ("Syntax error compiling: " + expr.toString(), e);
+         }
+        return new SaxonExpr(xpath);
     }
 
     @Override
@@ -73,36 +75,11 @@ public class Saxon extends Evaluator  {
     @Override
     public ResultList<?> iterate(Expression expr, Object contextItem) { 
         SaxonExpr saxonExpr = (SaxonExpr) expr;
-        if (contextItem == null && saxonExpr.getXPathQuery().getQuery() != null) {
-            return evaluateQuery(saxonExpr, getContext());
-        }
         try {
             return saxonExpr.evaluate((XdmItem) contextItem);
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
-    }
-
-    private ResultList<?> evaluateQuery(SaxonExpr saxonExpr, SaxonContext context) {
-        // TODO: include a context query 
-        // Query query = queryContext.getQuery();
-        long t = System.nanoTime();
-        IndexSearcher searcher = context.getSearcher();            
-        XPathQuery xpq = saxonExpr.getXPathQuery();
-        System.out.println ("executing xpath query: " + xpq);
-        queryStats = new QueryStats();
-        XPathCollector collector = new XPathCollector(this, saxonExpr, queryStats);
-        try {
-            searcher.search (xpq.getQuery(), collector);
-        } catch (IOException e) {
-            throw new LuxException("error searching for query: " + xpq, e);
-        } catch (ShortCircuitException e) {
-            // we didn't need to collect all the results
-        }
-        queryStats.totalTime = System.nanoTime() - t;
-        queryStats.docCount = collector.getDocCount();
-        queryStats.query = xpq.getQuery().toString();
-        return collector.getResults();
     }
 
     public SaxonBuilder getBuilder() {

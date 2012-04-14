@@ -91,7 +91,7 @@ public class Learner extends SearchBase {
         Saxon saxon = new Saxon();
         XdmNode hamlet = (XdmNode) saxon.getBuilder().build(new InputStreamReader (SearchTest.class.getClassLoader().getResourceAsStream("lux/hamlet.xml")));
         saxon.setContext(new SaxonContext(searcher, hamlet));
-        evalGenerated (saxon, false);
+        //evalGenerated (saxon, false);
     }
     
     @Test @Ignore
@@ -99,9 +99,10 @@ public class Learner extends SearchBase {
         // evaluate all of a first query generation, running queries against Lucene.
         Saxon saxon = new Saxon();
         saxon.setContext(new SaxonContext(searcher));        
-        evalGenerated (saxon, true);
+        //evalGenerated (saxon, true);
     }
     
+    /*
     private void evalGenerated (Saxon saxon, boolean validateResults) {
         ExprGen gen = new ExprGen(termCounts.keySet().toArray(new String[0]), elementCounts.keySet().toArray(new String[0]), 
                     new Random(), saxon, 2, 2);
@@ -162,10 +163,10 @@ public class Learner extends SearchBase {
                 System.out.println (ndocs + " " + nresults + " " + expr);
                 docs += ndocs;
                 if (validateResults) {
-                    SaxonExpr baseline = new SaxonExpr (saxonExpr.getXPathExecutable(), 
-                            new XPathQuery (null, new MatchAllDocsQuery(), 0, saxonExpr.getXPathQuery().getResultType()));
+                    // FIXME: how do we force every query to be a *:*?
+                    SaxonExpr baseline = new SaxonExpr (saxonExpr.getXPathExecutable());
                     result = saxon.evaluate(baseline);
-                    assertEquals ("result count mismatch when filtered by query: " + saxonExpr.getSearchQuery(), result.size(), nresults);
+                    assertEquals ("result count mismatch when filtered by query: " + saxonExpr.toString(), result.size(), nresults);
                 }
             } catch (LuxException e) {
                 //System.err.println (e.getMessage() + " in " + expr);
@@ -183,7 +184,7 @@ public class Learner extends SearchBase {
         System.out.println ("there were " + minimal_incorrect + " incorrect predictions of single-result queries");
         assertEquals (count, nonempty + empties + compilationErrors + runtimeErrors);
     }
-
+*/
     @Override
     public Evaluator getEvaluator() {        
         Evaluator eval = new Saxon();

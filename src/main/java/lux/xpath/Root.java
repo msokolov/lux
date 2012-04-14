@@ -18,4 +18,13 @@ public class Root extends AbstractExpression {
     public void accept(ExpressionVisitor visitor) {
         visitor.visit(this);
     }
+    
+    /** 
+     * replace this with the search function call
+     * @param search the search function call to use
+     * @return the search function call
+     */
+    public AbstractExpression replaceRoot(FunCall search) {        
+        return search;
+    }
 }

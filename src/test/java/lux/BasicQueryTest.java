@@ -30,6 +30,7 @@ public abstract class BasicQueryTest {
      * @param valueType the expected return type of the expression
      */
     public abstract void assertQuery (String expr, String luq, boolean isMinimal, ValueType valueType) throws Exception;
+    public abstract void assertQuery (String expr, String ... queries) throws Exception;
 
     protected static final String MATCH_ALL = new MatchAllDocsQuery().toString();
     
@@ -55,20 +56,16 @@ public abstract class BasicQueryTest {
 
     @Test public void testMatchAll () throws Exception {
         // Can you have an XML document with no elements?  I don't think so
-        assertQuery ("*", MATCH_ALL, true, ValueType.ELEMENT);
-        assertQuery ("node()", MATCH_ALL, true, ValueType.NODE);
+        //assertQuery ("*", MATCH_ALL, true, ValueType.ELEMENT);
+        //assertQuery ("node()", MATCH_ALL, true, ValueType.NODE);
         assertQuery ("/*", MATCH_ALL, true, ValueType.ELEMENT);
         assertQuery ("/node()", MATCH_ALL, true, ValueType.NODE);
         assertQuery ("/self::node()", MATCH_ALL, true, ValueType.DOCUMENT);
-        assertQuery ("self::node()", MATCH_ALL, true, ValueType.DOCUMENT);
+        //assertQuery ("self::node()", MATCH_ALL, true, ValueType.DOCUMENT);
     }
     
     @Test public void testSlash() throws Exception {
         assertQuery ("/", MATCH_ALL, true, ValueType.DOCUMENT);
-    }
-    
-    @Test public void testElementNameTest() throws Exception {
-        assertQuery ("foo", Q_FOO, false, ValueType.ELEMENT); 
     }
     
     @Test public void testElementPredicate() throws Exception {
@@ -85,7 +82,8 @@ public abstract class BasicQueryTest {
 
         assertQuery ("/foo", Q_FOO, false, ValueType.ELEMENT);
         
-        assertQuery ("foo/text()", Q_FOO, false, null);
+        assertQuery ("/foo/text()", Q_FOO, false, ValueType.ELEMENT);
+        // assertQuery ("foo/text()", Q_FOO, false, null);
     }
 
     @Test public void testAttributePaths () throws Exception {
@@ -104,16 +102,16 @@ public abstract class BasicQueryTest {
 
     @Test public void testElementAttributePaths () throws Exception {
         
-        assertQuery ("foo/@id", "+lux_elt_name_ms:foo +lux_att_name_ms:id", false, ValueType.ATTRIBUTE);
+        assertQuery ("//foo/@id", "+lux_elt_name_ms:foo +lux_att_name_ms:id", false, ValueType.ATTRIBUTE);
 
-        assertQuery ("foo/@*", Q_FOO, false, ValueType.ATTRIBUTE);
+        assertQuery ("//foo/@*", Q_FOO, false, ValueType.ATTRIBUTE);
     }
 
     @Test public void testTwoElementPaths () throws Exception {
         
-        assertQuery ("foo/bar", Q_FOO_BAR, false, ValueType.ELEMENT);
+        assertQuery ("//*/foo/bar", Q_FOO_BAR, false, ValueType.ELEMENT);
 
-        assertQuery ("foo//bar", Q_FOO_BAR, false, ValueType.ELEMENT);
+        assertQuery ("/foo//bar", Q_FOO_BAR, false, ValueType.ELEMENT);
     }
     
     @Test public void testTwoElementPredicates () throws Exception {
@@ -127,22 +125,22 @@ public abstract class BasicQueryTest {
     }
     
     @Test public void testPositionalPredicate () throws Exception {
-        assertQuery ("foo/bar[1]", Q_FOO_BAR, false, ValueType.ELEMENT);
+        assertQuery ("//foo/bar[1]", Q_FOO_BAR, false, ValueType.ELEMENT);
         
         assertQuery ("//bar[1]", Q_BAR, false, ValueType.ELEMENT);
     }
 
     @Test public void testMultiElementPaths () throws Exception {
-        assertQuery ("foo/title | bar/title | baz/title", 
-                     "((+lux_elt_name_ms:foo +lux_elt_name_ms:title) (+lux_elt_name_ms:bar +lux_elt_name_ms:title)) (+lux_elt_name_ms:baz +lux_elt_name_ms:title)", false, ValueType.ELEMENT);
+        assertQuery ("//foo/title | //bar/title | //baz/title", 
+                     "+lux_elt_name_ms:foo +lux_elt_name_ms:title",
+                     "+lux_elt_name_ms:bar +lux_elt_name_ms:title",
+                     "+lux_elt_name_ms:baz +lux_elt_name_ms:title"); 
+                     //false, ValueType.ELEMENT);
     }
 
     @Test public void testElementValueNoPath () throws Exception {
-        assertQuery ("foo[.='content']", Q_FOO, false, ValueType.ELEMENT);
-    }
-    
-    @Test public void testElementStringValue () throws Exception {
-        assertQuery ("foo[bar='content']", Q_FOO_BAR, false, ValueType.ELEMENT);
+        // depends on context expression when there is none
+        assertQuery ("foo[.='content']");//, Q_FOO, false, ValueType.ELEMENT);
     }
     
     @Test public void testElementValue () throws Exception {

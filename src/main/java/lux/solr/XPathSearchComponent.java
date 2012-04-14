@@ -149,7 +149,7 @@ public abstract class XPathSearchComponent extends QueryComponent {
 
     @Override
     public String getSourceId() {            
-        return "lux.XPathSearchHandler$XPathSearchComponent";
+        return "lux.XPathSearchComponent";
     }
 
     @Override

@@ -11,28 +11,31 @@ public class SaxonBasicQueryTest extends BasicQueryTest {
        QueryTest.assertQuery(xpath, luq, isMinimal, valueType);
     }
     
-    // Saxon switches the operand order
+    public void assertQuery (String xpath, String ... queries) {
+        QueryTest.assertQuery(xpath, queries);
+     }
+    
     @Test public void testUnion () throws Exception {
-        assertQuery ("foo|bar", "lux_elt_name_ms:bar lux_elt_name_ms:foo", false, ValueType.ELEMENT);
+        assertQuery ("/foo|/bar", "lux_elt_name_ms:foo lux_elt_name_ms:bar", false, ValueType.ELEMENT);
 
-        assertQuery ("//foo|//bar", "lux_elt_name_ms:bar lux_elt_name_ms:foo", true, ValueType.ELEMENT);
+        assertQuery ("//foo|//bar", "lux_elt_name_ms:foo lux_elt_name_ms:bar", true, ValueType.ELEMENT);
     }
     
     @Test public void testSequence () throws Exception {
-        assertQuery ("(foo,bar,baz)", "lux_elt_name_ms:bar lux_elt_name_ms:foo lux_elt_name_ms:baz", false, ValueType.ELEMENT);
+        assertQuery ("(/foo,/bar,/baz)", "lux_elt_name_ms:foo","lux_elt_name_ms:bar","lux_elt_name_ms:baz");//, false, ValueType.ELEMENT);
     }
     
     @Test public void testMatchNone () throws Exception {
         // Saxon detects that this will never match anything and we therefore don't require a query
         // MINIMAL is false since there are simply no facts at all about a non-existent query
-        assertQuery ("/self::*", "", false, ValueType.VALUE);
+        assertQuery ("/self::*");//, "", false, ValueType.VALUE);
         // Here Saxon thinks there might be a non-document context and a match is possible
-        assertQuery ("self::*", MATCH_ALL, true, ValueType.ELEMENT);
+        assertQuery ("self::*"); // , MATCH_ALL, true, ValueType.ELEMENT);
     }
     
     @Test public void testAncestor () throws Exception {
         // matches nothing
-        assertQuery ("/ancestor::node()", "", false, ValueType.VALUE);
+        assertQuery ("/ancestor::node()");//, "", false, ValueType.VALUE);
     }
     
     

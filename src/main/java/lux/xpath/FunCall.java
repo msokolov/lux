@@ -25,8 +25,10 @@ public class FunCall extends AbstractExpression {
     
     // TODO: move this elsewhere?
     public static String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
-    public static QName luxSearchQName = new QName ("net.lux", "lux", "search");
-    public static QName notQName = new QName (FN_NAMESPACE, "", "not");
+    public static String LUX_NAMESPACE = "lux";
+    public static QName luxSearchQName = new QName (LUX_NAMESPACE, "search", "lux");
+    public static QName notQName = new QName (FN_NAMESPACE, "not", "");
+    public static QName rootQName = new QName (FN_NAMESPACE, "root", "");
     
     public void accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);

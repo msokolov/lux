@@ -15,6 +15,6 @@ public class TestVisitor {
                 new PathStep (Axis.Child, new NodeTest (ValueType.ELEMENT, new QName("foo"))),
                 new LiteralExpression (1))
                 );
-        opt.visit(expr);
+        expr.accept(opt);
     }
 }

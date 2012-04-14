@@ -42,6 +42,7 @@ import net.sf.saxon.expr.parser.Token;
 import net.sf.saxon.expr.sort.IntSet;
 import net.sf.saxon.expr.sort.IntUniversalSet;
 import net.sf.saxon.functions.StandardFunction;
+import net.sf.saxon.functions.StandardFunction.Entry;
 import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Axis;
 import net.sf.saxon.om.Item;
@@ -134,14 +135,13 @@ public class SaxonTranslator {
     }
     
     private static final StructuredQName itemAtQName = new StructuredQName("", NamespaceConstant.SAXON, "item-at");
-    private static final StructuredQName reverseQName = new StructuredQName("", NamespaceConstant.FN, "reverse");
     
     private AbstractExpression exprFor (FunctionCall funcall) {
-        if (funcall.getFunctionName().equals (itemAtQName)) {
+        if (funcall.getFunctionName().equals(itemAtQName)) {
             return new Predicate (exprFor (funcall.getArguments()[0]), 
                     exprFor(funcall.getArguments()[1]));
         }
-        else if (funcall.getFunctionName().equals (reverseQName)) {
+        if (functionEqualsBuiltin(funcall, "reverse")) {
             // Saxon wraps a call to reverse() around reverse axis expressions; its axis expression
             // always returns items in axis (reverse) order, unlike an xpath axis expression, whose results
             // are returned in different order depending on the context
@@ -159,9 +159,22 @@ public class SaxonTranslator {
         for (int i = 0; i < args.length; i++) {
             aargs[i] = exprFor (args[i]);
         }
-        ValueType returnType = valueTypeForItemType (StandardFunction.getFunction
-                (funcall.getFunctionName().getDisplayName(), aargs.length).itemType);
+        // TODO: require the static context with its function libraries? So we can look up extension functions?
+        Entry entry = StandardFunction.getFunction(funcall.getFunctionName().getDisplayName(), aargs.length);
+        ValueType returnType = entry != null ? valueTypeForItemType (entry.itemType) : ValueType.VALUE;
+        if (functionEqualsBuiltin(funcall, "root")) 
+        {
+            // root() may return an element when executed in the context of a fragment
+            // However for the purposes of our optimizer, we want to know if it is returning
+            // documents.  Since we only use the return type to optimize absolute expressions, 
+            // this incorrect inference won't cause any errors in the other case.
+            returnType = ValueType.DOCUMENT;
+        }
         return new FunCall (qnameFor (funcall.getFunctionName()), returnType, aargs);
+    }
+    
+    private boolean functionEqualsBuiltin (FunctionCall funcall, String builtinFunction) {
+        return funcall.getFunctionName().getDisplayName().equals (builtinFunction);
     }
     
     private ValueType valueTypeForItemType(ItemType itemType) {
@@ -169,15 +182,17 @@ public class SaxonTranslator {
             // TODO: Make finer type distinctions among atomic types? 
             return ValueType.ATOMIC;
         }
-        NodeTest nodeTest = (NodeTest) itemType;
-        switch (nodeTest.getPrimitiveType()) {
-        case Type.NODE: return ValueType.NODE;
-        case Type.ELEMENT: return ValueType.ELEMENT;
-        case Type.TEXT: return ValueType.TEXT;
-        case Type.ATTRIBUTE: return ValueType.ATTRIBUTE;
-        case Type.DOCUMENT: return ValueType.DOCUMENT;
-        case Type.PROCESSING_INSTRUCTION: return ValueType.PROCESSING_INSTRUCTION;
-        case Type.COMMENT: return ValueType.COMMENT;
+        if (itemType instanceof NodeTest) {
+            NodeTest nodeTest = (NodeTest) itemType;
+            switch (nodeTest.getPrimitiveType()) {
+            case Type.NODE: return ValueType.NODE;
+            case Type.ELEMENT: return ValueType.ELEMENT;
+            case Type.TEXT: return ValueType.TEXT;
+            case Type.ATTRIBUTE: return ValueType.ATTRIBUTE;
+            case Type.DOCUMENT: return ValueType.DOCUMENT;
+            case Type.PROCESSING_INSTRUCTION: return ValueType.PROCESSING_INSTRUCTION;
+            case Type.COMMENT: return ValueType.COMMENT;
+            }
         }
         // could be a function type? or namespace()?
         return ValueType.VALUE;

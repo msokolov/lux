@@ -5,10 +5,9 @@ import static org.junit.Assert.assertEquals;
 import java.util.List;
 
 import lux.SearchTest;
-import lux.XPathQuery;
 import lux.api.ResultSet;
+import lux.xpath.AbstractExpression;
 
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.junit.Test;
 
 public class SaxonSearchTest extends SearchTest {
@@ -36,10 +35,11 @@ public class SaxonSearchTest extends SearchTest {
         Saxon saxon = getEvaluator();
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
-        SaxonExpr baseline = new SaxonExpr (saxonExpr.getXPathExecutable(), 
-                new XPathQuery (null, new MatchAllDocsQuery(), 0, saxonExpr.getXPathQuery().getResultType()));
+        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        aex = new UnOptimizer().unoptimize(aex);
+        SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
-        assertEquals ("result count mismatch when filtered by query: " + saxonExpr.getSearchQuery(), baseResult.size(), results.size());        
+        assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());        
     }
     
     @Test
@@ -49,5 +49,15 @@ public class SaxonSearchTest extends SearchTest {
         List<?> results = assertSearch("'remorseless' or descendant::text", QUERY_EXACT);
         assertEquals (1, results.size());
     }
-
+    
+    // A test case that exposes the difference between evaluating the entire expression
+    // for each document, and evaluating the sub-expressions independently, 
+    // for each document, which is correct since they both have collection()-wide scope
+    @Test
+    public void testCollectionScope() throws Exception {
+        List<?> results = assertSearch("count (//PERSONA[.='ROSENCRANTZ']) + count(//PERSONA[.='GUILDENSTERN'])", 0);
+        assertEquals (1, results.size());
+        assertEquals (60, results.get(0));        
+    }
+    
 }

@@ -1,5 +1,6 @@
 package lux.xpath;
 
+
 /**
  * An abstract XPath 2.0 expression.
  * 
@@ -53,6 +54,17 @@ public abstract class AbstractExpression implements Visitable {
 
     public boolean isAbsolute() {
         return false;
+    }
+
+    /** 
+     * If this has a root expression, replace it with the function call expression
+     * @param search the search function call to use in place of '/'
+     */
+    public AbstractExpression replaceRoot(FunCall search) {
+        if (subs != null && subs.length > 0) {
+            subs[0] = subs[0].replaceRoot(search);
+        }
+        return this;
     }
 
 }

@@ -1,8 +1,8 @@
 package lux.saxon;
 
 /**
- * Extends saxon Configuration providing an Optimizer that rewrites 
- * some path expressions as lux:search() calls.
+ * Extends saxon Configuration providing lux-specific configuration - for the moment, this is
+ * mostly a place-holder for possible future expansion.
  */
 
 import java.io.ByteArrayInputStream;
@@ -22,12 +22,7 @@ import net.sf.saxon.Configuration;
 public class Config extends Configuration implements URIResolver, EntityResolver {
     public Config () {
         super();
-        optimizer = new LuxOptimizer(this);
         getParseOptions().setEntityResolver(this);
-    }
-
-    public LuxOptimizer getOptimizer() {
-        return (LuxOptimizer) optimizer;
     }
     
     // TODO resolve uris!
