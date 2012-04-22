@@ -327,8 +327,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             lengthQuery = popFilter (length);
         }
         XPathQuery startQuery = popFilter (start);
-        if (length == null && start == FunCall.LastExpression || 
-                (start instanceof LiteralExpression && ((LiteralExpression) start).getValue().equals(1))) {
+        if (start == FunCall.LastExpression || (start.equals(LiteralExpression.ONE) && length.equals(LiteralExpression.ONE))) {
             // selecting the first or last item from a sequence - this has no effect
             // on the query, its minimality or return type, so just leave the main sub-expression query
             return subsequence;
