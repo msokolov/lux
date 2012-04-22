@@ -39,6 +39,7 @@ public abstract class SearchBase {
     protected static int QUERY_EXACT = 0x00000001;
     protected static int QUERY_FILTER_FREE = 0x00000002;
     protected static int QUERY_MINIMAL = 0x00000004;
+    protected static int QUERY_CONSTANT = 0x00000008;
 
     @BeforeClass
     public static void setUp() throws Exception {

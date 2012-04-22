@@ -52,8 +52,8 @@ public class BinaryOperation extends AbstractExpression {
         return operator;
     }
 
-    public void accept(ExpressionVisitor visitor) {
+    public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
-        visitor.visit(this);
+        return visitor.visit(this);
     }
 }

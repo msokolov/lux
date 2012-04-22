@@ -9,11 +9,14 @@ import net.sf.saxon.expr.BinaryExpression;
 import net.sf.saxon.expr.ContextSwitchingExpression;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.FilterExpression;
+import net.sf.saxon.expr.GeneralComparison;
 import net.sf.saxon.expr.IdentityComparison;
 import net.sf.saxon.expr.Literal;
 import net.sf.saxon.expr.SlashExpression;
+import net.sf.saxon.expr.ValueComparison;
 import net.sf.saxon.expr.VennExpression;
 import net.sf.saxon.om.Axis;
+import net.sf.saxon.type.AtomicType;
 import net.sf.saxon.type.BuiltInAtomicType;
 import net.sf.saxon.type.ItemType;
 import net.sf.saxon.type.Type;
@@ -42,7 +45,7 @@ public class ExprBreeder implements Iterable<Expression> {
             primitives.add(generator.genRandomStringLiteral());
             // Filter out primitives that will never match anything starting from a document-node()            
         }
-        byte axisMask = (1<<Axis.CHILD) | (1<<Axis.DESCENDANT);
+        byte axisMask = (1<<Axis.CHILD) | (1<<Axis.DESCENDANT) | (1 << Axis.DESCENDANT_OR_SELF);
         for (Expression expr : generator.genAxisExpressions (axisMask)) {
             primitives.add (expr);
         }
@@ -62,21 +65,29 @@ public class ExprBreeder implements Iterable<Expression> {
                 return true;
             }
         }
-        if (expr instanceof IdentityComparison || expr instanceof VennExpression) {
+        else if (expr instanceof IdentityComparison || expr instanceof VennExpression) {
             // TODO: prevent these from being generated in the first place
             BinaryExpression bin = (BinaryExpression) expr;
             Expression [] operands = bin.getOperands();
-            if (operands[0].getItemType(th).isPlainType() || operands[1].getItemType(th).isPlainType()) {
+            if (operands[0].getItemType(th).isAtomicType() || operands[1].getItemType(th).isAtomicType()) {
                 return true;
             }
         }
-        if (expr instanceof ArithmeticExpression) {
+        else if (expr instanceof ArithmeticExpression) {
             // TODO: prevent these from being generated in the first place
             BinaryExpression bin = (BinaryExpression) expr;
             Expression [] operands = bin.getOperands();
             // make sure both operands are not known to be non-numeric
             if (operands[0].getItemType(th) == BuiltInAtomicType.STRING || operands[1].getItemType(th) == BuiltInAtomicType.STRING) {
                 return true;
+            }
+        }
+        else if (expr instanceof ValueComparison || expr instanceof GeneralComparison) {
+            Expression [] operands = ((BinaryExpression)expr).getOperands();
+            if (operands[0].getItemType(th).isAtomicType() && operands[1].getItemType(th).isAtomicType()) {
+                AtomicType t0 = (AtomicType) operands[0].getItemType(th);
+                AtomicType t1 = (AtomicType) operands[1].getItemType(th);
+                return !(t0.isSameType(t1));
             }
         }
         return false;

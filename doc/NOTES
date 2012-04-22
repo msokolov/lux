@@ -1,3 +1,78 @@
+* PLAN
+Make small steps so we can progress without being overwhelmed, measure each
+step carefully before moving on.
+** ideas
+this doc and xml-indexer.txt
+** infrastructure, tools
+saxon (was jaxen), lucene (was solr)
+** structure, naming, project shell
+we have a project shell and some preliminary names
+*** package name solrx, org.solrx, (org.) lux, lucx, lucex, lucenex?
+Keep in mind the idea of providing implementations as raw classes w/o solr
+dependencies.
+*** class names falling into place
+** the bare minimum
+*** query translator 
+**** unit tests
+Basic query translator tests OK
+**** separate attributes from elements
+decide whether to use combined element/attribute indexes here
+**** as a QueryParserPlugin
+later - not part of the minimum
+*** indexer
+**** design
+single-pass parse using Woodstox that accumulates stack frames
+encompassing: One frame per XML node (text and attrs as leaves could be
+handled w/out frames?)  each frame should include char offsets in the
+original XML, an id (hierarchical), a parent id, a doc id.
+***** QNames
+***** QName paths
+implicit in a stack of QNames
+***** node words / values
+this is easy for attributes; for elements need to decide about child
+boundaries and whether values should be truncated.  Assuming phrase-through
+config like ML, but still include child words in parent value so they can
+have the same meaning as XPath string value.  However we should truncate.
+There's no sense in string value > 200 chars is there?  If we need to
+retrieve a node we can reconstruct its text from the document and the node
+offsets.  So then the only purpose for the values is to search them.  But
+nobody wants to search a long string as a value.
+***** XPath indexes
+These really do have to be computed in a second pass.  If we are going to
+create a tree anyway, we could choose to just traverse that in order to
+handle the other indexing too.
+***** See org.jdom.input.StAXBuilder
+Our reader would need to absorb and merge with this in order to maintain a
+single-pass approach.
+**** impl plan
+***** combined StAXBuilder/XMLCharFilter/NodeIndexer.  
+Something weird though - as a CharFilter, XmlCharFilter gets invoked by
+lucene as part of analysis of a specific field value.  It doesn't know from
+Documents, Fields, etc.  It just gets a Reader - that's it.
+***** eliminate CharFilter
+Perhaps the best approach here would be to create a different
+beast.  Build an LuXmlReader that (1) extracts text, preserving character
+offsets and (2) generates a JDOM.  Then we wouldn't need the char filter.
+Then a separate indexer generates fields from the JDOM and the text.
+
+Actually a neat idea would be an object model derived from the original
+character buffer.  We'd represent each element by a bunch of pointers; the
+text nodes and attribute values would be references to the buffer.
+But this optimization is truly premature.
+
+However this doesn't work b/c of entities.  The only way to model them is
+with offsets, which are a CharFilter feature.  And inserting phrase
+boundaries at element boundaries becomes tricky too.
+***** two-pass system
+One pass for indexing nodes, and another for handling the whole document -
+so we can do highlighting.
+**** unit tests
+**** as an UpdateProcessor
+** basic implementation complete 
+*** integration test framework
+loads documents, evaluates query, timings
+** a complete working implementation
+
 * Saxon notes
 ** parse/eval hooks for extension/query rewriting
 *** ExpressionParser accepts a CodeInjector
@@ -209,3 +284,37 @@ methods in IndexSearcher, or maybe one or two calls down in an
 Wheras writing the thread coordination / circular buffer to couple
 Collector with Saxonseems a bit scarier.
 
+* implementation notes on using Jaxen
+consider saxon which provides XPath 2.0? Maybe for version 2...  It turns
+out Jaxen <> javax.xml.xpath, which is bundled w/Oracle JRE now.  But JRE
+version doesn't expose its parse tree, so is not usable.
+** extend BaseXPath and wrap another XPath implementation (eg JDOM, dom4j, etc)
+*** getContext()
+Allow the use of a database collection as a context (all docs for now, but
+allow for extending to a restriction by document query)
+*** selectNodesForContext()
+When passed a database context, do our stuff, otherwise delegate
+** extend DefaultXPathFactory
+We want to: (1) generate a lucene query, and (2) know whether it is exact.
+Wrap all of the exprs, providing an asLuceneQuery(Query) method.  It needs
+to be able to contribute to a query, or not, and also indicate whether it
+is fully evaluated by its contribution; say it returns a boolean. Sibling
+axes could contribute, but only partially, if say we didn't really
+accurately index that info, but we would find docs that have both nodes a
+and b in a::following-sibling:b.  For example, we might only be able to do
+b[../a] without the order constraint, or maybe only /[.//b][.//a].
+*** have to use visitor
+I was intending to wrap the Expr classes as described above, providing my
+own XPathHandler wrapping jaxen's JaxenHandler, but unfortunately BaseXPath
+doesn't provide a constructor that would allow you to do that.
+
+So instead we can just crawl over the parse tree, converting it.
+** execute the query
+If it's exact, simply return the results.  Otherwise, the results must be
+from the same space as the provided context for the query.  In all but one
+of the schemes, we always return whole documents from the Lucene query.  In
+the other case, we may return documents, elements or attributes, and if
+these *are* the results, we're done.
+** process the results if needed
+Then pass each result in succession as a Context to the wrapped XPath
+implementation, and return the combined result set, possibly paginated.

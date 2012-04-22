@@ -2,11 +2,11 @@ package lux.saxon;
 
 import java.util.Iterator;
 
+import lux.api.ResultSet;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
-import lux.ResultList;
 
-public class XdmResultSet extends ResultList<XdmItem> {
+public class XdmResultSet implements ResultSet<XdmItem> {
     private XdmValue value;
     public XdmResultSet(XdmValue value) {
         this.value = value;

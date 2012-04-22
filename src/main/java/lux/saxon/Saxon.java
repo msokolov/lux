@@ -4,10 +4,12 @@ import java.io.Reader;
 
 import javax.xml.transform.stream.StreamSource;
 
-import lux.ResultList;
+import lux.XPathCollector;
+import lux.XPathQuery;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
+import lux.api.ResultSet;
 import lux.xml.XmlBuilder;
 import lux.xpath.AbstractExpression;
 import lux.xpath.PathOptimizer;
@@ -25,6 +27,10 @@ import net.sf.saxon.s9api.XdmItem;
 public class Saxon extends Evaluator  {
 
     private Processor processor;
+    public Processor getProcessor() {
+        return processor;
+    }
+
     private XPathCompiler xpathCompiler;
     private SaxonBuilder saxonBuilder;
     private SaxonTranslator translator;
@@ -36,6 +42,7 @@ public class Saxon extends Evaluator  {
         }
         processor = new Processor (config);
         processor.registerExtensionFunction(new LuxSearch(this));
+        processor.registerExtensionFunction(new LuxCount(this));
         xpathCompiler = processor.newXPathCompiler();
         xpathCompiler.declareNamespace("lux", "lux");
         saxonBuilder = new SaxonBuilder();
@@ -56,24 +63,24 @@ public class Saxon extends Evaluator  {
         expr = optimizer.optimize(expr);
         try {
             xpath = xpathCompiler.compile(expr.toString());
-         } catch (SaxonApiException e) {
-             throw new LuxException ("Syntax error compiling: " + expr.toString(), e);
-         }
-        return new SaxonExpr(xpath);
+        } catch (SaxonApiException e) {
+            throw new LuxException ("Syntax error compiling: " + expr.toString(), e);
+        }
+        return new SaxonExpr(xpath, expr);
     }
 
     @Override
-    public ResultList<?> evaluate(Expression expr) {
+    public ResultSet<?> evaluate(Expression expr) {
         return evaluate (expr, getContext().getContextItem());       
     }
     
     @Override
-    public ResultList<?> evaluate(Expression expr, Object contextItem) {
+    public ResultSet<?> evaluate(Expression expr, Object contextItem) {
         return iterate (expr, contextItem);
     }
 
     @Override
-    public ResultList<?> iterate(Expression expr, Object contextItem) { 
+    public ResultSet<?> iterate(Expression expr, Object contextItem) { 
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         try {
             return saxonExpr.evaluate((XdmItem) contextItem);
@@ -113,6 +120,10 @@ public class Saxon extends Evaluator  {
 
     public SaxonTranslator getTranslator() {
         return translator;
+    }
+    
+    public XPathCollector getCollector (XPathQuery query) {
+        return new XPathCollector (query, getBuilder(), queryStats);
     }
 
 }

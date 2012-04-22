@@ -1,6 +1,31 @@
-* move to translator-based implementation
-do we care about continuing support for Jaxen?
-** get query tests working w/SaxonTranslator
-** scrap LuxOptimizer 
-The original Saxon implementation would be replaced by the translator-based
-one.
+* test optimizations
+** attribute names
+//foo/@id, etc.
+We do have query tests - no search tests, since hamlet has no attributes.
+** exist(), empty(), not()
+short-circuit eval
+** count(//a) + count(//b)
+*** node-uri(), document-uri()
+** pagination
+optimize subsequence
+short-circuit evaluations, etc.
+*** optimize pagination when we know that #count=#estimate
+eg where a sequence will always return one result per document, and we know
+that we can match the documents exactly by query.  For example:
+**** /descendant::foo[1] or /descendant::foo[last()]
+If we had accurate element counts/positions we could extend this to any
+constant expression in the predicate.  Also expressions with position() =
+same
+* PTree binary storage
+* API packaging
+** rename Saxon
+Lux? Evaluator?
+** configuration
+*** Lucene field names
+*** storage format
+text vs PTree
+*** Object Model
+Saxon Xdm vs JDOM vs DOM vs ?
+*** language
+XPath / XQuery
+

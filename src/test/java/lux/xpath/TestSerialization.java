@@ -123,5 +123,38 @@ public class TestSerialization {
         Sequence seq= new Sequence(new LiteralExpression ("bar"), new LiteralExpression("baz"));
         assertEquals ("(\"bar\",\"baz\")", seq.toString());        
     }
+    
+    @Test public void testSubsequenceToString () {
+        Subsequence subseq = new Subsequence(new Dot(), LiteralExpression.ONE);
+        assertEquals ("subsequence(.,1)", subseq.toString());
+        subseq = new Subsequence(new Dot(), LiteralExpression.ONE, new LiteralExpression(10));
+        assertEquals ("subsequence(.,1,10)", subseq.toString());
+        subseq = new Subsequence(new Dot(), FunCall.LastExpression, LiteralExpression.ONE);
+        assertEquals (".[last()]", subseq.toString());
+        subseq = new Subsequence(new Dot(), LiteralExpression.ONE, LiteralExpression.ONE);
+        assertEquals (".[1]", subseq.toString());
+    }
+    
+    @Test public void testLetToString () {
+        Let let = new Let (new QName("x"), new LiteralExpression("bar"), new LiteralExpression("foo"));
+        assertEquals ("let $x := \"bar\" return \"foo\"", let.toString());
+    }
+    
+    @Test public void testBinaryOperationToString () {
+        LiteralExpression one = LiteralExpression.ONE;
+        assertEquals ("(1 = 1)", new BinaryOperation(one, Operator.EQUALS, one).toString());
+        assertEquals ("(1 != 1)", new BinaryOperation(one, Operator.NE, one).toString());
+        assertEquals ("(1 > 1)", new BinaryOperation(one, Operator.GT, one).toString());
+        assertEquals ("(1 < 1)", new BinaryOperation(one, Operator.LT, one).toString());
+        assertEquals ("(1 >= 1)", new BinaryOperation(one, Operator.GE, one).toString());
+        assertEquals ("(1 <= 1)", new BinaryOperation(one, Operator.LE, one).toString());
 
+        assertEquals ("(1 eq 1)", new BinaryOperation(one, Operator.AEQ, one).toString());
+        assertEquals ("(1 ne 1)", new BinaryOperation(one, Operator.ANE, one).toString());
+        assertEquals ("(1 gt 1)", new BinaryOperation(one, Operator.AGT, one).toString());
+        assertEquals ("(1 lt 1)", new BinaryOperation(one, Operator.ALT, one).toString());
+        assertEquals ("(1 ge 1)", new BinaryOperation(one, Operator.AGE, one).toString());
+        assertEquals ("(1 le 1)", new BinaryOperation(one, Operator.ALE, one).toString());
+        
+    }
 }

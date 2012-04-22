@@ -27,8 +27,8 @@ public class PathExpression extends AbstractExpression {
        return subs[0].isAbsolute();
     }
 
-    public void accept(ExpressionVisitor visitor) {
+    public AbstractExpression accept(ExpressionVisitor visitor) {
         acceptSubs(visitor);
-        visitor.visit(this);
+        return visitor.visit(this);
     }
 }

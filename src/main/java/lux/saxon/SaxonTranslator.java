@@ -1,9 +1,5 @@
 package lux.saxon;
 
-/**
- Optimizer that rewrites some path expressions as lux:search() calls.
- */
-
 import java.util.ArrayList;
 
 import lux.api.LuxException;
@@ -20,6 +16,7 @@ import lux.xpath.Predicate;
 import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
+import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
 import net.sf.saxon.expr.AxisExpression;
 import net.sf.saxon.expr.BinaryExpression;
@@ -30,12 +27,15 @@ import net.sf.saxon.expr.FilterExpression;
 import net.sf.saxon.expr.FirstItemExpression;
 import net.sf.saxon.expr.FunctionCall;
 import net.sf.saxon.expr.LastItemExpression;
+import net.sf.saxon.expr.LetExpression;
 import net.sf.saxon.expr.Literal;
+import net.sf.saxon.expr.LocalVariableReference;
 import net.sf.saxon.expr.NegateExpression;
 import net.sf.saxon.expr.ParentNodeExpression;
 import net.sf.saxon.expr.RootExpression;
 import net.sf.saxon.expr.SlashExpression;
 import net.sf.saxon.expr.StaticProperty;
+import net.sf.saxon.expr.TailExpression;
 import net.sf.saxon.expr.UnaryExpression;
 import net.sf.saxon.expr.instruct.Block;
 import net.sf.saxon.expr.parser.Token;
@@ -59,7 +59,7 @@ import net.sf.saxon.value.Cardinality;
 import net.sf.saxon.value.Value;
 
 /**
- *
+ * Translates Saxon XPath 2.0 Expressions into Lux AbstractExpressions.
  */
 public class SaxonTranslator {
     
@@ -101,6 +101,9 @@ public class SaxonTranslator {
         if (expr instanceof BinaryExpression) {
             return exprFor ((BinaryExpression) expr);
         }
+        if (expr instanceof TailExpression) {
+            return exprFor ((TailExpression) expr);
+        }
         if (expr instanceof Literal) {
             return exprFor ((Literal) expr);
         }
@@ -119,6 +122,12 @@ public class SaxonTranslator {
         if (expr instanceof CompareToIntegerConstant) {
             return exprFor ((CompareToIntegerConstant) expr);
         }
+        if (expr instanceof LetExpression) {
+            return exprFor ((LetExpression) expr);
+        }
+        if (expr instanceof LocalVariableReference) {
+            return exprFor ((LocalVariableReference) expr);
+        }
         throw new IllegalArgumentException("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
     }
     
@@ -134,12 +143,34 @@ public class SaxonTranslator {
         return new PathExpression(lq, rq);
     }
     
+    private AbstractExpression exprFor (TailExpression expr) {
+        return new Subsequence (exprFor (expr.getBaseExpression()), new LiteralExpression(expr.getStart()));
+    }
+    
+    private AbstractExpression exprFor (LetExpression let) {
+        /*
+        StructuredQName var = let.getVariableQName();
+        Expression seq = let.getSequence();
+        Expression returns = let.getAction();
+        return new Let (qnameFor(var), exprFor(seq), exprFor(returns));
+        */
+        // In XPath, inline all variable references:
+        return exprFor (let.getAction());
+    }
+    
+    private AbstractExpression exprFor (LocalVariableReference var) {
+        // return new Variable (qnameFor (var.getBinding().getVariableQName()));
+        // in XQuery this could be bound to a for expression, or another variable, etc.
+        // In XPath, inline all variable references:
+        LetExpression binding = (LetExpression) var.getBinding();
+        return exprFor (binding.getSequence());
+    }
+    
     private static final StructuredQName itemAtQName = new StructuredQName("", NamespaceConstant.SAXON, "item-at");
     
     private AbstractExpression exprFor (FunctionCall funcall) {
         if (funcall.getFunctionName().equals(itemAtQName)) {
-            return new Predicate (exprFor (funcall.getArguments()[0]), 
-                    exprFor(funcall.getArguments()[1]));
+            return new Subsequence(exprFor (funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
         }
         if (functionEqualsBuiltin(funcall, "reverse")) {
             // Saxon wraps a call to reverse() around reverse axis expressions; its axis expression
@@ -153,6 +184,16 @@ public class SaxonTranslator {
                 // to an appropriate xpath syntax 
                 return new Sequence (exprFor (arg));
             }        
+        }
+        if (funcall.getFunctionName().equals(FunCall.subsequenceQName)) {
+            if (funcall.getNumberOfArguments() == 2) {
+                return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
+            } else {
+                if (funcall.getNumberOfArguments() != 3) {
+                    throw new LuxException ("call to subsequence has " + funcall.getNumberOfArguments() + " arguments?");                    
+                }
+                return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), exprFor(funcall.getArguments()[2]));
+            }
         }
         Expression[] args = funcall.getArguments();
         AbstractExpression[] aargs = new AbstractExpression[args.length];
@@ -373,26 +414,26 @@ public class SaxonTranslator {
         default: throw new IllegalArgumentException("Unsupported operator: " + op);
         }
     }
-    
+
     private AbstractExpression exprFor (FirstItemExpression expr) {
-        return new Predicate (exprFor (expr.getBaseExpression()), new LiteralExpression (1));
+        return new Subsequence (exprFor (expr.getBaseExpression()), LiteralExpression.ONE, LiteralExpression.ONE);
     }
-    
+
     private AbstractExpression exprFor (LastItemExpression expr) {
-        return new Predicate (exprFor (expr.getBaseExpression()), new FunCall (new QName("last"), ValueType.VALUE));
+        return new Subsequence (exprFor (expr.getBaseExpression()), FunCall.LastExpression, LiteralExpression.ONE);
     }
-    
+
     private AbstractExpression exprFor (NegateExpression expr) {
         return new UnaryMinus(exprFor (expr.getBaseExpression()));
     }
-    
+
     /*
     private AbstractExpression exprFor (CastExpression expr) {
         
     }
     */
     
-    // UnaryExpression includes First/LastItemFilters 
+    // unused? UnaryExpression includes First/LastItemFilters and NegateExpression - anything else?
     // also unary -/+ ?
     private AbstractExpression exprFor (UnaryExpression expr) {
         // DocumentSorter does not need representation

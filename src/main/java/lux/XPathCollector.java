@@ -6,6 +6,7 @@ import java.io.StringReader;
 import lux.api.QueryStats;
 import lux.api.ValueType;
 import lux.xml.XmlBuilder;
+import net.sf.saxon.s9api.XdmAtomicValue;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
@@ -59,6 +60,8 @@ public class XPathCollector extends Collector {
 
     @Override
     public void collect(int docnum) throws IOException {
+        
+        long t = System.nanoTime();
         ++ docCount;
         if (isCounting && isMinimal) {
             return;
@@ -66,17 +69,18 @@ public class XPathCollector extends Collector {
         if (docCount < start) {
             return;
         }
-            
-        long t = System.nanoTime();
-        
+        long t1 = System.nanoTime();
         String xmlFieldName = "xml_text";
         Document document = reader.document(docnum, new SingleFieldSelector(xmlFieldName));
         String xml = document.get(xmlFieldName);
         Object doc;
         doc = builder.build(new StringReader (xml));
         results.add (doc);
-        t = System.nanoTime() - t;
-        queryStats.collectionTime += t;
+        if (queryStats != null) {
+            long t2 = System.nanoTime();
+            queryStats.retrievalTime += (t2 - t1);
+            queryStats.collectionTime += (t2 - t);
+        }
         if (results.size() >= size) {
             throw new ShortCircuitException();
         }
@@ -99,9 +103,9 @@ public class XPathCollector extends Collector {
     public ResultList<?> getResults() {
         if (isCounting && results.size() == 0) {
             if (isMinimal) {
-                results.add(Double.valueOf(docCount));
+                results.add(new XdmAtomicValue(docCount));
             } else {
-                results.add(Double.valueOf(resultCount));
+                results.add(new XdmAtomicValue(resultCount));
             }
         }            
         return results;

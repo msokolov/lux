@@ -15,7 +15,8 @@ public abstract class AbstractExpression implements Visitable {
         PathExpression, PathStep, Predicate, Binary, SetOperation,
         // these are types of Binary: we'll split them out when we need to
         // SetOperation, Comparison, AtomicComparison, MathOperation,
-        Literal, Root, Dot, FunctionCall, Sequence, UnaryMinus            
+        Literal, Root, Dot, FunctionCall, Sequence, UnaryMinus, Subsequence,
+        Let, Variable
     };
 
     private final Type type;
@@ -34,8 +35,11 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     public void acceptSubs (ExpressionVisitor visitor) {
-        for (AbstractExpression sub : getSubs()) {
-            sub.accept (visitor);
+        for (int i = 0; i < subs.length; i++) {
+            AbstractExpression sub = subs[i].accept (visitor);
+            if (sub != subs[i]) {
+                subs[i]= sub;
+            }
         }
     }
 
@@ -52,9 +56,20 @@ public abstract class AbstractExpression implements Visitable {
     */
     public abstract String toString();
 
+    /**
+     * @return whether this expression is a Root or a PathExpression beginning with a Root (/).
+     */
     public boolean isAbsolute() {
         return false;
     }
+    
+    /**
+     * @return whether this expression is emptiness- (or existence-) preserving.
+     * That is, it is empty() iff all its subs are empty().
+     */
+//    public boolean isExistential () {
+//        
+//    }
 
     /** 
      * If this has a root expression, replace it with the function call expression

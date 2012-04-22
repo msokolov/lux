@@ -35,9 +35,9 @@ public enum ValueType {
         if (other == VALUE)
             return true;
         if (this.isAtomic)
-            return other == ATOMIC || other == DOCUMENT;
+            return other == ATOMIC;
         if (this.isNode)
-            return other == NODE || other == DOCUMENT;            
+            return other == NODE;            
         return false;
     }
 

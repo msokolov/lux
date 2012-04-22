@@ -11,17 +11,21 @@ import lux.SearchTest;
 import lux.XPathQuery;
 import lux.api.Evaluator;
 import lux.api.LuxException;
+import lux.api.QueryStats;
 import lux.api.ResultSet;
-import lux.api.ValueType;
 import lux.saxon.Saxon;
 import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
+import lux.saxon.UnOptimizer;
+import lux.xpath.AbstractExpression;
 import net.sf.saxon.expr.Expression;
+import net.sf.saxon.s9api.ItemType;
+import net.sf.saxon.s9api.ItemTypeFactory;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmNodeKind;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -29,7 +33,7 @@ import org.junit.Test;
 /**
  * Learns discriminative XPath expressions 
  */
-public class Learner extends SearchBase {
+public abstract class Learner extends SearchBase {
     
     protected static HashMap<String,Integer> termCounts = new HashMap<String,Integer>();
     protected static int totalTermFreq;
@@ -94,15 +98,22 @@ public class Learner extends SearchBase {
         //evalGenerated (saxon, false);
     }
     
-    @Test @Ignore
+    @Test
     public void testSearchGenerated () {
         // evaluate all of a first query generation, running queries against Lucene.
         Saxon saxon = new Saxon();
         saxon.setContext(new SaxonContext(searcher));        
-        //evalGenerated (saxon, true);
+        evalGenerated (saxon, true);
     }
     
-    /*
+    /**
+     * execute a batch of generated queries (depth=2, breadth=2) using some terms and element names drawn from the 
+     * data set.  For each one, compare the results against unoptimized results (using *:* in place
+     * of all the queries in lux:search).  Also compare expected document counts retrieved from the database
+     * for minimal queries returning documents.
+     * @param saxon
+     * @param validateResults
+     */
     private void evalGenerated (Saxon saxon, boolean validateResults) {
         ExprGen gen = new ExprGen(termCounts.keySet().toArray(new String[0]), elementCounts.keySet().toArray(new String[0]), 
                     new Random(), saxon, 2, 2);
@@ -117,11 +128,10 @@ public class Learner extends SearchBase {
         int singletons = 0;
         int minimal_correct = 0;
         int minimal_incorrect = 0;
+        ItemTypeFactory itemTypeFactory = new ItemTypeFactory(saxon.getProcessor());
+        ItemType documentType = itemTypeFactory.getNodeKindTest(XdmNodeKind.DOCUMENT);
+        UnOptimizer unoptimizer = new UnOptimizer();
         for (Expression expr : breeder) {
-            // filter out expressions that don't depend on anything; they are constant, effectively
-            if (expr.computeDependencies() == 0)
-                // TODO: optimize this when evaluating
-                continue;
             ++count;
             String exprString = expr.toString().replaceAll("lastItem(.*)","($1)[last()]");
             SaxonExpr saxonExpr=null;
@@ -134,39 +144,52 @@ public class Learner extends SearchBase {
             }
             try {
                 ResultSet<?> result = saxon.evaluate(saxonExpr);
-                boolean isDocQuery = saxonExpr.getXPathQuery().getResultType().equals(ValueType.DOCUMENT);
+                boolean isDocQuery = documentType.subsumes(saxonExpr.getXPathExecutable().getResultItemType());
                 int ndocs = 0;
-                int nresults = result.size();
-                if (nresults > 0) {
+                int resultCount = result.size();
+                if (resultCount > 0) {
                     ++nonempty;
-                    if (saxon.getQueryStats() != null) {
+                    QueryStats stats = saxon.getQueryStats();
+                    if (stats != null) {
                         ndocs = saxon.getQueryStats().docCount;
                     } else {
                         ndocs = 1;
                     }
-                    results += nresults;
-                    if (result.size() == 1) {
+                    results += resultCount;
+                    if (stats != null && ((stats.queryFacts & XPathQuery.MINIMAL) != 0) && isDocQuery) {
+                        // If we asserted this was a minimal query returning documents, the number of results should = the number of documents
+                        if (ndocs == resultCount) {
+                            ++ minimal_correct;
+                        } else {
+                            ++ minimal_incorrect;
+                        }
+                    }
+                    /*
+                     * with hindsight this test seems misguided.  It counts only resultCount=1 as properly minimal??
+                    if (resultCount == 1) {
                         singletons ++;
-                        if (saxonExpr.getXPathQuery().isMinimal() && isDocQuery) {
+                        if (saxonExpr.isMinimal() && isDocQuery) {
                             System.out.println ("minimal: " + expr);                            
                             ++minimal_correct;
                         }
                     } else {
-                        if (saxonExpr.getXPathQuery().isMinimal() && isDocQuery) {
+                        if (saxonExpr.isMinimal() && isDocQuery) {
                             ++minimal_incorrect;
                             System.out.println ("not minimal: " + expr);
                         }
                     }
+                    */
                 } else {
                     empties ++;
                 }
-                System.out.println (ndocs + " " + nresults + " " + expr);
+                System.out.println (ndocs + " " + resultCount + " " + expr);
                 docs += ndocs;
                 if (validateResults) {
-                    // FIXME: how do we force every query to be a *:*?
-                    SaxonExpr baseline = new SaxonExpr (saxonExpr.getXPathExecutable());
-                    result = saxon.evaluate(baseline);
-                    assertEquals ("result count mismatch when filtered by query: " + saxonExpr.toString(), result.size(), nresults);
+                    AbstractExpression aex = saxonExpr.getExpression();
+                    aex = unoptimizer.unoptimize(aex);
+                    SaxonExpr baseline = saxon.compile(aex.toString());
+                    ResultSet<?> baseResult = saxon.evaluate(baseline);
+                    assertEquals ("result count mismatch when filtered by query: " + saxonExpr.toString(), baseResult.size(), resultCount);
                 }
             } catch (LuxException e) {
                 //System.err.println (e.getMessage() + " in " + expr);
@@ -184,7 +207,7 @@ public class Learner extends SearchBase {
         System.out.println ("there were " + minimal_incorrect + " incorrect predictions of single-result queries");
         assertEquals (count, nonempty + empties + compilationErrors + runtimeErrors);
     }
-*/
+
     @Override
     public Evaluator getEvaluator() {        
         Evaluator eval = new Saxon();

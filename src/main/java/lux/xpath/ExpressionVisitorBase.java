@@ -3,47 +3,73 @@ package lux.xpath;
 public abstract class ExpressionVisitorBase extends ExpressionVisitor {
 
     @Override
-    public void visit(PathStep step) {
+    public AbstractExpression visit(PathStep step) {
+        return step;
     }
 
     @Override
-    public void visit(PathExpression path) {
+    public AbstractExpression visit(PathExpression path) {
+        return path;
+    }
+    
+    @Override
+    public AbstractExpression visit(Let let) {
+        return let;
+    }
+    
+    @Override
+    public AbstractExpression visit(Variable var) {
+        return var;
     }
 
     @Override
-    public void visit(Root root) {
+    public AbstractExpression visit(Root root) {
+        return root;
     }
 
     @Override
-    public void visit(Dot dot) {
+    public AbstractExpression visit(Dot dot) {
+        return dot;
     }
 
     @Override
-    public void visit(BinaryOperation op) {
+    public AbstractExpression visit(BinaryOperation op) {
+        return op;
     }
 
     @Override
-    public void visit(FunCall func) {
+    public AbstractExpression visit(FunCall func) {
+        return func;
     }
 
     @Override
-    public void visit(LiteralExpression literal) {
+    public AbstractExpression visit(LiteralExpression literal) {
+        return literal;
     }
 
     @Override
-    public void visit(Predicate predicate) {
+    public AbstractExpression visit(Predicate predicate) {
+        return predicate;
     }
 
     @Override
-    public void visit(Sequence predicate) {
+    public AbstractExpression visit(Sequence seq) {
+        return seq;
+    }
+    
+    @Override
+    public AbstractExpression visit(Subsequence subseq) {
+        return subseq;
     }
 
     @Override
-    public void visit(SetOperation predicate) {
+    public AbstractExpression visit(SetOperation setop) {
+        return setop;
     }
 
     @Override
-    public void visit(UnaryMinus predicate) {
+    public AbstractExpression visit(UnaryMinus unaryMinus) {
+        return unaryMinus;
     }
 
 }

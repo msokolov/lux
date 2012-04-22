@@ -34,6 +34,10 @@ public abstract class Evaluator {
         return queryStats;
     }
     
+    public void setQueryStats (QueryStats stats) {
+        queryStats = stats;
+    }
+    
     public void setContext(Context context) {
         this.context =  context;
     }

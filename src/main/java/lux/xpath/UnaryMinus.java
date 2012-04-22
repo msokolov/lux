@@ -16,8 +16,8 @@ public class UnaryMinus extends AbstractExpression {
         return '-' + subs[0].toString();
     }
 
-    public void accept(ExpressionVisitor visitor) {
+    public AbstractExpression accept(ExpressionVisitor visitor) {
         subs[0].accept(visitor);
-        visitor.visit(this);
+        return visitor.visit(this);
     }
 }

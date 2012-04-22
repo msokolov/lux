@@ -19,9 +19,9 @@ public class Predicate extends AbstractExpression {
         return subs[1];
     }
     
-    public void accept(ExpressionVisitor visitor) {
+    public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
-        visitor.visit(this);
+        return visitor.visit(this);
     }
     
     public boolean isAbsolute () {

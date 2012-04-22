@@ -1,7 +1,6 @@
 package lux.saxon;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 import lux.ResultList;
 import lux.ShortCircuitException;
@@ -9,59 +8,52 @@ import lux.XPathCollector;
 import lux.XPathQuery;
 import lux.api.LuxException;
 import lux.api.QueryStats;
+import lux.api.ValueType;
 import lux.xpath.FunCall;
-import net.sf.saxon.expr.Expression;
-import net.sf.saxon.expr.LastPositionFinder;
-import net.sf.saxon.expr.StaticProperty;
-import net.sf.saxon.expr.XPathContext;
-import net.sf.saxon.functions.Collection;
-import net.sf.saxon.functions.StandardFunction;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
-import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.s9api.ExtensionFunction;
 import net.sf.saxon.s9api.ItemType;
 import net.sf.saxon.s9api.OccurrenceIndicator;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.SequenceType;
+import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmEmptySequence;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.LookaheadIterator;
 
+import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.util.Version;
 
 /**
  * Executes a Lucene search query and returns documents.
  * 
- * Saxon properties are similar to those for Collection, so just extend that.
- * 
- * The Query is provided in the constructor, so this method is for internal use only.
- * TODO: provide an argument allowing a query to passed in as a string and parsed by Lucene's
- * query parser?
- *
+ * Saxon properties are similar to those for Collection, so just extend that.  We implement
+ * both Saxon's internal and external function api's.  It's not clear we need the internal
+ * one though?  TODO: eliminate unused code.
  */
-public class LuxSearch extends Collection implements ExtensionFunction {
+public class LuxSearch implements ExtensionFunction {
     
     private XPathQuery query;
     private final Saxon saxon;
-    private QueryStats queryStats;
 
+    // unused
+    /*
     private static final StandardFunction.Entry ENTRY = StandardFunction.makeEntry(
-            "lux:search", LuxSearch.class, 0, 0, 0, NodeKindTest.DOCUMENT,
+            "lux:search", LuxSearch.class, 0, 0, 2, NodeKindTest.DOCUMENT,
             StaticProperty.ALLOWS_ZERO, StandardFunction.CORE);
+    */
     
-    public LuxSearch (XPathQuery query, Saxon saxon) {
+    protected LuxSearch (XPathQuery query, Saxon saxon) {
         this.query = query;
         this.saxon = saxon;
-        queryStats = new QueryStats();
-        setDetails(ENTRY);
-        setFunctionName(new StructuredQName("lux", FunCall.LUX_NAMESPACE,  "search"));
-        setArguments(new Expression[0]);
+        //setDetails(ENTRY);
+        //setFunctionName(new StructuredQName("lux", FunCall.LUX_NAMESPACE,  "search"));
+        //setArguments(new Expression[0]);
     }
     
     public LuxSearch (Saxon saxon) {
@@ -76,6 +68,7 @@ public class LuxSearch extends Collection implements ExtensionFunction {
      * expression to its result.
      * @throws XPathException
      */
+    /*
     @SuppressWarnings("rawtypes") @Override
     public SequenceIterator<Item> iterate(final XPathContext context) throws XPathException {        
         return new ResultIterator (doSearch (saxon.getContext()));
@@ -83,20 +76,39 @@ public class LuxSearch extends Collection implements ExtensionFunction {
     
     @SuppressWarnings("rawtypes") @Override
     public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
-        if (getNumberOfArguments() != 1) {
+        if (getNumberOfArguments() == 0 || getNumberOfArguments() > 2) {
             throw new XPathException ("wrong number of arguments");
         }
         Item arg = arguments[0].next();        
         if (arg == null) {
             throw new XPathException ("search arg is null");
         }
-        query = parseQuery (arg.getStringValue());
+        String queryString = arg.getStringValue();
+        long facts=0;
+        if (getNumberOfArguments() >= 2) {
+            IntegerValue num  = (IntegerValue) arguments[1].next();
+            facts = num.longValue();
+        }
+        try {
+            query = makeXPathQuery(queryString, facts);
+        } catch (ParseException e) {
+            throw new XPathException ("Failed to parse lucene query " + queryString, e);
+        }
         return iterate (context);
     }
-
-    private XPathQuery parseQuery(String stringValue) {
-        // TODO - parse lucene query
-        return null;
+*/
+    private XPathQuery makeXPathQuery(String queryString, long facts) throws ParseException {
+        Query q;
+        q = getQueryParser().parse(queryString);
+        return XPathQuery.getQuery(q, facts, ValueType.DOCUMENT);
+    }
+    
+    private QueryParser queryParser;
+    protected QueryParser getQueryParser () {
+        if (queryParser == null) {
+            queryParser = new QueryParser (Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
+        }
+        return queryParser;
     }
     
     private ResultList<XdmItem> doSearch(SaxonContext context) {
@@ -105,7 +117,8 @@ public class LuxSearch extends Collection implements ExtensionFunction {
         long t = System.nanoTime();
         IndexSearcher searcher = context.getSearcher(); 
         System.out.println ("executing xpath query: " + query);
-        XPathCollector collector = new XPathCollector (query, saxon.getBuilder(), queryStats);
+        XPathCollector collector = saxon.getCollector(query);
+        QueryStats stats = saxon.getQueryStats();
         try {
             searcher.search (query.getQuery(), collector);
         } catch (IOException e) {
@@ -113,17 +126,18 @@ public class LuxSearch extends Collection implements ExtensionFunction {
         } catch (ShortCircuitException e) {
             // we didn't need to collect all the results
         }
-        queryStats.totalTime = System.nanoTime() - t;
-        queryStats.docCount = collector.getDocCount();
-        queryStats.query = query.getQuery().toString();
+        if (stats != null) {
+            stats.totalTime += System.nanoTime() - t;
+            stats.docCount += collector.getDocCount();
+            stats.query = query.getQuery().toString();
+        }
         return (ResultList<XdmItem>) collector.getResults();
     }
-
     
     public Query getQuery() {
         return query;
     }
-    
+    /*
     @SuppressWarnings("rawtypes")
     class ResultIterator implements LookaheadIterator<Item>, LastPositionFinder<Item> {
         
@@ -177,7 +191,8 @@ public class LuxSearch extends Collection implements ExtensionFunction {
         }
         
     }
-
+    */
+    
     public QName getName() {
         return new QName("lux", FunCall.LUX_NAMESPACE, "search");
     }
@@ -188,12 +203,24 @@ public class LuxSearch extends Collection implements ExtensionFunction {
     }
 
     public SequenceType[] getArgumentTypes() {
-        return new SequenceType[] { SequenceType.makeSequenceType(ItemType.STRING, OccurrenceIndicator.ONE) };
+        return new SequenceType[] { 
+                SequenceType.makeSequenceType(ItemType.STRING, OccurrenceIndicator.ONE),
+                SequenceType.makeSequenceType(ItemType.INTEGER, OccurrenceIndicator.ZERO_OR_ONE)
+                };
     }
 
     public XdmValue call(XdmValue[] arguments) throws SaxonApiException {
-        query = parseQuery (arguments[0].itemAt(0).getStringValue());
-        ResultList<XdmItem> results =  doSearch (saxon.getContext());
+        String queryString = arguments[0].itemAt(0).getStringValue();
+        long facts = 0;
+        if (arguments.length > 1) {
+            facts = ((XdmAtomicValue)(arguments[1].itemAt(0))).getLongValue();
+        }
+        try {
+            query = makeXPathQuery(queryString, facts);
+        } catch (ParseException e) {
+            throw new SaxonApiException ("Failed to parse lucene query " + queryString, e);
+        }
+        ResultList<XdmItem> results = doSearch (saxon.getContext());
         if (results.isEmpty()) {
             return XdmEmptySequence.getInstance();
         }

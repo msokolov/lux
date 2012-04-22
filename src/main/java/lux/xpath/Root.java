@@ -15,8 +15,8 @@ public class Root extends AbstractExpression {
         return true;
     }
 
-    public void accept(ExpressionVisitor visitor) {
-        visitor.visit(this);
+    public AbstractExpression accept(ExpressionVisitor visitor) {
+        return visitor.visit(this);
     }
     
     /** 

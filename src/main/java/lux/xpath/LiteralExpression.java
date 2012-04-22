@@ -23,6 +23,8 @@ public class LiteralExpression extends AbstractExpression {
             valueType = ValueType.VALUE;
         }
     }
+
+    public static final LiteralExpression ONE = new LiteralExpression (1);
     
     private static ValueType computeType (Object value) {
         // TODO: date, dateTime, duration
@@ -60,7 +62,20 @@ public class LiteralExpression extends AbstractExpression {
         return value.toString();
     }
 
-    public void accept(ExpressionVisitor visitor) {
-        visitor.visit(this);
+    public AbstractExpression accept(ExpressionVisitor visitor) {
+        return visitor.visit(this);
+    }
+    
+    @Override 
+    public boolean equals (Object other) {
+        if (other instanceof LiteralExpression) {
+            return value.equals(((LiteralExpression)other).value);
+        }
+        return false;
+    }
+    
+    @Override
+    public int hashCode () {
+        return value.hashCode();
     }
 }

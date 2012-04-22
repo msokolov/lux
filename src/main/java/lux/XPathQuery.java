@@ -40,9 +40,10 @@ public class XPathQuery extends Query {
     }
 
     /** bitmask holding facts proven about the query; generally these facts enable different
-     * optimizations.
+     * optimizations.  In the comments, we refer to the "result type" of the query meaning the
+     * result type of the xpath expression that the query was generated from.
      */
-    private int facts;
+    private long facts;
     
     /**
      * A query is exact iff its xpath expression returns exactly one value per document, and the
@@ -56,25 +57,55 @@ public class XPathQuery extends Query {
      */
     public static final int MINIMAL=0x00000002;
     
+
+    public static final int RESULT_TYPE_FLAGS = 0x0000001C;
+    
     /**
      * A query is counting if its expression returns the count of the results of the lucene query
      */
-    public static final int COUNTING=0x00000004;
+    public static final int COUNTING=0x00000004; 
+    
+    /**
+     * A query is boolean_true if its result type is boolean, and the existence of a single query result indicates a 'true()' value
+     */
+    public static final int BOOLEAN_TRUE=0x00000008;
+
+    /**
+     * A query is boolean_false if its result type is boolean, and the existence of a single query result indicates a 'false()' value
+     */
+    public static final int BOOLEAN_FALSE=0x0000000C;
+    
+    /**
+     * A query has document results if its result type is document-node()
+     */
+    public static final int DOCUMENT_RESULTS=0x00000010;
     
     // TODO -- represent not() and exists() using count() > 0
     
     /**
      * @param expr an XPath 2.0 expression
      * @param query a Lucene query
-     * @param facts a bitmask with interesting facts about this query
+     * @param resultFacts a bitmask with interesting facts about this query
      * @param valueType the type of results returned by the xpath expression, as specifically as 
      * can be determined.
      */
-    public XPathQuery(Expression expr, Query query, int facts, ValueType valueType) {
+    protected XPathQuery(Expression expr, Query query, long resultFacts, ValueType valueType) {
         this.expr = expr;
         this.query = query;
-        this.valueType = valueType;
-        this.facts = facts;
+        this.facts = resultFacts;
+        setType (valueType);
+    }
+    
+    public static XPathQuery getQuery (Query query, long resultFacts, ValueType valueType) {
+        if (query instanceof MatchAllDocsQuery && resultFacts == MINIMAL) {
+            if (valueType == ValueType.DOCUMENT) {
+                return MATCH_ALL;
+            }
+            if (valueType == ValueType.NODE) {
+                return MATCH_ALL_NODE;
+            }
+        }
+        return new XPathQuery (null, query, resultFacts, valueType);
     }
     
     public Query getQuery() {
@@ -107,15 +138,19 @@ public class XPathQuery extends Query {
     }
 
     public final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT);
+    
+    public final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.NODE);
 
     public final static XPathQuery UNINDEXED = new XPathQuery(null, new MatchAllDocsQuery(), 0, ValueType.VALUE);
 
     public final static XPathQuery MATCH_NONE = new XPathQuery(null, null, 0, ValueType.VALUE);
     
+    // TODO: merge w/constructor and make immutable final
     static {
         MATCH_ALL.immutable = true;
         UNINDEXED.immutable = true;
         MATCH_NONE.immutable = true;
+        MATCH_ALL_NODE.immutable = true;
     }
 
     /**
@@ -145,7 +180,7 @@ public class XPathQuery extends Query {
     public XPathQuery combine(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type) {
         boolean negate = occur == Occur.MUST_NOT || precursorOccur == Occur.MUST_NOT;
         Query result = null;
-        int resultFacts = 0;
+        long resultFacts = 0;
         if (precursor.isEmpty()) {
             result = this.query;
             resultFacts = this.facts; 
@@ -156,7 +191,7 @@ public class XPathQuery extends Query {
         }
         // FIXME: result facts - do we need to combine facts?
         if (result != null && ! negate) {
-            return new XPathQuery(expr, result, resultFacts, type);
+            return XPathQuery.getQuery(result, resultFacts, type);
         }
         BooleanQuery bq = new BooleanQuery();
         if (result != null) {
@@ -189,8 +224,8 @@ public class XPathQuery extends Query {
         return new XPathQuery(expr, result, combineFacts(facts, precursor.facts), type);
     }
     
-    private static final int combineFacts (int f1, int f2) {
-        return f1 & f2;
+    private static final long combineFacts (long facts2, long facts3) {
+        return facts2 & facts3;
     }
 
     /**
@@ -203,7 +238,7 @@ public class XPathQuery extends Query {
     }
 
     public boolean isEmpty() {
-        return this == MATCH_ALL || this == MATCH_NONE;
+        return this == MATCH_ALL || this == MATCH_NONE || this == MATCH_ALL_NODE;
     }
     
     public String toString () {
@@ -269,13 +304,21 @@ public class XPathQuery extends Query {
       return (facts & fact) == fact;
   }
 
-  public int getFacts() {
+  public long getFacts() {
       return facts;
   }
 
   public void setType(ValueType type) {
       if (immutable) throw new LuxException ("attempt to modify immutable query");
       valueType = type;
+      facts &= (~RESULT_TYPE_FLAGS);
+      if (valueType == ValueType.DOCUMENT) {
+          facts |= DOCUMENT_RESULTS;
+      }
+      else if (valueType == ValueType.BOOLEAN) {
+          facts |= BOOLEAN_TRUE;
+      }
+
   }
   
   public void setExpression (Expression expr) {

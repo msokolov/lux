@@ -26,4 +26,15 @@ public class QueryStats {
      * documents for evaluation.
      */
     public String query;
+    
+    /**
+     * A record of the query's facts.  If multiple queries were evaluated, the facts are combined
+     * using bitwise AND.
+     */
+    public long queryFacts;
+    
+    /**
+     * time spent retrieving and parsing documents
+     */
+    public long retrievalTime;
 }
