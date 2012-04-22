@@ -157,12 +157,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     public AbstractExpression visit(FunCall funcall) {
         QName name = funcall.getQName();
-        if (name.equals(FunCall.countQName)) {
-            FunCall counter = optimizeCount (funcall);
-            if (counter != funcall) {
-                return counter;
-            }
-            // if count(arg) couldn't be converted to lux:count(arg), then maybe apply search to arg:
+        // Try special function optimizations, like count(), exists(), etc.
+        FunCall luxfunc = optimizeFunCall (funcall);
+        if (luxfunc != funcall) {
+            return luxfunc;
         }
         // see if the function args can be converted to searches.
         injectSearch(funcall, 0);
@@ -202,20 +200,58 @@ public class PathOptimizer extends ExpressionVisitorBase {
         fnArgParity.put("not", Occur.SHOULD);
     };
     
-    public FunCall optimizeCount (FunCall count) {
-        if (count.getSubs()[0].isAbsolute()) {
-            XPathQuery query = pop();
-            if (query.isMinimal() && query.getResultType().is(ValueType.DOCUMENT)) {
-                // can only use lux:count when we are sure that its argument expression
-                // is a completely indexed expression
-                push (MATCH_ALL_QUERY);
-                return new FunCall (FunCall.luxCountQName, ValueType.INT, 
-                        new LiteralExpression (query.toString()),
-                        new LiteralExpression (query.getFacts() | XPathQuery.COUNTING));                
-            }
-            push (query);
+    public FunCall optimizeFunCall (FunCall funcall) {
+        if (funcall.getSubs().length == 0 || ! funcall.getSubs()[0].isAbsolute()) {
+            return funcall;
         }
-        return count;
+        XPathQuery query = pop();
+        // can only use these function optimizations when we are sure that its argument expression
+        // is properly indexed
+        if (query.isMinimal()) {
+            // apply no restrictions to the enclosing scope:
+            push (MATCH_ALL_QUERY);
+            int functionFacts = 0;
+            ValueType returnType = null;
+            QName qname = null;
+            if (funcall.getQName().equals(FunCall.countQName) && query.getResultType().is(ValueType.DOCUMENT)) {
+                functionFacts = XPathQuery.COUNTING;
+                returnType = ValueType.INT;
+                qname = FunCall.luxCountQName;
+            } 
+            else if (funcall.getQName().equals(FunCall.existsQName)) {
+                functionFacts = XPathQuery.BOOLEAN_TRUE;
+                returnType = ValueType.BOOLEAN;
+                qname = FunCall.luxExistsQName;
+            }
+            else if (funcall.getQName().equals(FunCall.emptyQName)) {
+                functionFacts = XPathQuery.BOOLEAN_FALSE;
+                returnType = ValueType.BOOLEAN;
+                qname = FunCall.luxExistsQName;
+            }
+            if (qname != null) {
+                long facts;
+                if (query.isImmutable()) {
+                    facts = functionFacts | XPathQuery.MINIMAL;
+                } else {
+                    query.setType(ValueType.INT);
+                    query.setFact(functionFacts, true);
+                    facts = query.getFacts();
+                }
+                return new FunCall (qname, returnType, 
+                        new LiteralExpression (query.toString()),
+                        new LiteralExpression (facts));
+            }
+        }
+        // No optimization, but indicate that this function returns an int?
+        // TODO: if we really need it, move this logic up to the caller - it has nothing
+        // to do with optimizing this funcall.
+        if (query.isImmutable()) {
+            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), ValueType.INT);
+        } else {
+            query.setType(ValueType.INT);
+        }
+        push (query);
+        return funcall;
     }
     
     private static final XPathQuery combineQueries(XPathQuery lq, Occur loccur, XPathQuery rq, Occur roccur, ValueType valueType) {

@@ -57,14 +57,13 @@ public class XPathQuery extends Query {
      */
     public static final int MINIMAL=0x00000002;
     
-
-    public static final int RESULT_TYPE_FLAGS = 0x0000001C;
-    
     /**
      * A query is counting if its expression returns the count of the results of the lucene query
      */
-    public static final int COUNTING=0x00000004; 
+    public static final int COUNTING=0x00000004;
     
+    public static final int RESULT_TYPE_FLAGS = 0x00000018;
+
     /**
      * A query is boolean_true if its result type is boolean, and the existence of a single query result indicates a 'true()' value
      */
@@ -73,12 +72,12 @@ public class XPathQuery extends Query {
     /**
      * A query is boolean_false if its result type is boolean, and the existence of a single query result indicates a 'false()' value
      */
-    public static final int BOOLEAN_FALSE=0x0000000C;
+    public static final int BOOLEAN_FALSE=0x00000010;
     
     /**
      * A query has document results if its result type is document-node()
      */
-    public static final int DOCUMENT_RESULTS=0x00000010;
+    public static final int DOCUMENT_RESULTS=0x00000018;
     
     // TODO -- represent not() and exists() using count() > 0
     

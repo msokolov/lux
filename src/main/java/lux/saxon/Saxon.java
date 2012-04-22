@@ -43,6 +43,7 @@ public class Saxon extends Evaluator  {
         processor = new Processor (config);
         processor.registerExtensionFunction(new LuxSearch(this));
         processor.registerExtensionFunction(new LuxCount(this));
+        processor.registerExtensionFunction(new LuxExists(this));
         xpathCompiler = processor.newXPathCompiler();
         xpathCompiler.declareNamespace("lux", "lux");
         saxonBuilder = new SaxonBuilder();

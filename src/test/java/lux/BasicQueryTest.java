@@ -75,6 +75,12 @@ public class BasicQueryTest {
 
         MockQuery (String queryString, long facts) {
             super (null, null, facts, ValueType.VALUE);
+            long typecode = (facts & XPathQuery.RESULT_TYPE_FLAGS); 
+            if (typecode == XPathQuery.BOOLEAN_FALSE || typecode == XPathQuery.BOOLEAN_TRUE) {
+                setType (ValueType.BOOLEAN);
+            } else if (typecode == XPathQuery.DOCUMENT_RESULTS) {
+                setType (ValueType.DOCUMENT);
+            }
             this.queryString = queryString;
         }
 
@@ -200,12 +206,9 @@ public class BasicQueryTest {
     }
 
     @Test public void testPositionalPredicate () throws Exception {
-        // FIXME: when running the whole test suite this fails.  It looks like
-        // the immutable MATCH_ALL query is having its return type modified?
         assertQuery ("//foo/bar[1]", 0, ValueType.ELEMENT, Q_FOO_BAR);
         assertQuery ("/descendant-or-self::bar[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_BAR);
-        assertQuery ("//bar[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_BAR);
-        
+        assertQuery ("//bar[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_BAR);        
         assertQuery ("//bar[last()]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_BAR);
 
         // not minimal, since there may not be a second bar element
@@ -267,14 +270,29 @@ public class BasicQueryTest {
         assertQuery ("count(//foo/bar/ancestor::document-node())", 0, ValueType.ATOMIC, Q_FOO_BAR);
     }
     
-    @Test public void testExistenceFunctions() throws Exception {
+    @Test public void testExistence() throws Exception {
         assertQuery ("exists(/)", XPathQuery.MINIMAL, ValueType.BOOLEAN, "*:*");
         assertQuery ("exists(//foo)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("exists(//foo) and exist(//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_OR_BAR);
+        assertQuery ("exists(//foo/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("exists(//foo) and exists(//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO, Q_BAR);
         assertQuery ("exists(//foo/root()//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
-        assertQuery ("exists(//foo/root() intersect //bar/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
+        // TODO: merge queries such as this into one:
+        // assertQuery ("exists(//foo/root() intersect //bar/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
+        assertQuery ("exists((/)[.//foo and .//bar])", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
     }
-
+    
+    @Test public void testNonexistence() throws Exception {
+        assertQuery ("empty(/)", XPathQuery.MINIMAL, ValueType.BOOLEAN, "*:*");
+        assertQuery ("empty(//foo)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("empty(//foo/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("empty(//foo) and empty(//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO, Q_BAR);
+        assertQuery ("empty(//foo/root()//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
+        assertQuery ("empty((/)[.//foo and .//bar])", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
+    }
+    
+    // TODO: test empty()
+    // TODO: optimize not() expressions involving exists() and empty()
+    
     @Test public void testPredicateNegation () throws Exception {
         assertQuery ("//foo[not(bar)]", 0, ValueType.ELEMENT, Q_FOO);
         assertQuery ("//foo[count(bar) = 0]", 0, ValueType.ELEMENT, "lux_elt_name_ms:foo");

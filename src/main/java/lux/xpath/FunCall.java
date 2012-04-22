@@ -30,10 +30,12 @@ public class FunCall extends AbstractExpression {
     public static QName luxCountQName = new QName (LUX_NAMESPACE, "count", "lux");
     public static final QName luxExistsQName = new QName (LUX_NAMESPACE, "exists", "lux");
     public static final QName notQName = new QName (FN_NAMESPACE, "not", "");
+    public static final QName emptyQName = new QName (FN_NAMESPACE, "empty", "");
     public static final QName rootQName = new QName (FN_NAMESPACE, "root", "");
     public static final QName lastQName = new QName (FN_NAMESPACE, "last", "");
     public static final QName subsequenceQName = new QName (FN_NAMESPACE, "subsequence", "");
     public static final QName countQName = new QName (FN_NAMESPACE, "count", "");
+    public static final QName existsQName = new QName (FN_NAMESPACE, "exists", "");
 
     // represent last() in Subsequence(foo, last()); ie foo[last()].
     public static final FunCall LastExpression = new FunCall (lastQName, ValueType.VALUE);    
