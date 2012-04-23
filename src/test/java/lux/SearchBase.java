@@ -37,7 +37,7 @@ public abstract class SearchBase {
     private static final Version luceneVersion = Version.LUCENE_34;
     protected static int totalDocs;
     protected static int QUERY_EXACT = 0x00000001;
-    protected static int QUERY_FILTER_FREE = 0x00000002;
+    protected static int QUERY_NO_DOCS = 0x00000002;
     protected static int QUERY_MINIMAL = 0x00000004;
     protected static int QUERY_CONSTANT = 0x00000008;
 

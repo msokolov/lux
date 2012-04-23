@@ -43,7 +43,7 @@ public class XPathQuery extends Query {
      * optimizations.  In the comments, we refer to the "result type" of the query meaning the
      * result type of the xpath expression that the query was generated from.
      */
-    private long facts;
+    protected long facts;
     
     /**
      * A query is exact iff its xpath expression returns exactly one value per document, and the
@@ -105,6 +105,22 @@ public class XPathQuery extends Query {
             }
         }
         return new XPathQuery (null, query, resultFacts, valueType);
+    }
+    
+    public static XPathQuery getQuery (Query query, long resultFacts) {
+        return new XPathQuery (null, query, resultFacts, typeFromFacts(resultFacts));
+    }
+    
+    public static ValueType typeFromFacts (long facts) {
+        long typecode = (facts & XPathQuery.RESULT_TYPE_FLAGS); 
+        if (typecode == XPathQuery.BOOLEAN_FALSE) {
+            return ValueType.BOOLEAN_FALSE;
+        } else if (typecode == XPathQuery.BOOLEAN_TRUE) {
+            return ValueType.BOOLEAN;
+        } else if (typecode == XPathQuery.DOCUMENT_RESULTS) {
+            return ValueType.DOCUMENT;
+        } 
+        return ValueType.VALUE;                
     }
     
     public Query getQuery() {
@@ -311,13 +327,16 @@ public class XPathQuery extends Query {
       if (immutable) throw new LuxException ("attempt to modify immutable query");
       valueType = type;
       facts &= (~RESULT_TYPE_FLAGS);
-      if (valueType == ValueType.DOCUMENT) {
+      if (valueType == ValueType.BOOLEAN) {
+          facts |= BOOLEAN_TRUE;         
+      }
+      else if (valueType == ValueType.BOOLEAN_FALSE) {
+          facts |= BOOLEAN_FALSE;
+      }
+      else if (valueType == ValueType.DOCUMENT) {
           facts |= DOCUMENT_RESULTS;
       }
-      else if (valueType == ValueType.BOOLEAN) {
-          facts |= BOOLEAN_TRUE;
-      }
-
+      // no other type info is stored in facts since it's not needed by search()
   }
   
   public void setExpression (Expression expr) {

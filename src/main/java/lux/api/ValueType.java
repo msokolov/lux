@@ -1,9 +1,16 @@
 package lux.api;
 
+/** A lux-specific type system.  These types correspond roughly to the XDM / XML Schema types
+ * but only include types that are (or may) be useful for optimiization, and there are some extensions,
+ * like BOOLEAN_FALSE, which is just like boolean, but takes on the opposite sense: BOOLEAN_FALSE.true==!BOOLEAN.true.
+ * @author sokolov
+ *
+ */
 public enum ValueType {
+    
     VALUE(false), DOCUMENT("document-node"), NODE("node"), ELEMENT("element"), ATTRIBUTE("attribute"), 
         TEXT("text"), COMMENT("comment"), PROCESSING_INSTRUCTION("processing-instruction"),
-        ATOMIC(true), STRING(true), INT(true), NUMBER(true), BOOLEAN(true);
+        ATOMIC(true), STRING(true), INT(true), NUMBER(true), BOOLEAN(true), BOOLEAN_FALSE(true);
 
     public final boolean isNode;
     public final boolean isAtomic;

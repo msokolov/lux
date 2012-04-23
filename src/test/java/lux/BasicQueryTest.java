@@ -60,6 +60,7 @@ public class BasicQueryTest {
                     isMinimal, extractor.queries.get(0).isFact(XPathQuery.MINIMAL));
             assertEquals ("query counting for xpath " + xpath, (facts & XPathQuery.COUNTING) != 0, 
                     extractor.queries.get(0).isFact(XPathQuery.COUNTING));
+            assertEquals ("facts don't match", facts, extractor.queries.get(0).getFacts());      
             if (type != null) {
                 if ( ! (type == ValueType.DOCUMENT || type == ValueType.BOOLEAN)) {
                     // the other types don't get passed to lux:search as facts
@@ -74,13 +75,8 @@ public class BasicQueryTest {
         private String queryString;
 
         MockQuery (String queryString, long facts) {
-            super (null, null, facts, ValueType.VALUE);
-            long typecode = (facts & XPathQuery.RESULT_TYPE_FLAGS); 
-            if (typecode == XPathQuery.BOOLEAN_FALSE || typecode == XPathQuery.BOOLEAN_TRUE) {
-                setType (ValueType.BOOLEAN);
-            } else if (typecode == XPathQuery.DOCUMENT_RESULTS) {
-                setType (ValueType.DOCUMENT);
-            }
+            super (null, null, facts, XPathQuery.typeFromFacts (facts));
+            this.facts = facts;
             this.queryString = queryString;
         }
 
@@ -144,16 +140,16 @@ public class BasicQueryTest {
         //assertQuery ("node()", MATCH_ALL, true, ValueType.NODE);
         assertQuery ("/*", XPathQuery.MINIMAL, ValueType.ELEMENT, MATCH_ALL);
         assertQuery ("/node()", XPathQuery.MINIMAL, ValueType.NODE, MATCH_ALL);
-        assertQuery ("/self::node()", XPathQuery.MINIMAL, ValueType.DOCUMENT, MATCH_ALL);
+        assertQuery ("/self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, MATCH_ALL);
         //assertQuery ("self::node()", MATCH_ALL, XPathQuery.MINIMAL);
     }
     
     @Test public void testSlash() throws Exception {
-        assertQuery ("/", XPathQuery.MINIMAL, ValueType.DOCUMENT, MATCH_ALL);
+        assertQuery ("/", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, MATCH_ALL);
     }
     
     @Test public void testElementPredicate() throws Exception {
-        assertQuery ("(/)[.//foo]", XPathQuery.MINIMAL, ValueType.DOCUMENT, Q_FOO); 
+        assertQuery ("(/)[.//foo]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_FOO); 
     }
 
     @Test public void testElementPaths () throws Exception {
@@ -178,7 +174,7 @@ public class BasicQueryTest {
     @Test public void testAttributePredicates () throws Exception {
         assertQuery ("//*[@attr]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_ATTR);
 
-        assertQuery ("(/)[.//*/@attr]", XPathQuery.MINIMAL, ValueType.DOCUMENT, Q_ATTR);        
+        assertQuery ("(/)[.//*/@attr]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_ATTR);        
     }
 
     @Test public void testElementAttributePaths () throws Exception {
@@ -196,7 +192,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testTwoElementPredicates () throws Exception {
-        assertQuery ("(/)[.//foo][.//bar]", XPathQuery.MINIMAL, ValueType.DOCUMENT, Q_FOO_BAR);
+        assertQuery ("(/)[.//foo][.//bar]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_FOO_BAR);
     }
     
     @Test public void testUnion () throws Exception {
@@ -250,11 +246,11 @@ public class BasicQueryTest {
     }
     
     @Test public void testAncestorOrSelf () throws Exception {
-        assertQuery ("/ancestor-or-self::node()", XPathQuery.MINIMAL, ValueType.DOCUMENT, "*:*");
+        assertQuery ("/ancestor-or-self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, "*:*");
     }
     
     @Test public void testSelf () throws Exception {
-        assertQuery ("/self::node()", XPathQuery.MINIMAL, ValueType.DOCUMENT, "*:*");
+        assertQuery ("/self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, "*:*");
     }
     
     @Test public void testAtomicResult () throws Exception {
@@ -271,23 +267,23 @@ public class BasicQueryTest {
     }
     
     @Test public void testExistence() throws Exception {
-        assertQuery ("exists(/)", XPathQuery.MINIMAL, ValueType.BOOLEAN, "*:*");
-        assertQuery ("exists(//foo)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("exists(//foo/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("exists(//foo) and exists(//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO, Q_BAR);
-        assertQuery ("exists(//foo/root()//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
+        assertQuery ("exists(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, "*:*");
+        assertQuery ("exists(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("exists(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("exists(//foo) and exists(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO, Q_BAR);
+        assertQuery ("exists(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
         // TODO: merge queries such as this into one:
         // assertQuery ("exists(//foo/root() intersect //bar/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
-        assertQuery ("exists((/)[.//foo and .//bar])", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
+        assertQuery ("exists((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
     }
     
     @Test public void testNonexistence() throws Exception {
-        assertQuery ("empty(/)", XPathQuery.MINIMAL, ValueType.BOOLEAN, "*:*");
-        assertQuery ("empty(//foo)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("empty(//foo/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("empty(//foo) and empty(//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO, Q_BAR);
-        assertQuery ("empty(//foo/root()//bar)", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
-        assertQuery ("empty((/)[.//foo and .//bar])", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
+        assertQuery ("empty(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, "*:*");
+        assertQuery ("empty(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("empty(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("empty(//foo) and empty(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO, Q_BAR);
+        assertQuery ("empty(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO_BAR);
+        assertQuery ("empty((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO_BAR);
     }
     
     // TODO: test empty()

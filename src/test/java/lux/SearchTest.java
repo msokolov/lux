@@ -34,8 +34,32 @@ public class SearchTest extends SearchBase {
     
     @Test
     public void testCountAllDocs () throws Exception {
-        ResultSet<?> results = assertSearch ("count(/)", QUERY_FILTER_FREE);
+        ResultSet<?> results = assertSearch ("count(/)", QUERY_NO_DOCS, totalDocs);
         assertEquals (String.valueOf(totalDocs), results.iterator().next().toString());
+    }
+    
+    @Test
+    public void testExists () throws Exception {
+        ResultSet<?> results = assertSearch ("exists(/)", QUERY_NO_DOCS, 1);
+        assertEquals ("true", results.iterator().next().toString());
+        assertSearch  ("true", "exists(//SCENE)", QUERY_NO_DOCS, 1);
+        assertSearch  ("false", "exists(//foo)", QUERY_NO_DOCS, 0);
+        assertSearch ("true", "exists(//SCENE/root())", QUERY_NO_DOCS, 1);
+        assertSearch ("true", "exists(//SCENE) and exists(//ACT)", QUERY_NO_DOCS, 2);
+        assertSearch ("true", "exists(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
+        assertSearch ("true", "exists((/)[.//SCENE and .//ACT])", QUERY_NO_DOCS, 1);
+    }
+    
+    @Test
+    public void testEmpty () throws Exception {
+        ResultSet<?> results = assertSearch ("empty(/)", QUERY_NO_DOCS, 1);
+        assertEquals ("false", results.iterator().next().toString());
+        assertSearch  ("false", "empty(//SCENE)", QUERY_NO_DOCS, 1);
+        assertSearch  ("true", "empty(//foo)", QUERY_NO_DOCS, 0);
+        assertSearch ("false", "empty(//SCENE/root())", QUERY_NO_DOCS, 1);
+        assertSearch ("true", "empty(//SCENE) or empty(//foo)", QUERY_NO_DOCS, 1);
+        assertSearch ("false", "empty(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
+        assertSearch ("false", "empty((/)[.//SCENE and .//ACT])", QUERY_NO_DOCS, 1);
     }
     
     @Test
@@ -76,19 +100,19 @@ public class SearchTest extends SearchBase {
         // every SCENE, in its ACT and in the PLAY
         int sceneDocCount = elementCounts.get("SCENE") + elementCounts.get("ACT") + 1;
 
-        ResultSet<?> results = assertSearch("count (//SCENE/root())", QUERY_FILTER_FREE);
+        ResultSet<?> results = assertSearch("count (//SCENE/root())", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
         
-        results = assertSearch("count ((/)[.//SCENE])", QUERY_FILTER_FREE);
+        results = assertSearch("count ((/)[.//SCENE])", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
 
-        results = assertSearch("count (//SCENE/ancestor::document-node())", QUERY_FILTER_FREE);
+        results = assertSearch("count (//SCENE/ancestor::document-node())", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
 
-        results = assertSearch("count (/descendant-or-self::SCENE/root())", QUERY_FILTER_FREE);
+        results = assertSearch("count (/descendant-or-self::SCENE/root())", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
         
-        results = assertSearch("count (/descendant::SCENE/root())", QUERY_FILTER_FREE);
+        results = assertSearch("count (/descendant::SCENE/root())", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
     }
 
@@ -157,6 +181,15 @@ public class SearchTest extends SearchBase {
         return assertSearch (query, 0);
     }
     
+    protected ResultSet<?> assertSearch(String query, Integer props) throws LuxException {
+        return assertSearch(query, props, null);
+    }
+
+    protected void assertSearch(String result, String query, Integer props, Integer docCount) throws LuxException {
+        ResultSet<?> results = assertSearch (query, props, docCount);
+        assertEquals (result, results.iterator().next().toString());
+    }
+    
     /**
      * Executes the query, ensures that the given properties hold, and returns the result set.
      * Prints some diagnostic statistics, including total elapsed time (t) and time spent in the 
@@ -166,26 +199,32 @@ public class SearchTest extends SearchBase {
      * @return the query results
      * @throws LuxException
      */
-    protected ResultSet<?> assertSearch(String query, int props) throws LuxException {
+    protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount) throws LuxException {
         Evaluator eval = getEvaluator();
         ResultSet<?> results = (ResultSet<?>) eval.evaluate(eval.compile(query));
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));
-        if ((props & QUERY_EXACT) != 0) {
-            assertEquals ("query is not exact", results.size(), stats.docCount);
+        if (props != null) {
+            if ((props & QUERY_EXACT) != 0) {
+                assertEquals ("query is not exact", results.size(), stats.docCount);
+            }
+            if ((props & QUERY_CONSTANT) != 0) {
+                assertEquals ("query is not constant", 0, stats.docCount);
+            }
+            if ((props & QUERY_MINIMAL) != 0) {
+                // this is not the same as minimal, but is implied by it:
+                assertTrue (results.size() >= stats.docCount);
+                // in addition we'd need to show that every document produced at least one result
+            }
+            if ((props & QUERY_NO_DOCS) != 0) {
+                // This only makes sense because the main cost is usually retrieving and parsing documents
+                // if we spend most of our time searching (in the collector), we didn't do a lot of xquery evaluation
+                assertTrue ("query is not filter free", (stats.retrievalTime + 1) / (stats.totalTime + 1.0) < 0.01);
+            }
         }
-        if ((props & QUERY_CONSTANT) != 0) {
-            assertEquals ("query is not constant", 0, stats.docCount);
-        }
-        if ((props & QUERY_MINIMAL) != 0) {
-            // this is not the same as minimal, but is implied by it:
-            assertTrue (results.size() >= stats.docCount);
-            // in addition we'd need to show that every document produced at least one result
-        }
-        if ((props & QUERY_FILTER_FREE) != 0) {
-            // if we spend most of our time searching (in the collector), we didn't do a lot of xquery evaluation
-            assertTrue ("query is not filter free", (stats.retrievalTime + 1) / (stats.totalTime + 1.0) < 0.01);
+        if (docCount != null) {
+            assertEquals ("incorrect document count", docCount.intValue(), stats.docCount);
         }
         return results;
     }

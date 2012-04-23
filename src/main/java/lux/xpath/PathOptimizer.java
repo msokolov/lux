@@ -225,7 +225,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
             else if (funcall.getQName().equals(FunCall.emptyQName)) {
                 functionFacts = XPathQuery.BOOLEAN_FALSE;
-                returnType = ValueType.BOOLEAN;
+                returnType = ValueType.BOOLEAN_FALSE;
                 qname = FunCall.luxExistsQName;
             }
             if (qname != null) {

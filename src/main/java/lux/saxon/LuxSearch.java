@@ -8,7 +8,6 @@ import lux.XPathCollector;
 import lux.XPathQuery;
 import lux.api.LuxException;
 import lux.api.QueryStats;
-import lux.api.ValueType;
 import lux.xpath.FunCall;
 import net.sf.saxon.s9api.ExtensionFunction;
 import net.sf.saxon.s9api.ItemType;
@@ -100,7 +99,7 @@ public class LuxSearch implements ExtensionFunction {
     private XPathQuery makeXPathQuery(String queryString, long facts) throws ParseException {
         Query q;
         q = getQueryParser().parse(queryString);
-        return XPathQuery.getQuery(q, facts, ValueType.DOCUMENT);
+        return XPathQuery.getQuery(q, facts);
     }
     
     private QueryParser queryParser;
@@ -111,6 +110,7 @@ public class LuxSearch implements ExtensionFunction {
         return queryParser;
     }
     
+    @SuppressWarnings("unchecked")
     private ResultList<XdmItem> doSearch(SaxonContext context) {
         // TODO: include a context query 
         // Query query = queryContext.getQuery();
@@ -215,6 +215,10 @@ public class LuxSearch implements ExtensionFunction {
         if (arguments.length > 1) {
             facts = ((XdmAtomicValue)(arguments[1].itemAt(0))).getLongValue();
         }
+        return search (queryString, facts, 1, Integer.MAX_VALUE);
+    }
+    
+    protected XdmValue search (String queryString, long facts, int start, int maxresults) throws SaxonApiException {
         try {
             query = makeXPathQuery(queryString, facts);
         } catch (ParseException e) {
