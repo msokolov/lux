@@ -1,11 +1,6 @@
 * test optimizations
-** attribute names
-//foo/@id, etc.
-We do have query tests - no search tests, since hamlet has no attributes.
-** exist(), empty(), not()
-short-circuit eval
-** count(//a) + count(//b)
-*** node-uri(), document-uri()
+** not() 
+** node-uri(), document-uri()
 ** pagination
 optimize subsequence
 short-circuit evaluations, etc.
@@ -16,6 +11,11 @@ that we can match the documents exactly by query.  For example:
 If we had accurate element counts/positions we could extend this to any
 constant expression in the predicate.  Also expressions with position() =
 same
+** lazy result iteration
+Rather than trying to figure out in advance how many results will be
+required, allow the caller to pull results lazily.  Test this with exists()
+and empty(), and with count() > N.  Yaah this seems fraught with peril -
+see NOTES.
 * PTree binary storage
 * API packaging
 ** rename Saxon
@@ -28,4 +28,3 @@ text vs PTree
 Saxon Xdm vs JDOM vs DOM vs ?
 *** language
 XPath / XQuery
-

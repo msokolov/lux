@@ -282,7 +282,17 @@ methods in IndexSearcher, or maybe one or two calls down in an
 "expert-level" method, and in one case down in Scorer.
 
 Wheras writing the thread coordination / circular buffer to couple
-Collector with Saxonseems a bit scarier.
+Collector with Saxon seems a bit scarier.
+
+Umm - a second look reveals that creating a pull-API for Lucene is a major
+task.  There are several (at least 4 important) impls of Scorer, and each
+one implements scoring loops that call Collector.collect().  To do this
+"from the outside", one would have to wrap Query, Weight, and Scorer, and
+extend IndexSearcher.  The wrapped Query returns a wrapped Weight, which
+returns a wrapped or extended Scorer, which provides a nextDoc() method.
+This would have to be implemented differently for each Scorer type I think.
+
+Possibly LUCENE-2878 would provide a good mech for this.
 
 * implementation notes on using Jaxen
 consider saxon which provides XPath 2.0? Maybe for version 2...  It turns

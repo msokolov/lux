@@ -12,6 +12,9 @@ to these forms:
 etc..
 *** also in that case, when not counting (just returning documents),
 we save some time by not executing the xpath.
+** exist(), empty()
+short-circuit eval
+** count(//a) + count(//b)
 * lux components
 ** Translator
 converts Saxon's internal Expression tree to a Lux AbstractExpression tree.
