@@ -23,7 +23,7 @@ Lux? Evaluator?
 ** configuration
 *** Lucene field names
 *** storage format
-text vs PTree
+text vs PTree vs ?
 *** Object Model
 Saxon Xdm vs JDOM vs DOM vs ?
 *** language
