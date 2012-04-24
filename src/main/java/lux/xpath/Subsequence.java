@@ -35,6 +35,11 @@ public class Subsequence extends AbstractExpression {
     public AbstractExpression getLengthExpr () {
         return subs.length > 2 ? subs[2] : null;
     }
+    
+    @Override
+    public boolean isAbsolute () {
+        return getSequence().isAbsolute();
+    }
 
     @Override
     public String toString() {
@@ -42,6 +47,9 @@ public class Subsequence extends AbstractExpression {
             return "subsequence(" + getSequence().toString() + ',' + getStartExpr().toString() + ')';
         }
         if (getLengthExpr().equals(LiteralExpression.ONE)) {
+            if (getSequence().getSubs() != null) {
+                return '(' + getSequence().toString() + ")[" + getStartExpr().toString() + ']';
+            }
             return getSequence().toString() + '[' + getStartExpr().toString() + ']';
         }
         return "subsequence(" + getSequence().toString() + ',' + getStartExpr().toString() + ',' +

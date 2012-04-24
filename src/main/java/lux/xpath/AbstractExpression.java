@@ -57,7 +57,9 @@ public abstract class AbstractExpression implements Visitable {
     public abstract String toString();
 
     /**
-     * @return whether this expression is a Root or a PathExpression beginning with a Root (/).
+     * @return whether this expression is a Root or another expression that introduces
+     * a new query scope, such as a PathExpression beginning with a Root (/), or a subsequence
+     * of another absolute expression.
      */
     public boolean isAbsolute() {
         return false;
