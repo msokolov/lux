@@ -168,13 +168,25 @@ public class SearchTest extends SearchBase {
     }
     
     @Test
-    public void testCollectionScope() throws Exception {
+    public void testMultipleAbsolutePaths() throws Exception {
+        // Our first naive implementation tried to fetch all relevant documents
+        // using a single database query - this test tests multiple independent
+        // sequences (they were broken in that first impl).
         // /PLAY/PERSONAE/PGROUP/PERSONA
         ResultSet<?> results = assertSearch("count (//PERSONA[.='ROSENCRANTZ'])", 0);
         assertEquals ("4", results.iterator().next().toString());
         results = assertSearch("count (//PERSONA[.='ROSENCRANTZ']) + count(//PERSONA[.='GUILDENSTERN'])", 0);
         assertEquals (1, results.size());
         assertEquals ("8", results.iterator().next().toString());       
+    }
+    
+    @Test
+    public void testLazyEvaluation () throws Exception {
+        // ideally we would only fetch a single document here, but unfortunately it's not
+        // easy to bolt on a pull API atop Lucene
+        // Note this relies on Lucene's default sort by order of insertion (ie by docid)
+        assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 26);//1);
+        // assertSearch ("BERNARDO", "(//SCENE[count(SPEECH) gt 2])[1]/SPEECH[1]/SPEAKER");
     }
     
     private ResultSet<?> assertSearch(String query) throws LuxException {
@@ -201,7 +213,9 @@ public class SearchTest extends SearchBase {
      */
     protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount) throws LuxException {
         Evaluator eval = getEvaluator();
-        ResultSet<?> results = (ResultSet<?>) eval.evaluate(eval.compile(query));
+        SaxonExpr expr = (SaxonExpr) eval.compile(query);
+        System.out.println (expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr);
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));

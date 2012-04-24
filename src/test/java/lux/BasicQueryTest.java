@@ -209,6 +209,8 @@ public class BasicQueryTest {
 
         // not minimal, since there may not be a second bar element
         assertQuery ("//bar[2]", 0, ValueType.ELEMENT, Q_BAR);
+        
+        assertQuery ("(//foo)[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO); 
     }
     
     @Test public void testSubsequence () throws Exception {
