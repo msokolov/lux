@@ -10,6 +10,7 @@ import lux.XPathQuery;
 import lux.api.LuxException;
 import lux.api.QueryStats;
 import lux.xpath.FunCall;
+import lux.lucene.LuxSearcher;
 import net.sf.saxon.expr.LastPositionFinder;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.expr.XPathContext;
@@ -28,35 +29,21 @@ import net.sf.saxon.value.SequenceType;
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
 
 /**
  * Executes a Lucene search query and returns documents.
  * 
- * Saxon properties are similar to those for Collection, so just extend that.  We implement
- * both Saxon's internal and external function api's.  It's not clear we need the internal
- * one though?  TODO: eliminate unused code.
  */
 public class LuxSearch extends ExtensionFunctionDefinition {
     
     private XPathQuery query;
     private final Saxon saxon;
 
-    // unused
-    /*
-    private static final StandardFunction.Entry ENTRY = StandardFunction.makeEntry(
-            "lux:search", LuxSearch.class, 0, 0, 2, NodeKindTest.DOCUMENT,
-            StaticProperty.ALLOWS_ZERO, StandardFunction.CORE);
-    */
-    
     protected LuxSearch (XPathQuery query, Saxon saxon) {
         this.query = query;
         this.saxon = saxon;
-        //setDetails(ENTRY);
-        //setFunctionName(new StructuredQName("lux", FunCall.LUX_NAMESPACE,  "search"));
-        //setArguments(new Expression[0]);
     }
     
     public LuxSearch (Saxon saxon) {
@@ -82,7 +69,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         // TODO: include a context query 
         // Query query = queryContext.getQuery();
         long t = System.nanoTime();
-        IndexSearcher searcher = context.getSearcher(); 
+        LuxSearcher searcher = context.getSearcher(); 
         System.out.println ("executing xpath query: " + query);
         XPathCollector collector = saxon.getCollector(query);
         QueryStats stats = saxon.getQueryStats();

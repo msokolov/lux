@@ -18,10 +18,15 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import net.sf.saxon.Configuration;
+import net.sf.saxon.lib.ExtensionFunctionDefinition;
 
 public class Config extends Configuration implements URIResolver, EntityResolver {
+
+  private LuxFunctionLibrary luxFunctionLibrary;
+
     public Config () {
         super();
+        luxFunctionLibrary = new LuxFunctionLibrary();;
         getParseOptions().setEntityResolver(this);
     }
     
@@ -34,4 +39,15 @@ public class Config extends Configuration implements URIResolver, EntityResolver
     public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
         return new InputSource (new ByteArrayInputStream (new byte[0]));
     }
+
+  @Override
+  public LuxFunctionLibrary getIntegratedFunctionLibrary () {
+    return luxFunctionLibrary;
+  }
+
+  /** register functions with the lux function library */
+  @Override
+  public void registerExtensionFunction(ExtensionFunctionDefinition function) {
+    getIntegratedFunctionLibrary().registerFunction(function);
+  }
 }

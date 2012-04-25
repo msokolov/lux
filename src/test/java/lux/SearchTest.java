@@ -185,8 +185,8 @@ public class SearchTest extends SearchBase {
         // ideally we would only fetch a single document here, but unfortunately it's not
         // easy to bolt on a pull API atop Lucene
         // Note this relies on Lucene's default sort by order of insertion (ie by docid)
-        assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 26);//1);
-        // assertSearch ("BERNARDO", "(//SCENE[count(SPEECH) gt 2])[1]/SPEECH[1]/SPEAKER");
+        assertSearch ("BERNARDO", "subsequence(//SCENE, 1, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
+        assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 1);
     }
     
     private ResultSet<?> assertSearch(String query) throws LuxException {

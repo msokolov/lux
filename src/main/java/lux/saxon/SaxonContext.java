@@ -4,16 +4,16 @@ import lux.api.Context;
 import lux.api.QueryContext;
 import net.sf.saxon.s9api.XdmItem;
 
-import org.apache.lucene.search.IndexSearcher;
+import lux.lucene.LuxSearcher;
 
 public class SaxonContext extends QueryContext implements Context {
 
     private XdmItem contextItem;
     
-    public SaxonContext (IndexSearcher searcher) {
+    public SaxonContext (LuxSearcher searcher) {
        super (searcher);
     }
-    public SaxonContext (IndexSearcher searcher, XdmItem contextItem) {
+    public SaxonContext (LuxSearcher searcher, XdmItem contextItem) {
         super (searcher);
         this.contextItem = contextItem;
      }

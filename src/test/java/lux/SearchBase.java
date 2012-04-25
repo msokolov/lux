@@ -10,6 +10,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.api.Evaluator;
 import lux.index.XmlIndexer;
+import lux.lucene.LuxSearcher;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -20,7 +21,6 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
@@ -33,7 +33,7 @@ import org.junit.BeforeClass;
 public abstract class SearchBase {
 
     private static Directory dir;
-    protected static IndexSearcher searcher;
+    protected static LuxSearcher searcher;
     private static final Version luceneVersion = Version.LUCENE_34;
     protected static int totalDocs;
     protected static int QUERY_EXACT = 0x00000001;
@@ -46,7 +46,7 @@ public abstract class SearchBase {
         // create an in-memory Lucene index, index some content
         dir = new RAMDirectory();
         indexAllElements ("lux/hamlet.xml");
-        searcher = new IndexSearcher(dir);
+        searcher = new LuxSearcher(dir);
     }
 
     @AfterClass
