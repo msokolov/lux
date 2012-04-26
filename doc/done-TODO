@@ -15,6 +15,11 @@ we save some time by not executing the xpath.
 ** exist(), empty()
 short-circuit eval
 ** count(//a) + count(//b)
+** lazy result iteration
+Rather than trying to figure out in advance how many results will be
+required, allow the caller to pull results lazily.  Test this with exists()
+and empty(), and with count() > N.  Yaah this seems fraught with peril -
+see NOTES. No it works! And it's not that hard.
 * lux components
 ** Translator
 converts Saxon's internal Expression tree to a Lux AbstractExpression tree.

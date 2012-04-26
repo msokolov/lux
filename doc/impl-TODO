@@ -11,11 +11,6 @@ that we can match the documents exactly by query.  For example:
 If we had accurate element counts/positions we could extend this to any
 constant expression in the predicate.  Also expressions with position() =
 same
-** lazy result iteration
-Rather than trying to figure out in advance how many results will be
-required, allow the caller to pull results lazily.  Test this with exists()
-and empty(), and with count() > N.  Yaah this seems fraught with peril -
-see NOTES.
 * PTree binary storage
 * API packaging
 ** rename Saxon

@@ -182,11 +182,24 @@ public class SearchTest extends SearchBase {
     
     @Test
     public void testLazyEvaluation () throws Exception {
-        // ideally we would only fetch a single document here, but unfortunately it's not
-        // easy to bolt on a pull API atop Lucene
         // Note this relies on Lucene's default sort by order of insertion (ie by docid)
         assertSearch ("BERNARDO", "subsequence(//SCENE, 1, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
         assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 1);
+    }
+    
+    @Test
+    public void testIntersection () throws Exception {
+        // Michael Kay seemed to think there could be issues with our lazy evaluation strategy
+        // since it declares that documents are returned in sorted order.  Intersect requires
+        // correct sorting apparently.
+        assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 1164);
+        assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 1164);
+        assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 1164);
+        // saxon cleverly optimizes this and gets rid of the intersect
+        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);
+        // ok this fails -- apparently the documents are not identical in these cases?
+        // it seems we need to cache a docID->document map for the duration of a query eval
+        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);
     }
     
     private ResultSet<?> assertSearch(String query) throws LuxException {
