@@ -234,11 +234,11 @@ public class SearchTest extends SearchBase {
             if ((props & QUERY_NO_DOCS) != 0) {
                 // This only makes sense because the main cost is usually retrieving and parsing documents
                 // if we spend most of our time searching (in the collector), we didn't do a lot of xquery evaluation
-                assertTrue ("query is not filter free", (stats.retrievalTime + 1) / (stats.totalTime + 1.0) < 0.01);
+                assertTrue ("query is not filter free", stats.retrievalTime / (stats.totalTime + 1.0) < 0.01);
             }
         }
         if (docCount != null) {
-            assertEquals ("incorrect document count", docCount.intValue(), stats.docCount);
+            assertEquals ("incorrect document count", stats.docCount, docCount.intValue());
         }
         return results;
     }
