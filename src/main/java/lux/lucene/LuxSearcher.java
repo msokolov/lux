@@ -16,18 +16,29 @@ public class LuxSearcher extends IndexSearcher {
   }
 
   public DocIdSetIterator search (Query query) throws IOException {
-      return new DocIterator (query);
+      return new DocIterator (query, false);
+  }
+
+  public DocIdSetIterator searchOrdered (Query query) throws IOException {
+      return new DocIterator (query, true);
   }
   
   class DocIterator extends DocIdSetIterator {
       
       private final Weight weight;
+      private final boolean ordered;
       private int nextReader;
       private int docID;
       private Scorer scorer;
       
-      DocIterator (Query query) throws IOException {
+      /**
+       * @param query the lucene query whose results will be iterated
+       * @param ordered whether the docs must be scored in order
+       * @throws IOException
+       */
+      DocIterator (Query query, boolean ordered) throws IOException {
           weight = createNormalizedWeight(query);
+          this.ordered = ordered;
           nextReader = 0;
           docID = -1;
           advanceScorer();
@@ -35,7 +46,7 @@ public class LuxSearcher extends IndexSearcher {
 
       private void advanceScorer () throws IOException {
           while (nextReader < subReaders.length) {
-              scorer = weight.scorer(subReaders[nextReader++], true, true);
+              scorer = weight.scorer(subReaders[nextReader++], ordered, true);
               if (scorer != null) {
                   return;
               }

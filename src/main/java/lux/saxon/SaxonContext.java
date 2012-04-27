@@ -9,7 +9,7 @@ import lux.lucene.LuxSearcher;
 public class SaxonContext extends QueryContext implements Context {
 
     private XdmItem contextItem;
-    
+
     public SaxonContext (LuxSearcher searcher) {
        super (searcher);
     }

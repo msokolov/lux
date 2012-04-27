@@ -13,13 +13,19 @@ etc..
 *** also in that case, when not counting (just returning documents),
 we save some time by not executing the xpath.
 ** exist(), empty()
-short-circuit eval
+short-circuit counting; exits search as soon as a doc is found. not() is
+handled as well since saxon converts not(node-sequence) into
+not(exists(node-sequence)).
 ** count(//a) + count(//b)
 ** lazy result iteration
 Rather than trying to figure out in advance how many results will be
 required, allow the caller to pull results lazily.  Test this with exists()
 and empty(), and with count() > N.  Yaah this seems fraught with peril -
 see NOTES. No it works! And it's not that hard.
+** document identity
+Need to cache documents, at least for the duration of a single query, so we
+don't recreate the same document twice: otherwise Saxon thinks they are
+different.
 * lux components
 ** Translator
 converts Saxon's internal Expression tree to a Lux AbstractExpression tree.

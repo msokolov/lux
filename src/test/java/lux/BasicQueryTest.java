@@ -277,6 +277,8 @@ public class BasicQueryTest {
         // TODO: merge queries such as this into one:
         // assertQuery ("exists(//foo/root() intersect //bar/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
         assertQuery ("exists((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
+    
+        assertQuery ("//foo[exists(bar)]", 0, ValueType.NODE, Q_FOO_BAR);
     }
     
     @Test public void testNonexistence() throws Exception {
@@ -286,9 +288,18 @@ public class BasicQueryTest {
         assertQuery ("empty(//foo) and empty(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO, Q_BAR);
         assertQuery ("empty(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO_BAR);
         assertQuery ("empty((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO_BAR);
+
+        assertQuery ("//foo[empty(bar)]", 0, ValueType.NODE, Q_FOO);
     }
     
-    // TODO: test empty()
+    @Test public void testNot() throws Exception {
+        assertQuery ("not(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, "*:*");
+        assertQuery ("not(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("not(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
+        assertQuery ("not(//foo) and empty(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO, Q_BAR);
+        assertQuery ("not(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
+        assertQuery ("not((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
+    }    
     // TODO: optimize not() expressions involving exists() and empty()
     
     @Test public void testPredicateNegation () throws Exception {

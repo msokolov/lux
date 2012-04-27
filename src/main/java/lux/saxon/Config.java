@@ -13,12 +13,12 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
+import net.sf.saxon.Configuration;
+import net.sf.saxon.lib.ExtensionFunctionDefinition;
+
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import net.sf.saxon.Configuration;
-import net.sf.saxon.lib.ExtensionFunctionDefinition;
 
 public class Config extends Configuration implements URIResolver, EntityResolver {
 
@@ -39,6 +39,10 @@ public class Config extends Configuration implements URIResolver, EntityResolver
     public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
         return new InputSource (new ByteArrayInputStream (new byte[0]));
     }
+    
+    public DocIDNumberAllocator getDocumentNumberAllocator() {
+        return (DocIDNumberAllocator) super.getDocumentNumberAllocator();
+    }
 
   @Override
   public LuxFunctionLibrary getIntegratedFunctionLibrary () {
@@ -50,4 +54,5 @@ public class Config extends Configuration implements URIResolver, EntityResolver
   public void registerExtensionFunction(ExtensionFunctionDefinition function) {
     getIntegratedFunctionLibrary().registerFunction(function);
   }
+  
 }

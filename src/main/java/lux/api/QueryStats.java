@@ -37,4 +37,8 @@ public class QueryStats {
      * time spent retrieving and parsing documents
      */
     public long retrievalTime;
+    
+    public int cacheHits;
+    
+    public int cacheMisses;
 }

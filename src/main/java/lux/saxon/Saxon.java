@@ -19,6 +19,7 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XdmItem;
+import net.sf.saxon.s9api.XdmNode;
 
 /**
  * Implementation of a lux query/expression evaluator using Saxon
@@ -34,11 +35,19 @@ public class Saxon extends Evaluator  {
     private XPathCompiler xpathCompiler;
     private SaxonBuilder saxonBuilder;
     private SaxonTranslator translator;
+    
+    // This is a volatile thing that needs to be reset for every new query
+    // it should probably be associated with the Context? TODO: clean up the object model
+    // here and make an object that has only things that have a query lifespan
+    private CachingDocReader docReader;
+    
     private static Config config;
+    
     
     public Saxon() {
         if (config == null) {
             config = new Config();
+            config.setDocumentNumberAllocator(new DocIDNumberAllocator());
         }
         processor = new Processor (config);
         processor.registerExtensionFunction(new LuxSearch(this));
@@ -82,6 +91,7 @@ public class Saxon extends Evaluator  {
 
     @Override
     public ResultSet<?> iterate(Expression expr, Object contextItem) { 
+        docReader = new CachingDocReader(getContext().getSearcher().getIndexReader(), getBuilder(), getContext().getXmlFieldName());
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         try {
             return saxonExpr.evaluate((XdmItem) contextItem);
@@ -108,6 +118,11 @@ public class Saxon extends Evaluator  {
         SaxonBuilder () {
             documentBuilder = processor.newDocumentBuilder();
         }
+        
+        public XdmNode build (Reader reader, int docID) {
+            config.getDocumentNumberAllocator().setDocID(docID);
+            return (XdmNode) build(reader);
+        }
 
         @Override
         public Object build(Reader reader) {
@@ -126,5 +141,9 @@ public class Saxon extends Evaluator  {
     public XPathCollector getCollector (XPathQuery query) {
         return new XPathCollector (query, getBuilder(), queryStats);
     }
+
+    public CachingDocReader getDocReader() {
+        return docReader;
+    }    
 
 }

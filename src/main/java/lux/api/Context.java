@@ -1,5 +1,7 @@
 package lux.api;
 
+import lux.lucene.LuxSearcher;
+
 
 /**
  * A place to hold configuration. function bindings, external variable bindings, namespace bindings
@@ -12,4 +14,5 @@ public interface Context {
 
     String getXmlFieldName();
 
+    LuxSearcher getSearcher();
 }

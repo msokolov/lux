@@ -61,7 +61,18 @@ public class SearchTest extends SearchBase {
         assertSearch ("false", "empty(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
         assertSearch ("false", "empty((/)[.//SCENE and .//ACT])", QUERY_NO_DOCS, 1);
     }
-    
+
+    @Test
+    public void testNot() throws Exception {
+        ResultSet<?> results = assertSearch ("not(/)", QUERY_NO_DOCS, 1);
+        assertEquals ("false", results.iterator().next().toString());
+        assertSearch  ("false", "not(//SCENE)", QUERY_NO_DOCS, 1);
+        assertSearch  ("true", "not(//foo)", QUERY_NO_DOCS, 0);
+        assertSearch ("false", "not(//SCENE/root())", QUERY_NO_DOCS, 1);
+        assertSearch ("true", "not(//SCENE) or not(//foo)", QUERY_NO_DOCS, 1);
+        assertSearch ("false", "not(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
+        assertSearch ("false", "not((/)[.//SCENE and .//ACT])", QUERY_NO_DOCS, 1);
+    }
     @Test
     public void testSearchAct() throws Exception {
         ResultSet<?> results = assertSearch ("/ACT");
@@ -185,6 +196,17 @@ public class SearchTest extends SearchBase {
         // Note this relies on Lucene's default sort by order of insertion (ie by docid)
         assertSearch ("BERNARDO", "subsequence(//SCENE, 1, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
         assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 1);
+        // /PLAY/ACT[1]/SCENE[1], /ACT[1]/SCENE[1], /SCENE[1], /SCENE[2], /SCENE[3], /SCENE[4]
+        assertSearch ("HAMLET", "subsequence(/SCENE, 4, 1)/SPEECH[1]/SPEAKER/string()", null, 6);
+    }
+    
+    @Test
+    public void testSkipDocs () throws Exception {
+        // find the 4th document with a SCENE in it
+        // we shouldn't need to retrieve the first 3
+        // but actually Saxon decides it needs to sort //SCENE/root() so we end up retrieving every
+        // document
+        assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
     }
     
     @Test
@@ -197,9 +219,35 @@ public class SearchTest extends SearchBase {
         assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 1164);
         // saxon cleverly optimizes this and gets rid of the intersect
         assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);
-        // ok this fails -- apparently the documents are not identical in these cases?
-        // it seems we need to cache a docID->document map for the duration of a query eval
-        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);
+    }
+    
+    @Test
+    public void testIntersection2 () throws Exception {
+        // To get this working, we needed to implement CachingDocReader so that we would give
+        // Saxon the *same* document when we retrieved the same document from Lucene.
+        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);        
+    }
+    
+    @Test
+    public void testIntersection3 () throws Exception {
+        // We should be able to get a failing test case here, because Saxon allocates document numbers
+        // (which control ordering) in increasing order, so if we arrange for query 1 to return docs
+        // 1, 3, 5, 7 (which will then be numbered 1, 2, 3, 4 in saxon)
+        // and query 2 to return docs
+        // 3, 4, 5, 6, then these will be 2, 5, 3, 6 in saxon
+        // //SCENE -> /PLAY/ACT/SCENE (20), /ACT[1]/SCENE (5), /SCENE (5 of those), /ACT[2]/SCENE (2)
+        /*
+         Evaluator eval = getEvaluator();
+         
+        for (int i = 1; i <= 7; i++) {
+            SaxonExpr expr = (SaxonExpr) eval.compile("(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))[" + i + "]/SPEECH[1]");
+            ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr);
+            System.out.println("******** MATCH ********  " + i);
+            System.out.println(results.iterator().next());
+        }
+        */
+        assertSearch ("5", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))", null, 7);
+        assertSearch ("6", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))", null, 8);
     }
     
     private ResultSet<?> assertSearch(String query) throws LuxException {
@@ -232,6 +280,7 @@ public class SearchTest extends SearchBase {
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));
+        System.out.println (String.format("cache hits=%d, misses=%d", stats.cacheHits, stats.cacheMisses));
         if (props != null) {
             if ((props & QUERY_EXACT) != 0) {
                 assertEquals ("query is not exact", results.size(), stats.docCount);
@@ -251,7 +300,7 @@ public class SearchTest extends SearchBase {
             }
         }
         if (docCount != null) {
-            assertEquals ("incorrect document count", stats.docCount, docCount.intValue());
+            assertEquals ("incorrect document count", docCount.intValue(), stats.docCount);
         }
         return results;
     }

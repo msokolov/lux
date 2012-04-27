@@ -1,0 +1,28 @@
+/PLAY/ACT[1 to 5]/SCENE[...]
+/ACT[1]/SCENE[1 to 5]
+/SCENE[1]
+/SCENE[2]
+/SCENE[3]
+/SCENE[4]
+/SCENE[5]
+/ACT[2]/SCENE[1 to 2]
+/SCENE[6]
+/SCENE[7]
+
+/ACT/SCENE intersect //SCENE[xxx]
+
+/PLAY      1
+/ACT[1]    2
+/ACT[2]    3
+/ACT[3]    4
+/ACT[4]    5
+/ACT[5]    6
+
+/PLAY//SCENE (20)
+/ACT[1]//SCENE (5)
+/SCENE[1]  7
+/SCENE[2]  8
+/SCENE[3]  9
+/SCENE[4]  10
+/SCENE[5]  11
+/ACT[2]//SCENE  2
