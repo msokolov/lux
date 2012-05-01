@@ -1,4 +1,4 @@
-package lux.saxon;
+package lux.functions;
 
 import net.sf.saxon.expr.Container;
 import net.sf.saxon.expr.Expression;

@@ -11,11 +11,11 @@ public class Predicate extends AbstractExpression {
         return subs[0].toString() + '[' + subs[1].toString() + ']';
     }
     
-    public AbstractExpression getBase() {
+    public final AbstractExpression getBase() {
         return subs[0];
     }
 
-    public AbstractExpression getFilter() {
+    public final AbstractExpression getFilter() {
         return subs[1];
     }
     
@@ -24,8 +24,14 @@ public class Predicate extends AbstractExpression {
         return visitor.visit(this);
     }
     
+    @Override    
     public boolean isAbsolute () {
-        return subs[0].isAbsolute();
+        return getBase().isAbsolute();
+    }
+    
+    @Override
+    public boolean isDocumentOrdered () {
+        return getBase().isDocumentOrdered();
     }
 
 }

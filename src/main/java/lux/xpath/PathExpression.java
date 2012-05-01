@@ -2,7 +2,6 @@ package lux.xpath;
 
 public class PathExpression extends AbstractExpression {
     
-    // TODO: specialize to PathStep args?
     public PathExpression (AbstractExpression lhs, AbstractExpression rhs) {
         super (Type.PathExpression);
         subs = new AbstractExpression[2];

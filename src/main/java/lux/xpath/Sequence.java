@@ -41,4 +41,9 @@ public class Sequence extends AbstractExpression {
         super.acceptSubs(visitor);
         return visitor.visit(this);
     }
+    
+    @Override 
+    public boolean isDocumentOrdered () {
+        return subs.length < 2 && super.isDocumentOrdered();
+    }
 }

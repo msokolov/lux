@@ -1,20 +1,19 @@
 * High-level goals
 ** provide optimized XML-aware searching
-xpath analysis yielding index operations as much as possible
+xpath analysis yielding index operations as much as possible using a
+special search function, and by optimizing native xpath operation.
+Not XQFT? XQ update?
 ** compelling use cases
 All the xml db use cases
 ** differentiators
 Cheap, lightweight, highly scalable; strong focus on query optimization
 leverages best-of-breed indexing and xquery evaluation w/Lucene and Saxon.
-** learn indexes
+** learn indexes?
 grow xpath; determine salient dimensions by #matches - some, all or none.
 ** learn storage strategy
 chunk documents by size; guided by learned paths
 *** reduce parsing/serialization time
 *** xpath execution time
-** xpath 2
-** xquery
-** updates?
 * Lux search function
 Execute a lucene query, returning documents (or maybe later, nodes), and
 execute an xpath(later: xquery) on those, accumulating results and
@@ -32,7 +31,8 @@ names) from the data set.
 * Saxon integration
 ** use tinytree for storage
 Could use Ptree if you have saxon-PE+.  Or could build a replacement (maybe
-for in house use, but don't release).
+for in house use, but don't release).  Actually this proves to be difficult
+without totally taking over Saxon.
 ** TinyTree in ifpress
 ** check whether our code works w/9.1 (Saxon B) ?
 * Test Coverage
@@ -105,12 +105,19 @@ More complex would be something like: count(//a) + count(//b) ?
 across multiple documents
 *** node-uri(), document-uri()
 ** optimize pagination when we know that #count=#estimate
-eg where a sequence will always return one result per document, and we know
-that we can match the documents exactly by query.  For example:
-*** /descendant::foo[1] or /descendant::foo[last()]
-If we had accurate element counts/positions we could extend this to any
-constant expression in the predicate.  Also expressions with position() =
-same
+optimize subsequence when we can - eg the first arg, the sequence, is
+entirely indexed.  And even when it's not, make sure we don't iterate on
+beyond where we need to - asserting the results are sorted properly.  We're
+somewhat limited in our ability to do this right now since we rely on Saxon
+to make judgements about sorting, and it doesn't always optimize as
+agressively as we would like, at least not in the saxon-HE version.  It
+works in some simple cases, though.
+* saxon-PE/HE
+evaluate perf improvements
+** better optimization?
+especially collapsing document-sorting expressions
+** PTree binary storage
+evaluate the perf improvement from this
 * Advanced Indexing techniques
 ** index paths
 ** index text and values
@@ -159,9 +166,6 @@ through an entire large result set.
 count (//foo)
 *** need to handle functions at outermost scope
 expressions like (//foo)[1] too
-** cleanup API, rename classes
-This is better now - but still not sure about LuXPath
-once we have a few implementations done, revisit the naming
 * Solr integration
 ** namespaces
 *** in QParser config

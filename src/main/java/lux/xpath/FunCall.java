@@ -27,8 +27,10 @@ public class FunCall extends AbstractExpression {
     public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
     public static final String LUX_NAMESPACE = "lux";
     public static final QName luxSearchQName = new QName (LUX_NAMESPACE, "search", "lux");
-    public static QName luxCountQName = new QName (LUX_NAMESPACE, "count", "lux");
+    public static final QName luxCountQName = new QName (LUX_NAMESPACE, "count", "lux");
     public static final QName luxExistsQName = new QName (LUX_NAMESPACE, "exists", "lux");
+    public static final QName luxOrderedQName = new QName (LUX_NAMESPACE, "ordered", "lux");
+    public static final QName luxRootQName = new QName (LUX_NAMESPACE, "root", "lux");
     public static final QName notQName = new QName (FN_NAMESPACE, "not", "");
     public static final QName emptyQName = new QName (FN_NAMESPACE, "empty", "");
     public static final QName rootQName = new QName (FN_NAMESPACE, "root", "");
@@ -47,6 +49,16 @@ public class FunCall extends AbstractExpression {
 
     public ValueType getReturnType() {
         return returnType;
+    }
+    
+    @Override
+    public boolean isDocumentOrdered () {
+        return !returnType.isAtomic && 
+                super.isDocumentOrdered() &&
+                (name.getNamespaceURI().equals(LUX_NAMESPACE) || 
+                 (name.getNamespaceURI().equals(FN_NAMESPACE) &&
+                         ! name.getLocalPart().equals ("reverse") &&
+                         ! name.getLocalPart().equals("unordered")));
     }
 
 }

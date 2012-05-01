@@ -170,7 +170,7 @@ public class SaxonTranslator {
     
     private AbstractExpression exprFor (FunctionCall funcall) {
         if (funcall.getFunctionName().equals(itemAtQName)) {
-            return new Subsequence(exprFor (funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
+            return new Subsequence(exprFor (funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), LiteralExpression.ONE);
         }
         if (functionEqualsBuiltin(funcall, "reverse")) {
             // Saxon wraps a call to reverse() around reverse axis expressions; its axis expression
@@ -207,8 +207,7 @@ public class SaxonTranslator {
         {
             // root() may return an element when executed in the context of a fragment
             // However for the purposes of our optimizer, we want to know if it is returning
-            // documents.  Since we only use the return type to optimize absolute expressions, 
-            // this incorrect inference won't cause any errors in the other case.
+            // documents.  We only optimize absolute expressions, and this inference is correct in those cases.
             returnType = ValueType.DOCUMENT;
         }
         return new FunCall (qnameFor (funcall.getFunctionName()), returnType, aargs);

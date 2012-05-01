@@ -59,19 +59,26 @@ public abstract class AbstractExpression implements Visitable {
     /**
      * @return whether this expression is a Root or another expression that introduces
      * a new query scope, such as a PathExpression beginning with a Root (/), or a subsequence
-     * of another absolute expression.
+     * of another absolute expression.  This method returns false, supplying the common default.
      */
     public boolean isAbsolute() {
         return false;
     }
     
     /**
-     * @return whether this expression is emptiness- (or existence-) preserving.
-     * That is, it is empty() iff all its subs are empty().
+     * @return whether this expression is proven to return results in document order.  This method 
+     * returns true iff all its subs return true.  Warning: incorrect results may occur if 
+     * document-ordering is falsely asserted.
      */
-//    public boolean isExistential () {
-//        
-//    }
+    public boolean isDocumentOrdered() {
+        if (subs != null) {
+            for (AbstractExpression sub : subs) {
+                if (!sub.isDocumentOrdered())
+                    return false;
+            }
+        }
+        return true;
+    }
 
     /** 
      * If this has a root expression, replace it with the function call expression

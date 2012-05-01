@@ -1,8 +1,10 @@
-package lux.saxon;
+package lux.functions;
 
 import java.io.IOException;
 
 import lux.XPathQuery;
+import lux.saxon.ResultIterator;
+import lux.saxon.Saxon;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.expr.XPathContext;
@@ -46,7 +48,17 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         }
         return queryParser;
     }
-
+    
+    @Override
+    public int getMinimumNumberOfArguments() {
+        return 1;
+    }
+    
+    @Override
+    public int getMaximumNumberOfArguments() {
+        return 2;
+    }
+    
     @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] { 

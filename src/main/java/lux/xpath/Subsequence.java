@@ -27,13 +27,29 @@ public class Subsequence extends AbstractExpression {
     public AbstractExpression getSequence() {
         return subs[0];
     }
+    
+    public void setSequence (AbstractExpression ae) {
+        subs[0] = ae;
+    }
 
     public AbstractExpression getStartExpr () {
         return subs[1];
     }
+    
+    public void setStartExpr (AbstractExpression ae) {
+        subs[1] = ae;
+    }
 
     public AbstractExpression getLengthExpr () {
         return subs.length > 2 ? subs[2] : null;
+    }
+    
+    /**
+     * @param ae the expression to use as the length expression
+     * @throws ArrayIndexOutOfBoundsException if there wasn't already a length expression
+     */
+    public void setLengthExpr (AbstractExpression ae) {
+        subs[2] = ae;
     }
     
     @Override

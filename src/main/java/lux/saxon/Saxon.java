@@ -10,6 +10,10 @@ import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.ResultSet;
+import lux.functions.LuxCount;
+import lux.functions.LuxExists;
+import lux.functions.LuxRoot;
+import lux.functions.LuxSearch;
 import lux.xml.XmlBuilder;
 import lux.xpath.AbstractExpression;
 import lux.xpath.PathOptimizer;
@@ -53,6 +57,8 @@ public class Saxon extends Evaluator  {
         processor.registerExtensionFunction(new LuxSearch(this));
         processor.registerExtensionFunction(new LuxCount(this));
         processor.registerExtensionFunction(new LuxExists(this));
+        processor.registerExtensionFunction(new LuxRoot());
+
         xpathCompiler = processor.newXPathCompiler();
         xpathCompiler.declareNamespace("lux", "lux");
         saxonBuilder = new SaxonBuilder();

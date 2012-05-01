@@ -20,4 +20,9 @@ public class UnaryMinus extends AbstractExpression {
         subs[0].accept(visitor);
         return visitor.visit(this);
     }
+    
+    @Override
+    public boolean isDocumentOrdered () {
+        return false;
+    }
 }

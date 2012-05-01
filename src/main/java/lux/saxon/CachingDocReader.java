@@ -45,7 +45,7 @@ public class CachingDocReader {
         String xml = document.get(xmlFieldName);
         int n = xml.indexOf('\n');
         n = (n < 0 || n > 30) ? Math.min(30,xml.length()) : n-1;
-        System.out.println ("GET " + docID + " " + xml.substring(0, n));
+        //System.out.println ("GET " + docID + " " + xml.substring(0, n));
         XdmNode node = (XdmNode) builder.build(new StringReader (xml), docID);
         if (node != null) {
             cache.put(docID, node);

@@ -1,4 +1,4 @@
-package lux.saxon;
+package lux.functions;
 
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.functions.IntegratedFunctionCall;
@@ -11,8 +11,9 @@ public class LuxFunctionCall extends IntegratedFunctionCall {
     }
 
     /**
-     * Extends IFC, asserting that all of these functions return ordered, peer nodesets so as to 
+     * Extends IFC, asserting that all of the functions in the library return ordered, peer nodesets so as to 
      * allow Saxon to optimize away document order sorting and enable lazy evaluation.
+     * 
      * @return the special properties
      */
     protected int computeSpecialProperties() {

@@ -13,6 +13,9 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
+import lux.functions.LuxFunctionLibrary;
+
+
 import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 
@@ -28,6 +31,7 @@ public class Config extends Configuration implements URIResolver, EntityResolver
         super();
         luxFunctionLibrary = new LuxFunctionLibrary();;
         getParseOptions().setEntityResolver(this);
+        optimizer = new Optimizer(this);
     }
     
     // TODO resolve uris!

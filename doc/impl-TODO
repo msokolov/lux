@@ -1,23 +1,30 @@
-* test optimizations
-** pagination
-optimize subsequence
-short-circuit evaluations, etc.
-*** optimize pagination when we know that #count=#estimate
-eg where a sequence will always return one result per document, and we know
-that we can match the documents exactly by query.  For example:
-**** /descendant::foo[1] or /descendant::foo[last()]
-If we had accurate element counts/positions we could extend this to any
-constant expression in the predicate.  Also expressions with position() =
-same
-** node-uri(), document-uri()
-* PTree binary storage
+* cleanup optimizations
+** get rid of lux:search facts argument
+The facts are not serving any purpose now that we are using lazy
+evaluation, and we have separate lux:count and lux:exists methods.
+** add pagination args to lux:search
+This should help work around some of the shortcomings of Saxon's HE
+optimizer (re: documentSort) and let us skip document retrieval for docs
+prior to the starting doc.
+
+Background: the evaluator has to ensure that sequences of nodes are unique
+and in document order.  Our Optimizer calculates and asserts document
+order, but doesn't detect when there are multiple copies of the same node.
+This can occur due to doc() and root().  Maybe other functions?  A sequence
+like //foo/root() returns documents, but the evaluator iterates over nodes
+(//foo) in each document, and returns each document once for each
+occurrence of foo in its document.
+
+** shorten xml index field names?
+to make it easier to type queries.  Maybe make the default field name be
+something reasonable, like xml_text?  then use lx_att, lx_elt, lx_path?
+** enhance Saxon's default optimizer
+enable less agressive documentSorting?
 * API packaging
 ** rename Saxon
 Lux? Evaluator?
 ** configuration
 *** Lucene field names
-*** storage format
-text vs PTree vs ?
 *** Object Model
 Saxon Xdm vs JDOM vs DOM vs ?
 *** language

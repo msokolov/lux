@@ -3,17 +3,19 @@ package lux.xpath;
 public class PathStep extends AbstractExpression {
     public enum Axis {
 
-        Self("self"), Child("child"), Parent("parent"), 
-            Descendant("descendant"), DescendantSelf("descendant-or-self"),
-            Ancestor("ancestor"), AncestorSelf("ancestor-or-self"), 
-            Preceding("preceding"), Following("following"),
-            PrecedingSibling("preceding-sibling"), FollowingSibling("following-sibling"),
-            Attribute("attribute");
+        Self("self", true), Child("child", true), Parent("parent", false), 
+            Descendant("descendant", true), DescendantSelf("descendant-or-self", true),
+            Ancestor("ancestor", false), AncestorSelf("ancestor-or-self", false), 
+            Preceding("preceding", false), Following("following", true),
+            PrecedingSibling("preceding-sibling", false), FollowingSibling("following-sibling", true),
+            Attribute("attribute", true);
 
-        private final String name;
+        public final String name;
+        public final boolean isForward;
 
-        Axis (String name) {
-            this.name = name;            
+        Axis (String name, boolean forward) {
+            this.name = name;
+            this.isForward = forward;
         }
 
         public String toString() {
@@ -44,6 +46,11 @@ public class PathStep extends AbstractExpression {
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
+    }
+    
+    @Override
+    public boolean isDocumentOrdered () {
+        return axis.isForward;
     }
     
 }

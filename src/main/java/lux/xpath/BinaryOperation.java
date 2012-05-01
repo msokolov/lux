@@ -1,5 +1,7 @@
 package lux.xpath;
 
+import lux.api.ValueType;
+
 
 public class BinaryOperation extends AbstractExpression {
     
@@ -7,26 +9,32 @@ public class BinaryOperation extends AbstractExpression {
     
     public enum Operator {
         // boolean operators
-        AND("and"), OR("or"), 
+        AND("and", ValueType.BOOLEAN), OR("or", ValueType.BOOLEAN), 
         // set operators
-        INTERSECT("intersect"), EXCEPT("except"), UNION("|"), 
+        INTERSECT("intersect", ValueType.VALUE), EXCEPT("except", ValueType.VALUE), UNION("|", ValueType.VALUE), 
         // arithmetic operators
-        ADD("+"), SUB("-"), MUL("*"), DIV("div"), IDIV("idiv"), MOD("mod"),
+        ADD("+", ValueType.ATOMIC), SUB("-", ValueType.ATOMIC), MUL("*", ValueType.ATOMIC), DIV("div", ValueType.ATOMIC), IDIV("idiv", ValueType.ATOMIC), MOD("mod", ValueType.ATOMIC),
         // general comparisons
-        EQUALS("="), NE("!="), LT("<"), GT(">"), LE("<="), GE(">="), 
+        EQUALS("=", ValueType.BOOLEAN), NE("!=", ValueType.BOOLEAN), LT("<", ValueType.BOOLEAN), GT(">", ValueType.BOOLEAN), LE("<=", ValueType.BOOLEAN), GE(">=", ValueType.BOOLEAN), 
         // atomic comparisons
-        AEQ("eq"), ANE("ne"), ALT("lt"), ALE("le"), AGT("gt"), AGE("ge"),
+        AEQ("eq", ValueType.BOOLEAN), ANE("ne", ValueType.BOOLEAN), ALT("lt", ValueType.BOOLEAN), ALE("le", ValueType.BOOLEAN), AGT("gt", ValueType.BOOLEAN), AGE("ge", ValueType.BOOLEAN),
         // node operators
-        IS("is"), BEFORE("<<"), AFTER(">>");
+        IS("is", ValueType.BOOLEAN), BEFORE("<<", ValueType.BOOLEAN), AFTER(">>", ValueType.BOOLEAN);
         
         private String token;
+        private ValueType resultType;
         
-        Operator (String token) {
+        Operator (String token, ValueType resultType) {
             this.token = token;
+            this.resultType = resultType;
         }
         
         public String toString () {
             return token;
+        }
+        
+        public ValueType getResultType () {
+            return resultType;
         }
     };
     
@@ -55,5 +63,10 @@ public class BinaryOperation extends AbstractExpression {
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);
+    }
+    
+    @Override
+    public boolean isDocumentOrdered () {
+        return operator.getResultType().isNode && super.isDocumentOrdered();
     }
 }

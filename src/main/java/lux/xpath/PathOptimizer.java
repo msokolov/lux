@@ -56,11 +56,45 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
     public AbstractExpression optimize(AbstractExpression expr) {
         expr = expr.accept (this);
-        if (!queryStack.isEmpty() && expr.isAbsolute()) {
-            return expr.replaceRoot(createSearchCall(pop(), 0));
+        return optimizeExpression (expr, 0, 0);
+    }
+    
+    /**
+     * @param expr the expression to optimize
+     * @param j the query stack depth at which expr's query is to be found
+     * @param facts additional facts to apply to the query
+     */
+    private AbstractExpression optimizeExpression (AbstractExpression expr, int j, int facts) {
+        if (expr.isAbsolute()) {
+            FunCall search = getSearchCall(j, facts);
+            expr = expr.replaceRoot (search);
+            if (search.getReturnType() == ValueType.DOCUMENT) {
+                expr = new FunCall(FunCall.luxRootQName, ValueType.DOCUMENT, expr);
+            }
         }
         return expr;
     }
+
+    /**
+     * TODO: some operations *commute with lux:search*.  In those cases, we do better to wrap the search around
+     * this expression, rather than around each of its children.  Basically we want to "pull up" the search operation 
+     * to the highest allowable level.
+     * 
+     * Each absolute subexpression S is joined with a call to lux:search(), 
+     * effectively replacing it with search(QS)/S, where QS is the query derived 
+     * corresponding to S.  In addition, if S returns documents, the foregoing expression
+     * is wrapped by root(); root(search(QS)/S)
+     * 
+     * @param expr an expression
+     * @param facts assertions about the search to be injected, if any.  These are or-ed with 
+     * facts found in the search query.
+     */
+    protected void optimizeSubExpressions(AbstractExpression expr, int facts) {
+        AbstractExpression[] subs = expr.getSubs();
+        for (int i = 0; i < subs.length; i ++) {
+            subs[i] = optimizeExpression (subs[i], subs.length - i - 1, facts);
+        }
+    }    
     
     public AbstractExpression visit (Root expr) {
         push (MATCH_ALL_QUERY);
@@ -118,29 +152,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     /**
-     * TODO: some operations *commute with lux:search*.  In those cases, we do better to wrap the search around
-     * this expression, rather than around each of its children.  Basically we want to "pull up" the search operation 
-     * to the highest allowable level.
-     * 
-     * Each absolute subexpression S is wrapped by a call to lux:search(), effectively replacing it
-     * with search(QS)/S, where QS is the query derived corresponding to S.
-     * 
-     * @param expr an expression
-     * @param facts assertions about the search to be injected, if any.  These are or-ed with 
-     * facts found in the search query.
-     */
-    protected void injectSearch(AbstractExpression expr, int facts) {
-        AbstractExpression[] subs = expr.getSubs();
-        for (int i = 0; i < subs.length; i ++) {
-            if (subs[i].isAbsolute()) {
-                int j = subs.length - i - 1;
-                FunCall search = getSearchCall(j, facts);
-                subs[i] = subs[i].replaceRoot (search);
-            }
-        }
-    }
-    
-    /**
      * If a function F is emptiness-preserving, in other words F(a,b,c...)
      * is empty ( =()) if *any* of its arguments are empty, and is
      * non-empty if *all* of its arguments are non-empty, then its
@@ -163,7 +174,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return luxfunc;
         }
         // see if the function args can be converted to searches.
-        injectSearch(funcall, 0);
+        optimizeSubExpressions(funcall, 0);
         Occur occur;
         if (! name.getNamespaceURI().equals (FunCall.FN_NAMESPACE)) {            
             // we know nothing about this function
@@ -201,7 +212,17 @@ public class PathOptimizer extends ExpressionVisitorBase {
     };
     
     public FunCall optimizeFunCall (FunCall funcall) {
-        if (funcall.getSubs().length == 0 || ! funcall.getSubs()[0].isAbsolute()) {
+        AbstractExpression[] subs = funcall.getSubs();
+        /*
+        if (subs.length == 1 && subs[0] instanceof Dot) {
+            // TODO what about count(.), exists(.), empty(.)?
+            // what about (/)/root (//foo)?
+            if (funcall.getQName().equals(FunCall.rootQName)) {
+                return new FunCall (FunCall.luxRootQName, ValueType.DOCUMENT, subs);
+            }            
+        }
+        */
+        if (subs.length == 0 || ! subs[0].isAbsolute()) {
             return funcall;
         }
         XPathQuery query = pop();
@@ -243,7 +264,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
         }
         // No optimization, but indicate that this function returns an int?
-        // TODO: if we really need it, move this logic up to the caller - it has nothing
+        // FIXME: this is just wrong? It must have come from some random test case, 
+        // but isn't generally true.  If we really need it, move this logic up to the caller - it has nothing
         // to do with optimizing this funcall.
         if (query.isImmutable()) {
             query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), ValueType.INT);
@@ -274,7 +296,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(BinaryOperation op) {
-        injectSearch(op, 0);
+        optimizeSubExpressions(op, 0);
         XPathQuery rq = pop();
         XPathQuery lq = pop();
         ValueType type = lq.getResultType().promote (rq.getResultType());
@@ -332,10 +354,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(Predicate predicate) {
-        XPathQuery filterQuery = popFilter(predicate.getFilter());
+        // Allow the base expression to be optimized later so we have an opportunity to combine the 
+        // predicate query with the base query
+        optimizeExpression (predicate.getFilter(), 0, 0);
+        XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         // We can only assert the predicate MUST occur in certain circumstances
         // various function calls blur that - consider not(foo) or count(foo)=0 or count(.//foo) gt count(./foo)
+        // TODO: so why are we asserting it universally here?
         XPathQuery query = baseQuery.combine(filterQuery, Occur.MUST);
         // This is a counting expr if its base expr is
         query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
@@ -343,32 +369,25 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return predicate;
     }
 
-    // pop a query and if the given expression is absolute, insert a call to lux:search() 
-    private XPathQuery popFilter(AbstractExpression filter) {
-        XPathQuery filterQuery = pop();
-        if (filter.isAbsolute()) {
-            filter.replaceRoot(createSearchCall(filterQuery, 0));
-            filterQuery = XPathQuery.MATCH_ALL;
-        }
-        return filterQuery;
-    }
-
     @Override
     public AbstractExpression visit(Subsequence subsequence) {
+        optimizeSubExpressions (subsequence, 0);
         AbstractExpression start = subsequence.getStartExpr();
         AbstractExpression length = subsequence.getLengthExpr();
-        // TODO: encode pagination information in the call to lux:search created in popFilter()
+        // TODO: encode pagination information in the call to lux:search created here
         XPathQuery lengthQuery = null;
         if (length != null) {
-            lengthQuery = popFilter (length);
+            lengthQuery = pop ();
         }
-        XPathQuery startQuery = popFilter (start);
+        XPathQuery startQuery = pop();
         if (start == FunCall.LastExpression || (start.equals(LiteralExpression.ONE) && length.equals(LiteralExpression.ONE))) {
-            // selecting the first or last item from a sequence - this has no effect
-            // on the query, its minimality or return type, so just leave the main sub-expression query
+            // selecting the first or last item from a sequence - this has
+            // no effect on the query, its minimality or return type, so
+            // just leave the main sub-expression query; don't combine with
+            // the start or length queries
             return subsequence;
         }
-        XPathQuery baseQuery = popFilter(subsequence.getSequence());
+        XPathQuery baseQuery = pop();
         XPathQuery query = baseQuery.combine(startQuery, Occur.SHOULD);
         if (lengthQuery != null) {
             query = query.combine(lengthQuery, Occur.SHOULD);
@@ -393,7 +412,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(Sequence sequence) {
-        injectSearch(sequence, 0);
+        optimizeSubExpressions(sequence, 0);
         combineTopQueries (sequence.getSubs().length, Occur.SHOULD);
         return sequence;
     }

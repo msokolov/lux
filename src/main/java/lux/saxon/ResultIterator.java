@@ -14,7 +14,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Scorer;
 
 @SuppressWarnings("rawtypes")
-class ResultIterator implements SequenceIterator<Item>{
+public class ResultIterator implements SequenceIterator<Item>{
     
     private final DocIdSetIterator docIter;
     private final XPathQuery query;
@@ -25,7 +25,7 @@ class ResultIterator implements SequenceIterator<Item>{
     private Item current = null;
     private int position = 0;
     
-    ResultIterator (Saxon saxon, XPathQuery query) throws IOException {
+    public ResultIterator (Saxon saxon, XPathQuery query) throws IOException {
         this.query = query;
         this.saxon = saxon;
         this.stats = saxon.getQueryStats();
@@ -41,7 +41,7 @@ class ResultIterator implements SequenceIterator<Item>{
         long t = System.nanoTime();
         try {
             int docID = docIter.nextDoc();
-            System.out.println ("GET " + docID + " " + query.toString());
+            //System.out.println ("GET " + docID + " " + query.toString());
             if (docID == Scorer.NO_MORE_DOCS) {
                 position = -1;
                 current = null;

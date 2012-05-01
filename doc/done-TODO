@@ -19,9 +19,11 @@ not(exists(node-sequence)).
 ** count(//a) + count(//b)
 ** lazy result iteration
 Rather than trying to figure out in advance how many results will be
-required, allow the caller to pull results lazily.  Test this with exists()
-and empty(), and with count() > N.  Yaah this seems fraught with peril -
-see NOTES. No it works! And it's not that hard.
+required, allow the caller to pull results lazily.  Tested this with exists()
+and empty(), and with count() > N.
+*** subsequence(); [1], etc.
+This sometimes optimizes properly, but not in every case it could.  There
+are difficulties because of the need to preserve document ordering.
 ** document identity
 Need to cache documents, at least for the duration of a single query, so we
 don't recreate the same document twice: otherwise Saxon thinks they are

@@ -32,5 +32,10 @@ public class Let extends AbstractExpression {
     public AbstractExpression getReturn () {
         return subs[1];
     }
+    
+    @Override
+    public boolean isDocumentOrdered () {
+        return getReturn().isDocumentOrdered();
+    }
 
 }

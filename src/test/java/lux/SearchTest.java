@@ -193,6 +193,9 @@ public class SearchTest extends SearchBase {
     
     @Test
     public void testLazyEvaluation () throws Exception {
+        // These expressions are optimized in the sense that lux evaluates them all by retrieving
+        // only the minimal number of required documents (with the available indexes).
+        
         // Note this relies on Lucene's default sort by order of insertion (ie by docid)
         assertSearch ("BERNARDO", "subsequence(//SCENE, 1, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
         assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 1);
@@ -202,11 +205,33 @@ public class SearchTest extends SearchBase {
     
     @Test
     public void testSkipDocs () throws Exception {
-        // find the 4th document with a SCENE in it
-        // we shouldn't need to retrieve the first 3
-        // but actually Saxon decides it needs to sort //SCENE/root() so we end up retrieving every
-        // document
-        assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
+        // Failed to optimize this in two different ways.
+        //
+        // find the 4th document with a SCENE in it; We shouldn't need to retrieve the first 3
+        // 
+        // Even if we do retrieve those, we shouldn't need to get the rest of them,
+        // but actually Saxon decides it needs to sort one sequence or another 
+        // so we end up retrieving all the documents that match the query and don't short-circuit.
+
+        assertSearch ("KING CLAUDIUS", "subsequence((/)[.//SCENE], 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);
+        assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);
+        assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4]//SPEECH[1]/SPEAKER/string()", null, 4);
+        //assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4 to last()]//SPEECH[1]/SPEAKER/string()", null, 26);
+        assertSearch ("BERNARDO", "(//SCENE/SPEECH)[1]/SPEAKER/string()", null, 1);
+    }
+    
+    @Test
+    public void testRoot () {
+        assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);        
+    }
+    
+    @Test
+    public void testOptimizeLast () throws Exception {
+        // Failed to optimize this.
+        // 
+        // We should be able to retrieve the last document, and then get its last speech      
+        assertSearch ("PRINCE FORTINBRAS", "(lux:search('lux_elt_name_ms:SPEECH')[last()]//SPEECH)[last()]/SPEAKER/string()", null, 1);
+        assertSearch ("PRINCE FORTINBRAS", "(//SPEECH)[last()]/SPEAKER/string()", null, 1164);
     }
     
     @Test
@@ -222,30 +247,20 @@ public class SearchTest extends SearchBase {
     }
     
     @Test
-    public void testIntersection2 () throws Exception {
-        // To get this working, we needed to implement CachingDocReader so that we would give
-        // Saxon the *same* document when we retrieved the same document from Lucene.
+    public void testDocumentIdentity() throws Exception {
+        /* This test confirms that document identity is preserved when creating Saxon documents. */
         assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);        
     }
     
     @Test
-    public void testIntersection3 () throws Exception {
-        // We should be able to get a failing test case here, because Saxon allocates document numbers
-        // (which control ordering) in increasing order, so if we arrange for query 1 to return docs
-        // 1, 3, 5, 7 (which will then be numbered 1, 2, 3, 4 in saxon)
-        // and query 2 to return docs
-        // 3, 4, 5, 6, then these will be 2, 5, 3, 6 in saxon
-        // //SCENE -> /PLAY/ACT/SCENE (20), /ACT[1]/SCENE (5), /SCENE (5 of those), /ACT[2]/SCENE (2)
-        /*
-         Evaluator eval = getEvaluator();
-         
-        for (int i = 1; i <= 7; i++) {
-            SaxonExpr expr = (SaxonExpr) eval.compile("(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))[" + i + "]/SPEECH[1]");
-            ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr);
-            System.out.println("******** MATCH ********  " + i);
-            System.out.println(results.iterator().next());
-        }
-        */
+    public void testDocumentOrder() throws Exception {
+        /* This test confirms that document ordering is correct since if document order in Saxon
+         * is not the same as document order in Lucene, then the first 31st document will not be
+         * what we expect.  31 is a magic number because /PLAY has 20 /PLAY/ACT/SCENE, 
+         * /ACT 1 has 5 /ACT/SCENE, then those 5 are repeated as /SCENE. The 31st should be 
+         * /ACT[2]/SCENE[1], but since this will already have been created, its Saxon document 
+         * number would be low using the built-in numbering scheme, and the order mismatch causes 
+         * Saxon to terminate the intersection prematurely. */
         assertSearch ("5", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))", null, 7);
         assertSearch ("6", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))", null, 8);
     }
@@ -260,6 +275,7 @@ public class SearchTest extends SearchBase {
 
     protected void assertSearch(String result, String query, Integer props, Integer docCount) throws LuxException {
         ResultSet<?> results = assertSearch (query, props, docCount);
+        assertTrue ("no results", results.iterator().hasNext());
         assertEquals (result, results.iterator().next().toString());
     }
     
