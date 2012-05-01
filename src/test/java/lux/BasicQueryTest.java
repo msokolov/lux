@@ -34,6 +34,11 @@ public class BasicQueryTest {
         assertQuery (xpath, facts, null, queries);
     }
     
+
+    public static void assertQuery (String xpath, int facts, ValueType type, String ... queries) {
+        assertQuery (xpath, null, facts, type, queries);
+    }
+    
     /**
      * asserts that the given xpath generates the lucene query string, and 
      * that the asserted facts are passed to lux:search
@@ -44,10 +49,13 @@ public class BasicQueryTest {
      * @param queries the expected lucene query strings
      */
 
-    public static void assertQuery (String xpath, int facts, ValueType type, String ... queries) {
+    public static void assertQuery (String xpath, String optimized, int facts, ValueType type, String ... queries) {
         Saxon saxon = new Saxon();
         SaxonExpr expr = saxon.compile(xpath);
         AbstractExpression ex = saxon.getTranslator().exprFor(expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        if (optimized != null) {
+            assertEquals (optimized, ex.toString());
+        }
         SearchExtractor extractor = new SearchExtractor();
         ex.accept(extractor);
         assertEquals ("wrong number of queries for " + xpath, queries.length, extractor.queries.size());
@@ -222,13 +230,21 @@ public class BasicQueryTest {
         //assertQuery ("subsequence (//foo, 10, 10)", 0, Q_FOO);
     }
 
-    @Test public void testMultiElementPaths () throws Exception {
-        assertQuery ("//foo/title | //bar/title | //baz/title", 
+    @Test public void testMultiElementPaths () throws Exception {        
+        assertQuery ("//foo/title | //bar/title | //baz/title",
                      0,
                      ValueType.ELEMENT,
+                     "((+lux_elt_name_ms:foo +lux_elt_name_ms:title)" +
+                     " (+lux_elt_name_ms:bar +lux_elt_name_ms:title))" +
+                     " (+lux_elt_name_ms:baz +lux_elt_name_ms:title)");
+        // This was three separate queries, whose results would then have to be merged together,
+        // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
+        // together into a single query
+                     /*
                      "+lux_elt_name_ms:foo +lux_elt_name_ms:title",
                      "+lux_elt_name_ms:bar +lux_elt_name_ms:title",
                      "+lux_elt_name_ms:baz +lux_elt_name_ms:title"); 
+                     */
     }
 
     @Test public void testElementValueNoPath () throws Exception {
@@ -305,6 +321,14 @@ public class BasicQueryTest {
     @Test public void testPredicateNegation () throws Exception {
         assertQuery ("//foo[not(bar)]", 0, ValueType.ELEMENT, Q_FOO);
         assertQuery ("//foo[count(bar) = 0]", 0, ValueType.ELEMENT, "lux_elt_name_ms:foo");
+    }
+    
+    @Test public void testPredicateCombine () throws Exception {
+        // This should depend on having both foo and bar
+        assertQuery ("//foo[.//bar]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO_BAR);
+        assertQuery ("//foo[exists(.//bar)]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO_BAR);
+        // sorry...
+        assertQuery ("//foo[not(empty(.//bar))]", 0, ValueType.ELEMENT, Q_FOO); 
     }
 
 }
