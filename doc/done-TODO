@@ -28,6 +28,10 @@ are difficulties because of the need to preserve document ordering.
 Need to cache documents, at least for the duration of a single query, so we
 don't recreate the same document twice: otherwise Saxon thinks they are
 different.
+** predicate submersion
+Express paths returning documents (say ending with root()) as
+search()[path] so that the path doesn't need to be sorted in document
+order, enabling lazy evaluation.
 * lux components
 ** Translator
 converts Saxon's internal Expression tree to a Lux AbstractExpression tree.

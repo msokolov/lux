@@ -67,10 +67,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private AbstractExpression optimizeExpression (AbstractExpression expr, int j, int facts) {
         if (expr.isAbsolute()) {
             FunCall search = getSearchCall(j, facts);
+            if (search.getReturnType().equals(ValueType.DOCUMENT)) {
+                // Avoid the need to sort the results of this expression so that it can be 
+                // embedded in a subsequence or similar and evaluated lazily.
+                AbstractExpression tail = expr.getTail();
+                if (tail != null) {
+                    return new Predicate (search, tail);
+                }
+            }
             expr = expr.replaceRoot (search);
+            // rather than wrapping the whole expression in a function call that requires a special
+            // iterator (lux:root), let's try submerging the path in a predicate
+            /*
             if (search.getReturnType() == ValueType.DOCUMENT) {
                 expr = new FunCall(FunCall.luxRootQName, ValueType.DOCUMENT, expr);
             }
+            */
         }
         return expr;
     }

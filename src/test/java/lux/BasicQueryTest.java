@@ -177,7 +177,15 @@ public class BasicQueryTest {
         assertQuery ("//*/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q_ATTR);
         
         assertQuery ("//node()/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q_ATTR);
+    }    
+
+    @Test
+    public void testConvertRootedPathToPredicate() {
+        assertQuery ("//foo/bar/root()", "lux:search(\"" + Q_FOO_BAR + "\",24)" +
+        		"[exists(descendant::element(foo)/child::element(bar)/root(.))]", 
+        		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_FOO_BAR);
     }
+    
     
     @Test public void testAttributePredicates () throws Exception {
         assertQuery ("//*[@attr]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_ATTR);

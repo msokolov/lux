@@ -30,4 +30,15 @@ public class PathExpression extends AbstractExpression {
         acceptSubs(visitor);
         return visitor.visit(this);
     }
+
+    /**
+     * @return the expression left after removing the left-most sub-expression.
+     */
+    public AbstractExpression getTail() {
+        AbstractExpression left = subs[0].getTail();
+        if (left == null) {
+            return subs[1];
+        }
+        return new PathExpression (left, subs[1]);
+    }
 }

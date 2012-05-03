@@ -214,14 +214,12 @@ public class SearchTest extends SearchBase {
         // so we end up retrieving all the documents that match the query and don't short-circuit.
 
         assertSearch ("KING CLAUDIUS", "subsequence((/)[.//SCENE], 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);
-        assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);
-        assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4]//SPEECH[1]/SPEAKER/string()", null, 4);
-        //assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4 to last()]//SPEECH[1]/SPEAKER/string()", null, 26);
         assertSearch ("BERNARDO", "(//SCENE/SPEECH)[1]/SPEAKER/string()", null, 1);
     }
     
     @Test
     public void testRoot () {
+        assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4]//SPEECH[1]/SPEAKER/string()", null, 4);
         assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);        
     }
     
@@ -230,6 +228,7 @@ public class SearchTest extends SearchBase {
         // Failed to optimize this.
         // 
         // We should be able to retrieve the last document, and then get its last speech      
+        // best idea for optimizing this is to add pagination to lux:search
         assertSearch ("PRINCE FORTINBRAS", "(lux:search('lux_elt_name_ms:SPEECH')[last()]//SPEECH)[last()]/SPEAKER/string()", null, 1);
         assertSearch ("PRINCE FORTINBRAS", "(//SPEECH)[last()]/SPEAKER/string()", null, 1164);
     }

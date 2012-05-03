@@ -1,8 +1,9 @@
 package lux.index;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.*;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,20 +58,25 @@ public class XmlPathMapper implements StAXHandler {
             QName qname = getEventQName(reader);
             // qnameStack.add(qname);
             currentPath.append ('/');
-            currentPath.append(qname.toString());
+            currentPath.append(encodeQName(qname));
+            System.out.println (currentPath);
             incrCount(eltQNameCounts, qname);
             String curPath = currentPath.toString();
             incrCount(pathCounts, curPath);
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 QName attQName = getEventAttQName (reader, i);
                 incrCount (attQNameCounts, attQName);
-                incrCount(pathCounts, curPath + "/@" + attQName.toString());
+                incrCount(pathCounts, curPath + "/@" + encodeQName(attQName));
+                System.out.println (curPath + "/@" + encodeQName(attQName));
             }
         }
         else if (eventType == END_ELEMENT) {
             QName qname = getEventQName(reader);
             // snip off the last path step, including its '/' separator char
-            currentPath.setLength(currentPath.length() - qname.toString().length() - 1);
+            currentPath.setLength(currentPath.length() - encodeQName(qname).length() - 1);
+        }
+        else if (eventType == START_DOCUMENT) {
+            currentPath.append("{}");
         }
     }
 
@@ -84,7 +90,7 @@ public class XmlPathMapper implements StAXHandler {
     
     private QName createQName (String localName, String prefix, String namespace) {
         if (namespaceAware) {
-            return new QName (localName, namespace);
+            return new QName (namespace, localName);
         } 
         else if (! prefix.isEmpty()) {
             return new QName (prefix +':' + localName);
@@ -99,6 +105,29 @@ public class XmlPathMapper implements StAXHandler {
             map.put(o, map.get(o) + 1);
         else
             map.put(o, 1);
+    }
+    
+    /**
+     * encode a QName in a suitable form for indexing.  Escapes namespace uris URL-escaping
+     * so that no /'s occur, and / can be used as a separator.  
+     * If namespace-aware, the encoding is: local-name{encoded-namespace}.  Otherwise,
+     * if prefix is non-empty, it's local-name{prefix}, otherwise just local-name.
+     * @param qname
+     * @return the encoded qname
+     */
+    private String encodeQName (QName qname) {
+        String encns = null;
+        if (!isNamespaceAware()) {
+            if (qname.getPrefix().isEmpty()) {
+                return qname.getLocalPart();
+            }
+            encns = qname.getPrefix();
+        } else {
+            try {
+                encns = URLEncoder.encode(qname.getNamespaceURI(), "utf-8");
+            } catch (UnsupportedEncodingException e) { }
+        }
+        return qname.getLocalPart() + '{' + encns + '}';
     }
 
     public void clear() {

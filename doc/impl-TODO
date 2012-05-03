@@ -1,5 +1,10 @@
 * cleanup optimizations
-** get rid of lux:search facts argument
+** delete dead code
+*** lux:root()
+subsumed by predicate optimization
+*** Optimizer
+It's suspect and not doing anything anyway
+*** get rid of lux:search facts argument
 The facts are not serving any purpose now that we are using lazy
 evaluation, and we have separate lux:count and lux:exists methods.
 ** add pagination args to lux:search
@@ -18,8 +23,30 @@ occurrence of foo in its document.
 ** shorten xml index field names?
 to make it easier to type queries.  Maybe make the default field name be
 something reasonable, like xml_text?  then use lx_att, lx_elt, lx_path?
-** enhance Saxon's default optimizer
-enable less agressive documentSorting?
+* new indexes
+** path index
+options for indexing/querying:
+*** phrase query
+/foo/bar -> "ROOT foo bar"
+foo/*/bar -> "foo bar"~1
+foo/*/*/bar -> "foo bar"~2
+foo/*/bar/*/*/baz -> ??
+foo//bar -> "foo bar"~1000
+/foo//bar" -> ??
+*** wildcards (multi-term query)
+Only good when rooted at one end?
+*** span query
+/foo/bar -> "ROOT foo bar"
+foo/*/bar -> near("foo","bar",1,t)
+foo/*/*/bar -> near("foo","bar",2,t)
+foo/*/bar/*/*/baz -> near(near("foo","bar",1,t),"baz",2,t)
+foo//bar -> near("foo","bar",1000,t)
+/foo//bar" -> near("ROOT foo","bar",1000,t)
+** value indexes
+** word indexes
+** sorting
+* perf test
+some kind of comparison with something
 * API packaging
 ** rename Saxon
 Lux? Evaluator?
