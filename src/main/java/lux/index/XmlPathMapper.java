@@ -59,7 +59,6 @@ public class XmlPathMapper implements StAXHandler {
             // qnameStack.add(qname);
             currentPath.append ('/');
             currentPath.append(encodeQName(qname));
-            System.out.println (currentPath);
             incrCount(eltQNameCounts, qname);
             String curPath = currentPath.toString();
             incrCount(pathCounts, curPath);
@@ -67,7 +66,6 @@ public class XmlPathMapper implements StAXHandler {
                 QName attQName = getEventAttQName (reader, i);
                 incrCount (attQNameCounts, attQName);
                 incrCount(pathCounts, curPath + "/@" + encodeQName(attQName));
-                System.out.println (curPath + "/@" + encodeQName(attQName));
             }
         }
         else if (eventType == END_ELEMENT) {
