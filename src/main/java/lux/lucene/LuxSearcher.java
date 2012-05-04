@@ -29,6 +29,7 @@ public class LuxSearcher extends IndexSearcher {
       private final boolean ordered;
       private int nextReader;
       private int docID;
+      private int docBase; // add to docID which is relative to each sub-reader
       private Scorer scorer;
       
       /**
@@ -46,6 +47,7 @@ public class LuxSearcher extends IndexSearcher {
 
       private void advanceScorer () throws IOException {
           while (nextReader < subReaders.length) {
+              docBase = docStarts[nextReader];
               scorer = weight.scorer(subReaders[nextReader++], ordered, true);
               if (scorer != null) {
                   return;
@@ -64,7 +66,7 @@ public class LuxSearcher extends IndexSearcher {
         while (scorer != null) {
             docID = scorer.nextDoc();
             if (docID != NO_MORE_DOCS) {
-                return docID;
+                return docID + docBase;
             }
             advanceScorer();
         }
@@ -74,9 +76,9 @@ public class LuxSearcher extends IndexSearcher {
     @Override
     public int advance(int target) throws IOException {
         while (scorer != null) {
-            docID = scorer.advance(target);
+            docID = scorer.advance(target - docBase);
             if (docID != NO_MORE_DOCS) {
-                return docID;
+                return docID + docBase;
             }
             advanceScorer();
         }
