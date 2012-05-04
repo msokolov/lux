@@ -162,7 +162,7 @@ public class SearchTest extends SearchBase {
         Saxon saxon = getEvaluator();
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
-        System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
+        System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results");
         AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
         aex = new UnOptimizer().unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
