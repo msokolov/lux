@@ -1,7 +1,9 @@
 package lux.index;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +12,11 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexWriter;
 import org.jdom.Document;
 import org.jdom.filter.ContentFilter;
 import org.jdom.output.XMLOutputter;
@@ -28,7 +35,7 @@ public class XmlIndexer {
     private String eltNameFieldName = "lux_elt_name_ms";
     private String attNameFieldName = "lux_att_name_ms";
     private String pathFieldName = "lux_path_ms";
-    private String xmlFieldName = "xml_text"; // TODO rename
+    private String xmlFieldName = "xml_text";
     private String textFieldName = "xml_text_only";
     
     private int options = 0;
@@ -47,6 +54,11 @@ public class XmlIndexer {
     public final static int BUILD_JDOM=1;
     public final static int SERIALIZE_XML=2;
     public final static int NAMESPACE_AWARE=4;
+    public final static int STORE_XML=8;
+    public final static int STORE_PTREE=16;
+    public final static int INDEX_QNAMES=32;
+    public final static int INDEX_PATHS=64;
+    public final static int INDEX_FULLTEXT=128;
     
     public XmlIndexer (int options) {
         this ();
@@ -60,6 +72,16 @@ public class XmlIndexer {
                 jdomSerializer = new XMLOutputter ();
                 fieldNames.add(xmlFieldName);
             }
+        }
+        if (!isOption (INDEX_QNAMES)) {
+            fieldNames.remove(eltNameFieldName);
+            fieldNames.remove(attNameFieldName);
+        }
+        if (!isOption (INDEX_PATHS)) {
+            fieldNames.remove(pathFieldName);
+        }
+        if (!isOption (INDEX_FULLTEXT)) {
+            fieldNames.remove(textFieldName);
         }
     }
     
@@ -123,4 +145,21 @@ public class XmlIndexer {
             return null;
         return jdomBuilder.getDocument();
     }
+    
+    public void indexDocument(IndexWriter indexWriter, String xml) throws XMLStreamException, CorruptIndexException, IOException {
+        reset();
+        index(new StringReader(xml));
+        org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
+        for (String fieldName : getFieldNames()) {
+            for (Object value : getFieldValues(fieldName)) {
+                // TODO: handle other primitive value types like int, at least, and collations, and analyzers
+                doc.add(new Field(fieldName, value.toString(), Store.NO, isTokens(fieldName) ? Index.ANALYZED : Index.NOT_ANALYZED));
+            }
+        }
+        doc.add(new Field("xml_text", xml, Store.YES, Index.NOT_ANALYZED));
+        if ((STORE_XML & options) != 0) {
+            indexWriter.addDocument(doc);
+        }
+    }
+    
 }
