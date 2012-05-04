@@ -127,11 +127,12 @@ public class XmlPathMapper implements StAXHandler {
         }
         return qname.getLocalPart() + '{' + encns + '}';
     }
-
+    
     public void clear() {
         eltQNameCounts.clear();
         attQNameCounts.clear();
         pathCounts.clear();
+        currentPath.setLength(0);
     }
 
 }
