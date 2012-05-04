@@ -44,12 +44,14 @@ public class XmlIndexer {
         fieldNames.add(textFieldName);
     }
     
-    public static int BUILD_JDOM=1;
-    public static int SERIALIZE_XML=2;
+    public final static int BUILD_JDOM=1;
+    public final static int SERIALIZE_XML=2;
+    public final static int NAMESPACE_AWARE=4;
     
     public XmlIndexer (int options) {
         this ();
         this.options = options;
+        pathMapper.setNamespaceAware((options & NAMESPACE_AWARE) != 0);        
         if (isOption (BUILD_JDOM) || isOption(SERIALIZE_XML)) {
          // build a JDOM in case we want to index XPaths
             jdomBuilder = new JDOMBuilder();
