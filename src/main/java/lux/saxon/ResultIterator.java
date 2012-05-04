@@ -3,12 +3,14 @@ package lux.saxon;
 import java.io.IOException;
 
 import lux.XPathQuery;
+import lux.api.LuxException;
 import lux.api.QueryStats;
 import lux.lucene.LuxSearcher;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Scorer;
@@ -54,7 +56,12 @@ public class ResultIterator implements SequenceIterator<Item>{
                     }
                 }
                 XdmItem doc = docCache.get(docID);
-                current = (Item) doc.getUnderlyingValue();
+                Item item = (Item) doc.getUnderlyingValue();
+                // assertion for safety
+                if (current != null && ((TinyDocumentImpl)item).getDocumentNumber() <= ((TinyDocumentImpl)current).getDocumentNumber()) {
+                    throw new LuxException ("out of order");
+                }
+                current = item;
                 ++position;
                 stats.retrievalTime += System.nanoTime() - t;
             }
