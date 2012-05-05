@@ -5,6 +5,7 @@ import java.io.StringReader;
 
 import javax.xml.stream.XMLStreamException;
 
+import lux.index.XmlField;
 import lux.index.XmlIndexer;
 
 import org.apache.solr.common.params.SolrParams;
@@ -59,10 +60,10 @@ public class XPathUpdateProcessor extends UpdateRequestProcessorFactory {
                 } catch (XMLStreamException e) {
                     log.error ("Failed to parse " + xmlFieldName, e);
                 }
-                for (String fieldName : xmlIndexer.getFieldNames()) {
-                    for (Object value : xmlIndexer.getFieldValues(fieldName)) {
+                for (XmlField field : xmlIndexer.getFields()) {
+                    for (Object value : xmlIndexer.getFieldValues(field)) {
                         // TODO: handle other primitive value types
-                        cmd.getSolrInputDocument().addField(fieldName, value.toString());
+                        cmd.getSolrInputDocument().addField(field.getName(), value.toString());
                     }
                 }
             }

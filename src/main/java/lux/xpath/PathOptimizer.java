@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import lux.XPathQuery;
 import lux.api.ValueType;
+import lux.index.XmlField;
 import lux.xpath.PathStep.Axis;
 
 import org.apache.lucene.index.Term;
@@ -32,8 +33,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private ArrayList<XPathQuery> queryStack;
     //private AbstractExpression expr;
     
-    private final String attrQNameField = "lux_att_name_ms";
-    private final String elementQNameField = "lux_elt_name_ms";
+    private final static String attrQNameField = XmlField.ATT_QNAME.getName();
+    private final static String elementQNameField = XmlField.ELT_QNAME.getName();
     
     private static final XPathQuery MATCH_ALL_QUERY = XPathQuery.MATCH_ALL;
     

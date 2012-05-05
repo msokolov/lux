@@ -24,11 +24,11 @@ import org.junit.Test;
  */
 public class BasicQueryTest {
     
-    private static final String Q_ATTR = "lux_att_name_ms:attr";
-    private static final String Q_BAR = "lux_elt_name_ms:bar";
-    private static final String Q_FOO_BAR = "+lux_elt_name_ms:foo +lux_elt_name_ms:bar";
-    private static final String Q_FOO_OR_BAR = "lux_elt_name_ms:foo lux_elt_name_ms:bar";
-    private static final String Q_FOO = "lux_elt_name_ms:foo";
+    private static final String Q_ATTR = "lux_att_name:attr";
+    private static final String Q_BAR = "lux_elt_name:bar";
+    private static final String Q_FOO_BAR = "+lux_elt_name:foo +lux_elt_name:bar";
+    private static final String Q_FOO_OR_BAR = "lux_elt_name:foo lux_elt_name:bar";
+    private static final String Q_FOO = "lux_elt_name:foo";
 
     public static void assertQuery (String xpath, int facts, String ... queries) {
         assertQuery (xpath, facts, null, queries);
@@ -195,7 +195,7 @@ public class BasicQueryTest {
 
     @Test public void testElementAttributePaths () throws Exception {
         
-        assertQuery ("//foo/@id", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, "+lux_elt_name_ms:foo +lux_att_name_ms:id");
+        assertQuery ("//foo/@id", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, "+lux_elt_name:foo +lux_att_name:id");
 
         assertQuery ("//foo/@*", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q_FOO);
     }
@@ -242,16 +242,16 @@ public class BasicQueryTest {
         assertQuery ("//foo/title | //bar/title | //baz/title",
                      0,
                      ValueType.ELEMENT,
-                     "((+lux_elt_name_ms:foo +lux_elt_name_ms:title)" +
-                     " (+lux_elt_name_ms:bar +lux_elt_name_ms:title))" +
-                     " (+lux_elt_name_ms:baz +lux_elt_name_ms:title)");
+                     "((+lux_elt_name:foo +lux_elt_name:title)" +
+                     " (+lux_elt_name:bar +lux_elt_name:title))" +
+                     " (+lux_elt_name:baz +lux_elt_name:title)");
         // This was three separate queries, whose results would then have to be merged together,
         // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
         // together into a single query
                      /*
-                     "+lux_elt_name_ms:foo +lux_elt_name_ms:title",
-                     "+lux_elt_name_ms:bar +lux_elt_name_ms:title",
-                     "+lux_elt_name_ms:baz +lux_elt_name_ms:title"); 
+                     "+lux_elt_name:foo +lux_elt_name:title",
+                     "+lux_elt_name:bar +lux_elt_name:title",
+                     "+lux_elt_name:baz +lux_elt_name:title"); 
                      */
     }
 
@@ -280,8 +280,8 @@ public class BasicQueryTest {
     }
     
     @Test public void testAtomicResult () throws Exception {
-        assertQuery ("number(/doc/test[1])", 0, ValueType.ATOMIC, "+lux_elt_name_ms:doc +lux_elt_name_ms:test");
-        assertQuery ("number(//test[1])", XPathQuery.MINIMAL, ValueType.ATOMIC, "lux_elt_name_ms:test");
+        assertQuery ("number(/doc/test[1])", 0, ValueType.ATOMIC, "+lux_elt_name:doc +lux_elt_name:test");
+        assertQuery ("number(//test[1])", XPathQuery.MINIMAL, ValueType.ATOMIC, "lux_elt_name:test");
     }
     
     @Test public void testCounting () throws Exception {
@@ -328,7 +328,7 @@ public class BasicQueryTest {
     
     @Test public void testPredicateNegation () throws Exception {
         assertQuery ("//foo[not(bar)]", 0, ValueType.ELEMENT, Q_FOO);
-        assertQuery ("//foo[count(bar) = 0]", 0, ValueType.ELEMENT, "lux_elt_name_ms:foo");
+        assertQuery ("//foo[count(bar) = 0]", 0, ValueType.ELEMENT, "lux_elt_name:foo");
     }
     
     @Test public void testPredicateCombine () throws Exception {

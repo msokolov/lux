@@ -12,12 +12,9 @@ import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.util.Version;
 import org.jdom.Element;
 import org.jdom.filter.ElementFilter;
 import org.jdom.output.XMLOutputter;
@@ -28,7 +25,6 @@ public abstract class SearchBase {
 
     private static Directory dir;
     protected static LuxSearcher searcher;
-    private static final Version luceneVersion = Version.LUCENE_34;
     protected static int totalDocs;
     protected static int QUERY_EXACT = 0x00000001;
     protected static int QUERY_NO_DOCS = 0x00000002;
@@ -39,7 +35,7 @@ public abstract class SearchBase {
     public static void setUp() throws Exception {
         // create an in-memory Lucene index, index some content
         dir = new RAMDirectory();
-        XmlIndexer indexer = new XmlIndexer (XmlIndexer.BUILD_JDOM | XmlIndexer.STORE_XML);
+        XmlIndexer indexer = new XmlIndexer ();
         indexAllElements (indexer, dir, "lux/hamlet.xml");
         searcher = new LuxSearcher(dir);
     }
@@ -65,7 +61,7 @@ public abstract class SearchBase {
     }
     
     public static void indexAllElements(XmlIndexer indexer, Directory dir, InputStream in) throws XMLStreamException, IOException {
-        IndexWriter indexWriter = new IndexWriter(dir, new IndexWriterConfig(luceneVersion, new StandardAnalyzer(luceneVersion)));
+        IndexWriter indexWriter = indexer.getIndexWriter(dir);
         String hamlet = IOUtils.toString(in);
         indexer.indexDocument(indexWriter, hamlet);
         XMLOutputter outputter = new XMLOutputter();

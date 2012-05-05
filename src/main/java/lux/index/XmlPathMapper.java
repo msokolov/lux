@@ -57,7 +57,7 @@ public class XmlPathMapper implements StAXHandler {
         if (eventType == START_ELEMENT) {
             QName qname = getEventQName(reader);
             // qnameStack.add(qname);
-            currentPath.append ('/');
+            currentPath.append (' ');
             currentPath.append(encodeQName(qname));
             incrCount(eltQNameCounts, qname);
             String curPath = currentPath.toString();
@@ -65,7 +65,7 @@ public class XmlPathMapper implements StAXHandler {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 QName attQName = getEventAttQName (reader, i);
                 incrCount (attQNameCounts, attQName);
-                incrCount(pathCounts, curPath + "/@" + encodeQName(attQName));
+                incrCount(pathCounts, curPath + " @" + encodeQName(attQName));
             }
         }
         else if (eventType == END_ELEMENT) {
@@ -121,6 +121,9 @@ public class XmlPathMapper implements StAXHandler {
             }
             encns = qname.getPrefix();
         } else {
+            if (qname.getNamespaceURI().isEmpty()) {
+                return qname.getLocalPart();
+            }
             try {
                 encns = URLEncoder.encode(qname.getNamespaceURI(), "utf-8");
             } catch (UnsupportedEncodingException e) { }

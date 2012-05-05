@@ -12,17 +12,19 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import lux.xml.JDOMBuilder;
+import lux.xml.XmlReader;
+
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.LockObtainFailedException;
+import org.apache.lucene.util.Version;
 import org.jdom.Document;
 import org.jdom.filter.ContentFilter;
 import org.jdom.output.XMLOutputter;
-
-import lux.xml.JDOMBuilder;
-import lux.xml.XmlReader;
 
 public class XmlIndexer {
     
@@ -30,25 +32,15 @@ public class XmlIndexer {
     private JDOMBuilder jdomBuilder;
     private XMLOutputter jdomSerializer;
     private XmlPathMapper pathMapper;
-    private List<String> fieldNames = new ArrayList<String>();
-    
-    private String eltNameFieldName = "lux_elt_name_ms";
-    private String attNameFieldName = "lux_att_name_ms";
-    private String pathFieldName = "lux_path_ms";
-    private String xmlFieldName = "xml_text";
-    private String textFieldName = "xml_text_only";
+    private List<XmlField> fields = new ArrayList<XmlField>();
+    private MultiFieldAnalyzer fieldAnalyzers;
     
     private int options = 0;
     
+    private static final Version luceneVersion = Version.LUCENE_34;
+    
     public XmlIndexer () {
-        xmlReader = new XmlReader();        
-        // accumulate XML paths and QNames for indexing
-        pathMapper = new XmlPathMapper();
-        xmlReader.addHandler (pathMapper);
-        fieldNames.add(eltNameFieldName);
-        fieldNames.add(attNameFieldName);
-        fieldNames.add(pathFieldName);
-        fieldNames.add(textFieldName);
+        this (DEFAULT_OPTIONS);
     }
     
     public final static int BUILD_JDOM=1;
@@ -59,30 +51,42 @@ public class XmlIndexer {
     public final static int INDEX_QNAMES=32;
     public final static int INDEX_PATHS=64;
     public final static int INDEX_FULLTEXT=128;
+    public final static int DEFAULT_OPTIONS = BUILD_JDOM | STORE_XML | INDEX_QNAMES | INDEX_PATHS;
     
     public XmlIndexer (int options) {
-        this ();
         this.options = options;
+        fieldAnalyzers = new MultiFieldAnalyzer();
+        xmlReader = new XmlReader();        
+        // accumulate XML paths and QNames for indexing
+        pathMapper = new XmlPathMapper();
+        xmlReader.addHandler (pathMapper);
+        if (isOption (INDEX_QNAMES)) {
+            addField(XmlField.ELT_QNAME);
+            addField(XmlField.ELT_QNAME);
+        }
+        if (isOption (INDEX_PATHS)) {
+            addField(XmlField.PATH);
+        }
+        if (isOption (INDEX_FULLTEXT)) {
+            addField(XmlField.FULL_TEXT);
+        }
+        if (isOption (STORE_XML)) {
+            addField(XmlField.XML_STORE);
+        }
         pathMapper.setNamespaceAware((options & NAMESPACE_AWARE) != 0);        
-        if (isOption (BUILD_JDOM) || isOption(SERIALIZE_XML)) {
+        if (isOption (BUILD_JDOM) || isOption(STORE_XML)) {
          // build a JDOM in case we want to index XPaths
             jdomBuilder = new JDOMBuilder();
             xmlReader.addHandler (jdomBuilder);
-            if (isOption (SERIALIZE_XML)) {
+            if (isOption (STORE_XML)) {
                 jdomSerializer = new XMLOutputter ();
-                fieldNames.add(xmlFieldName);
             }
         }
-        if (!isOption (INDEX_QNAMES)) {
-            fieldNames.remove(eltNameFieldName);
-            fieldNames.remove(attNameFieldName);
-        }
-        if (!isOption (INDEX_PATHS)) {
-            fieldNames.remove(pathFieldName);
-        }
-        if (!isOption (INDEX_FULLTEXT)) {
-            fieldNames.remove(textFieldName);
-        }
+    }
+    
+    public void addField (XmlField field) {
+        fields.add(field);
+        fieldAnalyzers.put(field.getName(), field.getAnalyzer());
     }
     
     public void index (InputStream xml) throws XMLStreamException {
@@ -103,24 +107,26 @@ public class XmlIndexer {
         pathMapper.clear();
     }
     
-    public Collection<String> getFieldNames () {
-        return fieldNames;
+    public Collection<XmlField> getFields () {
+        return fields;
     }
     
-    public Iterable<?> getFieldValues (String fieldName) {
-        if (eltNameFieldName.equals(fieldName)) {
+    public Iterable<?> getFieldValues (XmlField field) {
+        if (XmlField.ELT_QNAME.equals(field)) {
+            // TODO: encode QNames
             return pathMapper.getEltQNameCounts().keySet();
         }
-        if (attNameFieldName.equals(fieldName)) {
+        if (XmlField.ATT_QNAME.equals(field)) {
+            // TODO: encode QNames
             return pathMapper.getAttQNameCounts().keySet();
         }
-        if (pathFieldName.equals(fieldName)) {
+        if (XmlField.PATH.equals(field)) {
             return pathMapper.getPathCounts().keySet();
         }
-        if (xmlFieldName.equals(fieldName) && isOption(SERIALIZE_XML)) {
+        if (XmlField.XML_STORE.equals(field)) {
             return Collections.singletonList(jdomSerializer.outputString(getJDOM()));
         }
-        if (textFieldName.equals(fieldName) && isOption(BUILD_JDOM)) {
+        if (XmlField.FULL_TEXT.equals(field)) {
            @SuppressWarnings("unchecked")
            final Iterator<Object> textIter = getJDOM().getDescendants (new ContentFilter(ContentFilter.TEXT | ContentFilter.CDATA));
            return new Iterable<Object> () {
@@ -130,14 +136,6 @@ public class XmlIndexer {
            };
         }
         return Collections.EMPTY_SET;
-    }
-    
-    public boolean isTokens (String fieldname) {
-        return textFieldName.equals(fieldname);
-    }
-    
-    public String getTextFieldName () {
-        return textFieldName;
     }
     
     public Document getJDOM() {
@@ -150,16 +148,17 @@ public class XmlIndexer {
         reset();
         index(new StringReader(xml));
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
-        for (String fieldName : getFieldNames()) {
-            for (Object value : getFieldValues(fieldName)) {
+        for (XmlField field : getFields()) {
+            for (Object value : getFieldValues(field)) {
                 // TODO: handle other primitive value types like int, at least, and collations, and analyzers
-                doc.add(new Field(fieldName, value.toString(), Store.NO, isTokens(fieldName) ? Index.ANALYZED : Index.NOT_ANALYZED));
+                doc.add(new Field(field.getName(), value.toString(), field.isStored(), field.getIndexOptions()));
             }
         }
-        doc.add(new Field("xml_text", xml, Store.YES, Index.NOT_ANALYZED));
-        if ((STORE_XML & options) != 0) {
-            indexWriter.addDocument(doc);
-        }
+        indexWriter.addDocument(doc);        
+    }
+
+    public IndexWriter getIndexWriter(Directory dir) throws CorruptIndexException, LockObtainFailedException, IOException {
+        return new IndexWriter(dir, new IndexWriterConfig(luceneVersion, fieldAnalyzers));
     }
     
 }

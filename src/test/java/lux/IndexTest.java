@@ -1,32 +1,89 @@
 package lux;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
 import lux.index.XmlIndexer;
+import lux.lucene.LuxSearcher;
 
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.TermEnum;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.store.RAMDirectory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-public abstract class IndexTest {
+/**
+ * measures space and time for different indexing options
+ */
+public class IndexTest {
     
+    private RAMDirectory dir;
+
     @Test
-    public void testIndexSizes () throws Exception {
-        testIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
-        testIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.BUILD_JDOM);
-        testIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
-        testIndex ("xml storage", XmlIndexer.STORE_XML| XmlIndexer.BUILD_JDOM);
+    public void testIndexQNames() throws Exception {
+        buildIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
+        IndexReader reader = IndexReader.open(dir);
+        TermEnum terms = reader.terms();
+        while (terms.next()) {
+            System.out.println (terms.term());
+        }
+        reader.close();
+    }
+        
+    private void assertTotalDocs() throws IOException {
+        LuxSearcher searcher = new LuxSearcher(dir);
+        DocIdSetIterator results = searcher.search(new MatchAllDocsQuery());
+        int count = 0;
+        while (results.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+            ++count;
+        }
+        assertEquals (6636, count);
+        /*
+        */
+        searcher.close();
+    }
+
+    @Test
+    public void testIndexPaths() throws Exception {
+        buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
+    }
+
+    @Test
+    public void testIndexQNamesAndPaths() throws Exception {
+        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
+    }
+
+    @Test
+    public void testStoreDocuments() throws Exception {
+        buildIndex ("xml storage", XmlIndexer.STORE_XML| XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
     }
     
-    private void testIndex (String desc, int options) throws XMLStreamException, IOException {
-        RAMDirectory dir = new RAMDirectory();
+    @Before
+    public void setup() {
+        dir = new RAMDirectory();
+    }
+    
+    @After
+    public void cleanup() {
+        dir.close();
+    }
+    
+    private void buildIndex (String desc, int options) throws XMLStreamException, IOException {
         XmlIndexer indexer = new XmlIndexer (options);
         long t0 = System.currentTimeMillis();
         SearchBase.indexAllElements (indexer, dir, "lux/hamlet.xml");
         System.out.println 
              (String.format("indexed %s in %d ms %d bytes", desc, 
                      (System.currentTimeMillis()-t0), dir.sizeInBytes()));
-        dir.close();
     }
 }

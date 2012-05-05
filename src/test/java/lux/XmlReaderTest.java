@@ -34,9 +34,9 @@ public class XmlReaderTest {
         // attributes
         assertEquals (Integer.valueOf(2), pathMapper.getAttQNameCounts().get(new QName("id")));
         // paths
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test/@id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test/entities/@id"));
-        assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{}/test/entities"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test @id"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test entities @id"));
+        assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{} test entities"));
         
         pathMapper.clear();
         assertTrue (pathMapper.getPathCounts().isEmpty());
@@ -59,9 +59,9 @@ public class XmlReaderTest {
         // attributes
         assertEquals (Integer.valueOf(2), pathMapper.getAttQNameCounts().get(new QName("id")));
         // paths
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test{http%3A%2F%2Flux.net%2F%23test}/@id{}"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test{http%3A%2F%2Flux.net%2F%23test}/entities{%232}/@id{}"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test{http%3A%2F%2Flux.net%2F%23test}/entities{http%3A%2F%2Flux.net%2F%23test}"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} @id"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} entities{%232} @id"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} entities{http%3A%2F%2Flux.net%2F%23test}"));
         
     }
     
@@ -78,10 +78,10 @@ public class XmlReaderTest {
         // attributes
         assertEquals (Integer.valueOf(2), pathMapper.getAttQNameCounts().get(new QName("id")));
         // paths
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test/@id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test/entities/@id"));
-        assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{}/test/entities"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{}/test/x:title"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test @id"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test entities @id"));
+        assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{} test entities"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test x:title"));
         
     }
 
