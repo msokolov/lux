@@ -5,7 +5,9 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 
 import lux.api.ValueType;
+import lux.index.XmlIndexer;
 import lux.saxon.Saxon;
+import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
@@ -51,6 +53,7 @@ public class BasicQueryTest {
 
     public static void assertQuery (String xpath, String optimized, int facts, ValueType type, String ... queries) {
         Saxon saxon = new Saxon();
+        saxon.setContext(new SaxonContext (null, new XmlIndexer()));
         SaxonExpr expr = saxon.compile(xpath);
         AbstractExpression ex = saxon.getTranslator().exprFor(expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
         if (optimized != null) {

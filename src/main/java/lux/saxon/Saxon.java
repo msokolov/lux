@@ -44,8 +44,7 @@ public class Saxon extends Evaluator  {
     // here and make an object that has only things that have a query lifespan
     private CachingDocReader docReader;
     
-    private static Config config;
-    
+    private static Config config;    
     
     public Saxon() {
         if (config == null) {
@@ -74,7 +73,7 @@ public class Saxon extends Evaluator  {
         }
 
         AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
-        PathOptimizer optimizer = new PathOptimizer();
+        PathOptimizer optimizer = new PathOptimizer(getContext().getIndexer());
         expr = optimizer.optimize(expr);
         try {
             xpath = xpathCompiler.compile(expr.toString());

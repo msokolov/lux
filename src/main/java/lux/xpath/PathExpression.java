@@ -1,5 +1,10 @@
 package lux.xpath;
 
+/**
+ * A path expression represents two expressions joined with a "/"
+ * @author sokolov
+ *
+ */
 public class PathExpression extends AbstractExpression {
     
     public PathExpression (AbstractExpression lhs, AbstractExpression rhs) {
@@ -7,6 +12,14 @@ public class PathExpression extends AbstractExpression {
         subs = new AbstractExpression[2];
         subs[0] = lhs;
         subs[1] = rhs;
+    }
+    
+    public final AbstractExpression getRHS() {
+        return subs[1];
+    }
+    
+    public final AbstractExpression getLHS() {
+        return subs[0];
     }
 
     @Override
@@ -41,4 +54,5 @@ public class PathExpression extends AbstractExpression {
         }
         return new PathExpression (left, subs[1]);
     }
+
 }

@@ -6,11 +6,14 @@ import java.util.HashMap;
 import lux.XPathQuery;
 import lux.api.ValueType;
 import lux.index.XmlField;
+import lux.index.XmlIndexer;
+import lux.lucene.SurroundTerm;
 import lux.xpath.PathStep.Axis;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
 /**
@@ -30,7 +33,8 @@ import org.apache.lucene.search.TermQuery;
  */
 public class PathOptimizer extends ExpressionVisitorBase {
 
-    private ArrayList<XPathQuery> queryStack;
+    private final ArrayList<XPathQuery> queryStack;
+    private final XmlIndexer indexer;
     //private AbstractExpression expr;
     
     private final static String attrQNameField = XmlField.ATT_QNAME.getName();
@@ -38,9 +42,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     private static final XPathQuery MATCH_ALL_QUERY = XPathQuery.MATCH_ALL;
     
-    public PathOptimizer() {
+    public PathOptimizer(XmlIndexer indexer) {
         queryStack = new ArrayList<XPathQuery>();
         push(MATCH_ALL_QUERY);
+        this.indexer = indexer;
     }
     
     /**
@@ -77,22 +82,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 }
             }
             expr = expr.replaceRoot (search);
-            // rather than wrapping the whole expression in a function call that requires a special
-            // iterator (lux:root), let's try submerging the path in a predicate
-            /*
-            if (search.getReturnType() == ValueType.DOCUMENT) {
-                expr = new FunCall(FunCall.luxRootQName, ValueType.DOCUMENT, expr);
-            }
-            */
         }
         return expr;
     }
 
     /**
-     * TODO: some operations *commute with lux:search*.  In those cases, we do better to wrap the search around
-     * this expression, rather than around each of its children.  Basically we want to "pull up" the search operation 
-     * to the highest allowable level.
-     * 
      * Each absolute subexpression S is joined with a call to lux:search(), 
      * effectively replacing it with search(QS)/S, where QS is the query derived 
      * corresponding to S.  In addition, if S returns documents, the foregoing expression
@@ -103,6 +97,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * facts found in the search query.
      */
     protected void optimizeSubExpressions(AbstractExpression expr, int facts) {
+        /*
+         * TODO: some operations *commute with lux:search*.  In those cases, we
+         * do better to wrap the search around this expression, rather than
+         * around each of its children.  Basically we want to "pull up" the
+         * search operation to the highest allowable level.  Maybe Saxon will
+         * already have done this for us?  Need a test case ...
+         * 
+         */
         AbstractExpression[] subs = expr.getSubs();
         for (int i = 0; i < subs.length; i ++) {
             subs[i] = optimizeExpression (subs[i], subs.length - i - 1, facts);
@@ -114,17 +116,32 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return expr;
     }
     
-    // An absolute path is a PathExpression whose left-most expression is a Root.
-    // divide the expression tree into regions bounded on the right and left by Root
-    // then optimize these absolute paths as searches, and then optimize some functions 
-    // like count(), exists(), not() with arguments that are searches
-    //
-    // also we may want to collapse some path expressions when they return documents;
-    // like //a/root().  in this case 
+    /**
+     * Conjoin the queries for the two expressions joined by the path.
+     *
+     * PathExpressions can join together Dot, Root, PathStep, FunCall, PathExpression,and maybe Variable?
+     */
     public AbstractExpression visit(PathExpression pathExpr) {
         XPathQuery rq = pop();
         XPathQuery lq = pop();
-        XPathQuery query = combineQueries (lq,  Occur.MUST, rq, Occur.MUST, rq.getResultType());
+        XPathQuery query;
+        SlopCounter slopCounter = new SlopCounter ();
+        
+        // count the left slop of the RHS
+        pathExpr.getRHS().accept (slopCounter);
+        Integer rSlop = slopCounter.getSlop();
+
+        // count the right slop of the LHS
+        slopCounter.setReverse (true);
+        pathExpr.getLHS().accept (slopCounter);
+        Integer lSlop = slopCounter.getSlop();
+
+        if (rSlop != null && lSlop != null) {
+            // total slop is the distance between the two path components.
+            query = lq.combine(rq, Occur.MUST, rq.getResultType(), rSlop + lSlop);
+        } else {
+            query = combineQueries (lq, Occur.MUST, rq, rq.getResultType());
+        }
         push(query);
         return pathExpr;
     }
@@ -157,7 +174,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
             query = XPathQuery.getQuery(new MatchAllDocsQuery(), getQuery().getFacts(), type);
         } else {
-            TermQuery termQuery = nodeNameTermQuery(step.getAxis(), name);
+            Query termQuery = nodeNameTermQuery(step.getAxis(), name);
             query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType());
         }
        push(query);
@@ -288,16 +305,26 @@ public class PathOptimizer extends ExpressionVisitorBase {
         push (query);
         return funcall;
     }
-    
-    private static final XPathQuery combineQueries(XPathQuery lq, Occur loccur, XPathQuery rq, Occur roccur, ValueType valueType) {
-        return lq.combine(loccur, rq, roccur, valueType);
+
+    private XPathQuery combineQueries(XPathQuery rq, Occur occur, XPathQuery lq, ValueType resultType) {
+        XPathQuery query;
+        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
+            query = lq.combine(rq, occur, resultType, -1);
+        } else {
+            query = lq.combine(occur, rq, occur, resultType);
+        }
+        return query;
     }
     
-    private TermQuery nodeNameTermQuery(Axis axis, QName name) {
+    private Query nodeNameTermQuery(Axis axis, QName name) {
         String nodeName = name.getClarkName(); //name.getLocalPart();
         String fieldName = (axis == Axis.Attribute) ? attrQNameField : elementQNameField;
-        TermQuery termQuery = new TermQuery (new Term (fieldName, nodeName));
-        return termQuery;
+        Term term = new Term (fieldName, nodeName);
+        if (indexer.isOption (XmlIndexer.INDEX_PATHS)) {
+            return new SurroundTerm (term);
+        } else {
+            return new TermQuery (term);
+        }
     }
     
     @Override
@@ -348,10 +375,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
             break;
             
         case EXCEPT:
-            push (combineQueries(lq, Occur.MUST, rq, Occur.MUST_NOT, type));
+            push (combineQueries(lq, Occur.MUST, rq, type));
             return op;
         }
-        XPathQuery query = combineQueries(lq, occur, rq, occur, type);
+        XPathQuery query = combineQueries(lq, occur, rq, type);
         if (minimal == false) {
             query.setFact(XPathQuery.MINIMAL, false);
         }
@@ -361,7 +388,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(LiteralExpression literal) {
-        push (XPathQuery.MATCH_NONE);
+        push (XPathQuery.UNINDEXED);
         return literal;
     }
 
@@ -436,7 +463,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private void combineTopQueries (int n, Occur occur, ValueType valueType) {
         if (n <= 0) {
-            push (XPathQuery.MATCH_NONE);
+            push (XPathQuery.UNINDEXED);
             return;
         }
         XPathQuery query = pop();

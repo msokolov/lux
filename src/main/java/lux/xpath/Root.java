@@ -27,4 +27,5 @@ public class Root extends AbstractExpression {
     public AbstractExpression replaceRoot(FunCall search) {        
         return search;
     }
+
 }

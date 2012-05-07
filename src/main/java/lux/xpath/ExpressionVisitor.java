@@ -1,6 +1,19 @@
 package lux.xpath;
 
 public abstract class ExpressionVisitor {
+    private boolean reverse = false;
+    /**
+     * @return whether the sub-expressions should be visited in reverse (right-to-left)
+     * order.
+     */
+    public boolean isReverse () {
+        return reverse;
+    }
+
+    public void setReverse (boolean reverse) {
+        this.reverse = reverse;
+    }
+
     public abstract AbstractExpression visit (PathStep step);
     public abstract AbstractExpression visit (PathExpression path);
     public abstract AbstractExpression visit (Root root);

@@ -6,6 +6,9 @@ import java.util.Set;
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.ValueType;
+import lux.lucene.SurroundBoolean;
+import lux.lucene.SurroundMatchAll;
+import lux.lucene.SurroundSpanQuery;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -152,19 +155,19 @@ public class XPathQuery extends Query {
         return valueType;
     }
 
-    public final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT);
     
-    public final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.NODE);
+    public final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.NODE);
 
-    public final static XPathQuery UNINDEXED = new XPathQuery(null, new MatchAllDocsQuery(), 0, ValueType.VALUE);
+    public final static XPathQuery UNINDEXED = new XPathQuery(null, SurroundMatchAll.getInstance(), 0, ValueType.VALUE);
 
-    public final static XPathQuery MATCH_NONE = new XPathQuery(null, null, 0, ValueType.VALUE);
+//    public final static XPathQuery MATCH_NONE = new XPathQuery(null, null, 0, ValueType.VALUE);
     
     // TODO: merge w/constructor and make immutable final
     static {
         MATCH_ALL.immutable = true;
         UNINDEXED.immutable = true;
-        MATCH_NONE.immutable = true;
+        //MATCH_NONE.immutable = true;
         MATCH_ALL_NODE.immutable = true;
     }
 
@@ -189,54 +192,69 @@ public class XPathQuery extends Query {
     }
 
     /**
-     * Combines this query with another, while specifying a valueType restriction for the
-     * resultant query's results.
+     * Combines this query with another, while specifying a valueType
+     * restriction for the resultant query's results.
      */
     public XPathQuery combine(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type) {
-        boolean negate = occur == Occur.MUST_NOT || precursorOccur == Occur.MUST_NOT;
-        Query result = null;
-        long resultFacts = 0;
-        if (precursor.isEmpty()) {
-            result = this.query;
-            resultFacts = this.facts; 
+        long resultFacts = combineQueryFacts (this, precursor);
+        Query result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
+        return getQuery(result, resultFacts, type);
+    }
+
+    /**
+     * Combines this query with another, while specifying a valueType
+     * restriction for the resultant query's results, and an allowable
+     * distance between the two queries.  Generates Lucene SpanQuerys, and
+     * the constituent queries must be span queries as well.
+     */
+    public XPathQuery combine(XPathQuery precursor, Occur occur, ValueType type, int distance) {
+        long resultFacts = combineQueryFacts (this, precursor);
+        Query result = combineSpans (this.query, occur, precursor.query, distance);
+        return new XPathQuery(expr, result, resultFacts, type);
+    }
+
+    private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
+        if (b.isEmpty()) {
+            return a.facts; 
         }
-        else if (this.isEmpty()) {
-            result = precursor.query;
-            resultFacts = precursor.facts;
-        }
-        // FIXME: result facts - do we need to combine facts?
-        if (result != null && ! negate) {
-            return XPathQuery.getQuery(result, resultFacts, type);
-        }
-        BooleanQuery bq = new BooleanQuery();
-        if (result != null) {
-            bq.add(new BooleanClause (result, occur));
-            result = bq;
-        } 
-        else if (precursor.query instanceof MatchAllDocsQuery) {
-            if (negate) {
-                bq.add(new BooleanClause(this.query, occur));
-                result = bq;
-            } else {
-                result = query;
-            }
-        }
-        else if (this.query instanceof MatchAllDocsQuery) {
-            if (negate) {
-                bq.add(new BooleanClause(precursor.query, occur));
-                result = bq;
-            } else {
-                result = precursor.query;
-            }
+        else if (a.isEmpty()) {
+            return b.facts;
         }
         else {
-            bq.add(new BooleanClause(this.query, occur));
-            bq.add(new BooleanClause(precursor.query, precursorOccur));
-            result = bq;
+            return combineFacts(a.facts, b.facts);
         }
-        // Union implies possible type promotion since two sequences of
-        // different types could be combined
-        return new XPathQuery(expr, result, combineFacts(facts, precursor.facts), type);
+    }
+
+    private static Query combineBoolean (Query a, Occur aOccur, Query b, Occur bOccur) {
+        BooleanQuery bq = new BooleanQuery();
+        if (a instanceof MatchAllDocsQuery) {
+            if (bOccur != Occur.MUST_NOT) {
+                return b;
+            }
+        } else {
+            bq.add(new BooleanClause(a, aOccur));
+        }
+        if (b instanceof MatchAllDocsQuery) {
+            if (aOccur != Occur.MUST_NOT) {
+                return a;
+            }
+        } else {
+            bq.add(new BooleanClause(b, bOccur));
+        }
+        return bq;        
+    }
+    
+    private static Query combineSpans (Query a, Occur occur, Query b, int distance) {
+        if (a instanceof MatchAllDocsQuery && occur != Occur.MUST_NOT) {
+            return b;
+        }
+        if (b instanceof MatchAllDocsQuery) {
+            return a;
+        }
+        if (distance >= 0) {
+            return new SurroundSpanQuery(distance, true, occur, a, b);            
+        }
+        return new SurroundBoolean (occur, a, b);
     }
     
     private static final long combineFacts (long facts2, long facts3) {
@@ -253,7 +271,7 @@ public class XPathQuery extends Query {
     }
 
     public boolean isEmpty() {
-        return this == MATCH_ALL || this == MATCH_NONE || this == MATCH_ALL_NODE;
+        return this == MATCH_ALL || this == UNINDEXED || this == MATCH_ALL_NODE;
     }
     
     public String toString () {

@@ -25,16 +25,14 @@ to make it easier to type queries.  Maybe make the default field name be
 something reasonable, like xml_text?  then use lx_att, lx_elt, lx_path?
 * new indexes
 ** path index
-options for indexing/querying:
-*** phrase query
-/foo/bar -> "ROOT foo bar"
-foo/*/bar -> "foo bar"~1
-foo/*/*/bar -> "foo bar"~2
-foo/*/bar/*/*/baz -> ??
-foo//bar -> "foo bar"~1000
-/foo//bar" -> ??
-*** wildcards (multi-term query)
-Only good when rooted at one end?
+Combining term queries - should we just use Spans unconditionally?  It
+seems likely we will always have a path index.  So instead of TermQuery, we
+create SpanTermQuery; instead of BooleanQuery, we use SpanOr or SpanNear -
+and then we need a distance.  Although possibly (at the very least for
+testing purposes) we should allow a parameter to control this.  The
+XmlIndexer holds the options, and also will eventually have a list of other
+indexes as well, which we will need for query rewrites/optimizations.
+
 *** span query
 /foo/bar -> "ROOT foo bar"
 foo/*/bar -> near("foo","bar",1,t)
@@ -42,9 +40,39 @@ foo/*/*/bar -> near("foo","bar",2,t)
 foo/*/bar/*/*/baz -> near(near("foo","bar",1,t),"baz",2,t)
 foo//bar -> near("foo","bar",1000,t)
 /foo//bar" -> near("ROOT foo","bar",1000,t)
+*** query parser
+we need a parser that can handle span queries since we serialize the query
+and pass it as a string arg to lux:search!  Syntax like this should be an
+easy add:
+
+a NEAR/0 b <-> a/b
+a NEAR/2 b <-> a/*/*/b
+would map to a SpanNear.  SpanOr?  SpanNot?
+
+SpanNot will arise in case of: /a[not(b)] (** currently this becomes SpanOr!!)
+
+We use SHOULD in some binary operations, like /a[b|c|d], which could be
+modeled as SpanOr, and for random functions, and for sequences, like
+(/a/b,/c/d), which doesn't have span-nature
+
+We could generate a little mini-parser that has terms, (), |, /, and !.
+And then we'd need to separate this from the main lucene query; with {span } ?
+
+So: a/b <-> SpanNear(a,b,0), a//b <-> SpanNear(a,b,1000), a/*/*/b <-> SpanNear(a,b,2); a!b <-> SpanNot(a,b,0); a|b <-> SpanOr(a,b)
+
+or else we can pass an xml query to lux:search and use the XmlQueryParser?
+This wouldn't work with xpath syntax though
+
+Perhaps we can generate something that looks like a Term and then expand
+the Term ourselves?  e.g.  /a/b|c/*/*/z//yy
+
 ** value indexes
 ** word indexes
 ** sorting
+* improve tests
+** test namespaces and attributes
+queries w/namespaces and attributes have not been tested.
+Try indexing and retrieving the reader-test documents
 * perf test
 some kind of comparison with something
 * API packaging

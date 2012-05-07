@@ -1,21 +1,24 @@
 package lux.api;
 
+import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
+
 import org.apache.lucene.search.Query;
 
 public class QueryContext {
 
     private final Query query;
     private final LuxSearcher searcher;
-    private final String xmlFieldName = "xml_text";
+    private final XmlIndexer indexer;
 
-    public QueryContext (Query query, LuxSearcher searcher) {
+    public QueryContext (Query query, LuxSearcher searcher, XmlIndexer indexer) {
         this.query = query;
         this.searcher = searcher;
+        this.indexer = indexer;
     }
     
-    public QueryContext (LuxSearcher searcher) {
-        this (null, searcher);
+    public QueryContext (LuxSearcher searcher, XmlIndexer indexer) {
+        this (null, searcher, indexer);
     }
     
     public Query getQuery() {
@@ -25,9 +28,9 @@ public class QueryContext {
     public LuxSearcher getSearcher() {
         return searcher;
     }
-
-    public String getXmlFieldName() {
-        return xmlFieldName;
+    
+    public XmlIndexer getIndexer () {
+        return indexer;
     }
 
 }

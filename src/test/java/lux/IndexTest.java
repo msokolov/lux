@@ -9,6 +9,7 @@ import javax.xml.stream.XMLStreamException;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 
+import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.search.DocIdSetIterator;
@@ -29,31 +30,13 @@ public class IndexTest {
     public void testIndexQNames() throws Exception {
         buildIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
-        IndexReader reader = IndexReader.open(dir);
-        TermEnum terms = reader.terms();
-        while (terms.next()) {
-            System.out.println (terms.term());
-        }
-        reader.close();
-    }
-        
-    private void assertTotalDocs() throws IOException {
-        LuxSearcher searcher = new LuxSearcher(dir);
-        DocIdSetIterator results = searcher.search(new MatchAllDocsQuery());
-        int count = 0;
-        while (results.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
-            ++count;
-        }
-        assertEquals (6636, count);
-        /*
-        */
-        searcher.close();
     }
 
     @Test
     public void testIndexPaths() throws Exception {
         buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
+        printAllTerms();
     }
 
     @Test
@@ -86,4 +69,27 @@ public class IndexTest {
              (String.format("indexed %s in %d ms %d bytes", desc, 
                      (System.currentTimeMillis()-t0), dir.sizeInBytes()));
     }
+
+    private void printAllTerms() throws CorruptIndexException, IOException {
+        IndexReader reader = IndexReader.open(dir);
+        TermEnum terms = reader.terms();
+        while (terms.next()) {
+            System.out.println (terms.term());
+        }
+        reader.close();
+    }
+        
+    private void assertTotalDocs() throws IOException {
+        LuxSearcher searcher = new LuxSearcher(dir);
+        DocIdSetIterator results = searcher.search(new MatchAllDocsQuery());
+        int count = 0;
+        while (results.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+            ++count;
+        }
+        assertEquals (6636, count);
+        /*
+        */
+        searcher.close();
+    }
+    
 }

@@ -3,6 +3,8 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.XPathQuery;
+import lux.index.XmlField;
+import lux.index.XmlIndexer;
 import lux.saxon.ResultIterator;
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
@@ -19,8 +21,10 @@ import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryParser.surround.parser.ParseException;
+import org.apache.lucene.queryParser.surround.parser.QueryParser;
+import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
+import org.apache.lucene.queryParser.surround.query.SrndQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
 
@@ -35,16 +39,30 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         this.saxon = saxon;
     }
     
-    private XPathQuery makeXPathQuery(String queryString, long facts) throws ParseException {
-        Query q;
-        q = getQueryParser().parse(queryString);
-        return XPathQuery.getQuery(q, facts);
+    private XPathQuery makeXPathQuery(String queryString, long facts) throws ParseException, org.apache.lucene.queryParser.ParseException {
+        Query query;
+        if (saxon.getContext().getIndexer().isOption(XmlIndexer.INDEX_PATHS)) {
+            SrndQuery q = getSurroundQueryParser().parse2(queryString);
+            // TODO: cache the query factory
+            query = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), new BasicQueryFactory());
+        } else {
+            query = getQueryParser().parse(queryString);
+        }
+        return XPathQuery.getQuery(query, facts);
     }
     
-    private QueryParser queryParser;
-    protected QueryParser getQueryParser () {
+    private QueryParser surroundQueryParser;
+    protected QueryParser getSurroundQueryParser () {
+        if (surroundQueryParser == null) {
+            surroundQueryParser = new QueryParser ();//Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
+        }
+        return surroundQueryParser;
+    }
+    
+    private org.apache.lucene.queryParser.QueryParser queryParser;
+    private org.apache.lucene.queryParser.QueryParser getQueryParser () {
         if (queryParser == null) {
-            queryParser = new QueryParser (Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
+            queryParser = new org.apache.lucene.queryParser.QueryParser (Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
         }
         return queryParser;
     }
@@ -122,6 +140,8 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             try {
                 query = makeXPathQuery(queryString, facts);
             } catch (ParseException e) {
+                throw new XPathException ("Failed to parse surround query " + queryString, e);
+            } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException ("Failed to parse lucene query " + queryString, e);
             }
             System.out.println ("executing xpath query: " + query);

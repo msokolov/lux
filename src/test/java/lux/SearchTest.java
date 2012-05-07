@@ -73,15 +73,17 @@ public class SearchTest extends SearchBase {
         assertSearch ("false", "not(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
         assertSearch ("false", "not((/)[.//SCENE and .//ACT])", QUERY_NO_DOCS, 1);
     }
+    
     @Test
     public void testSearchAct() throws Exception {
-        ResultSet<?> results = assertSearch ("/ACT");
+        // path indexes make this exact
+        ResultSet<?> results = assertSearch ("/ACT", QUERY_EXACT);
         assertEquals (elementCounts.get("ACT") + 0, results.size());
     }
     
     @Test
     public void testSearchActScene() throws Exception {
-        ResultSet<?> results = assertSearch("/ACT/SCENE");
+        ResultSet<?> results = assertSearch("/ACT/SCENE", QUERY_MINIMAL);
         assertEquals (elementCounts.get("SCENE") + 0, results.size());
     }
     
@@ -149,7 +151,7 @@ public class SearchTest extends SearchBase {
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
         AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
-        aex = new UnOptimizer().unoptimize(aex);
+        aex = new UnOptimizer(indexer.getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
         assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());        
@@ -164,10 +166,10 @@ public class SearchTest extends SearchBase {
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results");
         AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
-        aex = new UnOptimizer().unoptimize(aex);
+        aex = new UnOptimizer(indexer.getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
-        assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());        
+        assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());
     }
     
     @Test
@@ -235,9 +237,10 @@ public class SearchTest extends SearchBase {
     
     @Test
     public void testIntersection () throws Exception {
-        // Michael Kay seemed to think there could be issues with our lazy evaluation strategy
-        // since it declares that documents are returned in sorted order.  Intersect requires
-        // correct sorting apparently.
+        // There were issues with 
+        // document order, which we have to assert in order to get lazy evaluation.
+        // Intersect in particular exposes the problem since it's optimized based on
+        // correct sorting (tip from Michael Kay).
         assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 1164);
         assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 1164);
         assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 1164);
@@ -323,7 +326,7 @@ public class SearchTest extends SearchBase {
     @Override
     public Saxon getEvaluator() {
         Saxon eval = new Saxon();
-        eval.setContext(new SaxonContext(searcher));
+        eval.setContext(new SaxonContext(searcher, indexer));
         eval.setQueryStats (new QueryStats());
         return eval;
     }

@@ -40,6 +40,7 @@ public class PathStep extends AbstractExpression {
         return nodeTest; 
     }
 
+    @Override
     public String toString () {
         return axis.toString() + "::" + nodeTest.toString();
     }
@@ -52,5 +53,5 @@ public class PathStep extends AbstractExpression {
     public boolean isDocumentOrdered () {
         return axis.isForward;
     }
-    
+
 }

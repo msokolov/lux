@@ -1,5 +1,6 @@
 package lux.saxon;
 
+import lux.index.XmlIndexer;
 import lux.xpath.AbstractExpression;
 
 import net.sf.saxon.expr.Expression;
@@ -15,6 +16,7 @@ public class TranslatorTest {
     
     @Before public void setup () {
         saxon = new Saxon();
+        saxon.setContext(new SaxonContext(null, new XmlIndexer()));
     }
     
     @Test public void testTranslate () {

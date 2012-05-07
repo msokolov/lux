@@ -94,7 +94,7 @@ public abstract class Learner extends SearchBase {
         // but evaluates against a single document instance.
         Saxon saxon = new Saxon();
         XdmNode hamlet = (XdmNode) saxon.getBuilder().build(new InputStreamReader (SearchTest.class.getClassLoader().getResourceAsStream("lux/hamlet.xml")));
-        saxon.setContext(new SaxonContext(searcher, hamlet));
+        saxon.setContext(new SaxonContext(searcher, indexer, hamlet));
         //evalGenerated (saxon, false);
     }
     
@@ -102,7 +102,7 @@ public abstract class Learner extends SearchBase {
     public void testSearchGenerated () {
         // evaluate all of a first query generation, running queries against Lucene.
         Saxon saxon = new Saxon();
-        saxon.setContext(new SaxonContext(searcher));        
+        saxon.setContext(new SaxonContext(searcher, indexer));        
         evalGenerated (saxon, true);
     }
     
@@ -130,7 +130,7 @@ public abstract class Learner extends SearchBase {
         int minimal_incorrect = 0;
         ItemTypeFactory itemTypeFactory = new ItemTypeFactory(saxon.getProcessor());
         ItemType documentType = itemTypeFactory.getNodeKindTest(XdmNodeKind.DOCUMENT);
-        UnOptimizer unoptimizer = new UnOptimizer();
+        UnOptimizer unoptimizer = new UnOptimizer(indexer.getOptions());
         for (Expression expr : breeder) {
             ++count;
             String exprString = expr.toString().replaceAll("lastItem(.*)","($1)[last()]");
@@ -211,7 +211,7 @@ public abstract class Learner extends SearchBase {
     @Override
     public Evaluator getEvaluator() {        
         Evaluator eval = new Saxon();
-        eval.setContext(new SaxonContext(searcher));
+        eval.setContext(new SaxonContext(searcher, indexer));
         return eval;
     }
 

@@ -94,7 +94,12 @@ public class XmlIndexer {
         xmlReader.read (xml);
     }
 
-    private boolean isOption (int option) {
+    /**
+     * 
+     * @param option an option flag; one of: NAMESPACE_AWARE, STORE_XML, STORE_PTREE, INDEX_QNAMES, INDEX_PATHS, INDEX_FULLTEXT
+     * @return whether the option is set
+     */
+    public boolean isOption (int option) {
         return (options & option) != 0;
     }
     
@@ -113,11 +118,9 @@ public class XmlIndexer {
     
     public Iterable<?> getFieldValues (XmlField field) {
         if (XmlField.ELT_QNAME.equals(field)) {
-            // TODO: encode QNames
             return pathMapper.getEltQNameCounts().keySet();
         }
         if (XmlField.ATT_QNAME.equals(field)) {
-            // TODO: encode QNames
             return pathMapper.getAttQNameCounts().keySet();
         }
         if (XmlField.PATH.equals(field)) {
@@ -159,6 +162,10 @@ public class XmlIndexer {
 
     public IndexWriter getIndexWriter(Directory dir) throws CorruptIndexException, LockObtainFailedException, IOException {
         return new IndexWriter(dir, new IndexWriterConfig(luceneVersion, fieldAnalyzers));
+    }
+
+    public long getOptions() {
+        return options;
     }
     
 }

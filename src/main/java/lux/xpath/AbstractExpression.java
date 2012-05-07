@@ -37,9 +37,10 @@ public abstract class AbstractExpression implements Visitable {
     
     public void acceptSubs (ExpressionVisitor visitor) {
         for (int i = 0; i < subs.length; i++) {
-            AbstractExpression sub = subs[i].accept (visitor);
-            if (sub != subs[i]) {
-                subs[i]= sub;
+            int j = visitor.isReverse() ? (subs.length-i-1) : i;
+            AbstractExpression sub = subs[j].accept (visitor);
+            if (sub != subs[j]) {
+                subs[j]= sub;
             }
         }
     }
@@ -100,5 +101,7 @@ public abstract class AbstractExpression implements Visitable {
     public AbstractExpression getTail() {
         return null;
     }
+
+    public enum Direction { Left, Right };
 
 }
