@@ -265,14 +265,18 @@ public class XPathQuery extends Query {
     }
     
     private static Query combineSpans (Query a, Occur occur, Query b, int distance) {
-        if (distance >= 0) {
-            return new SurroundSpanQuery(distance, true, occur, a, b);            
+        if (distance == 0) {
+            return new SurroundSpanQuery(distance, true, occur, a, b);
         }
+        // don't create a span query for //foo; a single term is enough
         if (a instanceof SurroundMatchAll && occur != Occur.MUST_NOT) {
             return b;
         }
         if (b instanceof SurroundMatchAll) {
             return a;
+        }
+        if (distance > 1) {
+            return new SurroundSpanQuery(distance, true, occur, a, b);
         }
         return new SurroundBoolean (occur, a, b);
     }

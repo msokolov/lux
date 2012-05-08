@@ -12,7 +12,6 @@ import lux.xpath.PathStep.Axis;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
@@ -174,7 +173,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 // FIXME: This is wrong: do we rely on it?
                 type = ValueType.DOCUMENT;
             }
-            query = XPathQuery.getQuery(new MatchAllDocsQuery(), getQuery().getFacts(), type, indexer.getOptions());
+            query = XPathQuery.getQuery(MATCH_ALL.getQuery(), getQuery().getFacts(), type, indexer.getOptions());
         } else {
             Query termQuery = nodeNameTermQuery(step.getAxis(), name);
             query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexer.getOptions());
@@ -222,7 +221,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (int i = funcall.getSubs().length; i > 0; --i) {
                 pop();
             }
-            push ( XPathQuery.getQuery(new MatchAllDocsQuery(), 0, ValueType.VALUE, indexer.getOptions()));
+            push (XPathQuery.getQuery(MATCH_ALL.getQuery(), 0, ValueType.VALUE, indexer.getOptions()));
         } else {
             combineTopQueries(funcall.getSubs().length, occur, funcall.getReturnType());
         }
