@@ -41,14 +41,15 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     
     private XPathQuery makeXPathQuery(String queryString, long facts) throws ParseException, org.apache.lucene.queryParser.ParseException {
         Query query;
-        if (saxon.getContext().getIndexer().isOption(XmlIndexer.INDEX_PATHS)) {
+        XmlIndexer indexer = saxon.getContext().getIndexer();
+        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
             SrndQuery q = getSurroundQueryParser().parse2(queryString);
             // TODO: cache the query factory
             query = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), new BasicQueryFactory());
         } else {
             query = getQueryParser().parse(queryString);
         }
-        return XPathQuery.getQuery(query, facts);
+        return XPathQuery.getQuery(query, facts, indexer.getOptions());
     }
     
     private QueryParser surroundQueryParser;

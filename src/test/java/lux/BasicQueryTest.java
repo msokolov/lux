@@ -3,6 +3,7 @@ package lux;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
@@ -15,6 +16,7 @@ import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -31,6 +33,27 @@ public class BasicQueryTest {
     private static final String Q_FOO_BAR = "+lux_elt_name:foo +lux_elt_name:bar";
     private static final String Q_FOO_OR_BAR = "lux_elt_name:foo lux_elt_name:bar";
     private static final String Q_FOO = "lux_elt_name:foo";
+    private static final String Q_MATCH_ALL = "*:*";
+    
+    private static HashMap<String,String> pathQueries = new HashMap<String,String>();
+    private static HashMap<String,String> nameQueries = new HashMap<String,String>();
+    
+    @BeforeClass 
+    public static void init () {
+        pathQueries.put(Q_ATTR, "");
+        pathQueries.put(Q_BAR, "bar");
+        pathQueries.put(Q_FOO, "foo");
+        pathQueries.put(Q_FOO_BAR, "foo AND bar");
+        pathQueries.put(Q_FOO_OR_BAR, "foo OR bar");
+        pathQueries.put(Q_MATCH_ALL, "{}");
+        
+        nameQueries.put(Q_ATTR, Q_ATTR);
+        nameQueries.put(Q_BAR, Q_BAR);
+        nameQueries.put(Q_FOO, Q_FOO);
+        nameQueries.put(Q_FOO_BAR, Q_FOO_BAR);
+        nameQueries.put(Q_FOO_OR_BAR, Q_FOO_OR_BAR);
+        nameQueries.put(Q_MATCH_ALL, Q_MATCH_ALL);
+    }
 
     public static void assertQuery (String xpath, int facts, String ... queries) {
         assertQuery (xpath, facts, null, queries);
@@ -53,7 +76,18 @@ public class BasicQueryTest {
 
     public static void assertQuery (String xpath, String optimized, int facts, ValueType type, String ... queries) {
         Saxon saxon = new Saxon();
-        saxon.setContext(new SaxonContext (null, new XmlIndexer()));
+        
+        saxon.setContext(new SaxonContext (null, new XmlIndexer(XmlIndexer.INDEX_QNAMES)));
+        assertQuery(xpath, optimized, facts, type, saxon, nameQueries, queries);
+        
+        saxon.setContext(new SaxonContext (null, new XmlIndexer(XmlIndexer.INDEX_PATHS)));
+        assertQuery(xpath, optimized, facts, type, saxon, pathQueries, queries);
+    }
+
+
+    private static void assertQuery(String xpath, String optimized, int facts, ValueType type, Saxon saxon,
+            HashMap<String,String> expected, String... queries) {
+
         SaxonExpr expr = saxon.compile(xpath);
         AbstractExpression ex = saxon.getTranslator().exprFor(expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
         if (optimized != null) {
@@ -63,7 +97,7 @@ public class BasicQueryTest {
         ex.accept(extractor);
         assertEquals ("wrong number of queries for " + xpath, queries.length, extractor.queries.size());
         for (int i = 0; i < queries.length; i++) {
-            assertEquals (queries[i], extractor.queries.get(i).toString());
+            assertEquals (expected.get(queries[i]), extractor.queries.get(i).toString());
         }
         if (queries.length > 0) {
             boolean isMinimal = (facts & XPathQuery.MINIMAL) != 0;

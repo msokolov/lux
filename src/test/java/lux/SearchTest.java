@@ -42,8 +42,8 @@ public class SearchTest extends SearchBase {
     @Test
     public void testExists () throws Exception {
         assertSearch ("true", "exists(/)", QUERY_NO_DOCS, 1);
-        assertSearch  ("true", "exists(//SCENE)", QUERY_NO_DOCS, 1);
-        assertSearch  ("false", "exists(//foo)", QUERY_NO_DOCS, 0);
+        assertSearch ("true", "exists(//SCENE)", QUERY_NO_DOCS, 1);
+        assertSearch ("false", "exists(//foo)", QUERY_NO_DOCS, 0);
         assertSearch ("true", "exists(//SCENE/root())", QUERY_NO_DOCS, 1);
         assertSearch ("true", "exists(//SCENE) and exists(//ACT)", QUERY_NO_DOCS, 2);
         assertSearch ("true", "exists(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
@@ -54,8 +54,8 @@ public class SearchTest extends SearchBase {
     public void testEmpty () throws Exception {
         ResultSet<?> results = assertSearch ("empty(/)", QUERY_NO_DOCS, 1);
         assertEquals ("false", results.iterator().next().toString());
-        assertSearch  ("false", "empty(//SCENE)", QUERY_NO_DOCS, 1);
-        assertSearch  ("true", "empty(//foo)", QUERY_NO_DOCS, 0);
+        assertSearch ("false", "empty(//SCENE)", QUERY_NO_DOCS, 1);
+        assertSearch ("true", "empty(//foo)", QUERY_NO_DOCS, 0);
         assertSearch ("false", "empty(//SCENE/root())", QUERY_NO_DOCS, 1);
         assertSearch ("true", "empty(//SCENE) or empty(//foo)", QUERY_NO_DOCS, 1);
         assertSearch ("false", "empty(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
@@ -202,7 +202,8 @@ public class SearchTest extends SearchBase {
         assertSearch ("BERNARDO", "subsequence(//SCENE, 1, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
         assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 1);
         // /PLAY/ACT[1]/SCENE[1], /ACT[1]/SCENE[1], /SCENE[1], /SCENE[2], /SCENE[3], /SCENE[4]
-        assertSearch ("HAMLET", "subsequence(/SCENE, 4, 1)/SPEECH[1]/SPEAKER/string()", null, 6);
+        // count reduced from 6 to 4 by path queries; skip /PLAY and /ACT[1]
+        assertSearch ("HAMLET", "subsequence(/SCENE, 4, 1)/SPEECH[1]/SPEAKER/string()", null, 4);
     }
     
     @Test
@@ -241,11 +242,12 @@ public class SearchTest extends SearchBase {
         // document order, which we have to assert in order to get lazy evaluation.
         // Intersect in particular exposes the problem since it's optimized based on
         // correct sorting (tip from Michael Kay).
-        assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 1164);
-        assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 1164);
+        // NB - count was 1164; reduced to 1138 by path query (20 scenes + 5 acts + 1 play = 26).
+        assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 1138);
+        assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 1138);
         assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 1164);
         // saxon cleverly optimizes this and gets rid of the intersect
-        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);
+        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1138);
     }
     
     @Test

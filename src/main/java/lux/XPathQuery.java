@@ -6,6 +6,7 @@ import java.util.Set;
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.ValueType;
+import lux.index.XmlIndexer;
 import lux.lucene.SurroundBoolean;
 import lux.lucene.SurroundMatchAll;
 import lux.lucene.SurroundSpanQuery;
@@ -98,20 +99,33 @@ public class XPathQuery extends Query {
         setType (valueType);
     }
     
-    public static XPathQuery getQuery (Query query, long resultFacts, ValueType valueType) {
+    public static XPathQuery getQuery (Query query, long resultFacts, ValueType valueType, long options) {
         if (query instanceof MatchAllDocsQuery && resultFacts == MINIMAL) {
             if (valueType == ValueType.DOCUMENT) {
+                if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+                    return PATH_MATCH_ALL;
+                }
                 return MATCH_ALL;
             }
             if (valueType == ValueType.NODE) {
+                if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+                    return PATH_MATCH_ALL_NODE;
+                }
                 return MATCH_ALL_NODE;
             }
         }
         return new XPathQuery (null, query, resultFacts, valueType);
     }
     
-    public static XPathQuery getQuery (Query query, long resultFacts) {
-        return new XPathQuery (null, query, resultFacts, typeFromFacts(resultFacts));
+    public static XPathQuery getQuery (Query query, long resultFacts, long options) {
+        return getQuery (query, resultFacts, typeFromFacts(resultFacts), options);
+    }
+    
+    public static XPathQuery getMatchAllQuery (long options) {
+        if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+            return PATH_MATCH_ALL;
+        }
+        return MATCH_ALL;
     }
     
     public static ValueType typeFromFacts (long facts) {
@@ -155,20 +169,26 @@ public class XPathQuery extends Query {
         return valueType;
     }
 
-    public final static XPathQuery MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT);
     
-    public final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.NODE);
+    public final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.NODE);
 
-    public final static XPathQuery UNINDEXED = new XPathQuery(null, SurroundMatchAll.getInstance(), 0, ValueType.VALUE);
+    public final static XPathQuery UNINDEXED = new XPathQuery(null, new MatchAllDocsQuery(), 0, ValueType.VALUE);
 
-//    public final static XPathQuery MATCH_NONE = new XPathQuery(null, null, 0, ValueType.VALUE);
+    public final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT);
     
+    public final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.NODE);
+
+    public final static XPathQuery PATH_UNINDEXED = new XPathQuery(null, SurroundMatchAll.getInstance(), 0, ValueType.VALUE);
+
     // TODO: merge w/constructor and make immutable final
     static {
         MATCH_ALL.immutable = true;
         UNINDEXED.immutable = true;
-        //MATCH_NONE.immutable = true;
         MATCH_ALL_NODE.immutable = true;
+        PATH_MATCH_ALL.immutable = true;
+        PATH_UNINDEXED.immutable = true;
+        PATH_MATCH_ALL_NODE.immutable = true;
     }
 
     /**
@@ -198,7 +218,7 @@ public class XPathQuery extends Query {
     public XPathQuery combine(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type) {
         long resultFacts = combineQueryFacts (this, precursor);
         Query result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
-        return getQuery(result, resultFacts, type);
+        return getQuery(result, resultFacts, type, 0);
     }
 
     /**
@@ -241,18 +261,18 @@ public class XPathQuery extends Query {
         } else {
             bq.add(new BooleanClause(b, bOccur));
         }
-        return bq;        
+        return bq;
     }
     
     private static Query combineSpans (Query a, Occur occur, Query b, int distance) {
-        if (a instanceof MatchAllDocsQuery && occur != Occur.MUST_NOT) {
-            return b;
-        }
-        if (b instanceof MatchAllDocsQuery) {
-            return a;
-        }
         if (distance >= 0) {
             return new SurroundSpanQuery(distance, true, occur, a, b);            
+        }
+        if (a instanceof SurroundMatchAll && occur != Occur.MUST_NOT) {
+            return b;
+        }
+        if (b instanceof SurroundMatchAll) {
+            return a;
         }
         return new SurroundBoolean (occur, a, b);
     }

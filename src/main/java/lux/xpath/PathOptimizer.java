@@ -35,16 +35,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private final ArrayList<XPathQuery> queryStack;
     private final XmlIndexer indexer;
-    //private AbstractExpression expr;
+    private final XPathQuery MATCH_ALL;
     
     private final static String attrQNameField = XmlField.ATT_QNAME.getName();
     private final static String elementQNameField = XmlField.ELT_QNAME.getName();
     
-    private static final XPathQuery MATCH_ALL_QUERY = XPathQuery.MATCH_ALL;
-    
     public PathOptimizer(XmlIndexer indexer) {
         queryStack = new ArrayList<XPathQuery>();
-        push(MATCH_ALL_QUERY);
+        MATCH_ALL = XPathQuery.getMatchAllQuery(indexer.getOptions());
+        push(MATCH_ALL);
         this.indexer = indexer;
     }
     
@@ -112,7 +111,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }    
     
     public AbstractExpression visit (Root expr) {
-        push (MATCH_ALL_QUERY);
+        push (MATCH_ALL);
         return expr;
     }
     
@@ -125,17 +124,20 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery rq = pop();
         XPathQuery lq = pop();
         XPathQuery query;
-        SlopCounter slopCounter = new SlopCounter ();
         
-        // count the left slop of the RHS
-        pathExpr.getRHS().accept (slopCounter);
-        Integer rSlop = slopCounter.getSlop();
+        Integer rSlop=null, lSlop=null;
+        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
+            SlopCounter slopCounter = new SlopCounter ();
 
-        // count the right slop of the LHS
-        slopCounter.setReverse (true);
-        pathExpr.getLHS().accept (slopCounter);
-        Integer lSlop = slopCounter.getSlop();
+            // count the left slop of the RHS
+            pathExpr.getRHS().accept (slopCounter);
+            rSlop = slopCounter.getSlop();
 
+            // count the right slop of the LHS
+            slopCounter.setReverse (true);
+            pathExpr.getLHS().accept (slopCounter);
+            lSlop = slopCounter.getSlop();
+        }
         if (rSlop != null && lSlop != null) {
             // total slop is the distance between the two path components.
             query = lq.combine(rq, Occur.MUST, rq.getResultType(), rSlop + lSlop);
@@ -172,10 +174,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 // FIXME: This is wrong: do we rely on it?
                 type = ValueType.DOCUMENT;
             }
-            query = XPathQuery.getQuery(new MatchAllDocsQuery(), getQuery().getFacts(), type);
+            query = XPathQuery.getQuery(new MatchAllDocsQuery(), getQuery().getFacts(), type, indexer.getOptions());
         } else {
             Query termQuery = nodeNameTermQuery(step.getAxis(), name);
-            query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType());
+            query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexer.getOptions());
         }
        push(query);
        return step;
@@ -220,7 +222,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (int i = funcall.getSubs().length; i > 0; --i) {
                 pop();
             }
-            push ( XPathQuery.getQuery(new MatchAllDocsQuery(), 0, ValueType.VALUE));
+            push ( XPathQuery.getQuery(new MatchAllDocsQuery(), 0, ValueType.VALUE, indexer.getOptions()));
         } else {
             combineTopQueries(funcall.getSubs().length, occur, funcall.getReturnType());
         }
@@ -260,7 +262,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // is properly indexed
         if (query.isMinimal()) {
             // apply no restrictions to the enclosing scope:
-            push (MATCH_ALL_QUERY);
+            push (MATCH_ALL);
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
@@ -298,7 +300,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // but isn't generally true.  If we really need it, move this logic up to the caller - it has nothing
         // to do with optimizing this funcall.
         if (query.isImmutable()) {
-            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), ValueType.INT);
+            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), ValueType.INT, indexer.getOptions());
         } else {
             query.setType(ValueType.INT);
         }
@@ -402,7 +404,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // We can only assert the predicate MUST occur in certain circumstances
         // various function calls blur that - consider not(foo) or count(foo)=0 or count(.//foo) gt count(./foo)
         // TODO: so why are we asserting it universally here?
-        XPathQuery query = baseQuery.combine(filterQuery, Occur.MUST);
+        XPathQuery query = combineQueries (baseQuery, Occur.MUST, filterQuery, baseQuery.getResultType());
         // This is a counting expr if its base expr is
         query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
         push (query);
@@ -440,7 +442,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private FunCall getSearchCall (int i, int facts) {
         int j = queryStack.size() - i - 1;
         XPathQuery query = queryStack.get(j);
-        queryStack.set (j, MATCH_ALL_QUERY);
+        queryStack.set (j, MATCH_ALL);
         return createSearchCall(query, facts);
     }
     
@@ -468,13 +470,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         XPathQuery query = pop();
         for (int i = 0; i < n-1; i++) {
-            query = pop().combine(query, occur);
-        }
-        if (valueType != null && valueType != query.getResultType()) {
-            if (query.isImmutable())
-                query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), valueType);
-            else
-                query.setType(valueType);
+            query = combineQueries (pop(), occur, query, valueType);
         }
         push (query);
     }
