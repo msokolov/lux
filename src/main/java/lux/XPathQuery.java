@@ -39,10 +39,6 @@ public class XPathQuery extends Query {
     private ValueType valueType;
     private boolean immutable;
     
-    public boolean isImmutable() {
-        return immutable;
-    }
-
     /** bitmask holding facts proven about the query; generally these facts enable different
      * optimizations.  In the comments, we refer to the "result type" of the query meaning the
      * result type of the xpath expression that the query was generated from.
@@ -83,7 +79,28 @@ public class XPathQuery extends Query {
      */
     public static final int DOCUMENT_RESULTS=0x00000018;
     
-    // TODO -- represent not() and exists() using count() > 0
+
+    private final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT);
+    
+    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.NODE);
+
+    private final static XPathQuery UNINDEXED = new XPathQuery(null, new MatchAllDocsQuery(), 0, ValueType.VALUE);
+
+    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT);
+    
+    private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.NODE);
+
+    private final static XPathQuery PATH_UNINDEXED = new XPathQuery(null, SurroundMatchAll.getInstance(), 0, ValueType.VALUE);
+
+    // TODO: merge w/constructor and make immutable final
+    static {
+        MATCH_ALL.immutable = true;
+        UNINDEXED.immutable = true;
+        MATCH_ALL_NODE.immutable = true;
+        PATH_MATCH_ALL.immutable = true;
+        PATH_UNINDEXED.immutable = true;
+        PATH_MATCH_ALL_NODE.immutable = true;
+    }
     
     /**
      * @param expr an XPath 2.0 expression
@@ -128,6 +145,13 @@ public class XPathQuery extends Query {
         return MATCH_ALL;
     }
     
+    public static XPathQuery getUnindexedQuery (long options) {
+        if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+            return PATH_UNINDEXED;
+        }
+        return UNINDEXED;
+    }
+    
     public static ValueType typeFromFacts (long facts) {
         long typecode = (facts & XPathQuery.RESULT_TYPE_FLAGS); 
         if (typecode == XPathQuery.BOOLEAN_FALSE) {
@@ -167,28 +191,6 @@ public class XPathQuery extends Query {
 
     public ValueType getResultType() {
         return valueType;
-    }
-
-    public final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT);
-    
-    public final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.NODE);
-
-    public final static XPathQuery UNINDEXED = new XPathQuery(null, new MatchAllDocsQuery(), 0, ValueType.VALUE);
-
-    public final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT);
-    
-    public final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.NODE);
-
-    public final static XPathQuery PATH_UNINDEXED = new XPathQuery(null, SurroundMatchAll.getInstance(), 0, ValueType.VALUE);
-
-    // TODO: merge w/constructor and make immutable final
-    static {
-        MATCH_ALL.immutable = true;
-        UNINDEXED.immutable = true;
-        MATCH_ALL_NODE.immutable = true;
-        PATH_MATCH_ALL.immutable = true;
-        PATH_UNINDEXED.immutable = true;
-        PATH_MATCH_ALL_NODE.immutable = true;
     }
 
     /**
@@ -385,5 +387,10 @@ public class XPathQuery extends Query {
       if (immutable) throw new LuxException ("attempt to modify immutable query");
       this.expr = expr;
   }
+
+  public boolean isImmutable() {
+      return immutable;
+  }
+
   
 }

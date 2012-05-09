@@ -35,6 +35,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private final ArrayList<XPathQuery> queryStack;
     private final XmlIndexer indexer;
     private final XPathQuery MATCH_ALL;
+    private final XPathQuery UNINDEXED;
     
     private final static String attrQNameField = XmlField.ATT_QNAME.getName();
     private final static String elementQNameField = XmlField.ELT_QNAME.getName();
@@ -43,6 +44,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         queryStack = new ArrayList<XPathQuery>();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexer.getOptions());
         push(MATCH_ALL);
+        UNINDEXED = XPathQuery.getUnindexedQuery(indexer.getOptions());
         this.indexer = indexer;
     }
     
@@ -331,7 +333,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     @Override
     public AbstractExpression visit(Dot dot) {
         // FIXME - should have value type=VALUE?
-        push(XPathQuery.MATCH_ALL);
+        push(MATCH_ALL);
         return dot;
     }
 
@@ -389,7 +391,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(LiteralExpression literal) {
-        push (XPathQuery.UNINDEXED);
+        push (UNINDEXED);
         return literal;
     }
 
@@ -464,7 +466,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private void combineTopQueries (int n, Occur occur, ValueType valueType) {
         if (n <= 0) {
-            push (XPathQuery.UNINDEXED);
+            push (UNINDEXED);
             return;
         }
         XPathQuery query = pop();

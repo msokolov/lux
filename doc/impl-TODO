@@ -33,6 +33,8 @@ testing purposes) we should allow a parameter to control this.  The
 XmlIndexer holds the options, and also will eventually have a list of other
 indexes as well, which we will need for query rewrites/optimizations.
 
+*** phrase query
+
 *** span query
 /foo/bar -> "ROOT foo bar"
 foo/*/bar -> near("foo","bar",1,t)
@@ -45,10 +47,12 @@ we need a parser that can handle span queries since we serialize the query
 and pass it as a string arg to lux:search!  Syntax like this should be an
 easy add:
 
-a NEAR/0 b <-> a/b
-a NEAR/2 b <-> a/*/*/b
+a NEAR 0 b <-> a/b
+a NEAR 2 b <-> a/*/*/b
 would map to a SpanNear.  SpanOr?  SpanNot?
-
+a NOTNEAR/0 b?   This has more the meaning of the actual query
+a NEAR/0 NOT b?
+a NEAR b OR c -> SpanNear(a, SpanOr(b, c))
 SpanNot will arise in case of: /a[not(b)] (** currently this becomes SpanOr!!)
 
 We use SHOULD in some binary operations, like /a[b|c|d], which could be
