@@ -1,6 +1,8 @@
 package lux;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,56 +13,265 @@ import lux.saxon.Saxon;
 import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.xpath.AbstractExpression;
-import lux.xpath.LiteralExpression;
 import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
+import lux.xpath.LiteralExpression;
 
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Tests the parsing of XPath expressions and the generation
- * of a supporting Lucene query using only node name indexes.
+ * of a supporting Lucene query using node name indexes, and using path indexes.
  * 
- * TODO: add some tests with empty steps like self::* and self::node() axis - these should maintain
- * minimality.
+ * TODO: add some tests with empty steps like self::* and self::node() axis 
  */
-public class BasicQueryTest {
+public abstract class BasicQueryTest {
     
-    private static final String Q_ATTR = "lux_att_name:attr";
-    private static final String Q_BAR = "lux_elt_name:bar";
-    private static final String Q_FOO_BAR = "+lux_elt_name:foo +lux_elt_name:bar";
-    private static final String Q_FOO_OR_BAR = "lux_elt_name:foo lux_elt_name:bar";
-    private static final String Q_FOO = "lux_elt_name:foo";
-    private static final String Q_MATCH_ALL = "*:*";
+    protected HashMap <Q, String> queryStrings;
+
+    // subclasses supply expected query strings corresponding to each test case
+    // in the Q enum
+    public abstract void populateQueryStrings ();
     
-    private static HashMap<String,String> pathQueries = new HashMap<String,String>();
-    private static HashMap<String,String> nameQueries = new HashMap<String,String>();
+    public abstract XmlIndexer getIndexer ();
     
-    @BeforeClass 
-    public static void init () {
-        pathQueries.put(Q_ATTR, "");
-        pathQueries.put(Q_BAR, "bar");
-        pathQueries.put(Q_FOO, "foo");
-        pathQueries.put(Q_FOO_BAR, "foo AND bar");
-        pathQueries.put(Q_FOO_OR_BAR, "foo OR bar");
-        pathQueries.put(Q_MATCH_ALL, "{}");
-        
-        nameQueries.put(Q_ATTR, Q_ATTR);
-        nameQueries.put(Q_BAR, Q_BAR);
-        nameQueries.put(Q_FOO, Q_FOO);
-        nameQueries.put(Q_FOO_BAR, Q_FOO_BAR);
-        nameQueries.put(Q_FOO_OR_BAR, Q_FOO_OR_BAR);
-        nameQueries.put(Q_MATCH_ALL, Q_MATCH_ALL);
+    public enum Q {
+        ATTR, BAR, BAR_FOO, 
+            FOO, FOO1, FOO2, FOO_BAR, FOO_BAR1, FOO_BAR_BAZ, FOO_OR_BAR, 
+            FOO_ID, MATCH_ALL, 
+    };
+    
+    @Test public void testNoQuery () throws Exception {
+
+        try {
+            assertQuery ("", XPathQuery.MINIMAL, ValueType.DOCUMENT);
+            assertFalse ("expected syntax error", true);
+        } catch (Exception e) { }
+
+        try {
+            assertQuery (null, XPathQuery.MINIMAL, ValueType.DOCUMENT);
+            assertFalse ("expected NPE", true);
+        } catch (NullPointerException e) {}
+    }
+    
+    @Test public void testParseError () throws Exception {
+        try {
+            assertQuery ("bad xpath here", 0);
+            assertFalse ("expected syntax error", true);
+        } catch (Exception ex) { }
     }
 
-    public static void assertQuery (String xpath, int facts, String ... queries) {
+    @Test public void testMatchAll () throws Exception {
+        // Can you have an XML document with no elements?  I don't think so
+        //assertQuery ("*", Q.MATCH_ALL, true, ValueType.ELEMENT);
+        //assertQuery ("node()", Q.MATCH_ALL, true, ValueType.NODE);
+        assertQuery ("/*", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.MATCH_ALL);
+        assertQuery ("/node()", XPathQuery.MINIMAL, ValueType.NODE, Q.MATCH_ALL);
+        assertQuery ("/self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
+        //assertQuery ("self::node()", Q.MATCH_ALL, XPathQuery.MINIMAL);
+    }
+    
+    @Test public void testSlash() throws Exception {
+        assertQuery ("/", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
+    }
+    
+    @Test public void testElementPredicate() throws Exception {
+        assertQuery ("(/)[.//foo]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.FOO); 
+    }
+
+    @Test public void testElementPaths () throws Exception {
+       
+        assertQuery ("//foo", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.FOO);
+
+        assertQuery ("/*/foo", 0, ValueType.ELEMENT, Q.FOO2);
+        
+        assertQuery ("/foo//*", 0, ValueType.ELEMENT, Q.FOO1);
+
+        assertQuery ("/foo", 0, ValueType.ELEMENT, Q.FOO1);
+        
+        // this should be ValueType.TEXT shouldn't it??
+        assertQuery ("/foo/text()", 0, ValueType.ELEMENT, Q.FOO1);
+        // assertQuery ("foo/text()", Q.FOO, false public void testAttributePaths ( {
+        // FIXME: compute minimality properly for attributes
+        
+        assertQuery ("//*/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.ATTR);
+        
+        assertQuery ("//node()/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.ATTR);
+    }    
+
+    @Test
+    public void testConvertRootedPathToPredicate() {
+        assertQuery ("//foo/bar/root()", "lux:search(\"" + getQueryString(Q.FOO_BAR) + "\",24)" +
+        		"[exists(descendant::element(foo)/child::element(bar)/root(.))]", 
+        		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.FOO_BAR);
+    }    
+    
+    @Test public void testAttributePredicates () throws Exception {
+        assertQuery ("//*[@attr]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ATTR);
+
+        assertQuery ("(/)[.//*/@attr]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ATTR);        
+    }
+
+    @Test public void testElementAttributePaths () throws Exception {
+        
+        assertQuery ("//foo/@id", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.FOO_ID);
+
+        assertQuery ("//foo/@*", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.FOO);
+    }
+
+    @Test public void testTwoElementPaths () throws Exception {
+        
+        assertQuery ("//*/foo/bar", 0, ValueType.ELEMENT, Q.FOO_BAR);
+
+        assertQuery ("/foo//bar", 0, ValueType.ELEMENT, Q.FOO_BAR);
+    }
+    
+    @Test public void testTwoElementPredicates () throws Exception {
+        assertQuery ("(/)[.//foo][.//bar]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.FOO_BAR);
+    }
+    
+    @Test public void testUnion () throws Exception {
+        assertQuery ("foo|bar", 0, ValueType.ELEMENT);
+
+        assertQuery ("//foo|//bar", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.FOO_OR_BAR);
+    }
+
+    @Test public void testPositionalPredicate () throws Exception {
+        assertQuery ("//foo/bar[1]", 0, ValueType.ELEMENT, Q.FOO_BAR);
+        assertQuery ("/descendant-or-self::bar[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.BAR);
+        assertQuery ("//bar[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.BAR);        
+        assertQuery ("//bar[last()]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.BAR);
+
+        // not minimal, since there may not be a second bar element
+        assertQuery ("//bar[2]", 0, ValueType.ELEMENT, Q.BAR);
+        
+        assertQuery ("(//foo)[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.FOO); 
+    }
+    
+    @Test public void testSubsequence () throws Exception {
+        assertQuery ("subsequence (//foo, 1, 1)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.FOO);
+        // save this until we have implemented some kind of pagination in XPathQuery
+        // lux:search and XPathCollector
+        // assertQuery ("subsequence (//foo, 2)", 0, Q.FOO);
+        assertQuery ("subsequence (//foo, 1, 10)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.FOO);
+        //assertQuery ("subsequence (//foo, 10, 10)", 0, Q.FOO);
+    }
+
+    @Test public void testMultiElementPaths () throws Exception {        
+        assertQuery ("//foo/title | //bar/title | //baz/title",
+                     0,
+                     ValueType.ELEMENT, Q.FOO_BAR_BAZ);
+        // This was three separate queries, whose results would then have to be merged together,
+        // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
+        // together into a single query
+                     /*
+                     "+lux_elt_name:foo +lux_elt_name:title",
+                     "+lux_elt_name:bar +lux_elt_name:title",
+                     "+lux_elt_name:baz +lux_elt_name:title"); 
+                     */
+    }
+
+    @Test public void testElementValueNoPath () throws Exception {
+        // depends on context expression when there is none
+        assertQuery ("foo[.='content']", 0, ValueType.ELEMENT);
+    }
+    
+    @Test public void testElementValue () throws Exception {
+        assertQuery ("/foo[.='content']", 0, ValueType.ELEMENT, Q.FOO1);
+
+        assertQuery ("/foo[bar='content']", 0, ValueType.ELEMENT, Q.FOO_BAR1);
+
+        assertQuery ("//foo[.='content']", 0, ValueType.ELEMENT, Q.FOO);
+
+        assertQuery ("//foo[bar='content']", 0, ValueType.ELEMENT, Q.FOO_BAR);
+
+    }
+    
+    @Test public void testAncestorOrSelf () throws Exception {
+        assertQuery ("/ancestor-or-self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
+    }
+    
+    @Test public void testSelf () throws Exception {
+        assertQuery ("/self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
+    }
+    
+    @Test public void testAtomicResult () throws Exception {
+        assertQuery ("number(/foo/bar[1])", 0, ValueType.ATOMIC, Q.FOO_BAR1);
+        assertQuery ("number(//foo[1])", XPathQuery.MINIMAL, ValueType.ATOMIC, Q.FOO);
+    }
+    
+    @Test public void testCounting () throws Exception {
+        assertQuery ("count(/)", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.MATCH_ALL);
+        assertQuery ("count(//foo)", XPathQuery.MINIMAL, ValueType.ATOMIC, Q.FOO);
+        assertQuery ("count(//foo/root())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.FOO);
+        assertQuery ("count(//foo/ancestor::document-node())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.FOO);
+        assertQuery ("count(//foo/bar/ancestor::document-node())", 0, ValueType.ATOMIC, Q.FOO_BAR1);
+    }
+    
+    @Test public void testExistence() throws Exception {
+        assertQuery ("exists(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL);
+        assertQuery ("exists(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO);
+        assertQuery ("exists(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO);
+        assertQuery ("exists(//foo) and exists(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO, Q.BAR);
+        assertQuery ("exists(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO_BAR);
+        // TODO: merge queries such as this into one:
+        // assertQuery ("exists(//foo/root() intersect //bar/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q.FOO_BAR);
+        assertQuery ("exists((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO_BAR);
+    
+        assertQuery ("//foo[exists(bar)]", 0, ValueType.NODE, Q.FOO_BAR);
+    }
+    
+    @Test public void testNonexistence() throws Exception {
+        assertQuery ("empty(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q.MATCH_ALL);
+        assertQuery ("empty(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q.FOO);
+        assertQuery ("empty(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q.FOO);
+        assertQuery ("empty(//foo) and empty(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q.FOO, Q.BAR);
+        assertQuery ("empty(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q.FOO_BAR);
+        assertQuery ("empty((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q.FOO_BAR);
+
+        assertQuery ("//foo[empty(bar)]", 0, ValueType.NODE, Q.FOO);
+    }
+    
+    @Test public void testNot() throws Exception {
+        assertQuery ("not(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL);
+        assertQuery ("not(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO);
+        assertQuery ("not(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO);
+        assertQuery ("not(//foo) and empty(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO, Q.BAR);
+        assertQuery ("not(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO_BAR);
+        assertQuery ("not((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.FOO_BAR);
+    }    
+    // TODO: optimize not() expressions involving exists() and empty()
+    
+    @Test public void testPredicateNegation () throws Exception {
+        assertQuery ("//foo[not(bar)]", 0, ValueType.ELEMENT, Q.FOO);
+        assertQuery ("//foo[count(bar) = 0]", 0, ValueType.ELEMENT, Q.FOO);
+    }
+    
+    @Test public void testPredicateCombine () throws Exception {
+        // This should depend on having both foo and bar
+        assertQuery ("//foo[.//bar]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.FOO_BAR);
+        assertQuery ("//foo[exists(.//bar)]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.FOO_BAR);
+        // sorry...
+        assertQuery ("//foo[not(empty(.//bar))]", 0, ValueType.ELEMENT, Q.FOO); 
+    }
+
+    public String getQueryString (Q q) {
+        return queryStrings.get(q);
+    }
+    
+    
+    @Before 
+    public void init () {
+        queryStrings = new HashMap<Q, String>();
+        populateQueryStrings ();
+    }
+
+    public void assertQuery (String xpath, int facts, Q ... queries) {
         assertQuery (xpath, facts, null, queries);
     }
-    
 
-    public static void assertQuery (String xpath, int facts, ValueType type, String ... queries) {
+    public void assertQuery (String xpath, int facts, ValueType type, Q ... queries) {
         assertQuery (xpath, null, facts, type, queries);
     }
     
@@ -74,19 +285,16 @@ public class BasicQueryTest {
      * @param queries the expected lucene query strings
      */
 
-    public static void assertQuery (String xpath, String optimized, int facts, ValueType type, String ... queries) {
+    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
         Saxon saxon = new Saxon();
         
-        saxon.setContext(new SaxonContext (null, new XmlIndexer(XmlIndexer.INDEX_QNAMES)));
-        assertQuery(xpath, optimized, facts, type, saxon, nameQueries, queries);
-        
-        saxon.setContext(new SaxonContext (null, new XmlIndexer(XmlIndexer.INDEX_PATHS)));
-        assertQuery(xpath, optimized, facts, type, saxon, pathQueries, queries);
+        saxon.setContext(new SaxonContext (null, getIndexer()));
+        assertQuery(xpath, optimized, facts, type, saxon, queries);
     }
 
 
-    private static void assertQuery(String xpath, String optimized, int facts, ValueType type, Saxon saxon,
-            HashMap<String,String> expected, String... queries) {
+    private void assertQuery(String xpath, String optimized, int facts, ValueType type, Saxon saxon,
+            Q ... queries) {
 
         SaxonExpr expr = saxon.compile(xpath);
         AbstractExpression ex = saxon.getTranslator().exprFor(expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
@@ -97,7 +305,7 @@ public class BasicQueryTest {
         ex.accept(extractor);
         assertEquals ("wrong number of queries for " + xpath, queries.length, extractor.queries.size());
         for (int i = 0; i < queries.length; i++) {
-            assertEquals (expected.get(queries[i]), extractor.queries.get(i).toString());
+            assertEquals (getQueryString(queries[i]), extractor.queries.get(i).toString());
         }
         if (queries.length > 0) {
             boolean isMinimal = (facts & XPathQuery.MINIMAL) != 0;
@@ -156,224 +364,4 @@ public class BasicQueryTest {
         }
         
     }
-    
-    protected static final String MATCH_ALL = new MatchAllDocsQuery().toString();
-    
-    @Test public void testNoQuery () throws Exception {
-
-        try {
-            assertQuery ("", XPathQuery.MINIMAL, ValueType.DOCUMENT);
-            assertFalse ("expected syntax error", true);
-        } catch (Exception e) { }
-
-        try {
-            assertQuery (null, XPathQuery.MINIMAL, ValueType.DOCUMENT);
-            assertFalse ("expected NPE", true);
-        } catch (NullPointerException e) {}
-    }
-    
-    @Test public void testParseError () throws Exception {
-        try {
-            assertQuery ("bad xpath here", 0);
-            assertFalse ("expected syntax error", true);
-        } catch (Exception ex) { }
-    }
-
-    @Test public void testMatchAll () throws Exception {
-        // Can you have an XML document with no elements?  I don't think so
-        //assertQuery ("*", MATCH_ALL, true, ValueType.ELEMENT);
-        //assertQuery ("node()", MATCH_ALL, true, ValueType.NODE);
-        assertQuery ("/*", XPathQuery.MINIMAL, ValueType.ELEMENT, MATCH_ALL);
-        assertQuery ("/node()", XPathQuery.MINIMAL, ValueType.NODE, MATCH_ALL);
-        assertQuery ("/self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, MATCH_ALL);
-        //assertQuery ("self::node()", MATCH_ALL, XPathQuery.MINIMAL);
-    }
-    
-    @Test public void testSlash() throws Exception {
-        assertQuery ("/", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, MATCH_ALL);
-    }
-    
-    @Test public void testElementPredicate() throws Exception {
-        assertQuery ("(/)[.//foo]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_FOO); 
-    }
-
-    @Test public void testElementPaths () throws Exception {
-       
-        assertQuery ("//foo", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO);
-
-        assertQuery ("/*/foo", 0, ValueType.ELEMENT, Q_FOO);
-        
-        assertQuery ("/foo//*", 0, ValueType.ELEMENT, Q_FOO);
-
-        assertQuery ("/foo", 0, ValueType.ELEMENT, Q_FOO);
-        
-        assertQuery ("/foo/text()", 0, ValueType.ELEMENT, Q_FOO);
-        // assertQuery ("foo/text()", Q_FOO, false public void testAttributePaths ( {
-        // FIXME: compute minimality properly for attributes
-        
-        assertQuery ("//*/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q_ATTR);
-        
-        assertQuery ("//node()/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q_ATTR);
-    }    
-
-    @Test
-    public void testConvertRootedPathToPredicate() {
-        assertQuery ("//foo/bar/root()", "lux:search(\"" + Q_FOO_BAR + "\",24)" +
-        		"[exists(descendant::element(foo)/child::element(bar)/root(.))]", 
-        		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_FOO_BAR);
-    }
-    
-    
-    @Test public void testAttributePredicates () throws Exception {
-        assertQuery ("//*[@attr]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_ATTR);
-
-        assertQuery ("(/)[.//*/@attr]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_ATTR);        
-    }
-
-    @Test public void testElementAttributePaths () throws Exception {
-        
-        assertQuery ("//foo/@id", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, "+lux_elt_name:foo +lux_att_name:id");
-
-        assertQuery ("//foo/@*", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q_FOO);
-    }
-
-    @Test public void testTwoElementPaths () throws Exception {
-        
-        assertQuery ("//*/foo/bar", 0, ValueType.ELEMENT, Q_FOO_BAR);
-
-        assertQuery ("/foo//bar", 0, ValueType.ELEMENT, Q_FOO_BAR);
-    }
-    
-    @Test public void testTwoElementPredicates () throws Exception {
-        assertQuery ("(/)[.//foo][.//bar]", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q_FOO_BAR);
-    }
-    
-    @Test public void testUnion () throws Exception {
-        assertQuery ("foo|bar", 0, ValueType.ELEMENT);
-
-        assertQuery ("//foo|//bar", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO_OR_BAR);
-    }
-
-    @Test public void testPositionalPredicate () throws Exception {
-        assertQuery ("//foo/bar[1]", 0, ValueType.ELEMENT, Q_FOO_BAR);
-        assertQuery ("/descendant-or-self::bar[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_BAR);
-        assertQuery ("//bar[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_BAR);        
-        assertQuery ("//bar[last()]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_BAR);
-
-        // not minimal, since there may not be a second bar element
-        assertQuery ("//bar[2]", 0, ValueType.ELEMENT, Q_BAR);
-        
-        assertQuery ("(//foo)[1]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO); 
-    }
-    
-    @Test public void testSubsequence () throws Exception {
-        assertQuery ("subsequence (//foo, 1, 1)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO);
-        // save this until we have implemented some kind of pagination in XPathQuery
-        // lux:search and XPathCollector
-        // assertQuery ("subsequence (//foo, 2)", 0, Q_FOO);
-        assertQuery ("subsequence (//foo, 1, 10)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO);
-        //assertQuery ("subsequence (//foo, 10, 10)", 0, Q_FOO);
-    }
-
-    @Test public void testMultiElementPaths () throws Exception {        
-        assertQuery ("//foo/title | //bar/title | //baz/title",
-                     0,
-                     ValueType.ELEMENT,
-                     "((+lux_elt_name:foo +lux_elt_name:title)" +
-                     " (+lux_elt_name:bar +lux_elt_name:title))" +
-                     " (+lux_elt_name:baz +lux_elt_name:title)");
-        // This was three separate queries, whose results would then have to be merged together,
-        // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
-        // together into a single query
-                     /*
-                     "+lux_elt_name:foo +lux_elt_name:title",
-                     "+lux_elt_name:bar +lux_elt_name:title",
-                     "+lux_elt_name:baz +lux_elt_name:title"); 
-                     */
-    }
-
-    @Test public void testElementValueNoPath () throws Exception {
-        // depends on context expression when there is none
-        assertQuery ("foo[.='content']", 0, ValueType.ELEMENT);
-    }
-    
-    @Test public void testElementValue () throws Exception {
-        assertQuery ("/foo[.='content']", 0, ValueType.ELEMENT, Q_FOO);
-
-        assertQuery ("/foo[bar='content']", 0, ValueType.ELEMENT, Q_FOO_BAR);
-
-        assertQuery ("//foo[.='content']", 0, ValueType.ELEMENT, Q_FOO);
-
-        assertQuery ("//foo[bar='content']", 0, ValueType.ELEMENT, Q_FOO_BAR);
-
-    }
-    
-    @Test public void testAncestorOrSelf () throws Exception {
-        assertQuery ("/ancestor-or-self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, "*:*");
-    }
-    
-    @Test public void testSelf () throws Exception {
-        assertQuery ("/self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, "*:*");
-    }
-    
-    @Test public void testAtomicResult () throws Exception {
-        assertQuery ("number(/doc/test[1])", 0, ValueType.ATOMIC, "+lux_elt_name:doc +lux_elt_name:test");
-        assertQuery ("number(//test[1])", XPathQuery.MINIMAL, ValueType.ATOMIC, "lux_elt_name:test");
-    }
-    
-    @Test public void testCounting () throws Exception {
-        assertQuery ("count(/)", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, "*:*");
-        assertQuery ("count(//foo)", XPathQuery.MINIMAL, ValueType.ATOMIC, Q_FOO);
-        assertQuery ("count(//foo/root())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q_FOO);
-        assertQuery ("count(//foo/ancestor::document-node())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q_FOO);
-        assertQuery ("count(//foo/bar/ancestor::document-node())", 0, ValueType.ATOMIC, Q_FOO_BAR);
-    }
-    
-    @Test public void testExistence() throws Exception {
-        assertQuery ("exists(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, "*:*");
-        assertQuery ("exists(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("exists(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("exists(//foo) and exists(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO, Q_BAR);
-        assertQuery ("exists(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
-        // TODO: merge queries such as this into one:
-        // assertQuery ("exists(//foo/root() intersect //bar/root())", XPathQuery.MINIMAL, ValueType.BOOLEAN, Q_FOO_BAR);
-        assertQuery ("exists((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
-    
-        assertQuery ("//foo[exists(bar)]", 0, ValueType.NODE, Q_FOO_BAR);
-    }
-    
-    @Test public void testNonexistence() throws Exception {
-        assertQuery ("empty(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, "*:*");
-        assertQuery ("empty(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("empty(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("empty(//foo) and empty(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO, Q_BAR);
-        assertQuery ("empty(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO_BAR);
-        assertQuery ("empty((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_FALSE, ValueType.BOOLEAN, Q_FOO_BAR);
-
-        assertQuery ("//foo[empty(bar)]", 0, ValueType.NODE, Q_FOO);
-    }
-    
-    @Test public void testNot() throws Exception {
-        assertQuery ("not(/)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, "*:*");
-        assertQuery ("not(//foo)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("not(//foo/root())", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO);
-        assertQuery ("not(//foo) and empty(//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO, Q_BAR);
-        assertQuery ("not(//foo/root()//bar)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
-        assertQuery ("not((/)[.//foo and .//bar])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q_FOO_BAR);
-    }    
-    // TODO: optimize not() expressions involving exists() and empty()
-    
-    @Test public void testPredicateNegation () throws Exception {
-        assertQuery ("//foo[not(bar)]", 0, ValueType.ELEMENT, Q_FOO);
-        assertQuery ("//foo[count(bar) = 0]", 0, ValueType.ELEMENT, "lux_elt_name:foo");
-    }
-    
-    @Test public void testPredicateCombine () throws Exception {
-        // This should depend on having both foo and bar
-        assertQuery ("//foo[.//bar]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO_BAR);
-        assertQuery ("//foo[exists(.//bar)]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q_FOO_BAR);
-        // sorry...
-        assertQuery ("//foo[not(empty(.//bar))]", 0, ValueType.ELEMENT, Q_FOO); 
-    }
-
 }

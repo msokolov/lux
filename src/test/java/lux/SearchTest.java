@@ -48,6 +48,7 @@ public class SearchTest extends SearchBase {
         assertSearch ("true", "exists(//SCENE) and exists(//ACT)", QUERY_NO_DOCS, 2);
         assertSearch ("true", "exists(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
         assertSearch ("true", "exists((/)[.//SCENE and .//ACT])", QUERY_NO_DOCS, 1);
+        assertSearch ("true", "exists(//ACT//SCENE)", QUERY_NO_DOCS, 1);
     }
     
     @Test
@@ -72,6 +73,15 @@ public class SearchTest extends SearchBase {
         assertSearch ("true", "not(//SCENE) or not(//foo)", QUERY_NO_DOCS, 1);
         assertSearch ("false", "not(//SCENE/root()//ACT)", QUERY_NO_DOCS, 1);
         assertSearch ("false", "not((/)[.//SCENE and .//ACT])", QUERY_NO_DOCS, 1);
+        assertSearch ("true", "not(//SCENE//ACT)", QUERY_NO_DOCS, 0);
+    }
+    
+    @Test
+    public void testPathOrder () {
+        // make sure that order is *not* significant in the generated query; 
+        // it should be (SCENE AND ACT):
+        // 120 = 20 (scenes) * 5 (acts) in 1 /PLAY + 20 scenes in 5 /ACT documents
+        assertSearch ("120", "count(//SCENE/root()//ACT)", 0, 6);
     }
     
     @Test
@@ -280,7 +290,7 @@ public class SearchTest extends SearchBase {
     protected void assertSearch(String result, String query, Integer props, Integer docCount) throws LuxException {
         ResultSet<?> results = assertSearch (query, props, docCount);
         assertTrue ("no results", results.iterator().hasNext());
-        assertEquals (result, results.iterator().next().toString());
+        assertEquals ("incorrect query result", result, results.iterator().next().toString());
     }
     
     /**
@@ -310,7 +320,9 @@ public class SearchTest extends SearchBase {
             }
             if ((props & QUERY_MINIMAL) != 0) {
                 // this is not the same as minimal, but is implied by it:
-                assertTrue (results.size() >= stats.docCount);
+                assertTrue ("query is not minimal; retrieved " + stats.docCount + 
+                " docs but only got " + results.size() + " results", 
+                results.size() >= stats.docCount);
                 // in addition we'd need to show that every document produced at least one result
             }
             if ((props & QUERY_NO_DOCS) != 0) {

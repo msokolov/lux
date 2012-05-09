@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
+import lux.index.XmlField;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 
@@ -34,9 +35,13 @@ public class IndexTest {
 
     @Test
     public void testIndexPaths() throws Exception {
-        buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
+        XmlIndexer indexer = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
         printAllTerms();
+        indexer.index(getClass().getResourceAsStream("hamlet.xml"));
+        for (Object s : indexer.getFieldValues(XmlField.PATH)) {
+            System.out.println (s);
+        }
     }
 
     @Test
@@ -61,13 +66,14 @@ public class IndexTest {
         dir.close();
     }
     
-    private void buildIndex (String desc, int options) throws XMLStreamException, IOException {
+    private XmlIndexer buildIndex (String desc, int options) throws XMLStreamException, IOException {
         XmlIndexer indexer = new XmlIndexer (options);
         long t0 = System.currentTimeMillis();
         SearchBase.indexAllElements (indexer, dir, "lux/hamlet.xml");
         System.out.println 
              (String.format("indexed %s in %d ms %d bytes", desc, 
                      (System.currentTimeMillis()-t0), dir.sizeInBytes()));
+        return indexer;
     }
 
     private void printAllTerms() throws CorruptIndexException, IOException {
