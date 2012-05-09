@@ -107,7 +107,7 @@ public class XmlPathMapper implements StAXHandler {
     
     /**
      * encode a QName in a suitable form for indexing.  Escapes namespace uris URL-escaping
-     * so that no /'s occur, and / can be used as a separator.  
+     * so that no spaces occur, and space can be used as a separator.  
      * If namespace-aware, the encoding is: local-name{encoded-namespace}.  Otherwise,
      * if prefix is non-empty, it's local-name{prefix}, otherwise just local-name.
      * @param qname

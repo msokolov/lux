@@ -2,7 +2,6 @@ package lux.index;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
@@ -41,7 +40,7 @@ public class XmlField {
     
     public final static XmlField ELT_QNAME = new XmlField ("lux_elt_name", new KeywordAnalyzer(), Store.NO);
     public final static XmlField ATT_QNAME = new XmlField ("lux_att_name", new KeywordAnalyzer(), Store.NO);
-    public final static XmlField PATH = new XmlField ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_34), Store.NO);
+    public final static XmlField PATH = new XmlField ("lux_path", new WhitespaceGapAnalyzer(), Store.NO);
     public final static XmlField XML_STORE = new XmlField ("lux_xml", null, Store.YES);
     public static final XmlField FULL_TEXT = new XmlField ("lux_text", new StandardAnalyzer(Version.LUCENE_34), Store.YES);
 

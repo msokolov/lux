@@ -267,19 +267,24 @@ public class XPathQuery extends Query {
     }
     
     private static Query combineSpans (Query a, Occur occur, Query b, int distance) {
+
+        // distance == 0 means the two queries are adjacent
         if (distance == 0) {
             return new SurroundSpanQuery(distance, true, occur, a, b);
         }
+
         // don't create a span query for //foo; a single term is enough
-        if (a instanceof SurroundMatchAll && occur != Occur.MUST_NOT) {
+        // distance < 0 means no distance could be computed
+        if (a instanceof SurroundMatchAll && occur != Occur.MUST_NOT && (distance > 90 || distance < 0)) {
             return b;
         }
         if (b instanceof SurroundMatchAll) {
             return a;
         }
-        if (distance > 1) {
+        if (distance > 0) {
             return new SurroundSpanQuery(distance, true, occur, a, b);
         }
+        // distance = -1
         return new SurroundBoolean (occur, a, b);
     }
     

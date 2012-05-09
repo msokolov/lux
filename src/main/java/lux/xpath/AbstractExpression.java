@@ -36,7 +36,7 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     public void acceptSubs (ExpressionVisitor visitor) {
-        for (int i = 0; i < subs.length; i++) {
+        for (int i = 0; i < subs.length && !visitor.isDone(); i++) {
             int j = visitor.isReverse() ? (subs.length-i-1) : i;
             AbstractExpression sub = subs[j].accept (visitor);
             if (sub != subs[j]) {

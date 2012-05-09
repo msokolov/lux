@@ -20,9 +20,19 @@ public class SlopCounter extends ExpressionVisitorBase {
     private boolean done = false;
     private Integer slop = null;
 
+    /**
+     * reset back to the initial state so the counter may be reused.
+     */
+    public void reset() {
+        slop = null;
+        done = false;
+    }
+
     @Override
     public AbstractExpression visit(Root root) {
-        slop = 0;
+        if (slop == null) {
+            slop = 0;
+        }
         return root;
     }
 
@@ -48,9 +58,8 @@ public class SlopCounter extends ExpressionVisitorBase {
         } else if (axis == Axis.Descendant || axis == Axis.DescendantSelf) {
             // A number bigger than any document would ever be nested?  A
             // document nested this deeply would likely cause other
-            // problems.  We don't want to use MAX_INT because we'd like to
-            // be able to add these distances.
-            slop = 10;
+            // problems.  Surround Query Parser can only parse 2-digit distances
+            slop = 98;
         } else {
             done = true;
         }
@@ -84,6 +93,11 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     public Integer getSlop () {
         return slop;
+    }
+    
+    @Override
+    public boolean isDone () {
+        return done;
     }
 
 }

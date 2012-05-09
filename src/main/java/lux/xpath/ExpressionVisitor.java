@@ -13,6 +13,13 @@ public abstract class ExpressionVisitor {
     public void setReverse (boolean reverse) {
         this.reverse = reverse;
     }
+    
+    /**
+     * @return true if the visit is done; this allows visits to terminate early
+     */
+    public boolean isDone () {
+        return false;
+    }
 
     public abstract AbstractExpression visit (PathStep step);
     public abstract AbstractExpression visit (PathExpression path);

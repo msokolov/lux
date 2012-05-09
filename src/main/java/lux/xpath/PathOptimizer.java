@@ -135,9 +135,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
             rSlop = slopCounter.getSlop();
 
             // count the right slop of the LHS
-            slopCounter.setReverse (true);
-            pathExpr.getLHS().accept (slopCounter);
-            lSlop = slopCounter.getSlop();
+            if (rSlop != null) {
+                slopCounter.reset ();
+                slopCounter.setReverse (true);
+                pathExpr.getLHS().accept (slopCounter);
+                lSlop = slopCounter.getSlop();
+            }
         }
         if (rSlop != null && lSlop != null) {
             // total slop is the distance between the two path components.
@@ -320,12 +323,17 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     private Query nodeNameTermQuery(Axis axis, QName name) {
-        String nodeName = name.getClarkName(); //name.getLocalPart();
-        String fieldName = (axis == Axis.Attribute) ? attrQNameField : elementQNameField;
-        Term term = new Term (fieldName, nodeName);
         if (indexer.isOption (XmlIndexer.INDEX_PATHS)) {
+            String nodeName = name.getEncodedName();
+            if (axis == Axis.Attribute) {
+                nodeName = '@' + nodeName;
+            }
+            Term term = new Term ("", nodeName);
             return new SurroundTerm (term);
         } else {
+            String nodeName = name.getClarkName(); //name.getLocalPart();
+            String fieldName = (axis == Axis.Attribute) ? attrQNameField : elementQNameField;
+            Term term = new Term (fieldName, nodeName);
             return new TermQuery (term);
         }
     }
