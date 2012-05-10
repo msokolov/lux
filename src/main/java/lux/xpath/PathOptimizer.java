@@ -28,7 +28,12 @@ import org.apache.lucene.search.TermQuery;
  * retrieve the smallest possible subset of available documents for which the expression generates
  * a non-empty result sequence.  The queries for these sub-expressions are composed
  * according to the semantics of the combining expressions and functions.  Absolute
- * sequences (occurrences of /) generally inhibit query composition.
+ * sequences (occurrences of /) generally are not composed together - they form independent subqueries.
+ * 
+ * When optimizing for path indexes, we attempt to compute the "vertical" or node distances between adjacent 
+ * sub-expressions.  Child path steps introduce a zero distance when there is a named step on either side;
+ * wildcard child steps introduce a distance of one, and descendant (or ancestor?) steps count as infinite distance,
+ * although order is preserved.
  */
 public class PathOptimizer extends ExpressionVisitorBase {
 
@@ -121,35 +126,70 @@ public class PathOptimizer extends ExpressionVisitorBase {
      *
      * PathExpressions can join together Dot, Root, PathStep, FunCall, PathExpression,and maybe Variable?
      */
+    @Override
     public AbstractExpression visit(PathExpression pathExpr) {
         XPathQuery rq = pop();
-        XPathQuery lq = pop();
-        XPathQuery query;
+        XPathQuery lq = pop();        
+        XPathQuery query = combineAdjacentQueries(pathExpr.getLHS(), pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
+        push(query);
+        return pathExpr;
+    }
+    
+    @Override
+    public AbstractExpression visit(Predicate predicate) {
+        // Allow the base expression to be optimized later so we have an opportunity to combine the 
+        // predicate query with the base query
+        optimizeExpression (predicate.getFilter(), 0, 0);
+        XPathQuery filterQuery = pop();
+        XPathQuery baseQuery = pop();
         
+        XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
+        // This is a counting expr if its base expr is
+        query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
+        push (query);
+        return predicate;
+    }
+    
+    private enum ResultOrientation { LEFT, RIGHT };
+
+    /**
+     * Combine queries from two adjacent subexpressions
+     * @param left the left (upper) subexpression
+     * @param right the right (lower) subexpression
+     * @param lq the left query
+     * @param rq the right query
+     * @param orient the orientation of the combining expression - if RIGHT, then result items are 
+     * drawn from the right subexpression (as for paths), and for LEFT, result items from the left
+     * (as for predicates).
+     * @return the combined query
+     */
+    private XPathQuery combineAdjacentQueries(AbstractExpression left, AbstractExpression right, XPathQuery lq, XPathQuery rq,
+            ResultOrientation orient) {
+        XPathQuery query;
         Integer rSlop=null, lSlop=null;
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
             SlopCounter slopCounter = new SlopCounter ();
 
             // count the left slop of the RHS
-            pathExpr.getRHS().accept (slopCounter);
+            right.accept (slopCounter);
             rSlop = slopCounter.getSlop();
 
             // count the right slop of the LHS
             if (rSlop != null) {
                 slopCounter.reset ();
                 slopCounter.setReverse (true);
-                pathExpr.getLHS().accept (slopCounter);
+                left.accept (slopCounter);
                 lSlop = slopCounter.getSlop();
             }
         }
+        ValueType resultType = (orient == ResultOrientation.RIGHT) ? rq.getResultType() : lq.getResultType();
         if (rSlop != null && lSlop != null) {
             // total slop is the distance between the two path components.
-            query = lq.combine(rq, Occur.MUST, rq.getResultType(), rSlop + lSlop);
+            query = lq.combine(rq, Occur.MUST, resultType, rSlop + lSlop);
         } else {
-            query = combineQueries (lq, Occur.MUST, rq, rq.getResultType());
+            query = combineQueries (lq, Occur.MUST, rq, resultType);
         }
-        push(query);
-        return pathExpr;
+        return query;
     }
     
     public AbstractExpression visit(PathStep step) {
@@ -404,23 +444,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     @Override
-    public AbstractExpression visit(Predicate predicate) {
-        // Allow the base expression to be optimized later so we have an opportunity to combine the 
-        // predicate query with the base query
-        optimizeExpression (predicate.getFilter(), 0, 0);
-        XPathQuery filterQuery = pop();
-        XPathQuery baseQuery = pop();
-        // We can only assert the predicate MUST occur in certain circumstances
-        // various function calls blur that - consider not(foo) or count(foo)=0 or count(.//foo) gt count(./foo)
-        // TODO: so why are we asserting it universally here?
-        XPathQuery query = combineQueries (baseQuery, Occur.MUST, filterQuery, baseQuery.getResultType());
-        // This is a counting expr if its base expr is
-        query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
-        push (query);
-        return predicate;
-    }
-
-    @Override
     public AbstractExpression visit(Subsequence subsequence) {
         optimizeSubExpressions (subsequence, 0);
         AbstractExpression start = subsequence.getStartExpr();
@@ -439,9 +462,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return subsequence;
         }
         XPathQuery baseQuery = pop();
-        XPathQuery query = baseQuery.combine(startQuery, Occur.SHOULD);
+        XPathQuery query = combineQueries (baseQuery, Occur.SHOULD, startQuery, baseQuery.getResultType());
         if (lengthQuery != null) {
-            query = query.combine(lengthQuery, Occur.SHOULD);
+            query = combineQueries (query, Occur.SHOULD, lengthQuery, query.getResultType());
         }
         query.setFact(XPathQuery.MINIMAL, false);
         push (query);

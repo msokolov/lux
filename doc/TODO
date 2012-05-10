@@ -14,6 +14,43 @@ grow xpath; determine salient dimensions by #matches - some, all or none.
 chunk documents by size; guided by learned paths
 *** reduce parsing/serialization time
 *** xpath execution time
+* optimize XPath searching
+There are a few more things we can optimize using the "basic" indexing setup
+** Path indexes random idea
+What if instead of collapsing all the paths down so we only store unique
+paths, we retained the document structure in some way by listing *all*
+paths?  What would that buy?  numerical predicates?
+** pre-evaluate some functions, like aggregates:
+
+In cases where we can do this (argument expression is evaluated in the
+QueryContext, ie there is no current node, or the argument is the
+collection() function), rewrite/wrap/intercept the function to an internal
+method (lux:count) that we implement by recursing into a nested query/eval.
+
+Perform static analysis of the argument expression(s) to see if they can be
+retrieved minimally by query.  If we can prove that the db query result
+count will equal the expression result count, then we can replace the
+count() expression with an (indexed, more efficient) query-count()
+expression.  exists() and not() can be computed as count()>0 and count()=0,
+and we can short-circuit evaluation in the result collector.
+
+This could also hold for max/min when we have an appropriate field.  Maybe
+we can even help out w/aggregates like sum/avg?
+
+More complex would be something like: count(//a) + count(//b) ?
+
+*** root()
+*** count()
+across multiple documents
+*** node-uri(), document-uri()
+** optimize pagination when we know that #count=#estimate
+optimize subsequence when we can - eg the first arg, the sequence, is
+entirely indexed.  And even when it's not, make sure we don't iterate on
+beyond where we need to - asserting the results are sorted properly.  We're
+somewhat limited in our ability to do this right now since we rely on Saxon
+to make judgements about sorting, and it doesn't always optimize as
+agressively as we would like, at least not in the saxon-HE version.  It
+works in some simple cases, though.
 * Lux search function
 Execute a lucene query, returning documents (or maybe later, nodes), and
 execute an xpath(later: xquery) on those, accumulating results and
@@ -79,39 +116,6 @@ Run the XQTS in the same way using Lux and compare results (and time, of
 course).
 **** optimize and repeat
 Apply additional optimizations where possible
-* optimize XPath searching
-There are a few more things we can optimize using the "basic" indexing setup
-** pre-evaluate some functions, like aggregates:
-
-In cases where we can do this (argument expression is evaluated in the
-QueryContext, ie there is no current node, or the argument is the
-collection() function), rewrite/wrap/intercept the function to an internal
-method (lux:count) that we implement by recursing into a nested query/eval.
-
-Perform static analysis of the argument expression(s) to see if they can be
-retrieved minimally by query.  If we can prove that the db query result
-count will equal the expression result count, then we can replace the
-count() expression with an (indexed, more efficient) query-count()
-expression.  exists() and not() can be computed as count()>0 and count()=0,
-and we can short-circuit evaluation in the result collector.
-
-This could also hold for max/min when we have an appropriate field.  Maybe
-we can even help out w/aggregates like sum/avg?
-
-More complex would be something like: count(//a) + count(//b) ?
-
-*** root()
-*** count()
-across multiple documents
-*** node-uri(), document-uri()
-** optimize pagination when we know that #count=#estimate
-optimize subsequence when we can - eg the first arg, the sequence, is
-entirely indexed.  And even when it's not, make sure we don't iterate on
-beyond where we need to - asserting the results are sorted properly.  We're
-somewhat limited in our ability to do this right now since we rely on Saxon
-to make judgements about sorting, and it doesn't always optimize as
-agressively as we would like, at least not in the saxon-HE version.  It
-works in some simple cases, though.
 * saxon-PE/HE
 evaluate perf improvements
 ** better optimization?

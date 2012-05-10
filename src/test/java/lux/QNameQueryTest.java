@@ -10,8 +10,11 @@ public class QNameQueryTest extends BasicQueryTest {
         queryStrings.put (Q.BAR, "lux_elt_name:bar");
         queryStrings.put (Q.FOO_BAR, "+lux_elt_name:bar +lux_elt_name:foo");
         queryStrings.put (Q.FOO_BAR1, "+lux_elt_name:bar +lux_elt_name:foo");
+        queryStrings.put (Q.FOO_BAR2, "+lux_elt_name:bar +lux_elt_name:foo");
+        queryStrings.put (Q.FOO_BAR3, "+lux_elt_name:bar +lux_elt_name:foo");
         queryStrings.put (Q.BAR_FOO, "+lux_elt_name:foo +lux_elt_name:bar");
         queryStrings.put (Q.FOO_OR_BAR, "lux_elt_name:bar lux_elt_name:foo");
+        queryStrings.put (Q.FOO_AND_BAR, "+lux_elt_name:bar +lux_elt_name:foo");
         queryStrings.put(Q.FOO_BAR_BAZ, 
                          "(+lux_elt_name:title +lux_elt_name:baz)" +
                          " ((+lux_elt_name:title +lux_elt_name:bar)" +

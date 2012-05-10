@@ -30,9 +30,7 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(Root root) {
-        if (slop == null) {
-            slop = 0;
-        }
+        foundNode();
         return root;
     }
 
@@ -48,26 +46,54 @@ public class SlopCounter extends ExpressionVisitorBase {
                  || nodeTest.getType().equals (ValueType.ELEMENT))
                  )
             {
-                if (slop == null) {
-                    slop = 0;
-                }
+                foundNode();
                 if (nodeTest.getQName() == null) {
-                    ++slop;
+                    ++ slop;
+                } else {
+                    done = true;
                 }
             }
         } else if (axis == Axis.Descendant || axis == Axis.DescendantSelf) {
-            // A number bigger than any document would ever be nested?  A
-            // document nested this deeply would likely cause other
-            // problems.  Surround Query Parser can only parse 2-digit distances
-            slop = 98;
-        } else {
+            if (isReverse()) {
+                // we're going right-to-left
+                if (slop == null  && nodeTest.getQName() != null) {
+                    // we see our first thing and it's a named node
+                    slop = 0;
+                    done = true;
+                } else {
+                    slop = 98;
+                }
+            } else {
+                // A number bigger than any document would ever be nested?  A
+                // document nested this deeply would likely cause other
+                // problems.  Surround Query Parser can only parse 2-digit distances
+                slop = 98;
+            }
+        } else if (axis == Axis.Attribute) { 
+            if (nodeTest.getQName() != null) {
+                foundNode();
+            }
+        }
+        else {
             done = true;
         }
         return step;
     }
 
+    private void foundNode() {
+        if (slop == null) {
+            slop = 0;
+        }
+    }
+
     @Override
     public AbstractExpression visit(FunCall f) {
+        if (! f.getQName().equals(FunCall.existsQName)) {
+            // We can infer a path relationship with exists() because it depends on its
+            // context just like a predicate.  We should also be able to invert not(exists()) and 
+            // empty(), and not(), etc. in the path index case.
+            slop = null;
+        }
         done = true;
         return f;
     }
