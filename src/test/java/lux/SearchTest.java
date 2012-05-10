@@ -279,6 +279,22 @@ public class SearchTest extends SearchBase {
         assertSearch ("6", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))", null, 8);
     }
     
+    @Test
+    public void testPaths () throws Exception {
+        // test path ordering:
+        assertSearch (null, "/ACT/PLAY", null, 0);
+        assertSearch (null, "//ACT//PLAY", null, 0);
+        // test path distance:
+        assertSearch ("Where is your son?", "string(/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3])", null, 1);
+        // FIXME:
+        //assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);
+        // Q: who decides what serialization to use?
+        //assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]", null, 1);
+        assertSearch ("Where is your son?", "string((/PLAY/ACT[4]/*/*/LINE)[3])", null, 1);
+        // no result, but we can't tell from the query and have to retrieve the document and process it
+        assertSearch (null, "/PLAY/ACT[4]/*/*/*/*/LINE", null, 1);
+    }
+    
     private ResultSet<?> assertSearch(String query) throws LuxException {
         return assertSearch (query, 0);
     }
@@ -287,10 +303,16 @@ public class SearchTest extends SearchBase {
         return assertSearch(query, props, null);
     }
 
-    protected void assertSearch(String result, String query, Integer props, Integer docCount) throws LuxException {
+    protected void assertSearch(String expectedResult, String query, Integer props, Integer docCount) throws LuxException {
         ResultSet<?> results = assertSearch (query, props, docCount);
-        assertTrue ("no results", results.iterator().hasNext());
-        assertEquals ("incorrect query result", result, results.iterator().next().toString());
+        boolean hasResults = results.iterator().hasNext();
+        String result = hasResults ? results.iterator().next().toString() : null;
+        if (expectedResult == null) {            
+            assertTrue ("results not empty, got: " + result, !hasResults);
+            return;
+        }
+        assertTrue ("no results", hasResults);
+        assertEquals ("incorrect query result", expectedResult, result);
     }
     
     /**
