@@ -32,6 +32,13 @@ different.
 Express paths returning documents (say ending with root()) as
 search()[path] so that the path doesn't need to be sorted in document
 order, enabling lazy evaluation.
+* indexes
+XmlIndexer manages multiple index options, and we pass it around so consumers
+of the index know what is available there.
+** qname index
+** path index
+
+*** implemented using surround parser / span queries
 * lux components
 ** Translator
 converts Saxon's internal Expression tree to a Lux AbstractExpression tree.
@@ -41,3 +48,6 @@ attribute name indexes.
 *** ExpressionVisitor
 machinery for optimizers and other tree visitors like UnOptimizer.
 ** Indexer
+* packaging
+** solr request handler
+

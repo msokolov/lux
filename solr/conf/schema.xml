@@ -471,6 +471,13 @@
         alternately, change the type="ignored" to some other type e.g. "text" if you want 
         unknown fields indexed and/or stored by default --> 
    <!--dynamicField name="*" type="ignored" multiValued="true" /-->
+
+   <!-- LUX FIELD DEFINITIONS -->
+
+   <!-- text_ws = whitespace + 100 position gap -->
+   <field name="lux_path" type="text_ws"  indexed="true"  stored="false" multiValued="true" />
+   <field name="lux_elt_name" type="string"  indexed="true"  stored="false" multiValued="true" />
+   <field name="lux_att_name" type="string"  indexed="true"  stored="false" multiValued="true" />
    
  </fields>
 
@@ -496,4 +503,5 @@
 	  copyField also supports a maxChars to copy setting.  -->
 	   
    <!-- <copyField source="*_t" dest="text" maxChars="3000"/> -->
+
 </schema>

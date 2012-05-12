@@ -6,6 +6,7 @@ import java.math.BigInteger;
 
 import lux.api.Evaluator;
 import lux.saxon.Saxon;
+import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
@@ -25,15 +26,13 @@ public class SaxonComponent extends XPathSearchComponent {
     }
 
     @Override
-    public Object buildDocument(String xml) {
-        return ((Saxon)evaluator).getBuilder().build(new StringReader (xml));
+    public Object buildDocument(String xml, XmlBuilder builder) {
+        return builder.build(new StringReader (xml));
     }
 
     @Override
-    public void addResult(NamedList<Object> xpathResults, Iterable<?> result) {
-        for (Object item : result) {
-            addResult (xpathResults, (XdmItem) item);
-        }
+    public void addResult(NamedList<Object> xpathResults, Object item) {
+        addResult (xpathResults, (XdmItem) item);
     }
     
     private void addResult(NamedList<Object> xpathResults, XdmItem item) {

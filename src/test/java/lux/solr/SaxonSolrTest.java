@@ -1,6 +1,6 @@
 package lux.solr;
 
-public abstract class SaxonSolrTest extends LuxSolrTest {
+public class SaxonSolrTest extends LuxSolrTest {
     public String getXPathEngine () {
         return "saxon";
     }

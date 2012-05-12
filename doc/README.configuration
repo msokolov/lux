@@ -1,0 +1,16 @@
+The Lucene-only implementation has no configuration to speak of.
+
+The Solr plugins are configurable, in fact some configuration is required
+in order for them to work properly.  The update and search handlers must be
+configured in solrconfig.xml.  The xpath index fields must be configured in
+schema.xml.  Question: can we simply add the index config to the schema
+ourselves?  There really are no user-serviceable parts in there?  But we
+will want to allow configuration of analysis for word indexes.
+
+Note on query parsing in Solr:
+
+We may also want to configure a query parser plugin, but its actually not
+clear there is any value to that given that xpath requests have to be
+routed through a special handler anyway, which can simply hard-code the
+query parser to use.  We don't envision mixing XPath and other Lucene query
+syntax, but maybe there is some way to make sense of that.

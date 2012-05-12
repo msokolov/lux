@@ -4,7 +4,8 @@ xpath analysis yielding index operations as much as possible using a
 special search function, and by optimizing native xpath operation.
 Not XQFT? XQ update?
 ** compelling use cases
-All the xml db use cases
+*** analysis of unknown corpus
+*** xml-aware queries without index configuration
 ** differentiators
 Cheap, lightweight, highly scalable; strong focus on query optimization
 leverages best-of-breed indexing and xquery evaluation w/Lucene and Saxon.

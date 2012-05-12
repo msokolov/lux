@@ -63,7 +63,9 @@ public class ResultIterator implements SequenceIterator<Item>{
                 }
                 current = item;
                 ++position;
-                stats.retrievalTime += System.nanoTime() - t;
+                if (stats != null) {
+                    stats.retrievalTime += System.nanoTime() - t;
+                }
             }
         } catch (IOException e) {
             throw new XPathException(e);

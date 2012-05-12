@@ -46,7 +46,8 @@ public class XPathUpdateProcessor extends UpdateRequestProcessorFactory {
 
         public LuxProcessorInstance (UpdateRequestProcessor next) {
             super(next);
-            xmlIndexer = new XmlIndexer ();
+            // don't XmlIndexer.STORE_XML since we the client passes us the xml_text field
+            xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS);
         }
 
         public void processAdd (AddUpdateCommand cmd) throws IOException {  

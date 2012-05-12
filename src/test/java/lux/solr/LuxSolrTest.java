@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import lux.index.XmlField;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
@@ -37,38 +39,37 @@ public abstract class LuxSolrTest {
         solr = new EmbeddedSolrServer(coreContainer, "");
         solr.deleteByQuery("*:*");
         Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
+        // TODO: don't use the actual config as test data - it will have to change!
         addSolrDocFromFile("solr/conf/schema.xml", docs);
         addSolrDocFromFile("solr/conf/solrconfig.xml", docs);
         for (int i = 1; i <= 100; i++) {
             addSolrDoc ("test" + i, "<doc><test id='" + i + "'>" + i + "</test><test>cat</test></doc>", docs);
         }
         solr.add (docs);
-        solr.commit();     
+        solr.commit();
     }
     
     @Test public void testIndex() throws Exception {
         // make sure the documents have the values we expect
         assertQueryCount (102, "*:*");
-        assertQueryCount (1, "lux_elt_name_ms:config");
-        assertQueryCount (1, "lux_elt_name_ms:schema");
-        assertQueryCount (2, "lux_elt_name_ms:str");
-        assertQueryCount (1, "lux_path_ms:/schema/types/fieldType");
-        assertQueryCount (1, "lux_path_ms:/config/luceneMatchVersion");
-    }
-    
-    @Test public void testXPathQueryParserSyntax() throws Exception {
-        // test search using standard search query handler, custom query parser
-        assertQueryCount (1, "{!type=xpath}//config");
+        assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":config");
+        assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":schema");
+        assertQueryCount (2, XmlField.ELT_QNAME.getName() + ":str");
+        assertQueryCount (1, XmlField.PATH.getName() + ":\"{} schema types fieldType\"");
+        assertQueryCount (1, XmlField.PATH.getName() + ":schema");
+        assertQueryCount (1, XmlField.PATH.getName() + ":\"{} config luceneMatchVersion\"");
     }
     
     @Test public void testXPathSearch() throws Exception {
         // test search using standard search query handler, custom query parser
         assertXPathSearchCount (1, 1, "element", "config", "//config");
-        assertXPathSearchCount (37, 1, "element", "abortOnConfigurationError", "/config/*");
+        assertXPathSearchCount (34, 1, 50, "element", "abortOnConfigurationError", "/config/*");
     }
     
     @Test public void testAtomicResult () throws Exception {
-        assertXPathSearchCount (10, 100, "xs:double", "1", "number(/doc/test[1])");
+        // This also tests lazy evaluation - like paging within xpath.  Because we only retrieve
+        // the first value (in document order), we only need to retrieve one value.
+        assertXPathSearchCount (1, 1, "xs:double", "1", "number((/doc/test)[1])");
     }
     
     @Test public void testFirstPage () throws Exception {
@@ -113,10 +114,14 @@ public abstract class LuxSolrTest {
     }
     
     protected void assertXPathSearchCount (int count, int docCount, String type, String value, String query) throws SolrServerException {
+        assertXPathSearchCount(count, docCount, 10, type, value, query);
+    }
+    
+    protected void assertXPathSearchCount (int count, int docCount, int maxResults, String type, String value, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
         q.setParam("qt", getSolrSearchPath());
         q.setParam("engine", getXPathEngine());
-        q.setRows(10);
+        q.setRows(maxResults);
         q.setStart(0);
         QueryResponse rsp = solr.query (q);
         long docMatches = rsp.getResults().getNumFound();

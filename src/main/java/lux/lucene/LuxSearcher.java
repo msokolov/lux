@@ -14,6 +14,10 @@ public class LuxSearcher extends IndexSearcher {
   public LuxSearcher (Directory dir) throws IOException {
     super (dir);
   }
+  
+  public LuxSearcher (IndexSearcher searcher) {
+      super (searcher.getIndexReader());
+  }
 
   public DocIdSetIterator search (Query query) throws IOException {
       return new DocIterator (query, false);
