@@ -9,7 +9,6 @@ import java.util.Random;
 import lux.SearchBase;
 import lux.SearchTest;
 import lux.XPathQuery;
-import lux.api.Evaluator;
 import lux.api.LuxException;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
@@ -206,13 +205,6 @@ public abstract class Learner extends SearchBase {
         System.out.println ("of those, " + minimal_correct+ " were predicted");
         System.out.println ("there were " + minimal_incorrect + " incorrect predictions of single-result queries");
         assertEquals (count, nonempty + empties + compilationErrors + runtimeErrors);
-    }
-
-    @Override
-    public Evaluator getEvaluator() {        
-        Evaluator eval = new Saxon();
-        eval.setContext(new SaxonContext(searcher, indexer));
-        return eval;
     }
 
 }

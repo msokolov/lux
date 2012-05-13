@@ -7,7 +7,6 @@ import lux.api.LuxException;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
 import lux.saxon.Saxon;
-import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.saxon.UnOptimizer;
 import lux.xpath.AbstractExpression;
@@ -357,14 +356,6 @@ public class SearchTest extends SearchBase {
             assertEquals ("incorrect document count", docCount.intValue(), stats.docCount);
         }
         return results;
-    }
-    
-    @Override
-    public Saxon getEvaluator() {
-        Saxon eval = new Saxon();
-        eval.setContext(new SaxonContext(searcher, indexer));
-        eval.setQueryStats (new QueryStats());
-        return eval;
     }
 
 }

@@ -1,35 +1,62 @@
+* bugs
+** query quoting
+quote operators like and, or, not, n, w.  If we have these as QNames, we'll
+fail!  Also - quote quotes, etc.  These could appear in namespace uris, eg.
+Maybe we did that part already?
+* api design / cleanup
+The success of this adventure is going to depend on not only a good
+implementation, but also a nice clean understandable code base so others
+can extend it too.
 * better tests generally
-** search test coverage
-Run search tests for everything in query test, comparing "raw" against
-indexed results.
+** search test2
+refactor and merge w/search test - check opto facts against actual behavior
 ** search test all index types
 include name-index only test
 ** solr search handler coverage
 test all atomic result types
-* packaging / distribution
-** ifpress
-Make sure the update handler is compatible?  It keeps existing fields in
-place?  Provide a mechanism to notify it about other indexes?
-
-This is going to be a bit confusing if people are used to the existing
-system?  It's now XPath only (no sorting)...
-
-*** upload to ifactory maven repo
-*** install in loader sandbox
-add a dependency on lux; add configuration to schema/solrconfig
-update sandbox to exec xpath using lux? use when present
-** lucene
-mention on the mailing list?
-** xml-dev
-mention on the mailing list?
 * new indexes
 ** value indexes
 ** word indexes
 ** sorting
+* optimization ideas
+There are a few more things we can optimize using the "basic" indexing setup
+** Path indexes random idea
+What if instead of collapsing all the paths down so we only store unique
+paths, we retained the document structure in some way by listing *all*
+paths?  What would that buy?  numerical predicates?
+** pre-evaluate some functions, like aggregates:
+
+In cases where we can do this (argument expression is evaluated in the
+QueryContext, ie there is no current node, or the argument is the
+collection() function), rewrite/wrap/intercept the function to an internal
+method (lux:count) that we implement by recursing into a nested query/eval.
+
+Perform static analysis of the argument expression(s) to see if they can be
+retrieved minimally by query.  If we can prove that the db query result
+count will equal the expression result count, then we can replace the
+count() expression with an (indexed, more efficient) query-count()
+expression.  exists() and not() can be computed as count()>0 and count()=0,
+and we can short-circuit evaluation in the result collector.
+
+This could also hold for max/min when we have an appropriate field.  Maybe
+we can even help out w/aggregates like sum/avg?
+
+More complex would be something like: count(//a) + count(//b) ?
+
+*** root()
+*** count()
+across multiple documents
+*** node-uri(), document-uri()
+** optimize pagination when we know that #count=#estimate
+optimize subsequence when we can - eg the first arg, the sequence, is
+entirely indexed.  And even when it's not, make sure we don't iterate on
+beyond where we need to - asserting the results are sorted properly.  We're
+somewhat limited in our ability to do this right now since we rely on Saxon
+to make judgements about sorting, and it doesn't always optimize as
+agressively as we would like, at least not in the saxon-HE version.  It
+works in some simple cases, though.
 * cleanup
 ** delete dead code
-*** lux:root()
-subsumed by predicate optimization
 *** Optimizer
 It's suspect and not doing anything anyway
 *** get rid of lux:search facts argument
@@ -39,18 +66,6 @@ evaluation, and we have separate lux:count and lux:exists methods.
 This should help work around some of the shortcomings of Saxon's HE
 optimizer (re: documentSort) and let us skip document retrieval for docs
 prior to the starting doc.
-
-Background: the evaluator has to ensure that sequences of nodes are unique
-and in document order.  Our Optimizer calculates and asserts document
-order, but doesn't detect when there are multiple copies of the same node.
-This can occur due to doc() and root().  Maybe other functions?  A sequence
-like //foo/root() returns documents, but the evaluator iterates over nodes
-(//foo) in each document, and returns each document once for each
-occurrence of foo in its document.
-
-** shorten xml index field names?
-to make it easier to type queries.  Maybe make the default field name be
-something reasonable, like xml_text?  then use lx_att, lx_elt, lx_path?
 * improve tests
 ** test namespaces and attributes
 queries w/namespaces and attributes have not been tested.
@@ -61,7 +76,6 @@ some kind of comparison with something
 ** rename Saxon
 Lux? Evaluator?
 ** configuration
-*** Lucene field names
 *** Object Model
 Saxon Xdm vs JDOM vs DOM vs ?
 *** language

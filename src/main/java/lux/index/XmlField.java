@@ -9,8 +9,9 @@ import org.apache.lucene.util.Version;
 
 /**
  * represents a field in the index corresponding to some XML content.
- * Built-in fields include QName, Path, and FullText.  We plan to allow for Value and Text
- * fields tied to QName and Path, and eventually also for some xpath indexing, and typed indexes.
+ * Built-in fields include QName, Path, and FullText.  We plan to allow for
+ * Value and Text fields tied to QName and Path, and eventually also for
+ * some xpath indexing, and typed indexes.
  */
 public class XmlField {
     // the name of the field as it appears in queries, and in the index

@@ -1,0 +1,25 @@
+* Mission
+Bring the power of XML to a wider community by fostering a new web
+developer ecosystem based on XQuery against an indexed data store.
+** analogy to LAMP
+Ultimately we can provide an easy-to-use and easy-to-install alternative to
+PHP/MySQL for XML document-oriented sites.
+** differentiators
+Why not Base/X or eXist or one of the other similar techs?  Minimal
+approach: leverages best-of-breed indexing and xquery evaluation w/Lucene
+and Saxon.  Strong focus on query optimization enables us to provide a very
+high quality, high=perfoming system. 
+* High-level Goals
+** provide optimized XML-aware searching
+xpath analysis yielding index operations as much as possible using a
+special search function, and by optimizing native xpath operation.
+Not XQFT? XQ update?
+** compelling use cases
+*** analysis of unknown corpus
+*** xml-aware queries without index configuration
+** learn indexes?
+grow xpath; determine salient dimensions by #matches - some, all or none.
+** learn storage strategy
+chunk documents by size; guided by learned paths
+*** reduce parsing/serialization time
+*** xpath execution time

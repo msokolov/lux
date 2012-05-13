@@ -7,9 +7,11 @@ import java.util.Iterator;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.api.Evaluator;
+import lux.api.QueryStats;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
+import lux.saxon.Saxon;
+import lux.saxon.SaxonContext;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;
@@ -86,7 +88,12 @@ public abstract class SearchBase {
         indexWriter.commit();
         indexWriter.close();
     }
-
-    public abstract Evaluator getEvaluator();
+    
+    public static Saxon getEvaluator() {
+        Saxon eval = new Saxon();
+        eval.setContext(new SaxonContext(searcher, indexer));
+        eval.setQueryStats (new QueryStats());
+        return eval;
+    }
 
 }

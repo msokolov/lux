@@ -7,22 +7,22 @@ public class QNameQueryTest extends BasicQueryTest {
     @Override
     public void populateQueryStrings() {
         queryStrings.put (Q.ATTR, "lux_att_name:attr");
-        queryStrings.put (Q.BAR, "lux_elt_name:bar");
-        queryStrings.put (Q.FOO_BAR, "+lux_elt_name:bar +lux_elt_name:foo");
-        queryStrings.put (Q.FOO_BAR1, "+lux_elt_name:bar +lux_elt_name:foo");
-        queryStrings.put (Q.FOO_BAR2, "+lux_elt_name:bar +lux_elt_name:foo");
-        queryStrings.put (Q.FOO_BAR3, "+lux_elt_name:bar +lux_elt_name:foo");
-        queryStrings.put (Q.BAR_FOO, "+lux_elt_name:foo +lux_elt_name:bar");
-        queryStrings.put (Q.FOO_OR_BAR, "lux_elt_name:bar lux_elt_name:foo");
-        queryStrings.put (Q.FOO_AND_BAR, "+lux_elt_name:bar +lux_elt_name:foo");
-        queryStrings.put(Q.FOO_BAR_BAZ, 
-                         "(+lux_elt_name:title +lux_elt_name:baz)" +
-                         " ((+lux_elt_name:title +lux_elt_name:bar)" +
-                         " (+lux_elt_name:title +lux_elt_name:foo))");
-        queryStrings.put (Q.FOO, "lux_elt_name:foo");
-        queryStrings.put (Q.FOO2, "lux_elt_name:foo");
-        queryStrings.put (Q.FOO1, "lux_elt_name:foo");
-        queryStrings.put (Q.FOO_ID, "+lux_att_name:id +lux_elt_name:foo");
+        queryStrings.put (Q.SCENE, "lux_elt_name:SCENE");
+        queryStrings.put (Q.ACT_SCENE, "+lux_elt_name:SCENE +lux_elt_name:ACT");
+        queryStrings.put (Q.ACT_SCENE1, "+lux_elt_name:SCENE +lux_elt_name:ACT");
+        queryStrings.put (Q.ACT_SCENE2, "+lux_elt_name:SCENE +lux_elt_name:ACT");
+        queryStrings.put (Q.ACT_SCENE3, "+lux_elt_name:SCENE +lux_elt_name:ACT");
+        queryStrings.put (Q.SCENE_ACT, "+lux_elt_name:ACT +lux_elt_name:SCENE");
+        queryStrings.put (Q.ACT_OR_SCENE, "lux_elt_name:SCENE lux_elt_name:ACT");
+        queryStrings.put (Q.ACT_AND_SCENE, "+lux_elt_name:SCENE +lux_elt_name:ACT");
+        queryStrings.put(Q.ACT_SCENE_SPEECH, 
+                         "(+lux_elt_name:TITLE +lux_elt_name:SPEECH)" +
+                         " ((+lux_elt_name:TITLE +lux_elt_name:SCENE)" +
+                         " (+lux_elt_name:TITLE +lux_elt_name:ACT))");
+        queryStrings.put (Q.ACT, "lux_elt_name:ACT");
+        queryStrings.put (Q.ACT2, "lux_elt_name:ACT");
+        queryStrings.put (Q.ACT1, "lux_elt_name:ACT");
+        queryStrings.put (Q.ACT_ID, "+lux_att_name:id +lux_elt_name:ACT");
         queryStrings.put (Q.MATCH_ALL, "*:*");
     }
 

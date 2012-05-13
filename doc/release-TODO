@@ -1,0 +1,27 @@
+* first release to ifactory
+Be sure to preserve copyright.  Encourage ifactory to use and contribute.
+** criteria for release
+*** licensing in place in source code
+Mozilla? Apache? L/GPL?
+*** Very Good Quality
+Rigorous testing; no known severe bugs.
+*** compatibility w/ifpress
+test integration w/loader
+*** path and element name indexes
+is that enough?
+*** XPath 2.0
+*** clean API
+consider: namespace handling
+* second release to ?
+xml crowd? they will be harsh judges.  lucene crowd?  they are a mob. Some
+smaller cadre.  Not sure who?
+** criteria for release
+*** Highest Quality
+Rigorous testing; no known major bugs.
+*** XQuery search API
+enable explicit access to indexes
+**** search, count, exists
+**** terms (lexicon functions)
+*** word and value and xpath indexes
+*** XQuery 1.0
+sorting using indexes

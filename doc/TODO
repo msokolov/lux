@@ -1,159 +1,77 @@
-* High-level goals
-** provide optimized XML-aware searching
-xpath analysis yielding index operations as much as possible using a
-special search function, and by optimizing native xpath operation.
-Not XQFT? XQ update?
-** compelling use cases
-*** analysis of unknown corpus
-*** xml-aware queries without index configuration
-** differentiators
-Cheap, lightweight, highly scalable; strong focus on query optimization
-leverages best-of-breed indexing and xquery evaluation w/Lucene and Saxon.
-** learn indexes?
-grow xpath; determine salient dimensions by #matches - some, all or none.
-** learn storage strategy
-chunk documents by size; guided by learned paths
-*** reduce parsing/serialization time
-*** xpath execution time
-* optimize XPath searching
-There are a few more things we can optimize using the "basic" indexing setup
-** Path indexes random idea
-What if instead of collapsing all the paths down so we only store unique
-paths, we retained the document structure in some way by listing *all*
-paths?  What would that buy?  numerical predicates?
-** pre-evaluate some functions, like aggregates:
+* Packaging / distribution
+What is the goal for a first public release?  Is it better to just get
+something out there and invite users / collaboration?  The best thing will
+be to make sure whatever we put is out very high quality, and complete
+within some limited sphere.  But not to wait too long, since we want to
+test our ideas in the marketplace, and start to drum up interest and
+support.
+** sourceforge?
+At some point we'll want to put this up in a collaboration environment.
+Consider Collabnet?  GitHub?
+** ifpress
+Make sure the update handler is compatible?  It keeps existing fields in
+place?  Provide a mechanism to notify it about other indexes?
 
-In cases where we can do this (argument expression is evaluated in the
-QueryContext, ie there is no current node, or the argument is the
-collection() function), rewrite/wrap/intercept the function to an internal
-method (lux:count) that we implement by recursing into a nested query/eval.
+This is going to be a bit confusing if people are used to the existing
+system?  It's now XPath only (no sorting)...
 
-Perform static analysis of the argument expression(s) to see if they can be
-retrieved minimally by query.  If we can prove that the db query result
-count will equal the expression result count, then we can replace the
-count() expression with an (indexed, more efficient) query-count()
-expression.  exists() and not() can be computed as count()>0 and count()=0,
-and we can short-circuit evaluation in the result collector.
-
-This could also hold for max/min when we have an appropriate field.  Maybe
-we can even help out w/aggregates like sum/avg?
-
-More complex would be something like: count(//a) + count(//b) ?
-
-*** root()
-*** count()
-across multiple documents
-*** node-uri(), document-uri()
-** optimize pagination when we know that #count=#estimate
-optimize subsequence when we can - eg the first arg, the sequence, is
-entirely indexed.  And even when it's not, make sure we don't iterate on
-beyond where we need to - asserting the results are sorted properly.  We're
-somewhat limited in our ability to do this right now since we rely on Saxon
-to make judgements about sorting, and it doesn't always optimize as
-agressively as we would like, at least not in the saxon-HE version.  It
-works in some simple cases, though.
-* Lux search function
-Execute a lucene query, returning documents (or maybe later, nodes), and
-execute an xpath(later: xquery) on those, accumulating results and
-returning those.  This should be a user-callable function, so the user can
-embed lucene queries in their XQuery using a search function.  Must provide
-direct access to indexes, possibly with some syntax sugar.  But we also use
-this internally when optimizing.
-** optimize absolute (rooted) context-free expressions
-* Learning
-Iterative expression generator using the term vocabulary (values and node
-names) from the data set.
-** extract the vocabulary
-** generate expressions
-*** re-inject terms at every level
-* Saxon integration
-** use tinytree for storage
-Could use Ptree if you have saxon-PE+.  Or could build a replacement (maybe
-for in house use, but don't release).  Actually this proves to be difficult
-without totally taking over Saxon.
-** TinyTree in ifpress
-** check whether our code works w/9.1 (Saxon B) ?
-* Test Coverage
-** Leverage XQTS ?
-Is there a useful XPath-only subset? I don't see that
-** expression generator
-1. start with a fixed set of QNames and literals
-
-2. assign a fixed probability to each expression and to the termination condition
-3. generate random expressions!
-
-Use a seed, and a number of expressions to generate a predictable run
-*** baseline evaluation
-Evaluate the expression across a set of documents using a reference system.
-Keep track of the number of documents that generate non-empty results, the
-total number of results, and the number of different results.  Classify the
-expressions as: empty, constant, single-valued (per doc), across all the
-documents
-*** query-optimized evaluation
-Re-evaluate the same expression using the query optimizer.  
-**** Ensure the results are the same.
-**** check for optimization
-Simply compare evaluation speed; but also calculate a predicted
-optimization and compare.  We'd expect expressions to optimize well if they
-don't match many documents, or if they are constant, and maybe if they're
-single-valued.
-**** Keep statistics
-1. ERRORS flag any queries with incorrect results
-2. SURPRISES queries that optimize more or less than expected
-3. GOODNESS overall improvement due to optimization
-** Label the tests with expected optimizations
-*** query text
-This will depend on the indexes available and the query plan chosen.
-*** facts
-minimal, exact, counting: Is it possible to compute these emprically?  It's
-certainly possible to disprove a fact by finding a counter-example.  There
-may not be sufficient documents for this in the XQTS?
-*** possible strategy
-**** baseline from Saxon
-Run the XQTS using Saxon alone, executing each expressions against the
-entire collection of test documents, recording the results
-**** test using Lux
-Run the XQTS in the same way using Lux and compare results (and time, of
-course).
-**** optimize and repeat
-Apply additional optimizations where possible
-* saxon-PE/HE
-evaluate perf improvements
-** better optimization?
-especially collapsing document-sorting expressions
-** PTree binary storage
-evaluate the perf improvement from this
-* Advanced Indexing techniques
-** index paths
-** index text and values
-parameterize existing indexing classes
-** index XML structure
-* Testing
-** Document Set
-using hamlet for lucene tests, solr config + fake docs for solr
-** Query Set
-evolving
-** Performance Measurement
+*** upload to ifactory maven repo
+*** install in loader sandbox
+add a dependency on lux; add configuration to schema/solrconfig
+update sandbox to exec xpath using lux? use when present
+** lucene
+mention on the mailing list?
+** xml-dev
+mention on the mailing list?
+** svn
+** domain/namespace
+lux.* is unavailable
+luxpath.net/org are available
+** licensing. 
+Saxon licensing doesn't seem to be an issue?  Review
+Mozilla license, but if we are committed to open source there's no problem?
+If we do commit to saxon (seems like the best way to focus on indexing and
+query optos?), should probably scrap Jaxen support, or stop extending its
+tests.  Already the Lucene and Solr integration is too tied to the specific
+impl.  Alternatively, see this as an oppty to build a good abstraction
+layer.
 * Plans
 ** xquery abstraction
-either commit to Saxon, incorporate some other freer better parser(?), or
-build an XQuery abstraction layer.  Problems w/tying to Saxon: work w/8.7?
-9.1? changes in API could make it difficult to track.  How important is
-this?  Licensing doesn't seem to be an issue?  Review Mozilla license, but
-if we are committed to open source there's no problem?  If we do commit to
-saxon (seems like the best way to focus on indexing and query optos?),
-should probably scrap Jaxen support, or stop extending its tests.  Already
-the Lucene and Solr integration is too tied to the specific impl.
-Alternatively, see this as an oppty to build a good abstraction layer.
+We dumped Jaxen - it's just too old to be of interest.  So the only impl we
+have right now is based on Saxon.  We should maintain an abstraction layer
+though.  
 ** benchmark framework
 Eventually will want to scale up, perform repeats, report timings in a
 better way, etc.  For now unit tests seem fine.
 ** indexer/query generator plugin
 To make it easier to choose which indexes to use, this should be pluggable.
 Indexers can either be event-driven or xpath-based (post processed).
-
-Then query optos can be global (single lucene query followed by xquery), or
-combined for more complex xquery.
+* Advanced Indexing techniques
+** index text and values
+parameterize existing indexing classes
+** index XML structure
+"shred" or "fragment" - should help w/large docs.. Additional query
+optimizations will be possible (like indexed //foo without the need for any
+post-evaluation, joins, etc).
+* Saxon integration
+** PTree binary storage
+Use tinytree for storage; evaluate the perf improvement from this.  Could
+use Ptree if you have saxon-PE+.  Or could build a replacement (maybe for
+in house use, but don't release).  Actually this proves to be difficult
+without totally taking over Saxon.
+** TinyTree in ifpress
+** check whether our code works w/9.1 (Saxon B) ?
+** saxon-PE/HE
+evaluate perf improvements
+*** better optimization?
+especially collapsing document-sorting expressions
+* Testing
+** Document Set
+using hamlet for lucene tests, solr config + fake docs for solr
+** Performance Measurement
+** Query Set
+evolving; leverage XQTS? Is there a useful XPath-only subset? I don't see
+that.  We could still generate dummy data by ramifying the XQTS data?
 * Basic Implementation
 ** SOLR Pagination
 when start > 1, change doc-start = 1 and scan forward
@@ -167,10 +85,6 @@ comes in for xpath X position B, and B > A, we can start at A and scan
 forward.  This can be a very small cache.  The idea is that one consumer is
 skipping around in a result set.  The main case is to optimize is scanning
 through an entire large result set.
-** Counting
-count (//foo)
-*** need to handle functions at outermost scope
-expressions like (//foo)[1] too
 * Solr integration
 ** namespaces
 *** in QParser config
@@ -182,12 +96,6 @@ comms This is a bit better now.  But too much parsing/unparsing.
 *** xml field name
 *** namespace-aware
 for parser and update processor
-* Administrivia
-** svn
-** domain/namespace
-lux.* is unavailable
-luxpath.net/org are available
-** distribution
 * Highlighting
 * desiderata
 ** XML namespaces

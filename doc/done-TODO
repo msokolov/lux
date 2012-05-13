@@ -32,6 +32,24 @@ different.
 Express paths returning documents (say ending with root()) as
 search()[path] so that the path doesn't need to be sorted in document
 order, enabling lazy evaluation.
+*** This does seem to have worked
+I found this note in impl-TODO, but at the moment we don't seem to have any
+problem like this (see SearchTest.pathOrder which retrieves 120 nodes from
+6 documents in //SCENE/root()//ACT).  It seems to have gotten sorted out
+when we implemented path indexes, although I'm not sure why since we still
+emit a purely qname-based query: SCENE AND ACT.
+
+**** removed lux:root()
+subsumed by predicate optimization
+
+**** note about root()
+Background: the evaluator has to ensure that sequences of nodes are unique
+and in document order.  Our Optimizer calculates and asserts document
+order, but doesn't detect when there are multiple copies of the same node.
+This can occur due to doc() and root().  Maybe other functions?  A sequence
+like //foo/root() returns documents, but the evaluator iterates over nodes
+(//foo) in each document, and returns each document once for each
+occurrence of foo in its document.
 * indexes
 XmlIndexer manages multiple index options, and we pass it around so consumers
 of the index know what is available there.
@@ -39,6 +57,10 @@ of the index know what is available there.
 ** path index
 
 *** implemented using surround parser / span queries
+* tests
+** search test coverage
+Run search tests for everything in query test, comparing "raw" against
+indexed results.
 * lux components
 ** Translator
 converts Saxon's internal Expression tree to a Lux AbstractExpression tree.
@@ -48,6 +70,20 @@ attribute name indexes.
 *** ExpressionVisitor
 machinery for optimizers and other tree visitors like UnOptimizer.
 ** Indexer
+** Lux Function Library for XPath/XQuery 
+lux:search, lux:count, lux:exists execute a lucene query, returning
+documents, count, and boolean respectively, which are then processed by the
+evaluator as part of an enclosing XPath or XQuery expression. Currently
+used only internally by the optimizer, but we intend to provide
+user-callable versions as well supporting some form of lucene query syntx.
+*** optimize absolute (rooted) context-free expressions
+The optimizer considers inserting one of the lux function whenever such a
+sub-expression occurs.
 * packaging
 ** solr request handler
+* code cleanup
+** shorten xml index field names?
+to make it easier to type queries.  Maybe make the default field name be
+something reasonable, like xml_text?  then use lux_att_name, lux_elt_name,
+lux_path?  This is fine, but requires schema changes for the Solr version.
 
