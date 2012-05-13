@@ -7,13 +7,13 @@ import lux.XPathQuery;
 import lux.api.ValueType;
 import lux.index.XmlField;
 import lux.index.XmlIndexer;
+import lux.lucene.LuxTermQuery;
 import lux.lucene.SurroundTerm;
 import lux.xpath.PathStep.Axis;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
 
 /**
  * Prepares an XPath expression tree for indexed execution against a
@@ -374,7 +374,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             String nodeName = name.getClarkName(); //name.getLocalPart();
             String fieldName = (axis == Axis.Attribute) ? attrQNameField : elementQNameField;
             Term term = new Term (fieldName, nodeName);
-            return new TermQuery (term);
+            return new LuxTermQuery (term);
         }
     }
     
@@ -501,8 +501,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return;
         }
         XPathQuery query = pop();
-        for (int i = 0; i < n-1; i++) {
-            query = combineQueries (pop(), occur, query, valueType);
+        if (n == 1) {
+            query = XPathQuery.getQuery(query, query.getFacts(), valueType, indexer.getOptions());
+        } else {
+            for (int i = 0; i < n-1; i++) {
+                query = combineQueries (pop(), occur, query, valueType);
+            }
         }
         push (query);
     }
