@@ -17,8 +17,7 @@ public class SurroundTerm extends TermQuery {
 
     @Override
     public String toString(String field) {
-        // TODO quote any parser special characters
-        return getTerm().text();
+        return LuxTermQuery.toString(field, getTerm(), getBoost());
     }
 
 }

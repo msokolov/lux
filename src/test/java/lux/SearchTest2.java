@@ -11,7 +11,6 @@ import lux.saxon.Saxon;
 import lux.saxon.SaxonExpr;
 import lux.saxon.UnOptimizer;
 import lux.xpath.AbstractExpression;
-
 import net.sf.saxon.s9api.XdmItem;
 
 import org.junit.AfterClass;
@@ -24,7 +23,7 @@ public class SearchTest2 extends BasicQueryTest {
         
     @Override
     public void populateQueryStrings() {
-        // unused
+        queryStrings.put(Q.ACT_SCENE, "w(\"ACT\",\"SCENE\")");
     }
 
     @Override

@@ -40,7 +40,7 @@ public abstract class BasicQueryTest {
     public enum Q {
         ATTR, SCENE, SCENE_ACT, 
             ACT, ACT1, ACT2, ACT_SCENE, ACT_SCENE1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
-            ACT_ID, MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, 
+            ACT_ID, MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, 
     };
     
     @Test public void testNoQuery () throws Exception {
@@ -103,7 +103,7 @@ public abstract class BasicQueryTest {
 
     @Test
     public void testConvertRootedPathToPredicate() {
-        assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + getQueryString(Q.ACT_SCENE) + "\",24)" +
+        assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + getQueryString(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
         		"[exists(descendant::element(ACT)/child::element(SCENE)/root(.))]", 
         		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
@@ -256,6 +256,13 @@ public abstract class BasicQueryTest {
         // sorry...
         assertQuery ("//ACT[not(empty(.//SCENE))]", 0, ValueType.ELEMENT, Q.ACT); 
     }
+    
+    @Test public void testReservedWords () throws Exception {
+        // internally, we use certain words to denote search operations.  Make sure these are not
+        // confused with query terms
+        assertQuery("//AND", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.AND);        
+    }
+    
 
     public String getQueryString (Q q) {
         return queryStrings.get(q);

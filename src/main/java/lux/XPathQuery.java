@@ -116,6 +116,13 @@ public class XPathQuery extends Query {
         setType (valueType);
     }
     
+    /** 
+     * @param query the query on which the result is based
+     * @param resultFacts the facts to use in the new query
+     * @param valueType the result type of the new query
+     * @param options the indexer options; controls which type of match-all query may be returned
+     * @return a new query (or an immutable query) based on an existing query with some modifications.
+     */
     public static XPathQuery getQuery (Query query, long resultFacts, ValueType valueType, long options) {
         if (query instanceof MatchAllDocsQuery && resultFacts == MINIMAL) {
             if (valueType == ValueType.DOCUMENT) {

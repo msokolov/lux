@@ -285,8 +285,6 @@ public class SearchTest extends SearchBase {
         assertSearch (null, "//ACT//PLAY", null, 0);
         // test path distance:
         assertSearch ("Where is your son?", "string(/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3])", null, 1);
-        // FIXME:
-        //assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);
         // Q: who decides what serialization to use?
         //assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]", null, 1);
         assertSearch ("Where is your son?", "string((/PLAY/ACT[4]/*/*/LINE)[3])", null, 1);
@@ -294,6 +292,11 @@ public class SearchTest extends SearchBase {
         assertSearch (null, "/PLAY/ACT[4]/*/*/*/*/LINE", null, 1);
     }
     
+    @Test 
+    public void testTrailingStringCall () throws Exception {
+        assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);        
+    }
+        
     private ResultSet<?> assertSearch(String query) throws LuxException {
         return assertSearch (query, 0);
     }
