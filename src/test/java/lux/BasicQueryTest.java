@@ -40,7 +40,7 @@ public abstract class BasicQueryTest {
     public enum Q {
         ATTR, SCENE, SCENE_ACT, 
             ACT, ACT1, ACT2, ACT_SCENE, ACT_SCENE1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
-            ACT_ID, MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, 
+            ACT_ID, MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
     };
     
     @Test public void testNoQuery () throws Exception {
@@ -93,11 +93,9 @@ public abstract class BasicQueryTest {
         
         // this should be ValueType.TEXT shouldn't it??
         assertQuery ("/ACT/text()", 0, ValueType.ELEMENT, Q.ACT1);
-        // assertQuery ("ACT/text()", Q.ACT, false public void testAttributePaths ( {
-        // FIXME: compute minimality properly for attributes
-        
+
         assertQuery ("//*/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.ATTR);
-        
+
         assertQuery ("//node()/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.ATTR);
     }    
 
@@ -167,11 +165,7 @@ public abstract class BasicQueryTest {
         // This was three separate queries, whose results would then have to be merged together,
         // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
         // together into a single query
-                     /*
-                     "+lux_elt_name:ACT +lux_elt_name:title",
-                     "+lux_elt_name:SCENE +lux_elt_name:title",
-                     "+lux_elt_name:SPEECH +lux_elt_name:title"); 
-                     */
+        assertQuery ("/PLAY/(ACT|PERSONAE)/TITLE", 0, ValueType.ELEMENT, Q.PLAY_ACT_OR_PERSONAE_TITLE);
     }
 
     @Test @Ignore public void testElementValueNoPath () throws Exception {

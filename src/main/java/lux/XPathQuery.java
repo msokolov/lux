@@ -124,7 +124,8 @@ public class XPathQuery extends Query {
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
     public static XPathQuery getQuery (Query query, long resultFacts, ValueType valueType, long options) {
-        if (query instanceof MatchAllDocsQuery && resultFacts == MINIMAL) {
+        if ((query instanceof MatchAllDocsQuery && resultFacts == MINIMAL) ||
+                query == SurroundMatchAll.getInstance()) {
             if (valueType == ValueType.DOCUMENT) {
                 if ((options & XmlIndexer.INDEX_PATHS) != 0) {
                     return PATH_MATCH_ALL;

@@ -23,6 +23,7 @@ public class QNameQueryTest extends BasicQueryTest {
         queryStrings.put (Q.ACT2, "lux_elt_name:\"ACT\"");
         queryStrings.put (Q.ACT1, "lux_elt_name:\"ACT\"");
         queryStrings.put (Q.ACT_ID, "+lux_att_name:\"id\" +lux_elt_name:\"ACT\"");
+        queryStrings.put (Q.PLAY_ACT_OR_PERSONAE_TITLE, "+lux_elt_name:\"TITLE\" +(+(lux_elt_name:\"PERSONAE\" lux_elt_name:\"ACT\") +lux_elt_name:\"PLAY\")");
         queryStrings.put (Q.MATCH_ALL, "*:*");
         queryStrings.put (Q.AND, "lux_elt_name:\"AND\"");
     }

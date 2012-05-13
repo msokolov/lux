@@ -21,6 +21,9 @@ public class PathQueryTest extends BasicQueryTest {
         queryStrings.put(Q.ACT_AND_SCENE, "\"SCENE\" AND \"ACT\"");
         queryStrings.put (Q.ACT_ID, "w(\"ACT\",\"@id\")");
         queryStrings.put(Q.MATCH_ALL, "{}");
+        // TODO: see if there is any merit in collapsing queries like this?
+        //queryStrings.put(Q.PLAY_ACT_OR_PERSONAE_TITLE, "w({},\"PLAY\",(\"ACT\" OR \"PERSONAE\"),\"TITLE\")");
+        queryStrings.put(Q.PLAY_ACT_OR_PERSONAE_TITLE, "w(w(w({},\"PLAY\"),\"PERSONAE\" OR \"ACT\"),\"TITLE\")");
         queryStrings.put(Q.AND, "\"AND\"");        
     }
 

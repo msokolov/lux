@@ -1,8 +1,12 @@
 * bugs
-** query quoting
-quote operators like and, or, not, n, w.  If we have these as QNames, we'll
-fail!  Also - quote quotes, etc.  These could appear in namespace uris, eg.
-Maybe we did that part already?
+** visit(Dot) has possibly incorrect resultType (DOCUMENT)
+** standard function library untested
+A bunch of functions, including collection(), doc(), etc are untested.  We
+don't know if we're doing the write thing in terms of query generation
+based on their args.  See PathOptimizer.fnArgParity
+** failure to optimize deep path query properly
+see the expression in SearchTest.testTrailingStringCall - it ends up
+including some booleans instead of all paths
 * api design / cleanup
 The success of this adventure is going to depend on not only a good
 implementation, but also a nice clean understandable code base so others

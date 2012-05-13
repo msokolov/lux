@@ -86,4 +86,10 @@ sub-expression occurs.
 to make it easier to type queries.  Maybe make the default field name be
 something reasonable, like xml_text?  then use lux_att_name, lux_elt_name,
 lux_path?  This is fine, but requires schema changes for the Solr version.
-
+* bug fixes
+** query quoting
+quote operators like and, or, not, n, w.  If we have these as QNames, we'll
+fail!  Also - quote quotes, etc.  These could appear in namespace uris, eg.
+Maybe we did that part already?
+** trailing funcall()
+was being treated as root()

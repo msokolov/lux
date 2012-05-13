@@ -294,6 +294,7 @@ public class SearchTest extends SearchBase {
     
     @Test 
     public void testTrailingStringCall () throws Exception {
+        // FIXME - this isn't optimized as well as it could be; it has some Booleans in it?
         assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);        
     }
         

@@ -502,7 +502,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         XPathQuery query = pop();
         if (n == 1) {
-            query = XPathQuery.getQuery(query, query.getFacts(), valueType, indexer.getOptions());
+            ValueType type = valueType == null ? query.getResultType() : query.getResultType().promote(valueType);
+            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), type, indexer.getOptions());
         } else {
             for (int i = 0; i < n-1; i++) {
                 query = combineQueries (pop(), occur, query, valueType);
