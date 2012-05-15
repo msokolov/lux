@@ -1,0 +1,31 @@
+3/10; first implementation w/Jaxen and Saxon; used a global optimization,
+attempting to generate one single query per expression, and used a special
+lucene collector.  Limitations of this became quickly apparent
+
+4/04; developed translator as precursor to generating sub-expression queries
+using a function.
+
+4/11; a name-query optimizer beginning to take shape
+
+4/22; optimizer working well, but need for lazy eval becomes apparent
+
+4/23 - 4/25; switch to lazy evaluation
+
+4/25-4/30; tightening up various optimizations
+
+4/31-5/9; path indexing implemented and working
+
+5/10-5/13; solr components working again (broken by switch to lucene pull api); code cleanup
+
+UPCOMING
+
+****** value and word indexes
+
+****** bug fixes, testing (namespaces / attributes)
+
+****** package and RELEASE 0.9 to ifactory
+
+****** joins
+
+****** complete spec, testing, xqts?
+
