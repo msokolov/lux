@@ -76,8 +76,7 @@ public abstract class LuxSolrTest {
         // returns only the page including the first 10 results
         assertXPathSearchCount (10, 100, "document", "doc", "(/)[doc]");
         
-        // FIXME: implement position() in the global context: This doesn't work right
-        // assertXPathSearchCount (10, 100, "document", "doc", "(//doc)[position() > 10]");
+        assertXPathSearchCount (10, 100, "element", "doc", "(//doc)[position() > 10]");
     }
     
     @Test public void testPaging () throws Exception {
