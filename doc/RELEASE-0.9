@@ -1,0 +1,17 @@
+Lux is an integration of Lucene/Solr and Saxon that allows you to query
+using XPath 2.0 expressions against XML stored in and indexed using Lucene.
+
+XPath expressions are analyzed by the Lux optimizer, which generates a
+Lucene query for each absolute sub-expression.  This provides an implicit
+collection() context for every query.  The effect is as if the expression
+were evaluated against every document in the database, but every effort is
+made to avoid retrieving documents that will not ultimately produce any
+results.
+
+Known Issues
+
+Lux has an incomplete implementation of the XQuery type system; it simply
+converts most atomic types to strings.
+
+Only a few functions are optimized. In particular, user-defined functions
+inhibit optimizations.
