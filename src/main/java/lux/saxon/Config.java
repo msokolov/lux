@@ -1,8 +1,15 @@
 package lux.saxon;
 
 /**
- * Extends saxon Configuration providing lux-specific configuration - for the moment, this is
- * mostly a place-holder for possible future expansion.
+ * Extends saxon Configuration providing lux-specific configuration.  It provides a function library,
+ * so that we can declare functions as returning sequences sorted in document order.  It provides
+ * an Optimizer extending Saxon's so that we can make use of such an optimization, and a DocumentNumberAllocator
+ * that ensures that document ids are assigned in increasing document order.  Document order is defined
+ * by Lucene's internal docid ordering.  This ordering is not stable across multiple queries, but that's OK for the 
+ * purpose of optimizing ordering operations within a single query.
+ * 
+ * This Configuration also provides empty uri resolvers: it returns empty documents for every URI.  This is
+ * useful for formally satisfying DOCTYPE declarations, at least.
  */
 
 import java.io.ByteArrayInputStream;
@@ -34,7 +41,6 @@ public class Config extends Configuration implements URIResolver, EntityResolver
         optimizer = new Optimizer(this);
     }
     
-    // TODO resolve uris!
     public Source resolve(String href, String base) throws TransformerException {
         return new StreamSource (new ByteArrayInputStream (new byte[0]));
     }
