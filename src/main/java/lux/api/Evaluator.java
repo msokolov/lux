@@ -3,10 +3,6 @@ package lux.api;
 import lux.xml.XmlBuilder;
 
 /** Represents an expression engine: interpreter, compiler, evaluator */
-/*
- * TODO: add getBuilder(), Context.getXmlFieldName(), setContextItem(), 
- * add a method to return an iterator: evalResults(Expression)
- */
 public abstract class Evaluator {
     
     private Context context;
@@ -25,7 +21,7 @@ public abstract class Evaluator {
      * Return a builder that creates document models in a form that is useful for this 
      * Evaluator.  Implementations are not expected to provide pooling or thread-safety
      * guarantees; it is expected that the Evaluator is pooled and allocated per thread
-     * and will cache a reader.
+     * and will cache a builder.
      * @return
      */
     public abstract XmlBuilder getBuilder();

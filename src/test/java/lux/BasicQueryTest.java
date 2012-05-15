@@ -355,9 +355,9 @@ public abstract class BasicQueryTest {
         ArrayList<XPathQuery> queries = new ArrayList<XPathQuery>();
         
         public FunCall visit (FunCall funcall) {
-            if (funcall.getQName().equals (FunCall.luxSearchQName)
-                    || funcall.getQName().equals (FunCall.luxCountQName) 
-                    || funcall.getQName().equals (FunCall.luxExistsQName)) {
+            if (funcall.getQName().equals (FunCall.LUX_SEARCH)
+                    || funcall.getQName().equals (FunCall.LUX_COUNT) 
+                    || funcall.getQName().equals (FunCall.LUX_EXISTS)) {
                 String q = ((LiteralExpression)funcall.getSubs()[0]).getValue().toString();
                 long facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
                 queries.add( new MockQuery (q, facts));

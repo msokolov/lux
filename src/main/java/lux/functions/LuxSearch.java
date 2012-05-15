@@ -44,12 +44,19 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         XmlIndexer indexer = saxon.getContext().getIndexer();
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
             SrndQuery q = getSurroundQueryParser().parse2(queryString);
-            // TODO: cache the query factory
-            query = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), new BasicQueryFactory());
+            query = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), getQueryFactory());
         } else {
             query = getQueryParser().parse(queryString);
         }
         return XPathQuery.getQuery(query, facts, indexer.getOptions());
+    }
+    
+    private BasicQueryFactory queryFactory;
+    protected BasicQueryFactory getQueryFactory () {
+        if (queryFactory == null) {
+            queryFactory = new BasicQueryFactory();
+        }
+        return queryFactory;
     }
     
     private QueryParser surroundQueryParser;

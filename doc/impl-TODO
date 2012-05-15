@@ -7,10 +7,27 @@ based on their args.  See PathOptimizer.fnArgParity
 ** failure to optimize deep path query properly
 see the expression in SearchTest.testTrailingStringCall - it ends up
 including some booleans instead of all paths
+** don't use schema.xml and solrconfig.xml as test data !
+When we change them our tests break!
+* missing features
+** support for full set of atomic types
+The main thing missing is marshalling results from Solr
+** namespace support
+This might be working, but we need to test
+*** Solr plugin might need some config for this?
+** attribute index support
+This might be working, but we need to test
+**  Object lifecycle
+Saxon currently holds the DocIdAllocator, but this should really be in
+SaxonContext.  Make sure that long-lived objects stay in Evaluator (Saxon)
+and short-lived ones in Context (SaxonContext).
 * api design / cleanup
 The success of this adventure is going to depend on not only a good
 implementation, but also a nice clean understandable code base so others
 can extend it too.
+** make clean package dependencies 
+*** fill out the generic API
+*** put all the Saxon-specific code in a package
 * better tests generally
 ** search test2
 refactor and merge w/search test - check opto facts against actual behavior
@@ -24,6 +41,18 @@ test all atomic result types
 ** sorting
 * optimization ideas
 There are a few more things we can optimize using the "basic" indexing setup
+** optimize not(empty(X)) -> exists(X), and not(exists(X)) -> empty(X)
+** simplify some path queries
+Sometimes we generate a query like 
+w(w(w({},\"PLAY\"),\"PERSONAE\" OR \"ACT\"),\"TITLE\")
+instead of
+w({},\"PLAY\",(\"ACT\" OR \"PERSONAE\"),\"TITLE\")
+Is the second one actually better?
+** optimize the Optimizer 
+It currently generates an entire translated expression tree for every
+subtree it attempts to optimize so that we can figure out if that subtree
+is ordered or not.  We could possibly cache a translated tree and walk it
+in parallel?  Or link subexpressions to it with some kind of map?
 ** Path indexes random idea
 What if instead of collapsing all the paths down so we only store unique
 paths, we retained the document structure in some way by listing *all*
@@ -61,8 +90,6 @@ agressively as we would like, at least not in the saxon-HE version.  It
 works in some simple cases, though.
 * cleanup
 ** delete dead code
-*** Optimizer
-It's suspect and not doing anything anyway
 *** get rid of lux:search facts argument
 The facts are not serving any purpose now that we are using lazy
 evaluation, and we have separate lux:count and lux:exists methods.
@@ -78,7 +105,6 @@ Try indexing and retrieving the reader-test documents
 some kind of comparison with something
 * API packaging
 ** rename Saxon
-Lux? Evaluator?
 ** configuration
 *** Object Model
 Saxon Xdm vs JDOM vs DOM vs ?

@@ -15,8 +15,6 @@ import lux.xml.StAXHandler;
 /**
  * Accumulate counts of QNames and QName paths.
  * 
- * TODO: track char offsets and path id for each node
- *
  * @author sokolov
  *
  */

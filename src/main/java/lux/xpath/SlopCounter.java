@@ -88,7 +88,7 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(FunCall f) {
-        if (! f.getQName().equals(FunCall.existsQName)) {
+        if (! f.getQName().equals(FunCall.FN_EXISTS)) {
             // We can infer a path relationship with exists() because it depends on its
             // context just like a predicate.  We should also be able to invert not(exists()) and 
             // empty(), and not(), etc. in the path index case.
@@ -112,7 +112,6 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(BinaryOperation exp) {
-        // FIXME: handle /a/(b|c)/d ?
         done = true;
         return exp;
     }

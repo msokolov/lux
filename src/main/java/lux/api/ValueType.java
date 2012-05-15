@@ -29,10 +29,6 @@ public enum ValueType {
     }
     
     /**
-     * We treat DOCUMENT as a basically "untyped"
-     * because we only really care about whether we need to select sub-documents
-     * FIXME: rename this function (or the DOCUMENT type?) to express its real purpose (not a type restriction)
-     * 
      * @param other another type
      * @return whether this type is a subtype of the other
      */

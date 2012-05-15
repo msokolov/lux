@@ -102,14 +102,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * facts found in the search query.
      */
     protected void optimizeSubExpressions(AbstractExpression expr, int facts) {
-        /*
-         * TODO: some operations *commute with lux:search*.  In those cases, we
-         * do better to wrap the search around this expression, rather than
-         * around each of its children.  Basically we want to "pull up" the
-         * search operation to the highest allowable level.  Maybe Saxon will
-         * already have done this for us?  Need a test case ...
-         * 
-         */
         AbstractExpression[] subs = expr.getSubs();
         for (int i = 0; i < subs.length; i ++) {
             subs[i] = optimizeExpression (subs[i], subs.length - i - 1, facts);
@@ -215,7 +207,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
             else if (axis == Axis.AncestorSelf && (type == ValueType.NODE || type == ValueType.VALUE)
                     && getQuery().getResultType() == ValueType.DOCUMENT) {
-                // FIXME: This is wrong: do we rely on it?
                 type = ValueType.DOCUMENT;
             }
             query = XPathQuery.getQuery(MATCH_ALL.getQuery(), getQuery().getFacts(), type, indexer.getOptions());
@@ -289,41 +280,33 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     public FunCall optimizeFunCall (FunCall funcall) {
         AbstractExpression[] subs = funcall.getSubs();
-        /*
-        if (subs.length == 1 && subs[0] instanceof Dot) {
-            // TODO what about count(.), exists(.), empty(.)?
-            // what about (/)/root (//foo)?
-            if (funcall.getQName().equals(FunCall.rootQName)) {
-                return new FunCall (FunCall.luxRootQName, ValueType.DOCUMENT, subs);
-            }            
-        }
-        */
         if (subs.length == 0 || ! subs[0].isAbsolute()) {
             return funcall;
         }
         XPathQuery query = pop();
         // can only use these function optimizations when we are sure that its argument expression
-        // is properly indexed
+        // is properly indexed - MINIMAL here guarantees that every document matching the query will 
+        // produce a non-empty result in the function's argument
         if (query.isMinimal()) {
             // apply no restrictions to the enclosing scope:
             push (MATCH_ALL);
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
-            if (funcall.getQName().equals(FunCall.countQName) && query.getResultType().is(ValueType.DOCUMENT)) {
+            if (funcall.getQName().equals(FunCall.FN_COUNT) && query.getResultType().is(ValueType.DOCUMENT)) {
                 functionFacts = XPathQuery.COUNTING;
                 returnType = ValueType.INT;
-                qname = FunCall.luxCountQName;
+                qname = FunCall.LUX_COUNT;
             } 
-            else if (funcall.getQName().equals(FunCall.existsQName)) {
+            else if (funcall.getQName().equals(FunCall.FN_EXISTS)) {
                 functionFacts = XPathQuery.BOOLEAN_TRUE;
                 returnType = ValueType.BOOLEAN;
-                qname = FunCall.luxExistsQName;
+                qname = FunCall.LUX_EXISTS;
             }
-            else if (funcall.getQName().equals(FunCall.emptyQName)) {
+            else if (funcall.getQName().equals(FunCall.FN_EMPTY)) {
                 functionFacts = XPathQuery.BOOLEAN_FALSE;
                 returnType = ValueType.BOOLEAN_FALSE;
-                qname = FunCall.luxExistsQName;
+                qname = FunCall.LUX_EXISTS;
             }
             if (qname != null) {
                 long facts;
@@ -479,7 +462,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     private FunCall createSearchCall(XPathQuery query, int facts) {
-        return new FunCall (FunCall.luxSearchQName, query.getResultType(), 
+        return new FunCall (FunCall.LUX_SEARCH, query.getResultType(), 
                 new LiteralExpression (query.toString()),
                 new LiteralExpression (query.getFacts() | facts));
     }

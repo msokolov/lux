@@ -71,14 +71,9 @@ public class XPathUpdateProcessor extends UpdateRequestProcessorFactory {
             if (next != null) {
                 next.processAdd(cmd);
             }
-            // TODO: create additional documents; create a new AddUpdateCommand
-            // (or reset and reuse) and pass that to next.processAdd()
         }
 
         public void processDelete (DeleteUpdateCommand cmd) throws IOException {
-            // TODO: delete any related documents we created
-            // expand id -> query?
-            // expand query -> query?
             if (next != null) {
                 next.processDelete(cmd);
             }

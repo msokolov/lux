@@ -185,7 +185,7 @@ public class SaxonTranslator {
                 return new Sequence (exprFor (arg));
             }        
         }
-        if (funcall.getFunctionName().equals(FunCall.subsequenceQName)) {
+        if (funcall.getFunctionName().equals(FunCall.FN_SUBSEQUENCE)) {
             if (funcall.getNumberOfArguments() == 2) {
                 return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
             } else {
@@ -200,7 +200,6 @@ public class SaxonTranslator {
         for (int i = 0; i < args.length; i++) {
             aargs[i] = exprFor (args[i]);
         }
-        // TODO: require the static context with its function libraries? So we can look up extension functions?
         Entry entry = StandardFunction.getFunction(funcall.getFunctionName().getDisplayName(), aargs.length);
         ValueType returnType = entry != null ? valueTypeForItemType (entry.itemType) : ValueType.VALUE;
         if (functionEqualsBuiltin(funcall, "root")) 
@@ -219,7 +218,6 @@ public class SaxonTranslator {
     
     private ValueType valueTypeForItemType(ItemType itemType) {
         if (itemType.isAtomicType()) {
-            // TODO: Make finer type distinctions among atomic types? 
             return ValueType.ATOMIC;
         }
         if (itemType instanceof NodeTest) {
@@ -360,22 +358,8 @@ public class SaxonTranslator {
         }    
     }
     
-    /*
-    private AbstractExpression exprFor (VennExpression expr) {
-        int op = expr.getOperator() ;
-        Expression [] operands = expr.getOperands();
-    }
-    
-    private AbstractExpression exprFor (ArithmeticExpression expr) {
-        // TODO: indexing for value comparisons
-        AbstractExpression query = exprFor (expr.getArguments(), Occur.SHOULD);
-        return query;
-    }
-    */
-    
     // covers ArithmeticExpression, BooleanExpression, GeneralComparison, ValueComparison,
     // IdentityComparison, RangeExpression
-    // TODO: specialize
     private AbstractExpression exprFor (BinaryExpression expr) {
         Expression [] operands = expr.getOperands();
         BinaryOperation.Operator op = operatorFor(expr.getOperator());

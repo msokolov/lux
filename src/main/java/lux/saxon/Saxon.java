@@ -4,8 +4,6 @@ import java.io.Reader;
 
 import javax.xml.transform.stream.StreamSource;
 
-import lux.XPathCollector;
-import lux.XPathQuery;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
@@ -140,10 +138,6 @@ public class Saxon extends Evaluator  {
 
     public SaxonTranslator getTranslator() {
         return translator;
-    }
-    
-    public XPathCollector getCollector (XPathQuery query) {
-        return new XPathCollector (query, getBuilder(), queryStats);
     }
 
     public CachingDocReader getDocReader() {

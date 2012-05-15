@@ -25,7 +25,7 @@ public class Optimizer extends net.sf.saxon.expr.parser.Optimizer {
      */
     @Override
     public Expression makeConditionalDocumentSorter(DocumentSorter sorter, SlashExpression path) {
-        // FIXME: this is kind of expensive since we generate a translated expression tree
+        // TODO: this is kind of expensive since we generate a translated expression tree
         // for every sub-expression we attempt to optimize in this way.
         // But what can we do instead?  It seems we have to re-walk the Saxon Expression tree.
         // maybe we could simply use the visiting machinery in SaxonTranslator without bothering

@@ -23,24 +23,23 @@ public class FunCall extends AbstractExpression {
         return name;
     }
     
-    // TODO: move this elsewhere?
-    public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
     public static final String LUX_NAMESPACE = "lux";
-    public static final QName luxSearchQName = new QName (LUX_NAMESPACE, "search", "lux");
-    public static final QName luxCountQName = new QName (LUX_NAMESPACE, "count", "lux");
-    public static final QName luxExistsQName = new QName (LUX_NAMESPACE, "exists", "lux");
-    public static final QName luxOrderedQName = new QName (LUX_NAMESPACE, "ordered", "lux");
-    public static final QName luxRootQName = new QName (LUX_NAMESPACE, "root", "lux");
-    public static final QName notQName = new QName (FN_NAMESPACE, "not", "");
-    public static final QName emptyQName = new QName (FN_NAMESPACE, "empty", "");
-    public static final QName rootQName = new QName (FN_NAMESPACE, "root", "");
-    public static final QName lastQName = new QName (FN_NAMESPACE, "last", "");
-    public static final QName subsequenceQName = new QName (FN_NAMESPACE, "subsequence", "");
-    public static final QName countQName = new QName (FN_NAMESPACE, "count", "");
-    public static final QName existsQName = new QName (FN_NAMESPACE, "exists", "");
+    public static final QName LUX_SEARCH = new QName (LUX_NAMESPACE, "search", "lux");
+    public static final QName LUX_COUNT = new QName (LUX_NAMESPACE, "count", "lux");
+    public static final QName LUX_EXISTS = new QName (LUX_NAMESPACE, "exists", "lux");
+    public static final QName LUX_ROOT = new QName (LUX_NAMESPACE, "root", "lux");
+    
+    public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
+    public static final QName FN_ROOT = new QName (FN_NAMESPACE, "root", "");
+    public static final QName FN_LAST = new QName (FN_NAMESPACE, "last", "");
+    public static final QName FN_SUBSEQUENCE = new QName (FN_NAMESPACE, "subsequence", "");
+    public static final QName FN_COUNT = new QName (FN_NAMESPACE, "count", "");
+    public static final QName FN_EXISTS = new QName (FN_NAMESPACE, "exists", "");
+    public static final QName FN_NOT = new QName (FN_NAMESPACE, "not", "");
+    public static final QName FN_EMPTY = new QName (FN_NAMESPACE, "empty", "");
 
     // represent last() in Subsequence(foo, last()); ie foo[last()].
-    public static final FunCall LastExpression = new FunCall (lastQName, ValueType.VALUE);    
+    public static final FunCall LastExpression = new FunCall (FN_LAST, ValueType.VALUE);    
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
