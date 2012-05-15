@@ -7,10 +7,9 @@ Saxon and wanted to see how much leverage I could get from "mashup" of my
 two favorite systems.  Maybe the whole would be greater.
 
 Lucene provides great scalability, search and even storage, albeit without
-a real ACID capability.  But for document storage that's fine.  Business
-rules don't really rely on ACID.  Nice to have, but not a deal-breaker.  On
-top of that though the query language doesn't allow for the detail of xpath
-or xquery.
+full relational database capabilities.  But for document storage, search
+and retrieval that's usually fine.  On top of that though the query
+language doesn't allow for the detail of xpath or xquery.
 
 Saxon provides high-quality XQuery/XPath evaluation but its indexing
 capabilities are transient, designed to support XSLT's key() function, and

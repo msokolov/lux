@@ -206,6 +206,21 @@ maintaining in the long run.  Unfortunately tight coupling to the parse
 tree leads to some significant code duplication (in the key part of our
 work) if we want to support multiple expression parsers.
 
+
+FINALLY
+
+I did end up writing my own tree model and translating from Saxon's, and
+back again.  It really wasn't so bad - I ended up writing a "Translator"
+that really doesn't do much beyond translate.  This would have to be
+rewritten in order to support another parser.  The real benefit of using
+Saxon here (rather than writing our own parser) is twofold: one, I didn't
+have as much work to do, and two we can benefit from a lot of the
+expression analysis and simplification that Saxon is doing.  Going *back
+again* we actually do by serializing a query and having Saxon parse it
+again.  We have to do this since the Saxon parse tree is basically
+immutable from our point of view.
+
+
 -----------
 
 REVISIT

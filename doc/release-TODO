@@ -1,6 +1,6 @@
 * first release to ifactory
 Be sure to preserve copyright.  Encourage ifactory to use and contribute.
-** criteria for release
+** criteria for release 0.9
 *** licensing in place in source code
 Mozilla? Apache? L/GPL?
 *** Very Good Quality
@@ -11,11 +11,11 @@ test integration w/loader
 is that enough?
 *** XPath 2.0
 *** clean API
-consider: namespace handling
+*** use of namespaces tested
 * second release to ?
 xml crowd? they will be harsh judges.  lucene crowd?  they are a mob. Some
 smaller cadre.  Not sure who?
-** criteria for release
+** criteria for release 1.0
 *** Highest Quality
 Rigorous testing; no known major bugs.
 *** XQuery search API
@@ -24,4 +24,4 @@ enable explicit access to indexes
 **** terms (lexicon functions)
 *** word and value and xpath indexes
 *** XQuery 1.0
-sorting using indexes
+optimized sorting using indexes
