@@ -103,8 +103,8 @@ public class XPathQuery extends Query {
         this.expr = expr;
         this.query = query;
         this.facts = resultFacts;
-        this.immutable = immutable;
         setType (valueType);
+        this.immutable = immutable;
     }
     
     protected XPathQuery(Expression expr, Query query, long resultFacts, ValueType valueType) {
