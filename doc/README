@@ -1,7 +1,7 @@
 The story of Lux
 
 I needed a rich scalable open-source XML query capability.  I looked at
-smoe existing technologies, like eXist and baseX, and these are very
+some existing technologies, like eXist and baseX, and these are very
 appealing.  But I had made a significant technical investment in Lucene and
 Saxon and wanted to see how much leverage I could get from "mashup" of my
 two favorite systems.  Maybe the whole would be greater.

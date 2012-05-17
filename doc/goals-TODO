@@ -5,10 +5,13 @@ developer ecosystem based on XQuery against an indexed data store.
 Ultimately we can provide an easy-to-use and easy-to-install alternative to
 PHP/MySQL for XML document-oriented sites.
 ** differentiators
-Why not Base/X or eXist or one of the other similar techs?  Minimal
-approach: leverages best-of-breed indexing and xquery evaluation w/Lucene
-and Saxon.  Strong focus on query optimization enables us to provide a very
-high quality, high=perfoming system. 
+Why not Base/X or eXist or MarkLogic or one of the other similar techs?  No
+good reason.  These are excellent tools, probably better in many ways.  But
+Lux filled a different niche for us: we already had a Lucene index filled
+with XML documents, and we wanted to use XPath with it.  Also this is a
+minimal approach: leverages best-of-breed full text indexing and xquery
+evaluation w/Lucene and Saxon which enables us to focus on index-based
+query optimization.
 * High-level Goals
 ** provide optimized XML-aware searching
 xpath analysis yielding index operations as much as possible using a
