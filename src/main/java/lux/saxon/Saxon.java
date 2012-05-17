@@ -4,6 +4,7 @@ import java.io.Reader;
 
 import javax.xml.transform.stream.StreamSource;
 
+import lux.PathOptimizer;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
@@ -13,7 +14,6 @@ import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
 import lux.xml.XmlBuilder;
 import lux.xpath.AbstractExpression;
-import lux.xpath.PathOptimizer;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -143,5 +143,9 @@ public class Saxon extends Evaluator  {
     public CachingDocReader getDocReader() {
         return docReader;
     }    
+    
+    public void declareNamespace (String prefix, String namespace) {
+        xpathCompiler.declareNamespace(prefix, namespace);
+    }
 
 }

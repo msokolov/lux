@@ -16,6 +16,14 @@ public abstract class Evaluator {
     public abstract Object evaluate (Expression xpath, Object contextItem);
     
     public abstract Iterable<?> iterate (Expression xpath, Object contextItem);
+    
+    /**
+     * declare a prefix-namespace binding that will remain in effect for all expressions
+     * evaluated by this Evaluator. Bindings can be undone by passing an empty namespace.
+     * @param prefix the namespace prefix to bind
+     * @param namespace the namespace (sometimes referred to as namespace URI) to bind to the prefix
+     */
+    public abstract void declareNamespace (String prefix, String namespace);
 
     /**
      * Return a builder that creates document models in a form that is useful for this 

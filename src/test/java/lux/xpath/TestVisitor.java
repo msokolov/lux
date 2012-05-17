@@ -1,5 +1,6 @@
 package lux.xpath;
 
+import lux.PathOptimizer;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
 import lux.xpath.PathStep.Axis;
