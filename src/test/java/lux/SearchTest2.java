@@ -16,14 +16,14 @@ import net.sf.saxon.s9api.XdmItem;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-// TODO: merge w/SearchTest, inherit from SearchBase, not BasicQueryTest:
-// pull out all the test cases (xquery plus expected results)
-// into a separate catalog: a class or data structure
 public class SearchTest2 extends BasicQueryTest {
         
     @Override
-    public void populateQueryStrings() {
-        queryStrings.put(Q.ACT_SCENE, "w(\"ACT\",\"SCENE\")");
+    public String getQueryString(Q q) {
+        switch (q) {
+        case ACT_SCENE: return "w(\"ACT\",\"SCENE\")";
+        default: return null;
+        }
     }
 
     @Override

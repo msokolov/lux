@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
@@ -17,7 +16,6 @@ import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -28,19 +26,21 @@ import org.junit.Test;
  * TODO: add some tests with empty steps like self::* and self::node() axis 
  */
 public abstract class BasicQueryTest {
-    
-    protected HashMap <Q, String> queryStrings;
 
-    // subclasses supply expected query strings corresponding to each test case
-    // in the Q enum
-    public abstract void populateQueryStrings ();
-    
     public abstract XmlIndexer getIndexer ();
-    
+
+    /**
+     * each test case uses one or more enums to retrieve the expected generated query
+     * @param q query enum identifying the test case
+     * @return the query expected for this case
+     */
+    public abstract String getQueryString (Q q);
+
     public enum Q {
         ATTR, SCENE, SCENE_ACT, 
             ACT, ACT1, ACT2, ACT_SCENE, ACT_SCENE1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
             ACT_ID, MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
+            LUX_FOO, 
     };
     
     @Test public void testNoQuery () throws Exception {
@@ -235,9 +235,7 @@ public abstract class BasicQueryTest {
         assertQuery ("not(//ACT) and empty(//SCENE)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
         assertQuery ("not(//ACT/root()//SCENE)", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
         assertQuery ("not((/)[.//ACT and .//SCENE])", XPathQuery.MINIMAL|XPathQuery.BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
-    }    
-    // TODO: optimize not() expressions involving exists() and empty()
-    
+    }
     @Test public void testPredicateNegation () throws Exception {
         assertQuery ("//ACT[not(SCENE)]", 0, ValueType.ELEMENT, Q.ACT);
         assertQuery ("//ACT[count(SCENE) = 0]", 0, ValueType.ELEMENT, Q.ACT);
@@ -246,8 +244,9 @@ public abstract class BasicQueryTest {
     @Test public void testPredicateCombine () throws Exception {
         // This should depend on having both ACT and SCENE
         assertQuery ("//ACT[.//SCENE]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);
-        assertQuery ("//ACT[exists(.//SCENE)]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);
-        // sorry...
+        assertQuery ("//ACT[exists(.//SCENE)]", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);        
+        // TODO: optimize not() expressions involving exists() and empty()
+        // This should depend on having a SCENE!
         assertQuery ("//ACT[not(empty(.//SCENE))]", 0, ValueType.ELEMENT, Q.ACT); 
     }
     
@@ -256,19 +255,11 @@ public abstract class BasicQueryTest {
         // confused with query terms
         assertQuery("//AND", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.AND);        
     }
-    
 
-    public String getQueryString (Q q) {
-        return queryStrings.get(q);
+    @Test public void testNamespaceAware () throws Exception {
+        assertQuery("//lux:foo", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.LUX_FOO);
     }
     
-    
-    @Before 
-    public void init () {
-        queryStrings = new HashMap<Q, String>();
-        populateQueryStrings ();
-    }
-
     public void assertQuery (String xpath, int facts, Q ... queries) {
         assertQuery (xpath, facts, null, queries);
     }
@@ -289,11 +280,11 @@ public abstract class BasicQueryTest {
 
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
         Saxon saxon = new Saxon();
-        
+        saxon.declareNamespace("lux", "lux");
+        saxon.declareNamespace("ns", "http://namespace.org/#ns");
         saxon.setContext(new SaxonContext (null, getIndexer()));
         assertQuery(xpath, optimized, facts, type, saxon, queries);
     }
-
 
     private void assertQuery(String xpath, String optimized, int facts, ValueType type, Saxon saxon,
             Q ... queries) {
