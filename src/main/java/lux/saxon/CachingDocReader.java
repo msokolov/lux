@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 
-import lux.SingleFieldSelector;
+import lux.lucene.SingleFieldSelector;
 import lux.saxon.Saxon.SaxonBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
