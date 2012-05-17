@@ -1,3 +1,9 @@
+/* This source code is derived from Tatu Saloranta and Bradley Huffman's
+ * StAXBuilder, which in turn was based on code from the JDOM project by
+ * Jason Hunter and Brett McLaughlin. The original copyright notice is
+ * maintained.
+ */
+
 /*--
 
  Copyright (C) 2000-2004 Jason Hunter & Brett McLaughlin.
