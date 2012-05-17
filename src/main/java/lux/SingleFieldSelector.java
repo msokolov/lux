@@ -20,4 +20,3 @@ public final class SingleFieldSelector implements FieldSelector {
     }
 
 }
-

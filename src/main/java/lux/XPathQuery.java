@@ -404,5 +404,4 @@ public class XPathQuery extends Query {
       return immutable;
   }
 
-  
 }
