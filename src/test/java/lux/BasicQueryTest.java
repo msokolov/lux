@@ -264,6 +264,13 @@ public abstract class BasicQueryTest {
         assertQuery("//lux:foo", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.LUX_FOO);
     }
     
+    @Test public void testCollection () throws Exception {
+        // fn:collection() is implicit
+        assertQuery ("collection()//SCENE", "lux:search(\"" +
+                getQueryString(Q.SCENE).replace("\"", "\"\"")
+                + "\",2)/descendant::element(SCENE)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
+    }
+    
     public void assertQuery (String xpath, int facts, Q ... queries) {
         assertQuery (xpath, facts, null, queries);
     }
