@@ -325,6 +325,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 returnType = ValueType.BOOLEAN_FALSE;
                 qname = FunCall.LUX_EXISTS;
             }
+            else if (funcall.getQName().equals(FunCall.FN_COLLECTION)) {
+                functionFacts = XPathQuery.DOCUMENT_RESULTS;
+                returnType = ValueType.DOCUMENT;
+                // TODO: treat argument as lucene filter query?
+                qname = FunCall.LUX_SEARCH;
+            }
             if (qname != null) {
                 long facts;
                 if (query.isImmutable()) {
@@ -497,7 +503,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private void combineTopQueries (int n, Occur occur, ValueType valueType) {
         if (n <= 0) {
-            push (UNINDEXED);
+            push (MATCH_ALL);
             return;
         }
         XPathQuery query = pop();
