@@ -1,10 +1,6 @@
 * first release to ifactory
 Be sure to preserve copyright.  Encourage ifactory to use and contribute.
 ** criteria for release 0.9
-*** licensing in place in source code
-Mozilla? Apache? L/GPL?  I want to retain ownership so I have the ability
-to direct the development, develop a user base, gather contributions and
-generally distribute and manage the code base as I see fit.
 *** Very Good Quality
 Rigorous testing; no known severe bugs.
 *** compatibility w/ifpress
@@ -27,3 +23,4 @@ enable explicit access to indexes
 *** word and value and xpath indexes
 *** XQuery 1.0
 optimized sorting using indexes
+*** Add relevant copyright notices

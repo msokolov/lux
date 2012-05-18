@@ -81,6 +81,8 @@ The optimizer considers inserting one of the lux function whenever such a
 sub-expression occurs.
 * packaging
 ** solr request handler
+restored to working order
+** MPL license
 * code cleanup
 ** shorten xml index field names?
 to make it easier to type queries.  Maybe make the default field name be
