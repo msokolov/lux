@@ -41,6 +41,7 @@ public class FunCall extends AbstractExpression {
     public static final QName FN_EXISTS = new QName (FN_NAMESPACE, "exists", "");
     public static final QName FN_NOT = new QName (FN_NAMESPACE, "not", "");
     public static final QName FN_EMPTY = new QName (FN_NAMESPACE, "empty", "");
+    public static final QName FN_COLLECTION = new QName (FN_NAMESPACE, "collection", "");
 
     // represent last() in Subsequence(foo, last()); ie foo[last()].
     public static final FunCall LastExpression = new FunCall (FN_LAST, ValueType.VALUE);    
@@ -62,6 +63,25 @@ public class FunCall extends AbstractExpression {
                  (name.getNamespaceURI().equals(FN_NAMESPACE) &&
                          ! name.getLocalPart().equals ("reverse") &&
                          ! name.getLocalPart().equals("unordered")));
+    }
+    
+    public boolean isAbsolute () {
+        if (name.equals(FN_COLLECTION)) {
+            return true;
+        }
+        return false;
+    }
+    
+    /** 
+     * replace collection() with the search function call
+     * @param search the search function call to use
+     * @return the search function call if this is collection(), otherwise return this
+     */
+    public AbstractExpression replaceRoot(FunCall search) {        
+        if (name.equals(FN_COLLECTION)) {
+            return search;
+        }
+        return this;
     }
 
 }

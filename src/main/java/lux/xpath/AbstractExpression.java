@@ -87,7 +87,7 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     /** 
-     * If this has a root expression, replace it with the function call expression
+     * If this has an absolute subexpression, replace it with the function call expression
      * 
      * @param search the search function call to use in place of '/'
      */
