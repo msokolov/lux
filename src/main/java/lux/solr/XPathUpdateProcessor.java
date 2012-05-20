@@ -61,7 +61,7 @@ public class XPathUpdateProcessor extends UpdateRequestProcessorFactory {
             } else {
                 String xml = (String) o;
                 try {
-                    xmlIndexer.index (new StringReader(xml));
+                    xmlIndexer.read (new StringReader(xml));
                 } catch (XMLStreamException e) {
                     log.error ("Failed to parse " + xmlFieldName, e);
                 }

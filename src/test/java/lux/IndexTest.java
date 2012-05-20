@@ -42,7 +42,7 @@ public class IndexTest {
         XmlIndexer indexer = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
         printAllTerms();
-        indexer.index(getClass().getResourceAsStream("hamlet.xml"));
+        indexer.read(getClass().getResourceAsStream("hamlet.xml"));
         for (Object s : indexer.getFieldValues(XmlField.PATH)) {
             System.out.println (s);
         }

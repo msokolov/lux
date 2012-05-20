@@ -4,6 +4,14 @@
 
 package lux.xpath;
 
+import lux.xquery.AttributeConstructor;
+import lux.xquery.Conditional;
+import lux.xquery.ElementConstructor;
+import lux.xquery.FLWOR;
+import lux.xquery.Let;
+import lux.xquery.TextConstructor;
+import lux.xquery.Variable;
+
 public abstract class ExpressionVisitorBase extends ExpressionVisitor {
 
     @Override
@@ -75,5 +83,29 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     public AbstractExpression visit(UnaryMinus unaryMinus) {
         return unaryMinus;
     }
+    
+    @Override
+    public AbstractExpression visit(ElementConstructor elementConstructor) {
+        return elementConstructor;
+    }
 
+    @Override
+    public AbstractExpression visit(AttributeConstructor attributeConstructor) {
+        return attributeConstructor;
+    }
+    
+    @Override
+    public AbstractExpression visit(TextConstructor textConstructor) {
+        return textConstructor;
+    }
+    
+    @Override
+    public AbstractExpression visit(FLWOR flwor) {
+        return flwor;
+    }
+    
+    @Override
+    public AbstractExpression visit(Conditional cond) {
+        return cond;
+    }
 }

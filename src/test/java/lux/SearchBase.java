@@ -63,14 +63,14 @@ public abstract class SearchBase {
      * @throws IOException
      */
     public static void indexAllElements(XmlIndexer indexer, Directory dir, String filename) throws XMLStreamException, IOException {
-        indexAllElements(indexer, dir, SearchTest.class.getClassLoader().getResourceAsStream(filename));
+        indexAllElements(indexer, dir, filename, SearchTest.class.getClassLoader().getResourceAsStream(filename));
         System.out.println ("Indexed " + totalDocs + " documents from " + filename);
     }
     
-    public static void indexAllElements(XmlIndexer indexer, Directory dir, InputStream in) throws XMLStreamException, IOException {
+    public static void indexAllElements(XmlIndexer indexer, Directory dir, String uri, InputStream in) throws XMLStreamException, IOException {
         IndexWriter indexWriter = indexer.getIndexWriter(dir);
         String xml = IOUtils.toString(in);
-        indexer.indexDocument(indexWriter, xml);
+        indexer.indexDocument(indexWriter, uri, xml);
         XMLOutputter outputter = new XMLOutputter();
         // index all descendants
         totalDocs = 1;
@@ -87,7 +87,7 @@ public abstract class SearchBase {
             }
             ++totalDocs;
             String speech = outputter.outputString(e);
-            indexer.indexDocument (indexWriter, speech);
+            indexer.indexDocument (indexWriter, uri + '-' + totalDocs, speech);
         }
         indexWriter.commit();
         indexWriter.close();

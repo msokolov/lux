@@ -4,6 +4,14 @@
 
 package lux.xpath;
 
+import lux.xquery.AttributeConstructor;
+import lux.xquery.Conditional;
+import lux.xquery.ElementConstructor;
+import lux.xquery.FLWOR;
+import lux.xquery.Let;
+import lux.xquery.TextConstructor;
+import lux.xquery.Variable;
+
 public abstract class ExpressionVisitor {
     private boolean reverse = false;
     /**
@@ -39,4 +47,9 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (UnaryMinus predicate);
     public abstract AbstractExpression visit (Let let);
     public abstract AbstractExpression visit (Variable variable);
+    public abstract AbstractExpression visit (ElementConstructor elementConstructor);
+    public abstract AbstractExpression visit (AttributeConstructor attributeConstructor);
+    public abstract AbstractExpression visit (TextConstructor textConstructor);
+    public abstract AbstractExpression visit (FLWOR flwor);
+    public abstract AbstractExpression visit (Conditional conditional);
 }

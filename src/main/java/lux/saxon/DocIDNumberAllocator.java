@@ -7,20 +7,39 @@ package lux.saxon;
 import net.sf.saxon.tree.util.DocumentNumberAllocator;
 
 /**
- * This class enables external docIDs to be passed to a Saxon DocBuilder via its Configuration.
- * An id must be set by calling setDocID(int) before attempting to build each document.
+ * We guarantee that lux:search returns result in document order, which to Saxon means that
+ * the ids of the documents it returns must be in increasing order.  lux:search gathers
+ * docIDs in increasing order and calls setNextDocID(int) in order to maintain the same numbering 
+ * scheme in Saxon.  Internally-generated documents are allocated ids starting at Integer.MAX_VALUE+1 -
+ * Lucene ids are always ints.
+ *
  */
 public class DocIDNumberAllocator extends DocumentNumberAllocator {
     
-    private Integer docID;
+    private long nextInternalID = Integer.MAX_VALUE+1;
     
-    public void setDocID (int id) {
-        docID = id;
+    private Integer nextDocID;
+  
+    /**
+     * It is the caller's responsibility to ensure that the ids passed to this method are never
+     * repeated, and that they are assigned to documents in such a way that any functions declaring
+     * their results to be in document order have that assertion borne out.  The caller must also ensure
+     * that a document will be allocated immediately after this method is called.  For this reason,
+     * this entire class is *not* thread-safe.
+     * @param id the next id to allocate.
+     */
+    public void setNextDocID (int id) {
+        nextDocID = id;
     }
     
     public long allocateDocumentNumber() {
-        int id = docID;
-        docID = null;
+        long id;
+        if (nextDocID != null) {
+            id = nextDocID;
+            nextDocID = null;
+        } else {
+            id = nextInternalID--;
+        }
         return id;
     }
 }

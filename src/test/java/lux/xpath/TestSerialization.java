@@ -4,20 +4,21 @@
 
 package lux.xpath;
 
-import static org.junit.Assert.*;
-
+import static org.junit.Assert.assertEquals;
 import lux.api.ValueType;
 import lux.xpath.BinaryOperation.Operator;
-import lux.xpath.NodeTest;
-import lux.xpath.PathStep;
 import lux.xpath.PathStep.Axis;
+import lux.xquery.ElementConstructor;
+import lux.xquery.Let;
 
 import org.junit.Test;
 
 public class TestSerialization {
 
+    private static final QName FOO_QNAME = new QName("foo");
+
     @Test public void testNodeTestToString () {
-        QName foo = new QName ("foo");
+        QName foo = FOO_QNAME;
         QName foobar = new QName ("bar", "bar", "foo");
         QName star = new QName ("*");
         QName starstar = new QName ("*", "*", "*");
@@ -72,7 +73,7 @@ public class TestSerialization {
     }
     
     @Test public void testPathStepToString () {
-        NodeTest foo = new NodeTest (ValueType.ELEMENT, new QName("foo"));
+        NodeTest foo = new NodeTest (ValueType.ELEMENT, FOO_QNAME);
         assertEquals ("self::element(foo)", new PathStep (Axis.Self, foo).toString());
         assertEquals ("child::element(foo)", new PathStep (Axis.Child, foo).toString());
         assertEquals ("parent::element(foo)", new PathStep (Axis.Parent, foo).toString());
@@ -108,7 +109,7 @@ public class TestSerialization {
     }
     
     @Test public void testRootToString () {
-        assertEquals ("/", new Root().toString());
+        assertEquals ("(/)", new Root().toString());
     }
     
     @Test public void testDotToString () {
@@ -116,11 +117,14 @@ public class TestSerialization {
     }
     
     @Test public void testFunctionCallToString() {
-        FunCall fun = new FunCall (new QName("foo"), ValueType.VALUE, new LiteralExpression ("bar"));
+        FunCall fun = new FunCall (FOO_QNAME, ValueType.VALUE, new LiteralExpression ("bar"));
         assertEquals ("foo(\"bar\")", fun.toString());
 
-        FunCall fun2 = new FunCall (new QName("foo"), ValueType.VALUE, new LiteralExpression ("bar"), new LiteralExpression("baz"));
+        FunCall fun2 = new FunCall (FOO_QNAME, ValueType.VALUE, new LiteralExpression ("bar"), new LiteralExpression("baz"));
         assertEquals ("foo(\"bar\",\"baz\")", fun2.toString());        
+
+        FunCall fun3 = new FunCall (FunCall.FN_EXISTS, ValueType.BOOLEAN, new Sequence(LiteralExpression.ONE, LiteralExpression.ONE));
+        assertEquals ("fn:exists((1,1))", fun3.toString());
     }
     
     @Test public void testSequenceToString() {
@@ -161,4 +165,26 @@ public class TestSerialization {
         assertEquals ("(1 le 1)", new BinaryOperation(one, Operator.ALE, one).toString());
         
     }
+    
+    @Test public void testElementToString () {
+        ElementConstructor e = new ElementConstructor (FOO_QNAME, null, null);
+        assertEquals ("element foo {  }", e.toString());
+        e = new ElementConstructor (FOO_QNAME, new Namespace [] {
+                new Namespace ("", "default"),
+                new Namespace ("lux", "lux")
+        }, new ElementConstructor (FOO_QNAME, null, null));
+        assertEquals ("element foo { attribute xmlns { \"default\" }, attribute xmlns:lux { \"lux\" }, element foo {  } }", e.toString());   
+    }
+    
+    @Test public void testLiteralExpressionToString () {
+        assertEquals ("1", LiteralExpression.ONE.toString());
+        assertEquals ("\"1\"", new LiteralExpression("1").toString());
+        assertEquals ("\"&amp;\"", new LiteralExpression("&").toString());
+        assertEquals ("\"<\"", new LiteralExpression("<").toString());
+    }
+    
+    // TODO:
+    // testAttributeToString
+    // testTextToString
+    // testFLWORToString
 }

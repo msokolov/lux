@@ -41,7 +41,8 @@ public class Config extends Configuration implements URIResolver, EntityResolver
     public Config () {
         super();
         luxFunctionLibrary = new LuxFunctionLibrary();;
-        getParseOptions().setEntityResolver(this);
+        // This prevents expansion of internal "parameter entities" among other things
+        // getParseOptions().setEntityResolver(this);
         optimizer = new Optimizer(this);
     }
     

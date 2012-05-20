@@ -58,12 +58,38 @@ public class LiteralExpression extends AbstractExpression {
             return "()";
         }
         if (valueType == ValueType.STRING) {
-            return '"' + value.toString().replace ("\"", "\"\"") + '"';
+            return escapeString(value.toString());
         }
         if (valueType == ValueType.BOOLEAN) {
             return value.toString() + "()";
         }
+        if (value instanceof Double) {
+            Double d = (Double) value;
+            if (d.isInfinite()) {
+                if (d > 0)
+                    return "xs:float('INF')";
+                else
+                    return "xs:float('-INF')";
+            }
+            if (d.isNaN()) {
+                return "xs:float('NaN')";
+            }
+        }
         return value.toString();
+    }
+
+    protected static String escapeString(String s) {
+        StringBuilder buf = new StringBuilder ();
+        buf.append('"');
+        for (char c : s.toCharArray()) {
+            switch (c) {
+            case '"': buf.append ("\"\""); break;
+            case '&': buf.append ("&amp;"); break;
+            default: buf.append (c);
+            }
+        }
+        buf.append('"');
+        return buf.toString();
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {

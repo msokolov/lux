@@ -20,7 +20,18 @@ public class FunCall extends AbstractExpression {
     
     @Override
     public String toString() {
-        return name.toString() + Sequence.seqAsString(",", subs);
+        StringBuilder buf = new StringBuilder ();
+        buf.append (name);
+        buf.append ('(');
+        if (subs.length > 0) {
+            buf.append (subs[0]);
+        }
+        for (int i = 1; i < subs.length; i++) {
+            buf.append (',');
+            buf.append (subs[i]);
+        }
+        buf.append (')');
+        return buf.toString();
     }
     
     public QName getQName() {
@@ -34,14 +45,14 @@ public class FunCall extends AbstractExpression {
     public static final QName LUX_ROOT = new QName (LUX_NAMESPACE, "root", "lux");
     
     public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
-    public static final QName FN_ROOT = new QName (FN_NAMESPACE, "root", "");
-    public static final QName FN_LAST = new QName (FN_NAMESPACE, "last", "");
-    public static final QName FN_SUBSEQUENCE = new QName (FN_NAMESPACE, "subsequence", "");
-    public static final QName FN_COUNT = new QName (FN_NAMESPACE, "count", "");
-    public static final QName FN_EXISTS = new QName (FN_NAMESPACE, "exists", "");
-    public static final QName FN_NOT = new QName (FN_NAMESPACE, "not", "");
-    public static final QName FN_EMPTY = new QName (FN_NAMESPACE, "empty", "");
-    public static final QName FN_COLLECTION = new QName (FN_NAMESPACE, "collection", "");
+    public static final QName FN_ROOT = new QName (FN_NAMESPACE, "root", "fn");
+    public static final QName FN_LAST = new QName (FN_NAMESPACE, "last", "fn");
+    public static final QName FN_SUBSEQUENCE = new QName (FN_NAMESPACE, "subsequence", "fn");
+    public static final QName FN_COUNT = new QName (FN_NAMESPACE, "count", "fn");
+    public static final QName FN_EXISTS = new QName (FN_NAMESPACE, "exists", "fn");
+    public static final QName FN_NOT = new QName (FN_NAMESPACE, "not", "fn");
+    public static final QName FN_EMPTY = new QName (FN_NAMESPACE, "empty", "fn");
+    public static final QName FN_COLLECTION = new QName (FN_NAMESPACE, "collection", "fn");
 
     // represent last() in Subsequence(foo, last()); ie foo[last()].
     public static final FunCall LastExpression = new FunCall (FN_LAST, ValueType.VALUE);    

@@ -381,6 +381,9 @@ public class XPathQuery extends Query {
 
   public void setType(ValueType type) {
       if (immutable) throw new LuxException ("attempt to modify immutable query");
+      if (type == null) {
+          throw new NullPointerException("XPathQuery return type may not be null");
+      }
       valueType = type;
       facts &= (~RESULT_TYPE_FLAGS);
       if (valueType == ValueType.BOOLEAN) {

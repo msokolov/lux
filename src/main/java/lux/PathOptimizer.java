@@ -20,13 +20,13 @@ import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xpath.PathExpression;
 import lux.xpath.PathStep;
+import lux.xpath.PathStep.Axis;
 import lux.xpath.Predicate;
 import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.SlopCounter;
 import lux.xpath.Subsequence;
-import lux.xpath.PathStep.Axis;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -360,6 +360,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private XPathQuery combineQueries(XPathQuery rq, Occur occur, XPathQuery lq, ValueType resultType) {
         XPathQuery query;
+        // TODO - explain the difference between these two overrides!!!
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
             query = lq.combine(rq, occur, resultType, -1);
         } else {
@@ -498,7 +499,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     private void combineTopQueries (int n, Occur occur) {
-        combineTopQueries (n, occur, null);
+        combineTopQueries (n, occur, ValueType.VALUE);
     }
 
     private void combineTopQueries (int n, Occur occur, ValueType valueType) {

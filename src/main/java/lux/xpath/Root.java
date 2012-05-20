@@ -12,7 +12,7 @@ public class Root extends AbstractExpression {
     
     @Override
     public String toString() {
-       return "/";
+       return "(/)";
     }
     
     public boolean isAbsolute() {

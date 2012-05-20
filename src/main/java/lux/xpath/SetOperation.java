@@ -19,7 +19,7 @@ public class SetOperation extends AbstractExpression {
     public String toString () {
         StringBuilder buf = new StringBuilder ();
         buf.append('(');
-        Sequence.appendSeq(buf, subs, ' ' + operator.toString() + ' ');
+        Sequence.appendSeqContents(buf, subs, ' ' + operator.toString() + ' ');
         buf.append (')');
         return buf.toString();
     }

@@ -93,7 +93,7 @@ public class XmlIndexer {
         fieldAnalyzers.put(field.getName(), field.getAnalyzer());
     }
     
-    public void index (InputStream xml) throws XMLStreamException {
+    public void read (InputStream xml) throws XMLStreamException {
         reset();
         xmlReader.read (xml);
     }
@@ -107,7 +107,7 @@ public class XmlIndexer {
         return (options & option) != 0;
     }
     
-    public void index (Reader xml) throws XMLStreamException {
+    public void read (Reader xml) throws XMLStreamException {
         reset();
         xmlReader.read (xml);
     }
@@ -151,17 +151,28 @@ public class XmlIndexer {
         return jdomBuilder.getDocument();
     }
     
-    public void indexDocument(IndexWriter indexWriter, String xml) throws XMLStreamException, CorruptIndexException, IOException {
+    public void indexDocument(IndexWriter indexWriter, String uri, InputStream xml) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
-        index(new StringReader(xml));
+        read (xml);
+        addLuceneDocument(indexWriter, uri);        
+    }
+
+    public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
+        reset();
+        read(new StringReader(xml));
+        addLuceneDocument(indexWriter, uri);        
+    }
+
+    private void addLuceneDocument(IndexWriter indexWriter, String uri) throws CorruptIndexException, IOException {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
+        doc.add (new Field ("uri", uri, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
         for (XmlField field : getFields()) {
             for (Object value : getFieldValues(field)) {
                 // TODO: handle other primitive value types like int, at least, and collations, and analyzers
                 doc.add(new Field(field.getName(), value.toString(), field.isStored(), field.getIndexOptions()));
             }
         }
-        indexWriter.addDocument(doc);        
+        indexWriter.addDocument(doc);
     }
 
     public IndexWriter getIndexWriter(Directory dir) throws CorruptIndexException, LockObtainFailedException, IOException {

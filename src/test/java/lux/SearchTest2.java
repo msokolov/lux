@@ -26,7 +26,8 @@ public class SearchTest2 extends BasicQueryTest {
     public String getQueryString(Q q) {
         switch (q) {
         case ACT_SCENE: return "w(\"ACT\",\"SCENE\")";
-        default: return null;
+        case SCENE: return "\"SCENE\"";
+        default: throw new UnsupportedOperationException("No query string for " + q + " in " + getClass().getSimpleName());
         }
     }
 
@@ -40,7 +41,7 @@ public class SearchTest2 extends BasicQueryTest {
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         //System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
-        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getSaxonInternalExpression());
         aex = new UnOptimizer(getIndexer().getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);

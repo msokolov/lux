@@ -16,12 +16,12 @@ public abstract class AbstractExpression implements Visitable {
     
     protected AbstractExpression subs[];
 
-    enum Type {
+    public enum Type {
         PathExpression, PathStep, Predicate, Binary, SetOperation,
         // these are types of Binary: we'll split them out when we need to
         // SetOperation, Comparison, AtomicComparison, MathOperation,
         Literal, Root, Dot, FunctionCall, Sequence, UnaryMinus, Subsequence,
-        Let, Variable
+        Let, Variable, Element, Attribute, Text, FLWOR, Conditional
     };
 
     private final Type type;

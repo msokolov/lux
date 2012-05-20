@@ -5,40 +5,61 @@
 package lux.saxon;
 
 import lux.api.ResultSet;
-import lux.xpath.AbstractExpression;
+import net.sf.saxon.expr.Expression;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XPathSelector;
+import net.sf.saxon.s9api.XQueryEvaluator;
+import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 
 public class SaxonExpr implements lux.api.Expression {
 
     private XPathExecutable xpath;
-    private AbstractExpression aex;
+    private XQueryExecutable xquery;
     
     /**
-     * Construct a SaxonExpr from an xpath expression and a corresponding AbstractExpression,
-     * stored for testing convenience 
+     * Construct a SaxonExpr from an xpath expression 
      * @param xpath
-     * @param saxon
      */
-    public SaxonExpr (XPathExecutable xpath, AbstractExpression expr) {
+    public SaxonExpr (XPathExecutable xpath) {
         this.xpath = xpath;
-        this.aex = expr;
+    }
+    
+    /**
+     * Construct a SaxonExpr from an xquery expression 
+     * @param xpath
+     */
+    public SaxonExpr (XQueryExecutable xquery) {
+        this.xquery = xquery;
     }
 
-    public XPathExecutable getXPathExecutable() {
-        return xpath;
+    /**
+     * @return the expression in Saxon's internal form, which provides a sufficiently detailed api
+     * that we can inspect the entire expression tree.
+     */
+    public Expression getSaxonInternalExpression() {
+        if (xpath != null) {
+            return xpath.getUnderlyingExpression().getInternalExpression();
+        }
+        return xquery.getUnderlyingCompiledQuery().getExpression();
     }
     
     public ResultSet<?> evaluate(XdmItem contextItem) throws SaxonApiException {
-        XPathSelector eval = xpath.load();
+        if (xpath != null) {
+            XPathSelector eval = xpath.load();
+            if (contextItem != null)
+                eval.setContextItem(contextItem);
+            return new XdmResultSet (eval.evaluate());
+        }
+        XQueryEvaluator eval = xquery.load();
         if (contextItem != null)
             eval.setContextItem(contextItem);
         return new XdmResultSet (eval.evaluate());
     }
-
-    public AbstractExpression getExpression() {
-        return aex;
+    
+    public String toString () {
+        return getSaxonInternalExpression().toString();
     }
+
 }

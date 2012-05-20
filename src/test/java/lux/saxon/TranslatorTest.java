@@ -179,6 +179,6 @@ public class TranslatorTest {
     }
     
     private final Expression getExpression (SaxonExpr expr) {
-        return expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression();
+        return expr.getSaxonInternalExpression();
     }
 }

@@ -163,7 +163,7 @@ public class SearchTest extends SearchBase {
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
-        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getSaxonInternalExpression());
         aex = new UnOptimizer(indexer.getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
@@ -178,7 +178,7 @@ public class SearchTest extends SearchBase {
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results");
-        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getSaxonInternalExpression());
         aex = new UnOptimizer(indexer.getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
@@ -334,7 +334,7 @@ public class SearchTest extends SearchBase {
     protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount) throws LuxException {
         Evaluator eval = getEvaluator();
         SaxonExpr expr = (SaxonExpr) eval.compile(query);
-        System.out.println (expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        System.out.println (expr.getSaxonInternalExpression());
         ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr);
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 

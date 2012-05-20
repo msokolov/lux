@@ -16,29 +16,37 @@ public class Sequence extends AbstractExpression {
         return seqAsString(",", subs);
     }
     
+    /**
+     * @param separator 
+     * @param contents
+     * @return a string joining all the contents in order, separated from each other by the separator, 
+     * with the entire Sequence wrapped in "( )". If any contents are Sequences, these are merged together
+     * into a single flattened sequence.
+     */
     static final String seqAsString (String separator, AbstractExpression ... contents) {
         StringBuilder buf = new StringBuilder ();
         buf.append('(');
-        appendSeq(buf, contents, separator);
+        appendSeqContents(buf, contents, separator);
         buf.append (')');
         return buf.toString();
     }
 
-    static boolean appendSeq(StringBuilder buf, AbstractExpression[] contents, String separator) {
-        boolean first = true;
-        for (AbstractExpression arg : contents) {
-            if (first) {
-                first = false;
-            } else {
-                buf.append(separator);
-            }
-            if (arg.getType() == Type.Sequence) {
-                appendSeq (buf, arg.getSubs(), separator);
-            } else {
-                buf.append (arg);
-            }
+    static void appendSeqContents(StringBuilder buf, AbstractExpression[] contents, String separator) {
+        if (contents.length > 0) {
+            appendSeqItem(buf, separator, contents[0]);
         }
-        return first;
+        for (int i = 1; i < contents.length; i++) {
+            buf.append(separator);
+            appendSeqItem(buf, separator, contents[i]);
+        }
+    }
+
+    private static void appendSeqItem(StringBuilder buf, String separator, AbstractExpression arg) {
+        if (arg.getType() == Type.Sequence) {
+            appendSeqContents (buf, arg.getSubs(), separator);
+        } else {
+            buf.append (arg);
+        }
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {

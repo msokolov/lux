@@ -301,7 +301,7 @@ public abstract class BasicQueryTest {
             Q ... queries) {
 
         SaxonExpr expr = saxon.compile(xpath);
-        AbstractExpression ex = saxon.getTranslator().exprFor(expr.getXPathExecutable().getUnderlyingExpression().getInternalExpression());
+        AbstractExpression ex = saxon.getTranslator().exprFor(expr.getSaxonInternalExpression());
         if (optimized != null) {
             assertEquals (optimized, ex.toString());
         }
