@@ -279,8 +279,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // see if the function args can be converted to searches.
         optimizeSubExpressions(funcall, 0);
         Occur occur;
-        if (! name.getNamespaceURI().equals (FunCall.FN_NAMESPACE)) {            
-            // we know nothing about this function
+        if (! name.getNamespaceURI().equals (FunCall.FN_NAMESPACE)) {
+            // There's something squirrely here - we know nothing about this function; it's best 
+            // not to attempt any optimization, so we will throw away any filters coming from the
+            // function arguments
             occur = Occur.SHOULD;
         }
         // a built-in XPath 2 function
@@ -518,9 +520,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     private void combineTopQueries (int n, Occur occur) {
-        combineTopQueries (n, occur, ValueType.VALUE);
+        combineTopQueries (n, occur, null);
     }
 
+    /*
+     * combines the top n queries on the stack, using the boolean operator occur, and generalizing
+     * the return type to the given type.  If valueType is null, no type restriction is imposed; the 
+     * return type derives from type promotion among the constituent queries' return types.
+     */
     private void combineTopQueries (int n, Occur occur, ValueType valueType) {
         if (n <= 0) {
             push (MATCH_ALL);
