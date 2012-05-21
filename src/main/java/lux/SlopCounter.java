@@ -100,9 +100,9 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(FunCall f) {
-        if (! f.getName().equals(FunCall.FN_EXISTS)) {
-            // We can infer a path relationship with exists() because it depends on its
-            // context just like a predicate.  We should also be able to invert not(exists()) and 
+        if (! (f.getName().equals(FunCall.FN_EXISTS) || f.getName().equals(FunCall.FN_DATA))) {
+            // We can infer a path relationship with exists() and data() because they are 
+            // existence-preserving.  We should also be able to invert not(exists()) and 
             // empty(), and not(), etc. in the path index case.
             slop = null;
         }

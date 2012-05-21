@@ -5,8 +5,10 @@
 package lux.saxon;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import lux.api.LuxException;
 import lux.api.ValueType;
@@ -105,9 +107,11 @@ import net.sf.saxon.value.Value;
 public class SaxonTranslator {
     
     private Config config;
+    private HashMap<String,String> namespaceDeclarations;
     
     public SaxonTranslator (Config config) {
         this.config = config;
+        namespaceDeclarations = new HashMap<String, String>();
     }
     
     /** Converts from a Saxon to a lux xquery representation.
@@ -119,9 +123,12 @@ public class SaxonTranslator {
         XQueryExpression saxonQuery = xquery.getUnderlyingCompiledQuery();
         QueryModule queryModule = saxonQuery.getStaticContext();
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
+        // Namespace declarations are accumulated while walking the expression trees:
+        namespaceDeclarations.clear();
         FunctionDefinition[] defs = getFunctionDefinitions(queryModule);
-        Namespace[] namespaceDeclarations = getNamespaceDeclarations (queryModule);
-        return new XQuery(namespaceDeclarations, defs, exprFor (saxonQuery.getExpression()));
+        //Namespace[] namespaceDeclarations = getNamespaceDeclarations (queryModule);
+        AbstractExpression body = exprFor (saxonQuery.getExpression());
+        return new XQuery(getNamespaceDeclarations(queryModule), defs, body);
     }
 
     // FIXME: not implemented 
@@ -131,7 +138,18 @@ public class SaxonTranslator {
         // We'd like to get our hands on queryModule.explicitPrologNamespaces :(
         // I think possibly we will have to resort to walking the module in search of 
         // all namespaces??
-        return new Namespace[0];
+        Namespace[] decls = new Namespace[namespaceDeclarations.size()];
+        int i = 0;
+        for (Map.Entry<String, String> entry : namespaceDeclarations.entrySet()) {
+            decls[i++] = new Namespace (entry.getKey(), entry.getValue());
+        }
+        return decls;
+    }
+    
+    private void addNamespaceDeclaration (QName qname) {
+        String prefix = qname.getPrefix();
+        String namespaceURI = qname.getNamespaceURI();
+        namespaceDeclarations.put(prefix, namespaceURI);
     }
 
     private FunctionDefinition[] getFunctionDefinitions(QueryModule queryModule) {
@@ -142,9 +160,13 @@ public class SaxonTranslator {
             UserFunctionParameter[] params = function.getParameterDefinitions();
             Variable[] args = new Variable[params.length];
             for (int i = 0; i < params.length; i++) {
-                args[i] = new Variable (qnameFor (params[i].getVariableQName()));
+                QName argname = qnameFor (params[i].getVariableQName());
+                addNamespaceDeclaration(argname);
+                args[i] = new Variable (argname);
             }
-            FunctionDefinition fdef = new FunctionDefinition(qnameFor(function.getFunctionName()), 
+            QName fname = qnameFor(function.getFunctionName());
+            addNamespaceDeclaration(fname);
+            FunctionDefinition fdef = new FunctionDefinition(fname, 
                     valueTypeForItemType(function.getResultType().getPrimaryType()), 
                     args, exprFor (function.getBody()));  
             functionDefinitions.add (fdef);
@@ -380,7 +402,13 @@ public class SaxonTranslator {
     }
     
     private QName qnameFor(StructuredQName name) {
-        return new QName (name.getNamespaceBinding().getURI(), name.getLocalPart(), name.getNamespaceBinding().getPrefix());
+        QName qname = new QName (name.getNamespaceBinding().getURI(), name.getLocalPart(), name.getNamespaceBinding().getPrefix());
+        if (!(qname.getPrefix().equals ("fn") && qname.getNamespaceURI().equals(FunCall.FN_NAMESPACE) ||
+                qname.getPrefix().equals("local") && qname.getNamespaceURI().equals(FunCall.LOCAL_NAMESPACE) ||
+                qname.getPrefix().equals("xs") && qname.getNamespaceURI().equals(FunCall.XS_NAMESPACE))) {
+            addNamespaceDeclaration(qname);
+        }
+        return qname;
     }
     
     /* return a QName suitable for use as a constructor of the given type */
@@ -542,7 +570,7 @@ public class SaxonTranslator {
     
     private AbstractExpression exprFor (Atomizer atomizer) {
         Expression base = atomizer.getBaseExpression();
-        return new FunCall (new QName("data"), ValueType.ATOMIC, exprFor (base));
+        return new FunCall (FunCall.FN_DATA, ValueType.ATOMIC, exprFor (base));
     }
     
     private AbstractExpression exprFor (UnaryExpression expr) {

@@ -46,6 +46,7 @@ public class FunCall extends AbstractExpression {
     public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
     public static final QName FN_ROOT = new QName (FN_NAMESPACE, "root", "fn");
     public static final QName FN_LAST = new QName (FN_NAMESPACE, "last", "fn");
+    public static final QName FN_DATA = new QName (FN_NAMESPACE, "data", "fn");
     public static final QName FN_SUBSEQUENCE = new QName (FN_NAMESPACE, "subsequence", "fn");
     public static final QName FN_COUNT = new QName (FN_NAMESPACE, "count", "fn");
     public static final QName FN_EXISTS = new QName (FN_NAMESPACE, "exists", "fn");
@@ -54,9 +55,10 @@ public class FunCall extends AbstractExpression {
     public static final QName FN_COLLECTION = new QName (FN_NAMESPACE, "collection", "fn");
 
     public static final String LOCAL_NAMESPACE = "http://www.w3.org/2005/xquery-local-functions";
+    public static final String XS_NAMESPACE = "http://www.w3.org/2001/XMLSchema";    
     
     // represent last() in Subsequence(foo, last()); ie foo[last()].
-    public static final FunCall LastExpression = new FunCall (FN_LAST, ValueType.VALUE);    
+    public static final FunCall LastExpression = new FunCall (FN_LAST, ValueType.VALUE);
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);

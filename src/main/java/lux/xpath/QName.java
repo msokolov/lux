@@ -26,7 +26,7 @@ public class QName extends javax.xml.namespace.QName {
             buf.append (getPrefix()).append(':');
         }
         buf.append (getLocalPart());
-    }
+    }    
 
     @Override public String toString () {
         StringBuilder buf = new StringBuilder ();
