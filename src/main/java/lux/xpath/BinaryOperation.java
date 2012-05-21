@@ -4,6 +4,7 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
 import lux.api.ValueType;
 
 
@@ -48,8 +49,13 @@ public class BinaryOperation extends AbstractExpression {
         this.operator = operator;
     }
     
-    public String toString () {
-        return '(' + subs[0].toString() + ' ' + operator.toString() + ' ' + subs[1].toString() + ')';
+    @Override
+    public void toString (StringBuilder buf) {
+        buf.append ('(');
+        subs[0].toString(buf);
+        buf.append(' ').append(operator).append(' ');
+        subs[1].toString(buf);
+        buf.append (')');
     }
     
     public AbstractExpression getOperand1() {

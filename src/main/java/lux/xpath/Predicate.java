@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 public class Predicate extends AbstractExpression {
     
     public Predicate (AbstractExpression base, AbstractExpression filter) {
@@ -11,8 +13,11 @@ public class Predicate extends AbstractExpression {
         subs = new AbstractExpression[] { base, filter };
     }
     
-    public String toString () {
-        return subs[0].toString() + '[' + subs[1].toString() + ']';
+    public void toString (StringBuilder buf) {
+        subs[0].toString(buf);
+        buf.append ('[');
+        subs[1].toString(buf);
+        buf.append (']');
     }
     
     public final AbstractExpression getBase() {

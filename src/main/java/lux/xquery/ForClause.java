@@ -21,17 +21,15 @@ public class ForClause extends FLWORClause {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder ();
+    public void toString(StringBuilder buf) {
         buf.append ("for ");
-        buf.append (var.toString());
+        var.toString(buf);
         if (pos != null) {
             buf.append (" at ");
-            buf.append (pos.toString());
+            pos.toString(buf);
         }
         buf.append (" in ");
-        buf.append (seq.toString());
-        return buf.toString();
+        seq.toString(buf);
     }
 
 }

@@ -9,15 +9,13 @@ public class OrderByClause extends FLWORClause {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder();
+    public void toString(StringBuilder buf) {
         buf.append ("order by ");
-        buf.append (sortKeys[0].toString());
+        sortKeys[0].toString(buf);
         for (int i = 1; i < sortKeys.length; i++) {
             buf.append(", ");
-            buf.append(sortKeys[i].toString());
+            sortKeys[i].toString(buf);
         }
-        return buf.toString();
     }
 
 }

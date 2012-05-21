@@ -1,7 +1,7 @@
 package lux.xquery;
 
+import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
-import lux.xpath.ExpressionVisitor;
 
 public class FLWOR extends AbstractExpression {
     
@@ -19,15 +19,13 @@ public class FLWOR extends AbstractExpression {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder();
+    public void toString(StringBuilder buf) {
         for (FLWORClause clause : clauses) {
-            buf.append(clause.toString());
+            clause.toString(buf);
             buf.append(' ');
         }
         buf.append ("return ");
-        buf.append(returnExpr.toString());
-        return buf.toString();
+        returnExpr.toString(buf);
     }
 
 }

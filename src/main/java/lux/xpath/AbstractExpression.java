@@ -4,12 +4,15 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 
 
 /**
- * An abstract XPath 2.0 expression.
+ * An abstract XPath or XQuery expression.
  * 
- * This class and its subclasses represent XPath expressions.  Their toString() methods return valid XPath.
+ * This class and its subclasses represent XPath expressions.  Their
+ * toString() methods return valid XPath.
  */
 
 public abstract class AbstractExpression implements Visitable {
@@ -57,10 +60,19 @@ public abstract class AbstractExpression implements Visitable {
         return subs;
     }
 
-    /** Subclasses must implement the toString() method 
-    * @return the expression, as valid XPath 
-    */
-    public abstract String toString();
+    /** Each subclass must implement the toString(StringBuilder) method by
+     * rendering itself as a syntatically valid XPath/XQuery expression in
+     * the given buffer.
+     * @param buf
+     */
+    public abstract void toString(StringBuilder buf);
+
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder();
+        toString (buf);
+        return buf.toString();
+    }
 
     /**
      * @return whether this expression is a Root or another expression that introduces

@@ -15,7 +15,6 @@ import lux.lucene.SurroundTerm;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
-import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xpath.PathExpression;
@@ -25,8 +24,8 @@ import lux.xpath.Predicate;
 import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
-import lux.xpath.SlopCounter;
 import lux.xpath.Subsequence;
+import lux.xquery.XQuery;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -70,8 +69,27 @@ public class PathOptimizer extends ExpressionVisitorBase {
         this.indexer = indexer;
     }
     
+
     /**
-     * Prepares an XPath expression tree for indexed execution against a
+     * Prepares an XQuery module for indexed execution against a
+     * Lux data store.  See {@link #optimize(AbstractExpression)}.
+     * 
+     * @param query the query to optimize
+     * @return the optimized query
+     */
+    public XQuery optimize(XQuery query) {
+        AbstractExpression main = query.getBody();
+        if (main != null) {
+            main = optimize (main);
+            return new XQuery(query.getNamespaceDeclarations(), query.getFunctionDefinitions(), main);
+        }
+        // TODO optimize function definitions
+        // do nothing
+        return query;
+    }
+    
+    /**
+     * Prepares an XQuery expression for indexed execution against a
      * Lux data store.  Inserts calls to lux:search that execute queries
      * selecting a set of documents against which the expression, or some
      * of its sub-expressions, are evaluated.  The queries will always
@@ -81,6 +99,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * of context items?).
      *
      * @param expr the expression to optimize
+     * @return the optimized expression
      */
     public AbstractExpression optimize(AbstractExpression expr) {
         expr = expr.accept (this);
@@ -251,7 +270,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
 
     public AbstractExpression visit(FunCall funcall) {
-        QName name = funcall.getQName();
+        QName name = funcall.getName();
         // Try special function optimizations, like count(), exists(), etc.
         FunCall luxfunc = optimizeFunCall (funcall);
         if (luxfunc != funcall) {
@@ -310,22 +329,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
-            if (funcall.getQName().equals(FunCall.FN_COUNT) && query.getResultType().is(ValueType.DOCUMENT)) {
+            if (funcall.getName().equals(FunCall.FN_COUNT) && query.getResultType().is(ValueType.DOCUMENT)) {
                 functionFacts = XPathQuery.COUNTING;
                 returnType = ValueType.INT;
                 qname = FunCall.LUX_COUNT;
             } 
-            else if (funcall.getQName().equals(FunCall.FN_EXISTS)) {
+            else if (funcall.getName().equals(FunCall.FN_EXISTS)) {
                 functionFacts = XPathQuery.BOOLEAN_TRUE;
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_EXISTS;
             }
-            else if (funcall.getQName().equals(FunCall.FN_EMPTY)) {
+            else if (funcall.getName().equals(FunCall.FN_EMPTY)) {
                 functionFacts = XPathQuery.BOOLEAN_FALSE;
                 returnType = ValueType.BOOLEAN_FALSE;
                 qname = FunCall.LUX_EXISTS;
             }
-            else if (funcall.getQName().equals(FunCall.FN_COLLECTION)) {
+            else if (funcall.getName().equals(FunCall.FN_COLLECTION)) {
                 functionFacts = XPathQuery.DOCUMENT_RESULTS;
                 returnType = ValueType.DOCUMENT;
                 // TODO: treat argument as lucene filter query?

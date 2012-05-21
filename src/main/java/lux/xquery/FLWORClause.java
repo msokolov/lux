@@ -2,6 +2,6 @@ package lux.xquery;
 
 public abstract class FLWORClause {
     
-    public abstract String toString ();
+    public abstract void toString (StringBuilder buf);
 
 }

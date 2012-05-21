@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 /**
  * A path expression represents two expressions joined with a "/"
  * @author sokolov
@@ -27,11 +29,12 @@ public class PathExpression extends AbstractExpression {
     }
 
     @Override
-    public String toString() {
-        if (subs[0] instanceof Root) {
-            return '/' + subs[1].toString();
+    public void toString(StringBuilder buf) {
+        if (! (subs[0] instanceof Root)) {
+            subs[0].toString(buf);
         }
-        return subs[0].toString() + '/' + subs[1].toString();
+        buf.append('/');
+        subs[1].toString(buf);
     }
     
     /**

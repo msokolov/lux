@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 public class Root extends AbstractExpression {
 
     public Root () {
@@ -11,8 +13,8 @@ public class Root extends AbstractExpression {
     }
     
     @Override
-    public String toString() {
-       return "(/)";
+    public void toString(StringBuilder buf) {
+        buf.append ("(/)");
     }
     
     public boolean isAbsolute() {

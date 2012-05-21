@@ -4,6 +4,7 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
 import lux.api.ValueType;
 
 public class FunCall extends AbstractExpression {
@@ -19,8 +20,7 @@ public class FunCall extends AbstractExpression {
     }
     
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder ();
+    public void toString(StringBuilder buf) {
         buf.append (name);
         buf.append ('(');
         if (subs.length > 0) {
@@ -31,10 +31,9 @@ public class FunCall extends AbstractExpression {
             buf.append (subs[i]);
         }
         buf.append (')');
-        return buf.toString();
     }
     
-    public QName getQName() {
+    public QName getName() {
         return name;
     }
     
@@ -54,6 +53,8 @@ public class FunCall extends AbstractExpression {
     public static final QName FN_EMPTY = new QName (FN_NAMESPACE, "empty", "fn");
     public static final QName FN_COLLECTION = new QName (FN_NAMESPACE, "collection", "fn");
 
+    public static final String LOCAL_NAMESPACE = "http://www.w3.org/2005/xquery-local-functions";
+    
     // represent last() in Subsequence(foo, last()); ie foo[last()].
     public static final FunCall LastExpression = new FunCall (FN_LAST, ValueType.VALUE);    
     

@@ -60,24 +60,33 @@ public class NodeTest {
     }
 
     public String toString () {
+        StringBuilder buf = new StringBuilder ();
+        toString (buf);
+        return buf.toString();
+    }
+
+    public void toString (StringBuilder buf) {
+        if (name == null) {
+            buf.append (type.nodeTest).append ("()");
+            return;
+        }
         switch (type) {
         case NODE: case COMMENT: case TEXT:
-            return type.nodeTest + "()";
+            buf.append (type.nodeTest).append ("()");
+            break;
         case ELEMENT: case ATTRIBUTE:
-            if (name == null) {
-                return type.nodeTest + "()";
-            }
-            return type.nodeTest + '(' + name.toString() + ')';
+            buf.append (type.nodeTest).append ('(');
+            name.toString(buf);
+            buf.append(')');
+            break;
         case DOCUMENT:
-            if (name == null) {
-                return type.nodeTest + "()";
-            }
-            return type.nodeTest + "(element(" + name.toString() + "))";        
+            buf.append (type.nodeTest).append("(element(");
+            name.toString(buf);
+            buf.append("))");
+            break;
         case PROCESSING_INSTRUCTION:
-            if (name == null) {
-                return type.nodeTest + "()";
-            }
-            return type.nodeTest + '(' + name.getLocalPart() + ')';
+            buf.append (type.nodeTest).append('(').append(name.getLocalPart()).append(')');
+            break;
         default:
             throw new IllegalArgumentException ("invalid node type " + type);
         }

@@ -2,9 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package lux.xpath;
+package lux;
 
 import lux.api.ValueType;
+import lux.xpath.AbstractExpression;
+import lux.xpath.BinaryOperation;
+import lux.xpath.FunCall;
+import lux.xpath.LiteralExpression;
+import lux.xpath.NodeTest;
+import lux.xpath.PathStep;
+import lux.xpath.Root;
+import lux.xpath.Sequence;
 import lux.xpath.PathStep.Axis;
 
 /**
@@ -92,7 +100,7 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(FunCall f) {
-        if (! f.getQName().equals(FunCall.FN_EXISTS)) {
+        if (! f.getName().equals(FunCall.FN_EXISTS)) {
             // We can infer a path relationship with exists() because it depends on its
             // context just like a predicate.  We should also be able to invert not(exists()) and 
             // empty(), and not(), etc. in the path index case.

@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 public interface Visitable {
     AbstractExpression accept (ExpressionVisitor visitor);
 }

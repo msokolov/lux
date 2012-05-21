@@ -11,11 +11,9 @@ public class WhereClause extends FLWORClause {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder ();
+    public void toString(StringBuilder buf) {
         buf.append ("where ");
-        buf.append (predicate.toString());
-        return buf.toString();
+        predicate.toString(buf);
     }
 
 }

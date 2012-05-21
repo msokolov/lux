@@ -4,6 +4,7 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
 import lux.xpath.BinaryOperation.Operator;
 
 public class SetOperation extends AbstractExpression {
@@ -16,12 +17,10 @@ public class SetOperation extends AbstractExpression {
         this.operator = operator;
     }
     
-    public String toString () {
-        StringBuilder buf = new StringBuilder ();
+    public void toString (StringBuilder buf) {
         buf.append('(');
         Sequence.appendSeqContents(buf, subs, ' ' + operator.toString() + ' ');
         buf.append (')');
-        return buf.toString();
     }
     
     public AbstractExpression[] getsubs() {

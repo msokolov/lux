@@ -21,11 +21,17 @@ public class QName extends javax.xml.namespace.QName {
         super (namespace, localName, prefix);
     }
 
-    @Override public String toString () {
-        if (getPrefix ().equals ("")) {
-            return getLocalPart();
+    public void toString (StringBuilder buf) {
+        if (! getPrefix ().equals ("")) {
+            buf.append (getPrefix()).append(':');
         }
-        return getPrefix() + ':' + getLocalPart();
+        buf.append (getLocalPart());
+    }
+
+    @Override public String toString () {
+        StringBuilder buf = new StringBuilder ();
+        toString (buf);
+        return buf.toString();
     }
 
     /**

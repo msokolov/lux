@@ -1,7 +1,7 @@
 package lux.xquery;
 
+import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
-import lux.xpath.ExpressionVisitor;
 
 /**
  * represents xquery conditionals (if, then, else)
@@ -24,18 +24,16 @@ public class Conditional extends AbstractExpression {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder();
+    public void toString(StringBuilder buf) {
         buf.append ("if (");
-        buf.append (condition.toString());
+        condition.toString(buf);
         buf.append (") then (");
-        buf.append (trueAction.toString());
+        trueAction.toString(buf);
         if (falseAction != null) {
             buf.append(") else (");
-            buf.append(falseAction.toString());
+            falseAction.toString(buf);
         }
         buf.append (")");
-        return buf.toString();
     }
 
 }

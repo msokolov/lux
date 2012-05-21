@@ -1,7 +1,7 @@
 package lux.xquery;
 
+import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
-import lux.xpath.ExpressionVisitor;
 import lux.xpath.Namespace;
 import lux.xpath.QName;
 
@@ -24,10 +24,9 @@ public class ElementConstructor extends AbstractExpression {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder ();
+    public void toString(StringBuilder buf) {
         buf.append ("element ");
-        buf.append (qname.toString());
+        qname.toString(buf);
         buf.append (" { ");
         if (namespaces != null && namespaces.length > 0) {
             appendNamespace(namespaces[0], buf);
@@ -40,10 +39,9 @@ public class ElementConstructor extends AbstractExpression {
             if (namespaces != null && namespaces.length > 0) {
                 buf.append (", ");
             }
-            buf.append (content.toString());
+            content.toString(buf);
         }
         buf.append (" }");
-        return buf.toString();
     }
     
     private void appendNamespace (Namespace ns, StringBuilder buf) {

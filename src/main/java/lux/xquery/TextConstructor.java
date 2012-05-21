@@ -1,7 +1,7 @@
 package lux.xquery;
 
+import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
-import lux.xpath.ExpressionVisitor;
 
 public class TextConstructor extends AbstractExpression {
 
@@ -17,12 +17,10 @@ public class TextConstructor extends AbstractExpression {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder();
+    public void toString(StringBuilder buf) {
         buf.append ("text { ");
-        buf.append (content.toString());
+        content.toString(buf);
         buf.append (" } ");
-        return buf.toString();
     }
 
 }

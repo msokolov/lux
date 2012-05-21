@@ -5,6 +5,7 @@
 package lux.saxon;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import lux.api.LuxException;
@@ -30,12 +31,14 @@ import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
+import lux.xquery.FunctionDefinition;
 import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
 import lux.xquery.SortKey;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 import lux.xquery.WhereClause;
+import lux.xquery.XQuery;
 import net.sf.saxon.expr.Atomizer;
 import net.sf.saxon.expr.AxisExpression;
 import net.sf.saxon.expr.BinaryExpression;
@@ -65,6 +68,7 @@ import net.sf.saxon.expr.instruct.Block;
 import net.sf.saxon.expr.instruct.Choose;
 import net.sf.saxon.expr.instruct.FixedAttribute;
 import net.sf.saxon.expr.instruct.FixedElement;
+import net.sf.saxon.expr.instruct.UserFunctionParameter;
 import net.sf.saxon.expr.instruct.ValueOf;
 import net.sf.saxon.expr.parser.Token;
 import net.sf.saxon.expr.sort.IntSet;
@@ -82,6 +86,10 @@ import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.DocumentNodeTest;
 import net.sf.saxon.pattern.NodeTest;
+import net.sf.saxon.query.QueryModule;
+import net.sf.saxon.query.XQueryExpression;
+import net.sf.saxon.query.XQueryFunction;
+import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.type.AtomicType;
 import net.sf.saxon.type.BuiltInAtomicType;
@@ -102,9 +110,52 @@ public class SaxonTranslator {
         this.config = config;
     }
     
+    /** Converts from a Saxon to a lux xquery representation.
+     * @param expr a Saxon representation of an XQuery module
+     * @return a lux representation of an equivalent XQuery module
+     */
+
+    public XQuery queryFor(XQueryExecutable xquery) {
+        XQueryExpression saxonQuery = xquery.getUnderlyingCompiledQuery();
+        QueryModule queryModule = saxonQuery.getStaticContext();
+        //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
+        FunctionDefinition[] defs = getFunctionDefinitions(queryModule);
+        Namespace[] namespaceDeclarations = getNamespaceDeclarations (queryModule);
+        return new XQuery(namespaceDeclarations, defs, exprFor (saxonQuery.getExpression()));
+    }
+
+    // FIXME: not implemented 
+    private Namespace[] getNamespaceDeclarations(QueryModule queryModule) {
+        String defElementNS = queryModule.getDefaultElementNamespace();
+        String defFunctionNS = queryModule.getDefaultFunctionNamespace();
+        // We'd like to get our hands on queryModule.explicitPrologNamespaces :(
+        // I think possibly we will have to resort to walking the module in search of 
+        // all namespaces??
+        return new Namespace[0];
+    }
+
+    private FunctionDefinition[] getFunctionDefinitions(QueryModule queryModule) {
+        ArrayList<FunctionDefinition> functionDefinitions = new ArrayList<FunctionDefinition>();
+        Iterator<XQueryFunction> functions = queryModule.getLocalFunctionLibrary().getFunctionDefinitions();
+        while (functions.hasNext()) {
+            XQueryFunction function = functions.next();
+            UserFunctionParameter[] params = function.getParameterDefinitions();
+            Variable[] args = new Variable[params.length];
+            for (int i = 0; i < params.length; i++) {
+                args[i] = new Variable (qnameFor (params[i].getVariableQName()));
+            }
+            FunctionDefinition fdef = new FunctionDefinition(qnameFor(function.getFunctionName()), 
+                    valueTypeForItemType(function.getResultType().getPrimaryType()), 
+                    args, exprFor (function.getBody()));  
+            functionDefinitions.add (fdef);
+        }
+        FunctionDefinition[] defs = functionDefinitions.toArray(new FunctionDefinition[0]);
+        return defs;
+    }
+    
     /** Converts from a Saxon to a lux abstract expression tree.
-     * @param expr a Saxon representation of an XPath 2.0 expression
-     * @return a lux representation of an equivalent XPath 2.0 expression
+     * @param expr a Saxon representation of an XQuery expression
+     * @return a lux representation of an equivalent XQuery expression
      */
     public AbstractExpression exprFor (Expression expr) {
         if (expr == null) {
@@ -637,4 +688,5 @@ public class SaxonTranslator {
         }
         return tail;
     }
+
 }

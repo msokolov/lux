@@ -16,7 +16,6 @@ import lux.saxon.Saxon;
 import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.xpath.AbstractExpression;
-import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 
@@ -357,9 +356,9 @@ public abstract class BasicQueryTest {
         ArrayList<XPathQuery> queries = new ArrayList<XPathQuery>();
         
         public FunCall visit (FunCall funcall) {
-            if (funcall.getQName().equals (FunCall.LUX_SEARCH)
-                    || funcall.getQName().equals (FunCall.LUX_COUNT) 
-                    || funcall.getQName().equals (FunCall.LUX_EXISTS)) {
+            if (funcall.getName().equals (FunCall.LUX_SEARCH)
+                    || funcall.getName().equals (FunCall.LUX_COUNT) 
+                    || funcall.getName().equals (FunCall.LUX_EXISTS)) {
                 String q = ((LiteralExpression)funcall.getSubs()[0]).getValue().toString();
                 long facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
                 queries.add( new MockQuery (q, facts));

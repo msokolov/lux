@@ -14,6 +14,18 @@ When we change them our tests break!
 The main thing missing is marshalling results from Solr
 ** namespace support
 This might be working, but we need to test
+** XQuery!
+*** static context items
+a whole host of things, including various default mode settings too
+numerous to list here - see the spec.
+**** namespace declarations
+**** default collation
+**** default element namespace
+**** default function namespace
+**** XPath 1.0 compatibility mode??
+**** variables
+*** dynamic context items
+**** function definitions
 *** Solr plugin might need some config for this?
 ** attribute index support
 This might be working, but we need to test

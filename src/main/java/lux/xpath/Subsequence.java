@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 /**
  * represents numeric literal predicates like [1]; last-predicates like [last()] and
  * calls to the subsequence(expr,integer,integer) function.
@@ -62,18 +64,37 @@ public class Subsequence extends AbstractExpression {
     }
 
     @Override
-    public String toString() {
+    public void toString(StringBuilder buf) {
         if (getLengthExpr() == null) {
-            return "subsequence(" + getSequence().toString() + ',' + getStartExpr().toString() + ')';
+            buf.append ("subsequence(");
+            getSequence().toString(buf);
+            buf.append (',');
+            getStartExpr().toString(buf);
+            buf.append (')');
         }
-        if (getLengthExpr().equals(LiteralExpression.ONE)) {
+        else if (getLengthExpr().equals(LiteralExpression.ONE)) {
             if (getSequence().getSubs() != null) {
-                return '(' + getSequence().toString() + ")[" + getStartExpr().toString() + ']';
+                buf.append ('(');
+                getSequence().toString(buf);
+                buf.append (")[");
+                getStartExpr().toString(buf);
+                buf.append (']');
+            } else {
+                getSequence().toString(buf);
+                buf.append ("[");
+                getStartExpr().toString(buf);
+                buf.append (']');
             }
-            return getSequence().toString() + '[' + getStartExpr().toString() + ']';
         }
-        return "subsequence(" + getSequence().toString() + ',' + getStartExpr().toString() + ',' +
-                getLengthExpr().toString() + ')';
+        else  {
+            buf.append ("subsequence(");
+            getSequence().toString(buf);
+            buf.append (',');
+            getStartExpr().toString(buf);
+            buf.append (',');
+            getLengthExpr().toString(buf);
+            buf.append (')');
+        }
     }
 
 }

@@ -17,7 +17,7 @@ import lux.functions.LuxCount;
 import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
 import lux.xml.XmlBuilder;
-import lux.xpath.AbstractExpression;
+import lux.xquery.XQuery;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -82,16 +82,16 @@ public class Saxon extends Evaluator  {
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + exprString, e);
         }
+        XQuery abstractQuery = translator.queryFor (xquery);
         //AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
-        // TODO: gather the preamble, external variable decls, and function definitions
-        AbstractExpression expr = translator.exprFor(xquery.getUnderlyingCompiledQuery().getExpression());
+        //AbstractExpression expr = translator.exprFor(xquery.getUnderlyingCompiledQuery().getExpression());
         PathOptimizer optimizer = new PathOptimizer(getContext().getIndexer());
-        expr = optimizer.optimize(expr);
+        XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         try {
-            xquery = xqueryCompiler.compile(expr.toString());
+            xquery = xqueryCompiler.compile(optimizedQuery.toString());
             // xpath = xpathCompiler.compile(expr.toString());
         } catch (SaxonApiException e) {
-            throw new LuxException ("Syntax error compiling: " + expr.toString(), e);
+            throw new LuxException ("Syntax error compiling: " + optimizedQuery.toString(), e);
         }
         //return new SaxonExpr(xpath, expr);
         return new SaxonExpr(xquery);

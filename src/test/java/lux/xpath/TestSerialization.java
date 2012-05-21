@@ -100,14 +100,6 @@ public class TestSerialization {
         assertEquals ("child::element()[child::element()]", p.toString());
     }
     
-    @Test public void testBinaryExpressionToString() {
-        LiteralExpression foo = new LiteralExpression ("foo");
-        LiteralExpression two = new LiteralExpression (2);
-        LiteralExpression pi = new LiteralExpression (3.14);
-        assertEquals ("(2 * 3.14)", new BinaryOperation(two, Operator.MUL, pi).toString());
-        assertEquals ("(\"foo\" = \"foo\")", new BinaryOperation(foo, Operator.EQUALS, foo).toString());
-    }
-    
     @Test public void testRootToString () {
         assertEquals ("(/)", new Root().toString());
     }
@@ -138,7 +130,7 @@ public class TestSerialization {
         subseq = new Subsequence(new Dot(), LiteralExpression.ONE, new LiteralExpression(10));
         assertEquals ("subsequence(.,1,10)", subseq.toString());
         subseq = new Subsequence(new Dot(), FunCall.LastExpression, LiteralExpression.ONE);
-        assertEquals (".[last()]", subseq.toString());
+        assertEquals (".[fn:last()]", subseq.toString());
         subseq = new Subsequence(new Dot(), LiteralExpression.ONE, LiteralExpression.ONE);
         assertEquals (".[1]", subseq.toString());
     }
@@ -164,6 +156,11 @@ public class TestSerialization {
         assertEquals ("(1 ge 1)", new BinaryOperation(one, Operator.AGE, one).toString());
         assertEquals ("(1 le 1)", new BinaryOperation(one, Operator.ALE, one).toString());
         
+        LiteralExpression foo = new LiteralExpression ("foo");
+        LiteralExpression two = new LiteralExpression (2);
+        LiteralExpression pi = new LiteralExpression (3.14);
+        assertEquals ("(2 * 3.14)", new BinaryOperation(two, Operator.MUL, pi).toString());
+        assertEquals ("(\"foo\" = \"foo\")", new BinaryOperation(foo, Operator.EQUALS, foo).toString());           
     }
     
     @Test public void testElementToString () {

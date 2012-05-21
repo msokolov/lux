@@ -2,8 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package lux.xpath;
+package lux;
 
+import lux.xpath.AbstractExpression;
+import lux.xpath.BinaryOperation;
+import lux.xpath.Dot;
+import lux.xpath.FunCall;
+import lux.xpath.LiteralExpression;
+import lux.xpath.PathExpression;
+import lux.xpath.PathStep;
+import lux.xpath.Predicate;
+import lux.xpath.Root;
+import lux.xpath.Sequence;
+import lux.xpath.SetOperation;
+import lux.xpath.Subsequence;
+import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.Conditional;
 import lux.xquery.ElementConstructor;

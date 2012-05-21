@@ -27,9 +27,8 @@ public class SortKey {
         // case order?
     }
     
-    public String toString () {
-        StringBuilder buf = new StringBuilder();
-        buf.append (key.toString());
+    public void toString (StringBuilder buf ) {
+        key.toString(buf);
         buf.append (' ');
         buf.append (order.getValue());
         if (collation != null) {
@@ -39,6 +38,5 @@ public class SortKey {
         if (!emptyLeast) {
             buf.append (" empty greatest");
         }
-        return buf.toString();
     }
 }

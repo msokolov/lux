@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 public class UnaryMinus extends AbstractExpression {
 
     public UnaryMinus (AbstractExpression operand) {
@@ -16,8 +18,9 @@ public class UnaryMinus extends AbstractExpression {
     }
     
     @Override
-    public String toString() {
-        return '-' + subs[0].toString();
+    public void toString(StringBuilder buf) {
+        buf.append ('-');
+        subs[0].toString(buf);
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {

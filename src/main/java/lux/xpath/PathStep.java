@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 public class PathStep extends AbstractExpression {
     public enum Axis {
 
@@ -45,8 +47,9 @@ public class PathStep extends AbstractExpression {
     }
 
     @Override
-    public String toString () {
-        return axis.toString() + "::" + nodeTest.toString();
+    public void toString (StringBuilder buf) {
+        buf.append (axis).append("::");
+        nodeTest.toString (buf);
     }
     
     public AbstractExpression accept(ExpressionVisitor visitor) {

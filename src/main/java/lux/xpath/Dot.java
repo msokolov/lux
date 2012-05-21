@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 public class Dot extends AbstractExpression {
 
     public Dot () {
@@ -11,8 +13,8 @@ public class Dot extends AbstractExpression {
     }
     
     @Override
-    public String toString() {        
-        return ".";
+    public void toString(StringBuilder buf) {
+        buf.append ('.');
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {

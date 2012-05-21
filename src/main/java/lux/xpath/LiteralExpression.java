@@ -6,6 +6,7 @@ package lux.xpath;
 
 import java.math.BigDecimal;
 
+import lux.ExpressionVisitor;
 import lux.api.LuxException;
 import lux.api.ValueType;
 
@@ -53,33 +54,37 @@ public class LiteralExpression extends AbstractExpression {
     }
     
     @Override
-    public String toString() {
+    public void toString(StringBuilder buf) {
         if (value == null) {
-            return "()";
+            buf.append ("()");
         }
-        if (valueType == ValueType.STRING) {
-            return escapeString(value.toString());
+        else if (valueType == ValueType.STRING) {
+            escapeString(value.toString(), buf);
         }
-        if (valueType == ValueType.BOOLEAN) {
-            return value.toString() + "()";
+        else if (valueType == ValueType.BOOLEAN) {
+            buf.append (value).append("()");
         }
-        if (value instanceof Double) {
+        else if (value instanceof Double) {
             Double d = (Double) value;
             if (d.isInfinite()) {
                 if (d > 0)
-                    return "xs:float('INF')";
+                    buf.append ("xs:float('INF')");
                 else
-                    return "xs:float('-INF')";
+                    buf.append ("xs:float('-INF')");
             }
-            if (d.isNaN()) {
-                return "xs:float('NaN')";
+            else if (d.isNaN()) {
+                buf.append ("xs:float('NaN')");
+            }
+            else {
+                buf.append (d);
             }
         }
-        return value.toString();
+        else {
+            buf.append (value);
+        }
     }
 
-    protected static String escapeString(String s) {
-        StringBuilder buf = new StringBuilder ();
+    public static void escapeString(String s, StringBuilder buf) {
         buf.append('"');
         for (char c : s.toCharArray()) {
             switch (c) {
@@ -89,7 +94,6 @@ public class LiteralExpression extends AbstractExpression {
             }
         }
         buf.append('"');
-        return buf.toString();
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {

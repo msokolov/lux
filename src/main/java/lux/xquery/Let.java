@@ -4,8 +4,8 @@
 
 package lux.xquery;
 
+import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
-import lux.xpath.ExpressionVisitor;
 import lux.xpath.QName;
 
 public class Let extends AbstractExpression {
@@ -24,9 +24,13 @@ public class Let extends AbstractExpression {
     }
 
     @Override
-    public String toString() {
-        return "let $" + name.toString() + " := " + getAssignment().toString() 
-                + " return " + getReturn().toString();
+    public void toString(StringBuilder buf) {
+        buf.append("let $");
+        name.toString (buf);
+        buf.append (" := ");
+        getAssignment().toString(buf);
+        buf.append (" return ");
+        getReturn().toString(buf);
     }
     
     public QName getName () {

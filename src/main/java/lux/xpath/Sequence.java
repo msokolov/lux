@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.ExpressionVisitor;
+
 public class Sequence extends AbstractExpression {
     
     public Sequence (AbstractExpression ... contents) {
@@ -12,23 +14,23 @@ public class Sequence extends AbstractExpression {
     }
     
     @Override
-    public String toString() {
-        return seqAsString(",", subs);
+    public void toString(StringBuilder buf) {
+        seqAsString(buf, ",", subs);
     }
     
     /**
+     * append all the contents in order, separated from each other by the
+     * separator, to the buffer, wrapping the sequence in "( )". If any
+     * contents are Sequences, these are merged together into a single
+     * flattened sequence.
+     * @param buf
      * @param separator 
      * @param contents
-     * @return a string joining all the contents in order, separated from each other by the separator, 
-     * with the entire Sequence wrapped in "( )". If any contents are Sequences, these are merged together
-     * into a single flattened sequence.
      */
-    static final String seqAsString (String separator, AbstractExpression ... contents) {
-        StringBuilder buf = new StringBuilder ();
+    static final void seqAsString (StringBuilder buf, String separator, AbstractExpression ... contents) {
         buf.append('(');
         appendSeqContents(buf, contents, separator);
         buf.append (')');
-        return buf.toString();
     }
 
     static void appendSeqContents(StringBuilder buf, AbstractExpression[] contents, String separator) {

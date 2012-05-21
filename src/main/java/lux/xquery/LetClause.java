@@ -13,13 +13,11 @@ public class LetClause extends FLWORClause {
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder ();
+    public void toString(StringBuilder buf) {
         buf.append ("let ");
-        buf.append (var.toString());
+        var.toString (buf);
         buf.append (" := ");
-        buf.append(seq.toString());
-        return buf.toString();
+        seq.toString(buf);
     }
 
 }
