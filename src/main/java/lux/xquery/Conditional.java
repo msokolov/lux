@@ -7,16 +7,10 @@ import lux.xpath.AbstractExpression;
  * represents xquery conditionals (if, then, else)
  */
 public class Conditional extends AbstractExpression {
-
-    private final AbstractExpression condition;
-    private final AbstractExpression trueAction;
-    private final AbstractExpression falseAction;
     
     public Conditional (AbstractExpression condition, AbstractExpression trueAction, AbstractExpression falseAction) {
         super (Type.Conditional);
-        this.condition = condition;
-        this.trueAction = trueAction;
-        this.falseAction = falseAction;
+        subs = new AbstractExpression[] { condition, trueAction, falseAction };
     }
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
@@ -27,14 +21,26 @@ public class Conditional extends AbstractExpression {
     @Override
     public void toString(StringBuilder buf) {
         buf.append ("if (");
-        condition.toString(buf);
+        getCondition().toString(buf);
         buf.append (") then (");
-        trueAction.toString(buf);
-        if (falseAction != null) {
+        getTrueAction().toString(buf);
+        if (getFalseAction() != null) {
             buf.append(") else (");
-            falseAction.toString(buf);
+            getFalseAction().toString(buf);
         }
         buf.append (")");
     }
+    
+    public final AbstractExpression getCondition () {
+        return subs[0];
+    }
 
+    
+    public final AbstractExpression getTrueAction() {
+        return subs[1];
+    }
+    
+    public final AbstractExpression getFalseAction() {
+        return subs[2];
+    }
 }

@@ -7,12 +7,11 @@ import lux.xpath.QName;
 public class AttributeConstructor extends AbstractExpression {
 
     private final QName name;
-    private final AbstractExpression content;
     
     public AttributeConstructor(QName name, AbstractExpression content) {
         super(Type.Attribute);
         this.name = name;
-        this.content = content;
+        subs = new AbstractExpression[] { content };
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {
@@ -25,8 +24,12 @@ public class AttributeConstructor extends AbstractExpression {
         buf.append ("attribute ");
         name.toString (buf);
         buf.append (" { ");
-        content.toString (buf);
+        getContent().toString (buf);
         buf.append (" }");
      }
+    
+    public final AbstractExpression getContent () {
+        return subs[0];
+    }
 
 }

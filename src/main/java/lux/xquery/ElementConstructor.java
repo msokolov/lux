@@ -9,13 +9,12 @@ public class ElementConstructor extends AbstractExpression {
 
     private final QName qname;
     private final Namespace[] namespaces;
-    private final AbstractExpression content;
     
     
     public ElementConstructor(QName qname, Namespace[] namespaces, AbstractExpression content) {
         super(Type.Element);
         this.qname = qname;
-        this.content = content;
+        this.subs = new AbstractExpression[] { content };
         this.namespaces = namespaces;
     }
 
@@ -36,15 +35,19 @@ public class ElementConstructor extends AbstractExpression {
                 appendNamespace(namespaces[i], buf);
             }
         }
-        if (content != null) {
+        if (getContent() != null) {
             if (namespaces != null && namespaces.length > 0) {
                 buf.append (", ");
             }
-            content.toString(buf);
+            getContent() .toString(buf);
         }
         buf.append (" }");
     }
     
+    private AbstractExpression getContent() {
+        return subs[0];
+    }
+
     private void appendNamespace (Namespace ns, StringBuilder buf) {
         buf.append ("attribute xmlns");
         if (!ns.getPrefix().isEmpty()) {

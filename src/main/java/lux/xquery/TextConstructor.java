@@ -4,12 +4,10 @@ import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
 
 public class TextConstructor extends AbstractExpression {
-
-    private AbstractExpression content;
     
     public TextConstructor (AbstractExpression expression) {
         super (Type.Text);
-        this.content = expression;
+        subs = new AbstractExpression [] { expression };
     }
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
@@ -19,8 +17,12 @@ public class TextConstructor extends AbstractExpression {
     @Override
     public void toString(StringBuilder buf) {
         buf.append ("text { ");
-        content.toString(buf);
+        getContent().toString(buf);
         buf.append (" } ");
+    }
+
+    private AbstractExpression getContent() {
+        return subs[0];
     }
 
 }
