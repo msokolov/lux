@@ -39,4 +39,20 @@ public class SortKey {
             buf.append (" empty greatest");
         }
     }
+
+    public AbstractExpression getKey() {
+        return key;
+    }
+
+    public LiteralExpression getOrder() {
+        return order;
+    }
+
+    public AbstractExpression getCollation() {
+        return collation;
+    }
+
+    public boolean isEmptyLeast() {
+        return emptyLeast;
+    }
 }

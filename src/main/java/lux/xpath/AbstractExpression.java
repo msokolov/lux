@@ -6,8 +6,6 @@ package lux.xpath;
 
 import lux.ExpressionVisitor;
 
-
-
 /**
  * An abstract XPath or XQuery expression.
  * 

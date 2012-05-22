@@ -30,7 +30,9 @@ public class XQuery {
     public void toString (StringBuilder buf) {
         for (Namespace ns : namespaceDeclarations) {
             if (ns.getPrefix().isEmpty()) {
-                buf.append("declare default namespace ").append('=');                
+                // handle this using specific mappings for element/function default namespaces
+                continue;
+                //buf.append("declare default element namespace ").append('=');                
             } else {
                 buf.append("declare namespace ").append(ns.getPrefix()).append('=');
             }
@@ -38,8 +40,10 @@ public class XQuery {
             buf.append(";\n");
         }
         // TODO: collation, variables, modes, default function namespace, etc.
-        for (FunctionDefinition def : functionDefinitions) {
-            def.toString(buf);
+        if (functionDefinitions != null) {
+            for (FunctionDefinition def : functionDefinitions) {
+                def.toString(buf);
+            }
         }
         body.toString(buf);
     }

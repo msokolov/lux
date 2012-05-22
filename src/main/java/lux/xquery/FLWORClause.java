@@ -1,6 +1,9 @@
 package lux.xquery;
 
-public abstract class FLWORClause {
+import lux.xpath.Visitable;
+
+
+public abstract class FLWORClause implements Visitable {
     
     public abstract void toString (StringBuilder buf);
 

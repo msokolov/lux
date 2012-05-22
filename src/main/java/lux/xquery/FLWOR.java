@@ -6,15 +6,18 @@ import lux.xpath.AbstractExpression;
 public class FLWOR extends AbstractExpression {
     
     private final FLWORClause[] clauses;
-    private final AbstractExpression returnExpr;
 
     public FLWOR (AbstractExpression returnExpression, FLWORClause... clauses) {
         super (Type.FLWOR);
         this.clauses = clauses;
-        this.returnExpr = returnExpression;
+        subs = new AbstractExpression[] { returnExpression };
     }
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
+        for (FLWORClause clause : clauses) {
+            clause.accept (visitor);
+        }
+        subs[0] = getReturnExpression().accept(visitor);
         return visitor.visit(this);
     }
 
@@ -25,7 +28,15 @@ public class FLWOR extends AbstractExpression {
             buf.append(' ');
         }
         buf.append ("return ");
-        returnExpr.toString(buf);
+        getReturnExpression().toString(buf);
+    }
+    
+    public AbstractExpression getReturnExpression () {
+        return subs[0];
+    }
+    
+    public boolean isAbsolute () {
+        return getReturnExpression().isAbsolute();
     }
 
 }

@@ -130,11 +130,14 @@ public class SaxonTranslator {
         AbstractExpression body = exprFor (saxonQuery.getExpression());
         return new XQuery(getNamespaceDeclarations(queryModule), defs, body);
     }
+    
+    public XQuery queryFor(AbstractExpression ex) {
+        return new XQuery(getNamespaceDeclarations(null), null, ex);
+    }
 
-    // FIXME: not implemented 
     private Namespace[] getNamespaceDeclarations(QueryModule queryModule) {
-        String defElementNS = queryModule.getDefaultElementNamespace();
-        String defFunctionNS = queryModule.getDefaultFunctionNamespace();
+        // String defElementNS = queryModule.getDefaultElementNamespace();
+        // String defFunctionNS = queryModule.getDefaultFunctionNamespace();
         // We'd like to get our hands on queryModule.explicitPrologNamespaces :(
         // I think possibly we will have to resort to walking the module in search of 
         // all namespaces??

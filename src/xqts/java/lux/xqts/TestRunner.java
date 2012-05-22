@@ -3,11 +3,8 @@ package lux.xqts;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 

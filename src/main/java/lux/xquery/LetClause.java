@@ -1,5 +1,6 @@
 package lux.xquery;
 
+import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
 
 public class LetClause extends FLWORClause {
@@ -18,6 +19,11 @@ public class LetClause extends FLWORClause {
         var.toString (buf);
         buf.append (" := ");
         seq.toString(buf);
+    }
+
+    public AbstractExpression accept(ExpressionVisitor visitor) {
+        seq = seq.accept(visitor);
+        return seq;
     }
 
 }

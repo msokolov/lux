@@ -20,6 +20,7 @@ public class ElementConstructor extends AbstractExpression {
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {
+        acceptSubs(visitor);
         return visitor.visit(this);
     }
 

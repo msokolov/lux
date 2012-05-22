@@ -1,5 +1,6 @@
 package lux.xquery;
 
+import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
 
 public class WhereClause extends FLWORClause {
@@ -14,6 +15,11 @@ public class WhereClause extends FLWORClause {
     public void toString(StringBuilder buf) {
         buf.append ("where ");
         predicate.toString(buf);
+    }
+
+    public AbstractExpression accept(ExpressionVisitor visitor) {
+        predicate = predicate.accept(visitor);
+        return predicate;
     }
 
 }

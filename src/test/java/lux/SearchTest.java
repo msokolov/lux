@@ -14,6 +14,7 @@ import lux.saxon.Saxon;
 import lux.saxon.SaxonExpr;
 import lux.saxon.UnOptimizer;
 import lux.xpath.AbstractExpression;
+import lux.xquery.XQuery;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -180,7 +181,8 @@ public class SearchTest extends SearchBase {
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results");
         AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getSaxonInternalExpression());
         aex = new UnOptimizer(indexer.getOptions()).unoptimize(aex);
-        SaxonExpr baseline = saxon.compile(aex.toString());
+        XQuery baseQuery = saxon.getTranslator().queryFor(aex);
+        SaxonExpr baseline = saxon.compile(baseQuery.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
         assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());
     }

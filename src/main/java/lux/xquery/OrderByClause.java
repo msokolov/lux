@@ -1,5 +1,8 @@
 package lux.xquery;
 
+import lux.ExpressionVisitor;
+import lux.xpath.AbstractExpression;
+
 public class OrderByClause extends FLWORClause {
 
     private final SortKey[] sortKeys;
@@ -18,4 +21,14 @@ public class OrderByClause extends FLWORClause {
         }
     }
 
+    public AbstractExpression accept(ExpressionVisitor visitor) {
+        for (int i = 0; i < sortKeys.length; i++) {
+            AbstractExpression key = sortKeys[i].getKey();
+            AbstractExpression key2 = key.accept(visitor);
+            if (key != key2) {
+                sortKeys[i] = new SortKey(key2, sortKeys[i].getOrder(), sortKeys[i].getCollation(), sortKeys[i].isEmptyLeast());
+            }
+        }
+        return null;
+    }
 }
