@@ -55,7 +55,9 @@ public class XmlIndexer {
     public final static int INDEX_QNAMES=32;
     public final static int INDEX_PATHS=64;
     public final static int INDEX_FULLTEXT=128;
+    public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
     public final static int DEFAULT_OPTIONS = BUILD_JDOM | STORE_XML | INDEX_QNAMES | INDEX_PATHS;
+
     
     public XmlIndexer (int options) {
         this.options = options;
