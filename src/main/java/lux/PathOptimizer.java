@@ -25,6 +25,7 @@ import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
+import lux.xquery.Variable;
 import lux.xquery.XQuery;
 
 import org.apache.lucene.index.Term;
@@ -79,9 +80,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
     public XQuery optimize(XQuery query) {
         AbstractExpression main = query.getBody();
-        if (main != null) {
+        // Don't attempt to optimize if no indexes are available, or if the query has no body
+        if (main != null && (indexer.getOptions() & XmlIndexer.INDEXES) != 0) {
             main = optimize (main);
-            return new XQuery(query.getNamespaceDeclarations(), query.getFunctionDefinitions(), main);
+            return new XQuery(query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(), main);
         }
         // TODO optimize function definitions
         // do nothing
@@ -316,9 +318,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
         fnArgParity.put("not", Occur.SHOULD);
     };
     
+    /**
+     * Possibly convert this function call to a lux: function.  If we do that, all the arguments' queries
+     * will be removed from the stack.  Otherwise leave them there for the caller.
+     * @param funcall a function call to be optimized
+     * @return an optimized function, or the original function call
+     */
+    
     public FunCall optimizeFunCall (FunCall funcall) {
         AbstractExpression[] subs = funcall.getSubs();
-        if (subs.length == 0 || ! subs[0].isAbsolute()) {
+        if (subs.length != 1 || ! subs[0].isAbsolute()) {            
             return funcall;
         }
         XPathQuery query = pop();
@@ -326,8 +335,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // is properly indexed - MINIMAL here guarantees that every document matching the query will 
         // produce a non-empty result in the function's argument
         if (query.isMinimal()) {
-            // apply no restrictions to the enclosing scope:
-            push (MATCH_ALL);
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
@@ -361,6 +368,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     query.setFact(functionFacts, true);
                     facts = query.getFacts();
                 }
+                // apply no restrictions to the enclosing scope:
+                push (MATCH_ALL);
                 return new FunCall (qname, returnType, 
                         new LiteralExpression (query.toString()),
                         new LiteralExpression (facts));
@@ -469,6 +478,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(LiteralExpression literal) {
         push (UNINDEXED);
         return literal;
+    }
+    
+    @Override
+    public AbstractExpression visit(Variable variable) {
+        // TODO - optimize through variable references?
+        push (UNINDEXED);
+        return variable;
     }
 
     @Override
