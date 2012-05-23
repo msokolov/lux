@@ -4,6 +4,7 @@
 
 package lux;
 
+import lux.saxon.xquery.DocumentConstructor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
@@ -18,6 +19,7 @@ import lux.xpath.SetOperation;
 import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
+import lux.xquery.CommentConstructor;
 import lux.xquery.Conditional;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
@@ -26,6 +28,11 @@ import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 
 public abstract class ExpressionVisitorBase extends ExpressionVisitor {
+
+    @Override
+    public AbstractExpression visit(DocumentConstructor documentConstructor) {
+        return documentConstructor;
+    }
 
     @Override
     public AbstractExpression visit(PathStep step) {
@@ -120,5 +127,10 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     @Override
     public AbstractExpression visit(Conditional cond) {
         return cond;
+    }
+    
+    @Override
+    public AbstractExpression visit(CommentConstructor comment) {
+        return comment;
     }
 }

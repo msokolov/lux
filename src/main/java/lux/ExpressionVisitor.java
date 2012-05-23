@@ -4,6 +4,7 @@
 
 package lux;
 
+import lux.saxon.xquery.DocumentConstructor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
@@ -18,6 +19,7 @@ import lux.xpath.SetOperation;
 import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
+import lux.xquery.CommentConstructor;
 import lux.xquery.Conditional;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
@@ -65,4 +67,6 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (TextConstructor textConstructor);
     public abstract AbstractExpression visit (FLWOR flwor);
     public abstract AbstractExpression visit (Conditional conditional);
+    public abstract AbstractExpression visit (CommentConstructor commentConstructor);
+    public abstract AbstractExpression visit (DocumentConstructor documentConstructor);
 }
