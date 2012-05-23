@@ -30,4 +30,15 @@ public class Variable extends AbstractExpression {
     public QName getQName() {
         return name;
     }
+
+    @Override
+    public int getPrecedence () {
+        return 100;
+    }
+
+    @Override
+    public boolean isDocumentOrdered () {
+        // it would be nice to check the variable's referent if we can do that at compile time?
+        return false;
+    }
 }

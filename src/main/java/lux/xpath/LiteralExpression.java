@@ -45,6 +45,13 @@ public class LiteralExpression extends AbstractExpression {
         throw new LuxException ("unsupported java object type: " + value.getClass().getSimpleName());
     }
         
+    /**
+     * @return 100
+     */
+    @Override public int getPrecedence () {
+        return 100;
+    }
+
     public ValueType getValueType () {
         return valueType;
     }

@@ -17,6 +17,8 @@ import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.xqts.TestCase.ComparisonMode;
 
+import net.sf.saxon.s9api.XdmItem;
+
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.RAMDirectory;
 import org.junit.AfterClass;
@@ -30,12 +32,17 @@ public class TestRunner {
     private static LuxSearcher searcher;
     private static Saxon eval;
     private static int numtests;
+    private static int numfailed;
     
     @BeforeClass
     public static void setup () throws Exception {
         dir = new RAMDirectory();
         eval = new Saxon();
-        XmlIndexer indexer = new XmlIndexer ();
+        // This indexer does nothing, the effect of which is to disable Lux search optimizations for
+        // absolute expressions depending on the context. This makes it possible to evaluate tests that
+        // make use of the dynamic context.  Thus we're only really testing the Translator here, and not
+        // the Optimizer or Query components of Lux.
+        XmlIndexer indexer = new XmlIndexer (0);
         eval.getConfig().setErrorListener(new ErrorIgnorer ());
         catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", eval.getProcessor());
         indexDirectory (indexer, catalog);
@@ -73,6 +80,7 @@ public class TestRunner {
         searcher.close();
         dir.close();
         System.out.println ("Ran " + numtests + " tests");
+        System.out.println (numfailed + " tests failed");
     }
 
     private boolean runTest (String caseName) throws Exception {
@@ -85,16 +93,21 @@ public class TestRunner {
         ++numtests;
         try {
             SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
-            System.out.println (expr);
+            //System.out.println (expr);
             QueryStats stats = new QueryStats();
             eval.setQueryStats(stats);
             ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, test1.getContextItem());
             Boolean comparedEqual = test1.compareResult (results);            
             if (comparedEqual == null || comparedEqual) {
-                System.out.println (test1.getName() + " OK in " + stats.totalTime + "ms");
+                //System.out.println (test1.getName() + " OK in " + stats.totalTime + "ms");
                 return true;
             } else {
                 System.err.println (test1.getName() + " Mismatch: " + TestCase.resultToString(results) + " is not " + test1.getOutputText()[0]);
+                ++numfailed;
+                XdmItem item = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText()).load().evaluateSingle();
+                if (! test1.compareResult(item)) {
+                    System.err.println (test1.getName() + " Saxon fails too?");
+                }
                 return false;
             }
         } catch (Exception e) {
@@ -103,10 +116,13 @@ public class TestRunner {
             if (! ("runtime-error".equals(scenario) ||
                     "parse-error".equals(scenario) ||
                     test1.getComparisonMode() == ComparisonMode.Ignore)) {
-                System.err.println (test1.getName() + " Unexpected Error: " + e.getMessage());
-                throw (e);
+                System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + e.getMessage());
+                throw (e);                
+                //++numfailed;
+                //return false;
+                
             }
-            System.out.println (test1.getName() + " OK (expected error)");
+            //System.out.println (test1.getName() + " OK (expected error)");
             return true;
         }
     }
@@ -159,6 +175,10 @@ public class TestRunner {
         assertTrue (runTest ("K2-Literals-8"));
     }
 
+    @Test public void testPathExpr6() throws Exception {
+        assertTrue (runTest ("PathExpr-6"));
+    }
+
     @Test public void testParenExpr12() throws Exception {
         assertTrue (runTest ("Parenexpr-12"));
     }
@@ -179,10 +199,26 @@ public class TestRunner {
         assertTrue (runTest ("externalcontextitem-22"));
     }
 
-    @Test public void testK2FunctionCallExpr1() throws Exception {
-        assertTrue (runTest ("K2-FunctionCallExpr-1"));
+    @Test public void testK2FunctionCallExpr10() throws Exception {
+        assertTrue (runTest ("K2-FunctionCallExpr-10"));
     }
 
+    @Test public void testK2FunctionCallExpr11() throws Exception {
+        assertTrue (runTest ("K2-FunctionCallExpr-11"));
+    }
+
+    @Test public void testK2Steps12() throws Exception {
+        assertTrue (runTest ("K2-Steps-12"));
+    }
+    
+    @Test public void testK2Steps15() throws Exception {
+        assertTrue (runTest ("K2-Steps-15"));
+    }
+    
+    @Test public void testStepsLeadingLoneSlash1a() throws Exception {
+        assertTrue (runTest ("Steps-leading-lone-slash-1a"));
+    }
+    
     @Test public void testGroup () throws Exception {
         runTestGroup ("Basics");
         runTestGroup ("Expressions");

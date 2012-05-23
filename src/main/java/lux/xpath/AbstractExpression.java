@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.xpath;
 
 import lux.ExpressionVisitor;
@@ -22,7 +18,7 @@ public abstract class AbstractExpression implements Visitable {
         // these are types of Binary: we'll split them out when we need to
         // SetOperation, Comparison, AtomicComparison, MathOperation,
         Literal, Root, Dot, FunctionCall, Sequence, UnaryMinus, Subsequence,
-        Let, Variable, Element, Attribute, Text, FLWOR, Conditional
+        Let, Variable, Element, Attribute, Text, FLWOR, Conditional, Comment, DocumentConstructor
     };
 
     private final Type type;
@@ -83,7 +79,7 @@ public abstract class AbstractExpression implements Visitable {
     
     /**
      * @return whether this expression is proven to return results in document order.  This method 
-     * returns true iff all its subs return true.  Warning: incorrect results may occur if 
+     * returns true iff all its subs return true, or it has none.  Warning: incorrect results may occur if 
      * document-ordering is falsely asserted.
      */
     public boolean isDocumentOrdered() {
@@ -107,6 +103,24 @@ public abstract class AbstractExpression implements Visitable {
         }
         return this;
     }
+    
+    /**
+     * append the sub-expression to the buffer, wrapping it in parentheses if its precedence is
+     * lower than this expression's.
+     * @param buf the buffer to append to
+     * @param sub the sub-expression
+     */
+    protected void appendSub(StringBuilder buf, AbstractExpression sub) {
+        if (sub.getPrecedence() < getPrecedence()) {
+            buf.append ('(');
+            sub.toString(buf);
+            buf.append (')');            
+        } else {
+            sub.toString(buf);
+        }
+    }
+    
+
 
     /**
      * @return the tail of this expression - only has meaning for PathExpressions, which strip off the 
@@ -118,4 +132,19 @@ public abstract class AbstractExpression implements Visitable {
 
     public enum Direction { Left, Right };
 
+    /**
+     * @return a number indicating the *outer* precedence of this expression.
+     * Expressions with lower precedence numbers have lower
+     * precedence, ie bind more loosely, than expressions with higher
+     * precedence. Expressions with no sub-expressions are assigned a high
+     * precedence.  Complex expressions can be seen as having an inner and an outer
+     * precedence; for example function call expressions behave as a comma with regard 
+     * to their sub-expressions, the arguments, and like parentheses to their enclosing expression.
+     */
+    public abstract int getPrecedence ();
+
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

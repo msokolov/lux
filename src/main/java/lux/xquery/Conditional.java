@@ -43,4 +43,9 @@ public class Conditional extends AbstractExpression {
     public final AbstractExpression getFalseAction() {
         return subs[2];
     }
+
+    @Override
+    public int getPrecedence () {
+        return 3;
+    }
 }

@@ -142,25 +142,25 @@ public class TestSerialization {
     
     @Test public void testBinaryOperationToString () {
         LiteralExpression one = LiteralExpression.ONE;
-        assertEquals ("(1 = 1)", new BinaryOperation(one, Operator.EQUALS, one).toString());
-        assertEquals ("(1 != 1)", new BinaryOperation(one, Operator.NE, one).toString());
-        assertEquals ("(1 > 1)", new BinaryOperation(one, Operator.GT, one).toString());
-        assertEquals ("(1 < 1)", new BinaryOperation(one, Operator.LT, one).toString());
-        assertEquals ("(1 >= 1)", new BinaryOperation(one, Operator.GE, one).toString());
-        assertEquals ("(1 <= 1)", new BinaryOperation(one, Operator.LE, one).toString());
+        assertEquals ("1 = 1", new BinaryOperation(one, Operator.EQUALS, one).toString());
+        assertEquals ("1 != 1", new BinaryOperation(one, Operator.NE, one).toString());
+        assertEquals ("1 > 1", new BinaryOperation(one, Operator.GT, one).toString());
+        assertEquals ("1 < 1", new BinaryOperation(one, Operator.LT, one).toString());
+        assertEquals ("1 >= 1", new BinaryOperation(one, Operator.GE, one).toString());
+        assertEquals ("1 <= 1", new BinaryOperation(one, Operator.LE, one).toString());
 
-        assertEquals ("(1 eq 1)", new BinaryOperation(one, Operator.AEQ, one).toString());
-        assertEquals ("(1 ne 1)", new BinaryOperation(one, Operator.ANE, one).toString());
-        assertEquals ("(1 gt 1)", new BinaryOperation(one, Operator.AGT, one).toString());
-        assertEquals ("(1 lt 1)", new BinaryOperation(one, Operator.ALT, one).toString());
-        assertEquals ("(1 ge 1)", new BinaryOperation(one, Operator.AGE, one).toString());
-        assertEquals ("(1 le 1)", new BinaryOperation(one, Operator.ALE, one).toString());
+        assertEquals ("1 eq 1", new BinaryOperation(one, Operator.AEQ, one).toString());
+        assertEquals ("1 ne 1", new BinaryOperation(one, Operator.ANE, one).toString());
+        assertEquals ("1 gt 1", new BinaryOperation(one, Operator.AGT, one).toString());
+        assertEquals ("1 lt 1", new BinaryOperation(one, Operator.ALT, one).toString());
+        assertEquals ("1 ge 1", new BinaryOperation(one, Operator.AGE, one).toString());
+        assertEquals ("1 le 1", new BinaryOperation(one, Operator.ALE, one).toString());
         
         LiteralExpression foo = new LiteralExpression ("foo");
         LiteralExpression two = new LiteralExpression (2);
         LiteralExpression pi = new LiteralExpression (3.14);
-        assertEquals ("(2 * 3.14)", new BinaryOperation(two, Operator.MUL, pi).toString());
-        assertEquals ("(\"foo\" = \"foo\")", new BinaryOperation(foo, Operator.EQUALS, foo).toString());           
+        assertEquals ("2 * 3.14", new BinaryOperation(two, Operator.MUL, pi).toString());
+        assertEquals ("\"foo\" = \"foo\"", new BinaryOperation(foo, Operator.EQUALS, foo).toString());           
     }
     
     @Test public void testElementToString () {

@@ -25,4 +25,8 @@ public class TextConstructor extends AbstractExpression {
         return subs[0];
     }
 
+    @Override
+    public int getPrecedence () {
+        return 100;
+    }
 }

@@ -39,4 +39,10 @@ public class FLWOR extends AbstractExpression {
         return getReturnExpression().isAbsolute();
     }
 
+    // TODO: are we confused here? Spec lists different precedence (2)
+    // for assignment operator?
+    @Override
+    public int getPrecedence () {
+        return 3;
+    }
 }

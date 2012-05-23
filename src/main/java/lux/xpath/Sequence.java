@@ -15,7 +15,7 @@ public class Sequence extends AbstractExpression {
     
     @Override
     public void toString(StringBuilder buf) {
-        seqAsString(buf, ",", subs);
+        seqAsString(buf, subs);
     }
     
     /**
@@ -27,27 +27,33 @@ public class Sequence extends AbstractExpression {
      * @param separator 
      * @param contents
      */
-    static final void seqAsString (StringBuilder buf, String separator, AbstractExpression ... contents) {
+    private void seqAsString (StringBuilder buf, AbstractExpression ... contents) {
         buf.append('(');
-        appendSeqContents(buf, contents, separator);
+        appendSeqContents(buf, contents, ",", getPrecedence());
         buf.append (')');
     }
 
-    static void appendSeqContents(StringBuilder buf, AbstractExpression[] contents, String separator) {
+    static void appendSeqContents(StringBuilder buf, AbstractExpression[] contents, String separator, int precedence) {
         if (contents.length > 0) {
-            appendSeqItem(buf, separator, contents[0]);
+            appendSeqItem(buf, separator, precedence, contents[0]);
         }
         for (int i = 1; i < contents.length; i++) {
             buf.append(separator);
-            appendSeqItem(buf, separator, contents[i]);
+            appendSeqItem(buf, separator, precedence, contents[i]);
         }
     }
 
-    private static void appendSeqItem(StringBuilder buf, String separator, AbstractExpression arg) {
+    private static void appendSeqItem(StringBuilder buf, String separator, int precedence, AbstractExpression arg) {
         if (arg.getType() == Type.Sequence) {
-            appendSeqContents (buf, arg.getSubs(), separator);
+            appendSeqContents (buf, arg.getSubs(), separator, precedence);
         } else {
-            buf.append (arg);
+            if (arg.getPrecedence() < precedence) {
+                buf.append ('(');
+                arg.toString(buf);
+                buf.append (')');
+            } else {
+                arg.toString(buf);
+            }
         }
     }
 
@@ -59,5 +65,13 @@ public class Sequence extends AbstractExpression {
     @Override 
     public boolean isDocumentOrdered () {
         return subs.length < 2 && super.isDocumentOrdered();
+    }
+
+    /**
+     * @return 1, the precedence of the comma operator.
+     */
+    @Override
+    public int getPrecedence () {
+        return 1;
     }
 }

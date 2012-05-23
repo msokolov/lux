@@ -20,7 +20,7 @@ public class UnaryMinus extends AbstractExpression {
     @Override
     public void toString(StringBuilder buf) {
         buf.append ('-');
-        subs[0].toString(buf);
+        appendSub(buf, subs[0]);
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {
@@ -28,6 +28,13 @@ public class UnaryMinus extends AbstractExpression {
         return visitor.visit(this);
     }
     
+    /**
+     * @return 16
+     */
+    @Override public int getPrecedence () {
+        return 16;
+    }
+
     @Override
     public boolean isDocumentOrdered () {
         return false;

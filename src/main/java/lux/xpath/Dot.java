@@ -16,9 +16,14 @@ public class Dot extends AbstractExpression {
     public void toString(StringBuilder buf) {
         buf.append ('.');
     }
-
+    
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
+    }
+
+    @Override
+    public int getPrecedence () {
+        return 100;
     }
 
 }

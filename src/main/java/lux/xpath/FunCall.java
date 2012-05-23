@@ -23,12 +23,15 @@ public class FunCall extends AbstractExpression {
     public void toString(StringBuilder buf) {
         buf.append (name);
         buf.append ('(');
-        if (subs.length > 0) {
+        if (subs.length == 1) {
             buf.append (subs[0]);
+        } 
+        else if (subs.length > 1) {
+            subs[0].toString(buf);            
         }
         for (int i = 1; i < subs.length; i++) {
             buf.append (',');
-            buf.append (subs[i]);
+            subs[i].toString(buf);
         }
         buf.append (')');
     }
@@ -37,6 +40,13 @@ public class FunCall extends AbstractExpression {
         return name;
     }
     
+    /**
+     * @return 100; the outer precedence.
+     */
+    @Override public int getPrecedence () {
+        return 100;
+    }
+
     public static final String LUX_NAMESPACE = "lux";
     public static final QName LUX_SEARCH = new QName (LUX_NAMESPACE, "search", "lux");
     public static final QName LUX_COUNT = new QName (LUX_NAMESPACE, "count", "lux");

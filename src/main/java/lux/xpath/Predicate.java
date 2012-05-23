@@ -14,7 +14,7 @@ public class Predicate extends AbstractExpression {
     }
     
     public void toString (StringBuilder buf) {
-        subs[0].toString(buf);
+        appendSub (buf, subs[0]);
         buf.append ('[');
         subs[1].toString(buf);
         buf.append (']');
@@ -33,6 +33,13 @@ public class Predicate extends AbstractExpression {
         return visitor.visit(this);
     }
     
+    /**
+     * @return 19
+     */
+    @Override public int getPrecedence () {
+        return 19;
+    }
+
     @Override    
     public boolean isAbsolute () {
         return getBase().isAbsolute();

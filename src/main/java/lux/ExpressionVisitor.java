@@ -4,7 +4,6 @@
 
 package lux;
 
-import lux.saxon.xquery.DocumentConstructor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
@@ -21,6 +20,7 @@ import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
 import lux.xquery.Conditional;
+import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.Let;

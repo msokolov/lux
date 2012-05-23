@@ -213,6 +213,9 @@ public class TestCase {
 
     public static String resultToString(Iterable<?> results) {
         Iterator<?> iterator = results.iterator();
+        if (!iterator.hasNext()) {
+            return "";
+        }
         StringBuilder buf = new StringBuilder (iterator.next().toString());
         while (iterator.hasNext()) {
             buf.append (' ');

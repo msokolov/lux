@@ -7,8 +7,8 @@ package lux.xpath;
 import lux.ExpressionVisitor;
 
 /**
- * represents numeric literal predicates like [1]; last-predicates like [last()] and
- * calls to the subsequence(expr,integer,integer) function.
+ * represents numeric literal predicates like [1]; last-predicates like
+ * [last()] and calls to the subsequence(expr,integer,integer) function.
  * 
  * @author sokolov
  *
@@ -63,6 +63,19 @@ public class Subsequence extends AbstractExpression {
         return getSequence().isAbsolute();
     }
 
+    /**
+     * @return the precedence of comma (,) or predicate ([]), depending
+     * on the child expressions.
+     */
+    @Override
+    public int getPrecedence () {
+        if (getLengthExpr() == null) {
+            return 1;
+        } else {
+            return 19;
+        }
+    }
+
     @Override
     public void toString(StringBuilder buf) {
         if (getLengthExpr() == null) {
@@ -72,19 +85,11 @@ public class Subsequence extends AbstractExpression {
             getStartExpr().toString(buf);
             buf.append (')');
         }
-        else if (getLengthExpr().equals(LiteralExpression.ONE)) {
-            if (getSequence().getSubs() != null) {
-                buf.append ('(');
-                getSequence().toString(buf);
-                buf.append (")[");
-                getStartExpr().toString(buf);
-                buf.append (']');
-            } else {
-                getSequence().toString(buf);
-                buf.append ("[");
-                getStartExpr().toString(buf);
-                buf.append (']');
-            }
+        else if (getLengthExpr().equals(LiteralExpression.ONE) && getStartExpr().getType() == Type.Literal) {
+            appendSub(buf, getSequence());
+            buf.append ("[");
+            getStartExpr().toString(buf);
+            buf.append (']');
         }
         else  {
             buf.append ("subsequence(");

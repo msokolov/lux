@@ -28,13 +28,20 @@ public class PathExpression extends AbstractExpression {
         return subs[0];
     }
 
+    /**
+     * @return 18
+     */
+    @Override public int getPrecedence () {
+        return 18;
+    }
+
     @Override
     public void toString(StringBuilder buf) {
         if (! (subs[0] instanceof Root)) {
-            subs[0].toString(buf);
+            appendSub (buf, subs[0]);
         }
         buf.append('/');
-        subs[1].toString(buf);
+        appendSub(buf, subs[1]);
     }
     
     /**

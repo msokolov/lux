@@ -12,11 +12,12 @@ public class XQuery {
     
     private final FunctionDefinition[] functionDefinitions;
     private final Namespace[] namespaceDeclarations;
-    // private final VariableDeclaration[] externalVariables;
+    private final VariableDefinition[] externalVariables;
     private final AbstractExpression body;
     
-    public XQuery (Namespace[] namespaceDeclarations, FunctionDefinition[] defs, AbstractExpression body) {
+    public XQuery (Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, AbstractExpression body) {
         this.namespaceDeclarations = namespaceDeclarations;
+        this.externalVariables = variableDefinitions;
         this.functionDefinitions = defs;
         this.body = body;
     }
@@ -39,6 +40,11 @@ public class XQuery {
             LiteralExpression.escapeString (ns.getNamespace(), buf);
             buf.append(";\n");
         }
+        if (externalVariables != null) {
+            for (VariableDefinition def : externalVariables) {
+                def.toString(buf);
+            }
+        }
         // TODO: collation, variables, modes, default function namespace, etc.
         if (functionDefinitions != null) {
             for (FunctionDefinition def : functionDefinitions) {
@@ -58,6 +64,10 @@ public class XQuery {
 
     public Namespace[] getNamespaceDeclarations() {
         return namespaceDeclarations;
+    }
+
+    public VariableDefinition[] getVariableDefinitions() {
+        return externalVariables;
     }
     
 }

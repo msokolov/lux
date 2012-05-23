@@ -51,11 +51,18 @@ public class PathStep extends AbstractExpression {
         buf.append (axis).append("::");
         nodeTest.toString (buf);
     }
-    
+        
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
     }
     
+    /**
+     * @return 0
+     */
+    @Override public int getPrecedence () {
+        return 100;
+    }
+
     @Override
     public boolean isDocumentOrdered () {
         return axis.isForward;

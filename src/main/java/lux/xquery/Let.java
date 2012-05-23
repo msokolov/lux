@@ -28,7 +28,7 @@ public class Let extends AbstractExpression {
         buf.append("let $");
         name.toString (buf);
         buf.append (" := ");
-        getAssignment().toString(buf);
+        appendSub (buf, getAssignment());
         buf.append (" return ");
         getReturn().toString(buf);
     }
@@ -50,4 +50,8 @@ public class Let extends AbstractExpression {
         return getReturn().isDocumentOrdered();
     }
 
+    @Override
+    public int getPrecedence () {
+        return 2;
+    }
 }

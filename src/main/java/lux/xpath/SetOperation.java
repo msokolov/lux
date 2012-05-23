@@ -18,9 +18,7 @@ public class SetOperation extends AbstractExpression {
     }
     
     public void toString (StringBuilder buf) {
-        buf.append('(');
-        Sequence.appendSeqContents(buf, subs, ' ' + operator.toString() + ' ');
-        buf.append (')');
+        Sequence.appendSeqContents(buf, subs, ' ' + operator.toString() + ' ', operator.getPrecedence());
     }
     
     public AbstractExpression[] getsubs() {
@@ -31,6 +29,14 @@ public class SetOperation extends AbstractExpression {
         return operator;
     }
 
+    /**
+     * @return the operator precedence
+     */
+    @Override
+    public int getPrecedence () {
+        return operator.getPrecedence();
+    }
+    
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

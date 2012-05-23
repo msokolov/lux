@@ -14,24 +14,26 @@ public class BinaryOperation extends AbstractExpression {
     
     public enum Operator {
         // boolean operators
-        AND("and", ValueType.BOOLEAN), OR("or", ValueType.BOOLEAN), 
+        AND("and", ValueType.BOOLEAN, 5), OR("or", ValueType.BOOLEAN, 4), 
         // set operators
-        INTERSECT("intersect", ValueType.VALUE), EXCEPT("except", ValueType.VALUE), UNION("|", ValueType.VALUE), 
+            INTERSECT("intersect", ValueType.VALUE, 11), EXCEPT("except", ValueType.VALUE, 11), UNION("|", ValueType.VALUE, 10), 
         // arithmetic operators
-        ADD("+", ValueType.ATOMIC), SUB("-", ValueType.ATOMIC), MUL("*", ValueType.ATOMIC), DIV("div", ValueType.ATOMIC), IDIV("idiv", ValueType.ATOMIC), MOD("mod", ValueType.ATOMIC),
+            ADD("+", ValueType.ATOMIC, 8), SUB("-", ValueType.ATOMIC, 8), MUL("*", ValueType.ATOMIC, 9), DIV("div", ValueType.ATOMIC, 9), IDIV("idiv", ValueType.ATOMIC, 9), MOD("mod", ValueType.ATOMIC, 9),
         // general comparisons
-        EQUALS("=", ValueType.BOOLEAN), NE("!=", ValueType.BOOLEAN), LT("<", ValueType.BOOLEAN), GT(">", ValueType.BOOLEAN), LE("<=", ValueType.BOOLEAN), GE(">=", ValueType.BOOLEAN), 
+            EQUALS("=", ValueType.BOOLEAN, 6), NE("!=", ValueType.BOOLEAN, 6), LT("<", ValueType.BOOLEAN, 6), GT(">", ValueType.BOOLEAN, 6), LE("<=", ValueType.BOOLEAN, 6), GE(">=", ValueType.BOOLEAN, 6), 
         // atomic comparisons
-        AEQ("eq", ValueType.BOOLEAN), ANE("ne", ValueType.BOOLEAN), ALT("lt", ValueType.BOOLEAN), ALE("le", ValueType.BOOLEAN), AGT("gt", ValueType.BOOLEAN), AGE("ge", ValueType.BOOLEAN),
+            AEQ("eq", ValueType.BOOLEAN, 6), ANE("ne", ValueType.BOOLEAN, 6), ALT("lt", ValueType.BOOLEAN, 6), ALE("le", ValueType.BOOLEAN, 6), AGT("gt", ValueType.BOOLEAN, 6), AGE("ge", ValueType.BOOLEAN, 6),
         // node operators
-        IS("is", ValueType.BOOLEAN), BEFORE("<<", ValueType.BOOLEAN), AFTER(">>", ValueType.BOOLEAN);
+            IS("is", ValueType.BOOLEAN, 6), BEFORE("<<", ValueType.BOOLEAN, 6), AFTER(">>", ValueType.BOOLEAN, 6), TO("to", ValueType.ATOMIC, 7);
         
         private String token;
         private ValueType resultType;
+        private int precedence;
         
-        Operator (String token, ValueType resultType) {
+        Operator (String token, ValueType resultType, int precedence) {
             this.token = token;
             this.resultType = resultType;
+            this.precedence = precedence;
         }
         
         public String toString () {
@@ -41,6 +43,11 @@ public class BinaryOperation extends AbstractExpression {
         public ValueType getResultType () {
             return resultType;
         }
+        
+        public int getPrecedence() {
+            return precedence;
+        }
+        
     };
     
     public BinaryOperation (AbstractExpression op1, Operator operator, AbstractExpression op2) {
@@ -51,13 +58,11 @@ public class BinaryOperation extends AbstractExpression {
     
     @Override
     public void toString (StringBuilder buf) {
-        buf.append ('(');
-        subs[0].toString(buf);
+        appendSub(buf, subs[0]);
         buf.append(' ').append(operator).append(' ');
-        subs[1].toString(buf);
-        buf.append (')');
+        appendSub(buf, subs[1]);
     }
-    
+
     public AbstractExpression getOperand1() {
         return subs[0];
     }
@@ -78,5 +83,10 @@ public class BinaryOperation extends AbstractExpression {
     @Override
     public boolean isDocumentOrdered () {
         return operator.getResultType().isNode && super.isDocumentOrdered();
+    }
+
+    @Override
+    public int getPrecedence () {
+        return operator.precedence;
     }
 }

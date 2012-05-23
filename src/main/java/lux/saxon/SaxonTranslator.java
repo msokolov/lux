@@ -12,7 +12,6 @@ import java.util.Map;
 
 import lux.api.LuxException;
 import lux.api.ValueType;
-import lux.saxon.xquery.DocumentConstructor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.BinaryOperation.Operator;
@@ -31,6 +30,7 @@ import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
 import lux.xquery.Conditional;
+import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;

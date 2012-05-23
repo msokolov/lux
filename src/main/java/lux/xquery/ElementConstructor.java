@@ -59,4 +59,8 @@ public class ElementConstructor extends AbstractExpression {
         buf.append ("\" }");        
     }
 
+    @Override
+    public int getPrecedence () {
+        return 100;
+    }
 }

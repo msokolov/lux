@@ -10,6 +10,7 @@ public class Root extends AbstractExpression {
 
     public Root () {
         super (Type.Root);
+        subs = new AbstractExpression[0];
     }
     
     @Override
@@ -17,6 +18,7 @@ public class Root extends AbstractExpression {
         buf.append ("(/)");
     }
     
+    @Override
     public boolean isAbsolute() {
         return true;
     }
@@ -25,6 +27,13 @@ public class Root extends AbstractExpression {
         return visitor.visit(this);
     }
     
+    /**
+     * @return 0
+     */
+    @Override public int getPrecedence () {
+        return 100;
+    }
+
     /** 
      * replace this with the search function call
      * @param search the search function call to use
