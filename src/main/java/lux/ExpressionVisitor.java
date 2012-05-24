@@ -24,6 +24,7 @@ import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.Let;
+import lux.xquery.ProcessingInstructionConstructor;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 
@@ -69,4 +70,5 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (Conditional conditional);
     public abstract AbstractExpression visit (CommentConstructor commentConstructor);
     public abstract AbstractExpression visit (DocumentConstructor documentConstructor);
+    public abstract AbstractExpression visit (ProcessingInstructionConstructor processingInstructionConstructor);
 }

@@ -15,6 +15,8 @@ The main thing missing is marshalling results from Solr
 ** namespace support
 This might be working, but we need to test
 ** XQuery!
+runninng XQTS now - down to 1305 failures out of 12008 tests
+Now down to 1207 failures
 *** static context items
 a whole host of things, including various default mode settings too
 numerous to list here - see the spec.

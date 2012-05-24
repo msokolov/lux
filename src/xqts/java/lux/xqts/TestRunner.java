@@ -117,10 +117,9 @@ public class TestRunner {
                     "parse-error".equals(scenario) ||
                     test1.getComparisonMode() == ComparisonMode.Ignore)) {
                 System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + e.getMessage());
-                throw (e);                
-                //++numfailed;
-                //return false;
-                
+                //throw (e);                
+                ++numfailed;
+                return false;                
             }
             //System.out.println (test1.getName() + " OK (expected error)");
             return true;
@@ -179,8 +178,12 @@ public class TestRunner {
         assertTrue (runTest ("PathExpr-6"));
     }
 
-    @Test public void testParenExpr12() throws Exception {
-        assertTrue (runTest ("Parenexpr-12"));
+    @Test public void testAxes091() throws Exception {
+        assertTrue (runTest ("Axes091"));
+    }
+    
+    @Test public void testParenExpr11() throws Exception {
+        assertTrue (runTest ("Parenexpr-11"));
     }
     
     @Test public void testParenExpr20() throws Exception {
@@ -223,7 +226,17 @@ public class TestRunner {
         assertTrue (runTest ("K2-Steps-35"));
     }
 
+    @Test public void testAxes036_2() throws Exception {
+        assertTrue (runTest ("Axes036-2"));
+    }
+    
+
+    @Test public void testStepsLeadingLoneSlash8a() throws Exception {
+        assertTrue (runTest ("Steps-leading-lone-slash-8a"));
+    }
+
     @Test public void testStepsLeadingLoneSlash1a() throws Exception {
+        // fails since we don't implement "instance of"
         assertTrue (runTest ("Steps-leading-lone-slash-1a"));
     }
     

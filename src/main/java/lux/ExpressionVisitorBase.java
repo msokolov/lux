@@ -24,6 +24,7 @@ import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.Let;
+import lux.xquery.ProcessingInstructionConstructor;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 
@@ -132,5 +133,10 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     @Override
     public AbstractExpression visit(CommentConstructor comment) {
         return comment;
+    }
+
+    @Override
+    public AbstractExpression visit(ProcessingInstructionConstructor pi) {
+        return pi;
     }
 }

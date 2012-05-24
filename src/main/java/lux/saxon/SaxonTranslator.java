@@ -38,6 +38,7 @@ import lux.xquery.ForClause;
 import lux.xquery.FunctionDefinition;
 import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
+import lux.xquery.ProcessingInstructionConstructor;
 import lux.xquery.SortKey;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
@@ -55,6 +56,7 @@ import net.sf.saxon.expr.FilterExpression;
 import net.sf.saxon.expr.FirstItemExpression;
 import net.sf.saxon.expr.ForExpression;
 import net.sf.saxon.expr.FunctionCall;
+import net.sf.saxon.expr.IntegerRangeTest;
 import net.sf.saxon.expr.LastItemExpression;
 import net.sf.saxon.expr.LetExpression;
 import net.sf.saxon.expr.Literal;
@@ -76,6 +78,7 @@ import net.sf.saxon.expr.instruct.Comment;
 import net.sf.saxon.expr.instruct.FixedAttribute;
 import net.sf.saxon.expr.instruct.FixedElement;
 import net.sf.saxon.expr.instruct.GlobalVariable;
+import net.sf.saxon.expr.instruct.ProcessingInstruction;
 import net.sf.saxon.expr.instruct.UserFunctionParameter;
 import net.sf.saxon.expr.instruct.ValueOf;
 import net.sf.saxon.expr.parser.Token;
@@ -93,6 +96,7 @@ import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.DocumentNodeTest;
+import net.sf.saxon.pattern.LocalNameTest;
 import net.sf.saxon.pattern.NodeTest;
 import net.sf.saxon.query.GlobalVariableDefinition;
 import net.sf.saxon.query.QueryModule;
@@ -115,7 +119,7 @@ public class SaxonTranslator {
     
     private Config config;
     private HashMap<String,String> namespaceDeclarations;
-    private HashMap<Class<? extends Expression>,ExprClass> dispatcher;
+    private HashMap<String,ExprClass> dispatcher;
 
     public SaxonTranslator (Config config) {
         this.config = config;
@@ -124,9 +128,9 @@ public class SaxonTranslator {
     }
     
     private void createDispatcher() {
-        dispatcher = new HashMap<Class<? extends Expression>, ExprClass>();
-        for (Class<? extends Expression> eclass : exprClasses) {
-            dispatcher.put (eclass, ExprClass.valueOf(eclass.getSimpleName()));
+        dispatcher = new HashMap<String, ExprClass>();
+        for (ExprClass eclass : ExprClass.values()) {
+            dispatcher.put (eclass.toString(), eclass);            
         }
     }
 
@@ -208,178 +212,6 @@ public class SaxonTranslator {
         return defs;
     }
     
-    public AbstractExpression exprFor (RootExpression expr) {
-        return new Root();
-    }
-
-    public AbstractExpression exprFor (ContextItemExpression expr) {
-        return new Dot();
-    }
-    
-    public AbstractExpression exprFor (ParentNodeExpression expr) {
-        return new PathStep(PathStep.Axis.Parent, new lux.xpath.NodeTest(ValueType.NODE));
-    }
-
-    public AbstractExpression exprFor (Block expr) {
-        return exprFor (expr.getChildren());
-    }
-
-    public AbstractExpression exprFor (Comment expr) {
-        return new CommentConstructor(exprFor(((Comment)expr).getContentExpression()));
-    }
-    
-    public AbstractExpression exprFor (FilterExpression expr) {
-        AbstractExpression filtered = exprFor (expr.getControllingExpression());
-        AbstractExpression filter = exprFor (expr.getFilter());
-        return new Predicate(filtered, filter);
-    }
-    
-    public AbstractExpression exprFor (SlashExpression expr) {
-        AbstractExpression lq = exprFor (expr.getControllingExpression());
-        AbstractExpression rq = exprFor (expr.getControlledExpression());
-        return new PathExpression(lq, rq);
-    }
-    
-    public AbstractExpression exprFor (TailExpression expr) {
-        return new Subsequence (exprFor (expr.getBaseExpression()), new LiteralExpression(expr.getStart()));
-    }
-    
-    public AbstractExpression exprFor (LetExpression let) {
-        // TODO: get rid of Let and use a FLWOR
-        StructuredQName var = let.getVariableQName();
-        Expression seq = let.getSequence();
-        Expression returns = let.getAction();
-        return new FLWOR(exprFor(returns), new LetClause (new Variable(qnameFor(var)), exprFor(seq)));
-    }
-    
-    public AbstractExpression exprFor (ForExpression forExpr) {
-        StructuredQName var = forExpr.getVariableQName();
-        Expression seq = forExpr.getSequence();
-        Expression returns = forExpr.getAction();
-        return new FLWOR(exprFor(returns), new ForClause (new Variable(qnameFor(var)), null, exprFor(seq)));
-    }
-
-    public AbstractExpression exprFor (GlobalVariable var) {
-        // TODO: encode the declared type
-        return new Variable (qnameFor (var.getVariableQName()));
-    }
-    
-    public AbstractExpression exprFor (VariableReference var) {
-        return new Variable (qnameFor (var.getBinding().getVariableQName()));
-        // in XQuery this could be bound to a for expression, or another variable, etc.
-        // In XPath, inline all variable references:
-        //LetExpression binding = (LetExpression) var.getBinding();
-        //return exprFor (binding.getSequence());
-    }
-    
-    private static final StructuredQName itemAtQName = new StructuredQName("", NamespaceConstant.SAXON, "item-at");
-    
-    public AbstractExpression exprFor (FunctionCall funcall) {
-        if (funcall.getFunctionName().equals(itemAtQName)) {
-            return new Subsequence(exprFor (funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), LiteralExpression.ONE);
-        }
-        if (functionEqualsBuiltin(funcall, "reverse")) {
-            // Saxon wraps a call to reverse() around reverse axis expressions; its axis expression
-            // always returns items in axis (reverse) order, unlike an xpath axis expression, whose results
-            // are returned in different order depending on the context
-            Expression arg = funcall.getArguments()[0];
-            if ((arg.getSpecialProperties() & StaticProperty.REVERSE_DOCUMENT_ORDER) != 0 ||
-                    (! Cardinality.allowsMany(arg.getCardinality()))) {
-                // if (arg instanceof AxisExpression && (!Axis.isForwards[((AxisExpression) arg).getAxis()])) {
-                // wrap in a sequence so as to preserve document order using an expression that will serialize
-                // to an appropriate xpath syntax 
-                return new Sequence (exprFor (arg));
-            }        
-        }
-        if (funcall.getFunctionName().equals(FunCall.FN_SUBSEQUENCE)) {
-            if (funcall.getNumberOfArguments() == 2) {
-                return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
-            } else {
-                if (funcall.getNumberOfArguments() != 3) {
-                    throw new LuxException ("call to subsequence has " + funcall.getNumberOfArguments() + " arguments?");                    
-                }
-                return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), exprFor(funcall.getArguments()[2]));
-            }
-        }
-        Expression[] args = funcall.getArguments();
-        AbstractExpression[] aargs = new AbstractExpression[args.length];
-        for (int i = 0; i < args.length; i++) {
-            aargs[i] = exprFor (args[i]);
-        }
-        Entry entry = StandardFunction.getFunction(funcall.getFunctionName().getDisplayName(), aargs.length);
-        ValueType returnType = entry != null ? valueTypeForItemType (entry.itemType) : ValueType.VALUE;
-        if (functionEqualsBuiltin(funcall, "root")) 
-        {
-            // root() may return an element when executed in the context of a fragment
-            // However for the purposes of our optimizer, we want to know if it is returning
-            // documents.  We only optimize absolute expressions, and this inference is correct in those cases.
-            returnType = ValueType.DOCUMENT;
-        }
-        return new FunCall (qnameFor (funcall.getFunctionName()), returnType, aargs);
-    }
-    
-    private boolean functionEqualsBuiltin (FunctionCall funcall, String builtinFunction) {
-        return funcall.getFunctionName().getDisplayName().equals (builtinFunction);
-    }
-    
-    private ValueType valueTypeForItemType(ItemType itemType) {
-        if (itemType.isAtomicType()) {
-            return ValueType.ATOMIC;
-        }
-        if (itemType instanceof NodeTest) {
-            NodeTest nodeTest = (NodeTest) itemType;
-            switch (nodeTest.getPrimitiveType()) {
-            case Type.NODE: return ValueType.NODE;
-            case Type.ELEMENT: return ValueType.ELEMENT;
-            case Type.TEXT: return ValueType.TEXT;
-            case Type.ATTRIBUTE: return ValueType.ATTRIBUTE;
-            case Type.DOCUMENT: return ValueType.DOCUMENT;
-            case Type.PROCESSING_INSTRUCTION: return ValueType.PROCESSING_INSTRUCTION;
-            case Type.COMMENT: return ValueType.COMMENT;
-            }
-        }
-        // could be a function type? or namespace()?
-        return ValueType.VALUE;
-    }
-
-    public AbstractExpression exprFor (Literal literal) {
-        // This could be a sequence!!
-        Value<?> value = literal.getValue();
-        try {
-            int len = value.getLength();
-            if (len == 0) {
-                return new LiteralExpression();
-            }
-            if (len > 1) {
-                ArrayList<LiteralExpression> items = new ArrayList<LiteralExpression>();
-                SequenceIterator<?> iter = value.iterate();
-                Item<?> member;
-                while ((member = iter.next()) != null) {
-                    if (member instanceof AtomicValue) {
-                        items.add(new LiteralExpression (Value.convertToJava(member)));
-                    } else {
-                        throw new LuxException ("unsupported node in a literal sequence: " + literal.toString());
-                    }                    
-                }
-                return new Sequence (items.toArray(new LiteralExpression[0]));
-            }
-            // FIXME: precision loss here for BigInteger values
-            return new LiteralExpression(Value.convertToJava(value.asItem()));
-        } catch (XPathException e) {
-            throw new LuxException (e);
-        }        
-    }
-    
-    private QName qnameFor(StructuredQName name) {
-        QName qname = new QName (name.getNamespaceBinding().getURI(), name.getLocalPart(), name.getNamespaceBinding().getPrefix());
-        if (!(qname.getPrefix().equals ("fn") && qname.getNamespaceURI().equals(FunCall.FN_NAMESPACE) ||
-                qname.getPrefix().equals("local") && qname.getNamespaceURI().equals(FunCall.LOCAL_NAMESPACE) ||
-                qname.getPrefix().equals("xs") && qname.getNamespaceURI().equals(FunCall.XS_NAMESPACE))) {
-            addNamespaceDeclaration(qname);
-        }
-        return qname;
-    }
-    
     /* return a QName suitable for use as a constructor of the given type */
     private QName qnameFor (AtomicType type) {
         if (type.isBuiltInType()) {
@@ -388,14 +220,11 @@ public class SaxonTranslator {
         return qnameForNameCode(type.getNameCode());
     }
 
-    private Sequence exprFor (Expression[] exprs) {
-        AbstractExpression[] aex = new AbstractExpression [exprs.length];
-        for (int i = 0 ; i < exprs.length; i++) {
-            aex[i] = exprFor (exprs[i]);
-        }
-        return new Sequence (aex);
+    public AbstractExpression exprFor (Atomizer atomizer) {
+        Expression base = atomizer.getBaseExpression();
+        return new FunCall (FunCall.FN_DATA, ValueType.ATOMIC, exprFor (base));
     }
-        
+    
     public AbstractExpression exprFor (AxisExpression expr) {
         PathStep.Axis axis;
         switch (expr.getAxis()) {
@@ -456,6 +285,9 @@ public class SaxonTranslator {
         if (nameCode >= 0) { // matches a single node name 
             return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qnameForNameCode(nameCode)));
         } else { // matches multiple node names
+            if (nodeTest instanceof LocalNameTest) {
+                return new PathStep (axis, new lux.xpath.NodeTest (nodeType, new QName(((LocalNameTest)nodeTest).getLocalName())));
+            }
             IntSet nameCodes = nodeTest.getRequiredNodeNames();
             if (nameCodes == IntUniversalSet.getInstance()) {
                 return new PathStep (axis, new lux.xpath.NodeTest (nodeType));
@@ -520,16 +352,8 @@ public class SaxonTranslator {
         }
     }
 
-    public AbstractExpression exprFor (FirstItemExpression expr) {
-        return new Subsequence (exprFor (expr.getBaseExpression()), LiteralExpression.ONE, LiteralExpression.ONE);
-    }
-
-    public AbstractExpression exprFor (LastItemExpression expr) {
-        return new Subsequence (exprFor (expr.getBaseExpression()), FunCall.LastExpression, LiteralExpression.ONE);
-    }
-
-    public AbstractExpression exprFor (NegateExpression expr) {
-        return new UnaryMinus(exprFor (expr.getBaseExpression()));
+    public AbstractExpression exprFor (Block expr) {
+        return exprFor (expr.getChildren());
     }
 
     public AbstractExpression exprFor (CastExpression expr) {
@@ -538,9 +362,227 @@ public class SaxonTranslator {
         return new FunCall (qnameFor(type), valueTypeForItemType(type), exprFor(base));
     }
     
-    public AbstractExpression exprFor (Atomizer atomizer) {
-        Expression base = atomizer.getBaseExpression();
-        return new FunCall (FunCall.FN_DATA, ValueType.ATOMIC, exprFor (base));
+    private Sequence exprFor (Expression[] exprs) {
+        AbstractExpression[] aex = new AbstractExpression [exprs.length];
+        for (int i = 0 ; i < exprs.length; i++) {
+            aex[i] = exprFor (exprs[i]);
+        }
+        return new Sequence (aex);
+    }
+        
+    public AbstractExpression exprFor (Choose choose) {
+        // convert a list of condition/action pairs (a la XSLT) to a chain
+        // of if-then-else conditions a-la XQuery
+        Expression[] conds = choose.getConditions();
+        Expression[] actions = choose.getActions();
+        int l = conds.length;
+        if (actions.length != conds.length) {
+            throw new LuxException ("Choose must have the same number of actions as conditions");            
+        }
+        if (l < 2) {
+            return new Conditional (exprFor (conds[0]), exprFor(actions[0]), new LiteralExpression());
+        }
+        l -= 2;
+        AbstractExpression tail = new Conditional(exprFor (conds[l]), exprFor (actions[l]), exprFor(actions[l+1]));
+        while (--l > 0) {
+            tail = new Conditional (exprFor (conds[l]), exprFor(actions[l]), tail);
+        }
+        return tail;
+    }
+
+    public AbstractExpression exprFor (Comment expr) {
+        return new CommentConstructor(exprFor(((Comment)expr).getContentExpression()));
+    }
+    
+    public AbstractExpression exprFor (ContextItemExpression expr) {
+        return new Dot();
+    }
+    
+    public AbstractExpression exprFor (DocumentInstr documentInstr) {
+        return new DocumentConstructor (exprFor (documentInstr.getContentExpression()));
+    }
+    
+    public AbstractExpression exprFor (FilterExpression expr) {
+        AbstractExpression filtered = exprFor (expr.getControllingExpression());
+        AbstractExpression filter = exprFor (expr.getFilter());
+        return new Predicate(filtered, filter);
+    }
+
+    public AbstractExpression exprFor (FirstItemExpression expr) {
+        return new Subsequence (exprFor (expr.getBaseExpression()), LiteralExpression.ONE, LiteralExpression.ONE);
+    }
+
+    public AbstractExpression exprFor (FixedAttribute attribute) {
+        NodeName name = attribute.getAttributeName();
+        QName qname = qnameFor (name.getStructuredQName());
+        AttributeConstructor att = new AttributeConstructor(qname, exprFor (attribute.getContentExpression()));
+        return att;
+    }
+    
+    public AbstractExpression exprFor (FixedElement element) {
+        NodeName name = element.getElementName();
+        QName qname = qnameFor (name.getStructuredQName());
+        AbstractExpression content = exprFor (element.getContentExpression());
+        Namespace [] namespaces = namespacesFor (element.getActiveNamespaces());
+        ElementConstructor elcon = new ElementConstructor(qname, namespaces, content);
+        return elcon;
+    }
+
+    public AbstractExpression exprFor (ForExpression forExpr) {
+        StructuredQName var = forExpr.getVariableQName();
+        Expression seq = forExpr.getSequence();
+        Expression returns = forExpr.getAction();
+        return new FLWOR(exprFor(returns), new ForClause (new Variable(qnameFor(var)), null, exprFor(seq)));
+    }
+
+    public AbstractExpression exprFor (FunctionCall funcall) {
+        if (funcall.getFunctionName().equals(itemAtQName)) {
+            return new Subsequence(exprFor (funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), LiteralExpression.ONE);
+        }
+        if (functionEqualsBuiltin(funcall, "reverse")) {
+            // Saxon wraps a call to reverse() around reverse axis expressions; its axis expression
+            // always returns items in axis (reverse) order, unlike an xpath axis expression, whose results
+            // are returned in different order depending on the context
+            Expression arg = funcall.getArguments()[0];
+            if ((arg.getSpecialProperties() & StaticProperty.REVERSE_DOCUMENT_ORDER) != 0 ||
+                    (! Cardinality.allowsMany(arg.getCardinality()))) {
+                // if (arg instanceof AxisExpression && (!Axis.isForwards[((AxisExpression) arg).getAxis()])) {
+                // wrap in a sequence so as to preserve document order using an expression that will serialize
+                // to an appropriate xpath syntax 
+                return new Sequence (exprFor (arg));
+            }        
+        }
+        if (funcall.getFunctionName().equals(FunCall.FN_SUBSEQUENCE)) {
+            if (funcall.getNumberOfArguments() == 2) {
+                return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
+            } else {
+                if (funcall.getNumberOfArguments() != 3) {
+                    throw new LuxException ("call to subsequence has " + funcall.getNumberOfArguments() + " arguments?");                    
+                }
+                return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), exprFor(funcall.getArguments()[2]));
+            }
+        }
+        Expression[] args = funcall.getArguments();
+        AbstractExpression[] aargs = new AbstractExpression[args.length];
+        for (int i = 0; i < args.length; i++) {
+            aargs[i] = exprFor (args[i]);
+        }
+        Entry entry = StandardFunction.getFunction(funcall.getFunctionName().getDisplayName(), aargs.length);
+        ValueType returnType = entry != null ? valueTypeForItemType (entry.itemType) : ValueType.VALUE;
+        if (functionEqualsBuiltin(funcall, "root")) 
+        {
+            // root() may return an element when executed in the context of a fragment
+            // However for the purposes of our optimizer, we want to know if it is returning
+            // documents.  We only optimize absolute expressions, and this inference is correct in those cases.
+            returnType = ValueType.DOCUMENT;
+        }
+        return new FunCall (qnameFor (funcall.getFunctionName()), returnType, aargs);
+    }
+    
+    private boolean functionEqualsBuiltin (FunctionCall funcall, String builtinFunction) {
+        return funcall.getFunctionName().getDisplayName().equals (builtinFunction);
+    }
+    
+    public AbstractExpression exprFor (GlobalVariable var) {
+        // TODO: encode the declared type
+        return new Variable (qnameFor (var.getVariableQName()));
+    }
+    
+    public AbstractExpression exprFor (IntegerRangeTest rangeTest) {
+        return new BinaryOperation
+            (new BinaryOperation
+             (exprFor (rangeTest.getValueExpression()), Operator.ALE, 
+              exprFor (rangeTest.getMaxValueExpression())),
+             Operator.AND,
+             new BinaryOperation
+             (exprFor (rangeTest.getValueExpression()), Operator.AGE, 
+              exprFor (rangeTest.getMinValueExpression())));
+    }
+
+    private ValueType valueTypeForItemType(ItemType itemType) {
+        if (itemType.isAtomicType()) {
+            return ValueType.ATOMIC;
+        }
+        if (itemType instanceof NodeTest) {
+            NodeTest nodeTest = (NodeTest) itemType;
+            switch (nodeTest.getPrimitiveType()) {
+            case Type.NODE: return ValueType.NODE;
+            case Type.ELEMENT: return ValueType.ELEMENT;
+            case Type.TEXT: return ValueType.TEXT;
+            case Type.ATTRIBUTE: return ValueType.ATTRIBUTE;
+            case Type.DOCUMENT: return ValueType.DOCUMENT;
+            case Type.PROCESSING_INSTRUCTION: return ValueType.PROCESSING_INSTRUCTION;
+            case Type.COMMENT: return ValueType.COMMENT;
+            }
+        }
+        // could be a function type? or namespace()?
+        return ValueType.VALUE;
+    }
+
+    public AbstractExpression exprFor (LastItemExpression expr) {
+        return new Subsequence (exprFor (expr.getBaseExpression()), FunCall.LastExpression, LiteralExpression.ONE);
+    }
+
+    public AbstractExpression exprFor (LetExpression let) {
+        // TODO: get rid of Let and use a FLWOR
+        StructuredQName var = let.getVariableQName();
+        Expression seq = let.getSequence();
+        Expression returns = let.getAction();
+        return new FLWOR(exprFor(returns), new LetClause (new Variable(qnameFor(var)), exprFor(seq)));
+    }
+    
+    public AbstractExpression exprFor (Literal literal) {
+        // This could be a sequence!!
+        Value<?> value = literal.getValue();
+        try {
+            int len = value.getLength();
+            if (len == 0) {
+                return new LiteralExpression();
+            }
+            if (len > 1) {
+                ArrayList<LiteralExpression> items = new ArrayList<LiteralExpression>();
+                SequenceIterator<?> iter = value.iterate();
+                Item<?> member;
+                while ((member = iter.next()) != null) {
+                    if (member instanceof AtomicValue) {
+                        items.add(new LiteralExpression (Value.convertToJava(member)));
+                    } else {
+                        throw new LuxException ("unsupported node in a literal sequence: " + literal.toString());
+                    }                    
+                }
+                return new Sequence (items.toArray(new LiteralExpression[0]));
+            }
+            // FIXME: precision loss here for BigInteger values
+            return new LiteralExpression(Value.convertToJava(value.asItem()));
+        } catch (XPathException e) {
+            throw new LuxException (e);
+        }        
+    }
+
+    public AbstractExpression exprFor (NegateExpression expr) {
+        return new UnaryMinus(exprFor (expr.getBaseExpression()));
+    }
+
+    public AbstractExpression exprFor (ParentNodeExpression expr) {
+        return new PathStep(PathStep.Axis.Parent, new lux.xpath.NodeTest(ValueType.NODE));
+    }
+
+    public AbstractExpression exprFor (ProcessingInstruction pi) {
+        return new ProcessingInstructionConstructor(exprFor(pi.getNameExpression()), exprFor(pi.getContentExpression()));
+    }
+    
+    public AbstractExpression exprFor (RootExpression expr) {
+        return new Root();
+    }
+
+    public AbstractExpression exprFor (SlashExpression expr) {
+        AbstractExpression lq = exprFor (expr.getControllingExpression());
+        AbstractExpression rq = exprFor (expr.getControlledExpression());
+        return new PathExpression(lq, rq);
+    }
+    
+    public AbstractExpression exprFor (TailExpression expr) {
+        return new Subsequence (exprFor (expr.getBaseExpression()), new LiteralExpression(expr.getStart()));
     }
     
     public AbstractExpression exprFor (UnaryExpression expr) {
@@ -550,23 +592,34 @@ public class SaxonTranslator {
         return exprFor (expr.getBaseExpression());
     }
     
+    public AbstractExpression exprFor (ValueOf valueOf) {
+        return new TextConstructor(exprFor (valueOf.getContentExpression()));
+    }
+    
+    public AbstractExpression exprFor (VariableReference var) {
+        return new Variable (qnameFor (var.getBinding().getVariableQName()));
+        // in XQuery this could be bound to a for expression, or another variable, etc.
+        // In XPath, inline all variable references:
+        //LetExpression binding = (LetExpression) var.getBinding();
+        //return exprFor (binding.getSequence());
+    }
+    
+    private static final StructuredQName itemAtQName = new StructuredQName("", NamespaceConstant.SAXON, "item-at");
+    
+    private QName qnameFor(StructuredQName name) {
+        QName qname = new QName (name.getNamespaceBinding().getURI(), name.getLocalPart(), name.getNamespaceBinding().getPrefix());
+        if (!(qname.getPrefix().equals ("fn") && qname.getNamespaceURI().equals(FunCall.FN_NAMESPACE) ||
+                qname.getPrefix().equals("local") && qname.getNamespaceURI().equals(FunCall.LOCAL_NAMESPACE) ||
+                qname.getPrefix().equals("xs") && qname.getNamespaceURI().equals(FunCall.XS_NAMESPACE))) {
+            addNamespaceDeclaration(qname);
+        }
+        return qname;
+    }
+
     public AbstractExpression exprFor (CompareToIntegerConstant comp) {
         Operator op = operatorFor (comp.getComparisonOperator());
         long num = comp.getComparand();
         return new BinaryOperation  (exprFor (comp.getOperand()), op, new LiteralExpression (num));
-    }
-
-    /*
-     * XQuery expressions
-     */
-   
-    public AbstractExpression exprFor (FixedElement element) {
-        NodeName name = element.getElementName();
-        QName qname = qnameFor (name.getStructuredQName());
-        AbstractExpression content = exprFor (element.getContentExpression());
-        Namespace [] namespaces = namespacesFor (element.getActiveNamespaces());
-        ElementConstructor elcon = new ElementConstructor(qname, namespaces, content);
-        return elcon;
     }
 
     private Namespace[] namespacesFor(NamespaceBinding[] activeNamespaces) {
@@ -578,21 +631,6 @@ public class SaxonTranslator {
             namespaces[i++] = new Namespace (binding.getPrefix(), binding.getURI());
         }
         return namespaces;
-    }
-
-    public AbstractExpression exprFor (DocumentInstr documentInstr) {
-        return new DocumentConstructor (exprFor (documentInstr.getContentExpression()));
-    }
-    
-    public AbstractExpression exprFor (FixedAttribute attribute) {
-        NodeName name = attribute.getAttributeName();
-        QName qname = qnameFor (name.getStructuredQName());
-        AttributeConstructor att = new AttributeConstructor(qname, exprFor (attribute.getContentExpression()));
-        return att;
-    }
-    
-    public AbstractExpression exprFor (ValueOf valueOf) {
-        return new TextConstructor(exprFor (valueOf.getContentExpression()));
     }
     
     public AbstractExpression exprFor (FLWORExpression flwor) {  
@@ -671,33 +709,13 @@ public class SaxonTranslator {
                 sortKeyDef.getEmptyLeast());
     }
     
-    public AbstractExpression exprFor (Choose choose) {
-        // convert a list of condition/action pairs (a la XSLT) to a chain of if-then-else conditions
-        // a-la XQuery
-        Expression[] conds = choose.getConditions();
-        Expression[] actions = choose.getActions();
-        int l = conds.length;
-        if (l < 2) {
-            throw new LuxException ("Choose must have at least two conditions");
-        }
-        if (actions.length != conds.length) {
-            throw new LuxException ("Choose must have the same number of actions as conditions");            
-        }
-        l -= 2;
-        AbstractExpression tail = new Conditional(exprFor (conds[l]), exprFor (actions[l]), exprFor(actions[l+1]));
-        while (--l > 0) {
-            tail = new Conditional (exprFor (conds[l]), exprFor(actions[l]), tail);
-        }
-        return tail;
-    }
-
     public AbstractExpression exprFor (Expression expr) {
         if (expr == null) {
             return null;
         }
-        ExprClass exprClass = null;
+        ExprClass exprClass = null;        
         for (Class<?> cls = expr.getClass(); exprClass == null && cls != Object.class; cls = cls.getSuperclass()) {
-            exprClass = dispatcher.get (cls);
+            exprClass = dispatcher.get (cls.getSimpleName());
         }
         if (exprClass == null) {
             throw new UnsupportedOperationException ("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
@@ -737,6 +755,8 @@ public class SaxonTranslator {
             return exprFor ((ForExpression) expr);
         case FunctionCall:
             return exprFor ((FunctionCall) expr);
+        case IntegerRangeTest:
+            return exprFor ((IntegerRangeTest) expr);
         case LastItemExpression:
             return exprFor ((LastItemExpression) expr);
         case LetExpression:
@@ -747,6 +767,8 @@ public class SaxonTranslator {
             return exprFor ((NegateExpression) expr);
         case ParentNodeExpression:
             return exprFor ((ParentNodeExpression) expr);
+        case ProcessingInstruction:
+            return exprFor ((ProcessingInstruction) expr);
         case RootExpression:
             return exprFor ((RootExpression) expr);
         case SlashExpression:
@@ -761,43 +783,9 @@ public class SaxonTranslator {
         case VariableReference:
             return exprFor ((VariableReference) expr);
         default:
-            throw new IllegalArgumentException("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
+            throw new UnsupportedOperationException("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
         }
     }
-
-    @SuppressWarnings("unchecked")
-    private Class<? extends Expression>[] exprClasses = new Class[] {
-        Atomizer.class,
-        AxisExpression.class,
-        BinaryExpression.class,
-        CastExpression.class,
-        CompareToIntegerConstant.class,
-        ContextItemExpression.class,
-        Expression.class,
-        FilterExpression.class,
-        FirstItemExpression.class,
-        ForExpression.class,
-        FunctionCall.class,
-        LastItemExpression.class,
-        LetExpression.class,
-        Literal.class,
-        NegateExpression.class,
-        ParentNodeExpression.class,
-        RootExpression.class,
-        SlashExpression.class,
-        TailExpression.class,
-        UnaryExpression.class,
-        VariableReference.class,
-        FLWORExpression.class,
-        Block.class,
-        Choose.class,
-        Comment.class,
-        DocumentInstr.class,
-        FixedAttribute.class,
-        FixedElement.class,
-        GlobalVariable.class,
-        ValueOf.class
-    };
     
     private enum ExprClass {
         Atomizer,
@@ -811,12 +799,14 @@ public class SaxonTranslator {
         FirstItemExpression,
         ForExpression,
         FunctionCall,
+        IntegerRangeTest,
         LastItemExpression,
         LetExpression,
         Literal,
-        LocalVariableReference,
         NegateExpression,
+        ProcessingInstruction,
         ParentNodeExpression,
+        QuantifiedExpression,
         RootExpression,
         SlashExpression,
         TailExpression,

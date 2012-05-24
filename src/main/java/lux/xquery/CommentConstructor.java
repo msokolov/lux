@@ -18,9 +18,9 @@ public class CommentConstructor extends AbstractExpression {
 
     @Override
     public void toString(StringBuilder buf) {
-        buf.append("<!--");
+        buf.append("comment { ");
         content.toString(buf);
-        buf.append("-->");
+        buf.append(" }");
     }
 
     @Override

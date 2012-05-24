@@ -10,7 +10,7 @@ public class PathStep extends AbstractExpression {
     public enum Axis {
 
         Self("self", true), Child("child", true), Parent("parent", false), 
-            Descendant("descendant", true), DescendantSelf("descendant-or-self", true),
+            Descendant("descendant", true), DescendantSelf("descendant-or-self", false),
             Ancestor("ancestor", false), AncestorSelf("ancestor-or-self", false), 
             Preceding("preceding", false), Following("following", true),
             PrecedingSibling("preceding-sibling", false), FollowingSibling("following-sibling", true),

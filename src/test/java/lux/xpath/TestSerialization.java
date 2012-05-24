@@ -130,7 +130,7 @@ public class TestSerialization {
         subseq = new Subsequence(new Dot(), LiteralExpression.ONE, new LiteralExpression(10));
         assertEquals ("subsequence(.,1,10)", subseq.toString());
         subseq = new Subsequence(new Dot(), FunCall.LastExpression, LiteralExpression.ONE);
-        assertEquals (".[fn:last()]", subseq.toString());
+        assertEquals ("subsequence(.,fn:last(),1)", subseq.toString());
         subseq = new Subsequence(new Dot(), LiteralExpression.ONE, LiteralExpression.ONE);
         assertEquals (".[1]", subseq.toString());
     }
