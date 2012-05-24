@@ -215,6 +215,14 @@ public class TestRunner {
         assertTrue (runTest ("K2-Steps-15"));
     }
     
+    @Test public void testK2Steps20() throws Exception {
+        assertTrue (runTest ("K2-Steps-20"));
+    }
+    
+    @Test public void testK2Steps35() throws Exception {
+        assertTrue (runTest ("K2-Steps-35"));
+    }
+
     @Test public void testStepsLeadingLoneSlash1a() throws Exception {
         assertTrue (runTest ("Steps-leading-lone-slash-1a"));
     }

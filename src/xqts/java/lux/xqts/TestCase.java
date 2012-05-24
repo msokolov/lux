@@ -9,14 +9,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import net.sf.saxon.expr.sort.CodepointCollator;
 import net.sf.saxon.expr.sort.GenericAtomicComparer;
 import net.sf.saxon.functions.DeepEqual;
+import net.sf.saxon.query.QueryResult;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -186,7 +190,7 @@ public class TestCase {
         switch (getComparisonMode()) {
         case Fragment:
         case Text:
-            String result = resultToString(results);
+            String result = results == null ? "" : resultToString(results);
             for (String output : getOutputText()) {
                 if (result.equals(unescape(output)))
                     return true;
@@ -211,18 +215,38 @@ public class TestCase {
         }
     }
 
-    public static String resultToString(Iterable<?> results) {
+    public static String resultToString(Iterable<?> results) throws XPathException {
         Iterator<?> iterator = results.iterator();
         if (!iterator.hasNext()) {
             return "";
         }
-        StringBuilder buf = new StringBuilder (iterator.next().toString());
+        StringBuilder buf = new StringBuilder (resultToString (iterator.next()));
         while (iterator.hasNext()) {
-            buf.append (' ');
-            buf.append (iterator.next());
+            Object result = iterator.next();
+            if (! (result instanceof XdmNode) && buf.length() > 0) {
+                buf.append (' ');
+            }
+            buf.append (resultToString (result));
         }
         String result = buf.toString();
         return result;
+    }
+    
+    public static String resultToString (Object o) throws XPathException {
+        if (o instanceof XdmNode) {
+            return resultToString((XdmNode) o);
+        }
+        return o.toString();        
+    }
+
+    public static String resultToString (XdmNode node) throws XPathException {
+        StringWriter sw = new StringWriter();
+        Properties props = new Properties();
+        props.setProperty("method", "xml");
+        props.setProperty("indent", "no");
+        props.setProperty("omit-xml-declaration", "yes");
+        QueryResult.serialize(node.getUnderlyingNode(), new StreamResult(sw), props);
+        return sw.toString();
     }
     
     private boolean areNodesEqual (XdmNode node1, XdmNode node2) throws XPathException {
