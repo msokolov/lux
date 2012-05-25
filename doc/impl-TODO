@@ -18,6 +18,8 @@ This might be working, but we need to test
 runninng XQTS now - down to 1305 failures out of 12008 tests
 Now down to 1207 failures
 Now 976
+Now 841
+Now 780
 *** static context items
 a whole host of things, including various default mode settings too
 numerous to list here - see the spec.

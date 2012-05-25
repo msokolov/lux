@@ -35,6 +35,7 @@ public class TestRunner {
     private static int numtests;
     private static int numfailed;
     private boolean terminateOnException = true;
+    private boolean printDetailedDiagnostics = false;
     
     @BeforeClass
     public static void setup () throws Exception {
@@ -107,15 +108,15 @@ public class TestRunner {
                 System.err.println (test1.getName() + " Mismatch: " + TestCase.resultToString(results) + " is not " + test1.getOutputText()[0]);
                 ++numfailed;
                 // debugging diagnostics:
-                /*
-                XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
-                XdmItem item = xq.load().evaluateSingle();
-                if (! test1.compareResult(item)) {
-                    System.err.println (test1.getName() + " Saxon fails too?");
-                } else {
-                    System.err.println (eval.getTranslator().queryFor(xq));
+                if (printDetailedDiagnostics) {
+                    XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
+                    XdmItem item = xq.load().evaluateSingle();
+                    if (! test1.compareResult(item)) {
+                        System.err.println (test1.getName() + " Saxon fails too?");
+                    } else {
+                        System.err.println (eval.getTranslator().queryFor(xq));
+                    }
                 }
-                */
                 return false;
             }
         } catch (Exception e) {
@@ -124,11 +125,11 @@ public class TestRunner {
                     test1.getComparisonMode() == ComparisonMode.Ignore)) {                
                 System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + e.getMessage());
                 // diagnostics:
-                /*
-                XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
-                XdmItem item = xq.load().evaluateSingle();
-                System.err.println (test1.getQueryText() + " returns " + item);
-                */
+                if (printDetailedDiagnostics ) {
+                    XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
+                    XdmItem item = xq.load().evaluateSingle();
+                    System.err.println (test1.getQueryText() + " returns " + item);
+                }
                 if (terminateOnException) {
                     throw (e); 
                 } else {
@@ -160,6 +161,11 @@ public class TestRunner {
     @Test public void testStepsLeadingLoneSlash8a() throws Exception {
         // fails since we don't implement "instance of"
         assertTrue (runTest ("Steps-leading-lone-slash-8a"));
+    }
+    
+    @Test public void testOneTest() throws Exception {
+        printDetailedDiagnostics = true;
+        assertTrue (runTest ("nametest-18"));
     }
     
     @Test public void testGroup () throws Exception {

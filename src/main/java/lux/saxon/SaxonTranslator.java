@@ -10,6 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
 import lux.api.LuxException;
 import lux.api.ValueType;
 import lux.xpath.AbstractExpression;
@@ -122,10 +124,12 @@ import net.sf.saxon.value.Value;
  */
 public class SaxonTranslator {
     
+    public static final String CODEPOINT_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
     private Config config;
     private HashMap<String,String> namespaceDeclarations;
     private HashMap<String,ExprClass> dispatcher;
-
+    private QueryModule queryModule;
+    
     public SaxonTranslator (Config config) {
         this.config = config;
         namespaceDeclarations = new HashMap<String, String>();
@@ -144,32 +148,38 @@ public class SaxonTranslator {
      * @return a lux representation of an equivalent XQuery module
      */
 
-    private QueryModule queryModulex;
-    
     public XQuery queryFor(XQueryExecutable xquery) {
         XQueryExpression saxonQuery = xquery.getUnderlyingCompiledQuery();
-        QueryModule queryModule = saxonQuery.getStaticContext();
+        queryModule = saxonQuery.getStaticContext();
         // queryModule.getNamespaceResolver().iteratePrefixes()
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
         // Namespace declarations are accumulated while walking the expression trees:
         namespaceDeclarations.clear();
         FunctionDefinition[] defs = getFunctionDefinitions(queryModule);
-        queryModulex = queryModule;
         //Namespace[] namespaceDeclarations = getNamespaceDeclarations (queryModule);
         AbstractExpression body = exprFor (saxonQuery.getExpression());
-        return new XQuery(getNamespaceDeclarations(queryModule), getVariableDefinitions(queryModule), defs, body);
+        String defaultCollation = queryModule.getDefaultCollationName();
+        if (defaultCollation.equals (CODEPOINT_COLLATION)) {
+            defaultCollation = null;
+        }
+        return new XQuery(
+                queryModule.getDefaultElementNamespace(),
+                queryModule.getDefaultFunctionNamespace(),
+                defaultCollation,
+                getNamespaceDeclarations(queryModule), 
+                getVariableDefinitions(queryModule), defs, body);
     }
     
     public XQuery queryFor(AbstractExpression ex) {
-        return new XQuery(getNamespaceDeclarations(null), null, null, ex);
+        return new XQuery(ex);
     }
 
     private Namespace[] getNamespaceDeclarations(QueryModule queryModule) {
         // String defElementNS = queryModule.getDefaultElementNamespace();
         // String defFunctionNS = queryModule.getDefaultFunctionNamespace();
         // We'd like to get our hands on queryModule.explicitPrologNamespaces :(
-        // I think possibly we will have to resort to walking the module in search of 
-        // all namespaces??
+        // Without it we have to resort to some scanning ugliness in search of 
+        // all namespaces.
         Namespace[] decls = new Namespace[namespaceDeclarations.size()];
         int i = 0;
         for (Map.Entry<String, String> entry : namespaceDeclarations.entrySet()) {
@@ -279,7 +289,12 @@ public class SaxonTranslator {
 
     private QName qnameForNameCode(int nameCode) {
         StructuredQName sqname = config.getNamePool().getStructuredQName(nameCode);
-        QName name = new QName (sqname.getURI(), sqname.getLocalPart(), sqname.getPrefix());
+        String prefix = sqname.getPrefix();
+        String namespace = sqname.getURI();
+        if (StringUtils.isBlank(prefix) && StringUtils.isNotBlank(namespace)) {
+            prefix = getPrefixForNamespace(namespace);
+        }
+        QName name = new QName (namespace, sqname.getLocalPart(), prefix);
         return name;
     }
     
@@ -299,26 +314,12 @@ public class SaxonTranslator {
             return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qnameForNameCode(nameCode)));
         } else { // matches multiple node names
             if (nodeTest instanceof LocalNameTest) {
-                return new PathStep (axis, new lux.xpath.NodeTest (nodeType, new QName(((LocalNameTest)nodeTest).getLocalName())));
+                return new PathStep (axis, new lux.xpath.NodeTest (nodeType, new QName(null, ((LocalNameTest)nodeTest).getLocalName(), "*")));
             }
             if (nodeTest instanceof NamespaceTest) {
                 NamespaceTest namespaceTest = (NamespaceTest) nodeTest;
                 String namespace = namespaceTest.getNamespaceURI();
                 String prefix = getPrefixForNamespace (namespace);
-                if (prefix == null) {
-                    prefix = config.getNamePool().suggestPrefixForURI(namespace);
-                }
-                if (prefix == null) {
-                    NamespaceResolver resolver = queryModulex.getNamespaceResolver();
-                    Iterator<String> prefixes = resolver.iteratePrefixes();
-                    while (prefixes.hasNext()) {
-                        String p = prefixes.next();
-                        if (namespace.equals(resolver.getURIForPrefix(p, true))) {
-                            prefix = p;
-                            break;
-                        }
-                    }
-                }
                 QName qname = new QName(namespace, "*", prefix);
                 addNamespaceDeclaration(qname);
                 return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qname));
@@ -351,6 +352,18 @@ public class SaxonTranslator {
             if (ns.getValue().equals(namespace))
                 return ns.getKey();
         }
+        String prefix = config.getNamePool().suggestPrefixForURI(namespace);
+        if (prefix != null) {
+            return prefix;
+        }
+        NamespaceResolver resolver = queryModule.getNamespaceResolver();
+        Iterator<String> prefixes = resolver.iteratePrefixes();
+        while (prefixes.hasNext()) {
+            prefix = prefixes.next();
+            if (namespace.equals(resolver.getURIForPrefix(prefix, true))) {
+                return prefix;
+            }
+        }        
         return null;
     }
 

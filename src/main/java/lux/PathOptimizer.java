@@ -83,7 +83,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // Don't attempt to optimize if no indexes are available, or if the query has no body
         if (main != null && (indexer.getOptions() & XmlIndexer.INDEXES) != 0) {
             main = optimize (main);
-            return new XQuery(query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(), main);
+            return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(), query.getDefaultCollation(), query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(), main);
         }
         // TODO optimize function definitions
         // do nothing

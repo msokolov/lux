@@ -1,6 +1,9 @@
 package lux.xquery;
 
+import org.apache.commons.lang.StringUtils;
+
 import lux.xpath.AbstractExpression;
+import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xpath.Namespace;
 
@@ -12,14 +15,29 @@ public class XQuery {
     
     private final FunctionDefinition[] functionDefinitions;
     private final Namespace[] namespaceDeclarations;
+    private final String defaultElementNamespace, defaultFunctionNamespace, defaultCollation;
     private final VariableDefinition[] externalVariables;
     private final AbstractExpression body;
     
-    public XQuery (Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, AbstractExpression body) {
+    public XQuery (String defaultElementNamespace, String defaultFunctionNamespace, String defaultCollation, Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, AbstractExpression body) {
         this.namespaceDeclarations = namespaceDeclarations;
         this.externalVariables = variableDefinitions;
+        this.defaultCollation = defaultCollation;
+        this.defaultElementNamespace = defaultElementNamespace;
+        this.defaultFunctionNamespace = defaultFunctionNamespace;
         this.functionDefinitions = defs;
         this.body = body;
+    }
+    
+    public XQuery (AbstractExpression body) {
+        this.namespaceDeclarations = null;
+        this.externalVariables = null;
+        this.defaultCollation = null;
+        this.defaultElementNamespace = null;
+        this.defaultFunctionNamespace = null;
+        this.functionDefinitions = null;
+        this.body = body;
+        
     }
     
     public String toString () {
@@ -29,8 +47,17 @@ public class XQuery {
     }
     
     public void toString (StringBuilder buf) {
+        if (StringUtils.isNotBlank(defaultCollation)) {
+            buf.append("declare default collation \"").append(defaultCollation).append("\";\n");
+        }
+        if (StringUtils.isNotBlank(defaultElementNamespace)) {
+            buf.append("declare default element namespace \"").append(defaultElementNamespace).append("\";\n");
+        }
+        if (StringUtils.isNotBlank(defaultFunctionNamespace)  && !defaultFunctionNamespace.equals(FunCall.FN_NAMESPACE)) {
+            buf.append("declare default function namespace \"").append(defaultFunctionNamespace).append("\";\n");
+        }
         for (Namespace ns : namespaceDeclarations) {
-            if (ns.getPrefix().isEmpty()) {
+            if (ns.getPrefix().isEmpty() || "xml".equals (ns.getPrefix())) {
                 // handle this using specific mappings for element/function default namespaces
                 continue;
                 //buf.append("declare default element namespace ").append('=');                
@@ -70,6 +97,17 @@ public class XQuery {
         return externalVariables;
     }
     
+    public String getDefaultCollation () {
+        return defaultCollation;
+    }
+
+    public String getDefaultElementNamespace () {
+        return defaultElementNamespace;
+    }
+    
+    public String getDefaultFunctionNamespace () {
+        return defaultFunctionNamespace;
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
