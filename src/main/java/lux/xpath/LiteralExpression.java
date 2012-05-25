@@ -128,7 +128,7 @@ public class LiteralExpression extends AbstractExpression {
             buf.append("xs:time(\"").append (value).append("\")");
             break;
         case DECIMAL:
-            buf.append("xs:decimal(\"").append (value).append("\")");
+            buf.append("xs:decimal(").append (value).append(")");
             break;
         case NUMBER:
         default:
