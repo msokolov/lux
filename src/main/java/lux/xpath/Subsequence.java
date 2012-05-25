@@ -85,7 +85,10 @@ public class Subsequence extends AbstractExpression {
             getStartExpr().toString(buf);
             buf.append (')');
         }
-        else if (getLengthExpr().equals(LiteralExpression.ONE) && getStartExpr().getType() == Type.Literal) {
+        else if (getLengthExpr().equals(LiteralExpression.ONE) && 
+                (getStartExpr().getType() == Type.Literal ||
+                        getStartExpr().equals(FunCall.LastExpression))) 
+        {
             appendSub(buf, getSequence());
             buf.append ("[");
             getStartExpr().toString(buf);

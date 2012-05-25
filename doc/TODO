@@ -39,7 +39,9 @@ layer.
 ** xquery abstraction
 We dumped Jaxen - it's just too old to be of interest.  So the only impl we
 have right now is based on Saxon.  We should maintain an abstraction layer
-though.  
+though.  ADVANTAGES of a built-in xquery parser: decouple from Saxon API -
+this is actually a big deal.  SUPPORT for xpath 1.0 in JDK: this way we can
+run out of the box in Lucene with no additional jars.
 ** benchmark framework
 Eventually will want to scale up, perform repeats, report timings in a
 better way, etc.  For now unit tests seem fine.

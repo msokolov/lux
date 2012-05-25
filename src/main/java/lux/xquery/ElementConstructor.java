@@ -1,5 +1,7 @@
 package lux.xquery;
 
+import org.apache.commons.lang.StringUtils;
+
 import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.Namespace;
@@ -25,23 +27,34 @@ public class ElementConstructor extends AbstractExpression {
 
     @Override
     public void toString(StringBuilder buf) {
-        buf.append ("element ");
+        buf.append ('<');
         qname.toString(buf);
-        buf.append (" { ");
-        if (namespaces != null && namespaces.length > 0) {
+        buf.append (' ');
+        boolean hasNamespaceDecl = namespaces != null && namespaces.length > 0;
+        if (hasNamespaceDecl) {
             appendNamespace(namespaces[0], buf);
             for (int i = 1; i < namespaces.length; i++) {
-                buf.append (", ");
+                buf.append (' ');
                 appendNamespace(namespaces[i], buf);
             }
         }
-        if (getContent() != null) {
-            if (namespaces != null && namespaces.length > 0) {
-                buf.append (", ");
+        if (StringUtils.isBlank(qname.getPrefix()) && StringUtils.isNotBlank(qname.getNamespaceURI())) {
+            if (hasNamespaceDecl) {
+                buf.append(' ');
+            } else {
+                hasNamespaceDecl = true;
             }
-            getContent() .toString(buf);
+            buf.append ("xmlns=\"").append (qname.getNamespaceURI()).append ("\"");
         }
-        buf.append (" }");
+        if (getContent() == null) {
+            buf.append ("/>");
+        } else {
+            buf.append (">{");
+            getContent().toString(buf);
+            buf.append (" }</");
+            qname.toString(buf);
+            buf.append ('>');
+        }
     }
     
     private AbstractExpression getContent() {
@@ -49,14 +62,14 @@ public class ElementConstructor extends AbstractExpression {
     }
 
     private void appendNamespace (Namespace ns, StringBuilder buf) {
-        buf.append ("attribute xmlns");
+        buf.append ("xmlns");
         if (!ns.getPrefix().isEmpty()) {
             buf.append (':');
             buf.append (ns.getPrefix());
         }
-        buf.append (" { \"");
+        buf.append ("=\"");
         buf.append (ns.getNamespace());
-        buf.append ("\" }");        
+        buf.append ("\"");        
     }
 
     @Override

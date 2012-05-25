@@ -17,6 +17,7 @@ import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.xqts.TestCase.ComparisonMode;
 
+import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 
 import org.apache.lucene.index.IndexWriter;
@@ -104,22 +105,33 @@ public class TestRunner {
             } else {
                 System.err.println (test1.getName() + " Mismatch: " + TestCase.resultToString(results) + " is not " + test1.getOutputText()[0]);
                 ++numfailed;
-                XdmItem item = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText()).load().evaluateSingle();
+                // debugging diagnostics:
+                /*
+                XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
+                XdmItem item = xq.load().evaluateSingle();
                 if (! test1.compareResult(item)) {
                     System.err.println (test1.getName() + " Saxon fails too?");
+                } else {
+                    System.err.println (eval.getTranslator().queryFor(xq));
                 }
+                */
                 return false;
             }
         } catch (Exception e) {
-            // TODO: compare errors against expected errors
-            String scenario = test1.getScenario();
-            if (! ("runtime-error".equals(scenario) ||
-                    "parse-error".equals(scenario) ||
-                    test1.getComparisonMode() == ComparisonMode.Ignore)) {
+            // Saxon's XQTS report says it doesn't check actual error codes, so neither do we
+            if (! (test1.isExpectError() ||
+                    test1.getComparisonMode() == ComparisonMode.Ignore)) {                
                 System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + e.getMessage());
-                //throw (e);                
+                // diagnostics:
+                /*
+                XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
+                XdmItem item = xq.load().evaluateSingle();
+                System.err.println (test1.getQueryText() + " returns " + item);
+                */
+                
+                // throw (e); 
                 ++numfailed;
-                return false;                
+                return false;
             }
             //System.out.println (test1.getName() + " OK (expected error)");
             return true;
@@ -142,102 +154,9 @@ public class TestRunner {
         }
     }
     
-    @Test public void testOne () throws Exception {
-        assertTrue (runTest ("op-date-greater-than2args-1"));
-    }
-
-    @Test public void testLiterals054 () throws Exception {
-        assertTrue (runTest ("Literals054"));
-    }
-    
-    @Test public void testLiterals056 () throws Exception {
-        assertTrue (runTest ("Literals056"));
-    }
-    
-    @Test public void testLiterals066 () throws Exception {
-        assertTrue (runTest ("Literals066"));
-    }
-    
-    @Test public void testLiterals005 () throws Exception {
-        assertTrue (runTest ("Literals005"));
-    }
-    
-    @Test public void testLiterals004 () throws Exception {
-        assertTrue (runTest ("Literals004"));
-    }
-    
-    @Test public void testLiteralsK2_4 () throws Exception {
-        assertTrue (runTest ("K2-Literals-4"));
-    }
-    
-    @Test public void testLiteralsK2_8 () throws Exception {
-        assertTrue (runTest ("K2-Literals-8"));
-    }
-
-    @Test public void testPathExpr6() throws Exception {
-        assertTrue (runTest ("PathExpr-6"));
-    }
-
-    @Test public void testAxes091() throws Exception {
-        assertTrue (runTest ("Axes091"));
-    }
-    
-    @Test public void testParenExpr11() throws Exception {
-        assertTrue (runTest ("Parenexpr-11"));
-    }
-    
-    @Test public void testParenExpr20() throws Exception {
-        assertTrue (runTest ("Parenexpr-20"));
-    }
-    
-    @Test public void testExternalContextItem2() throws Exception {
-        assertTrue (runTest ("externalcontextitem-2"));
-    }
-    
-    @Test public void testExternalContextItem9() throws Exception {
-        assertTrue (runTest ("externalcontextitem-9"));
-    }
-
-    @Test public void testExternalContextItem22() throws Exception {
-        assertTrue (runTest ("externalcontextitem-22"));
-    }
-
-    @Test public void testK2FunctionCallExpr10() throws Exception {
-        assertTrue (runTest ("K2-FunctionCallExpr-10"));
-    }
-
-    @Test public void testK2FunctionCallExpr11() throws Exception {
-        assertTrue (runTest ("K2-FunctionCallExpr-11"));
-    }
-
-    @Test public void testK2Steps12() throws Exception {
-        assertTrue (runTest ("K2-Steps-12"));
-    }
-    
-    @Test public void testK2Steps15() throws Exception {
-        assertTrue (runTest ("K2-Steps-15"));
-    }
-    
-    @Test public void testK2Steps20() throws Exception {
-        assertTrue (runTest ("K2-Steps-20"));
-    }
-    
-    @Test public void testK2Steps35() throws Exception {
-        assertTrue (runTest ("K2-Steps-35"));
-    }
-
-    @Test public void testAxes036_2() throws Exception {
-        assertTrue (runTest ("Axes036-2"));
-    }
-    
-
     @Test public void testStepsLeadingLoneSlash8a() throws Exception {
-        assertTrue (runTest ("Steps-leading-lone-slash-8a"));
-    }
-
-    @Test public void testStepsLeadingLoneSlash1a() throws Exception {
         // fails since we don't implement "instance of"
-        assertTrue (runTest ("Steps-leading-lone-slash-1a"));
+        assertTrue (runTest ("Steps-leading-lone-slash-8a"));
     }
     
     @Test public void testGroup () throws Exception {

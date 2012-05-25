@@ -74,10 +74,13 @@ public class NodeTest {
         case NODE: case COMMENT: case TEXT:
             buf.append (type.nodeTest).append ("()");
             break;
-        case ELEMENT: case ATTRIBUTE:
-            buf.append (type.nodeTest).append ('(');
-            name.toString(buf);
-            buf.append(')');
+        case ATTRIBUTE:
+        case ELEMENT: 
+            if ("*".equals(name.getLocalPart())) {
+                buf.append(name.getPrefix()).append(":*");
+            } else {
+                name.toString(buf);
+            }
             break;
         case DOCUMENT:
             buf.append (type.nodeTest).append("(element(");

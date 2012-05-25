@@ -49,6 +49,7 @@ public class TestCase {
     private final String queryText;
     //private final String inputFileText;
     private String[] outputFileText;
+    private final boolean expectError;
 
     static final String XQTS_NS = "http://www.w3.org/2005/02/query-test-XQTSCatalog";
     static final QName COMPARE = new QName("compare");
@@ -60,7 +61,8 @@ public class TestCase {
     static final QName QUERY = new QName(XQTS_NS, "query");
     static final QName INPUT_FILE = new QName(XQTS_NS, "input-file");
     static final QName OUTPUT_FILE = new QName(XQTS_NS, "output-file");
-    static final QName CONTEXT_ITEM = new QName(XQTS_NS, "contextItem");   
+    static final QName CONTEXT_ITEM = new QName(XQTS_NS, "contextItem");
+    private static final QName EXPECTED_ERROR = new QName(XQTS_NS, "expected-error");   
     
     public enum ComparisonMode {
         XML, Text, Fragment, Ignore, Inspect;
@@ -106,6 +108,10 @@ public class TestCase {
             }
         }
         queryText = text;
+        
+        XdmSequenceIterator errors = testCase.axisIterator(Axis.CHILD, EXPECTED_ERROR);
+        expectError = errors.hasNext();
+        
         catalog.putTestCase(name, this);
     }
 
@@ -216,16 +222,18 @@ public class TestCase {
         if (!iterator.hasNext()) {
             return "";
         }
-        StringBuilder buf = new StringBuilder (resultToString (iterator.next()));
+        Object result = iterator.next();
+        StringBuilder buf = new StringBuilder (resultToString (result));
+        boolean lastNode = result instanceof XdmNode;
         while (iterator.hasNext()) {
-            Object result = iterator.next();
-            if (! (result instanceof XdmNode) && buf.length() > 0) {
+            result = iterator.next();
+            if (! (result instanceof XdmNode) && !lastNode) {
                 buf.append (' ');
             }
             buf.append (resultToString (result));
+            lastNode = result instanceof XdmNode;
         }
-        String result = buf.toString();
-        return result;
+        return buf.toString();
     }
     
     public static String resultToString (Object o) throws XPathException {
@@ -272,6 +280,10 @@ public class TestCase {
     
     public String toString () {
         return "XQueryTestCase{" + name + "}";
+    }
+
+    public boolean isExpectError() {
+        return expectError;
     }
  
 }

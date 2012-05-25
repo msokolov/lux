@@ -91,12 +91,14 @@ import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Axis;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NamespaceBinding;
+import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.NodeName;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.DocumentNodeTest;
 import net.sf.saxon.pattern.LocalNameTest;
+import net.sf.saxon.pattern.NamespaceTest;
 import net.sf.saxon.pattern.NodeTest;
 import net.sf.saxon.query.GlobalVariableDefinition;
 import net.sf.saxon.query.QueryModule;
@@ -139,13 +141,17 @@ public class SaxonTranslator {
      * @return a lux representation of an equivalent XQuery module
      */
 
+    private QueryModule queryModulex;
+    
     public XQuery queryFor(XQueryExecutable xquery) {
         XQueryExpression saxonQuery = xquery.getUnderlyingCompiledQuery();
         QueryModule queryModule = saxonQuery.getStaticContext();
+        // queryModule.getNamespaceResolver().iteratePrefixes()
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
         // Namespace declarations are accumulated while walking the expression trees:
         namespaceDeclarations.clear();
         FunctionDefinition[] defs = getFunctionDefinitions(queryModule);
+        queryModulex = queryModule;
         //Namespace[] namespaceDeclarations = getNamespaceDeclarations (queryModule);
         AbstractExpression body = exprFor (saxonQuery.getExpression());
         return new XQuery(getNamespaceDeclarations(queryModule), getVariableDefinitions(queryModule), defs, body);
@@ -186,7 +192,11 @@ public class SaxonTranslator {
     private void addNamespaceDeclaration (QName qname) {
         String prefix = qname.getPrefix();
         String namespaceURI = qname.getNamespaceURI();
-        namespaceDeclarations.put(prefix, namespaceURI);
+        if (! namespaceDeclarations.containsKey(prefix)) {
+            // We only want the outermost binding of each prefix; these
+            // are used to generate the namespace declarations in the query preamble
+            namespaceDeclarations.put(prefix, namespaceURI);
+        }
     }
 
     private FunctionDefinition[] getFunctionDefinitions(QueryModule queryModule) {
@@ -288,6 +298,28 @@ public class SaxonTranslator {
             if (nodeTest instanceof LocalNameTest) {
                 return new PathStep (axis, new lux.xpath.NodeTest (nodeType, new QName(((LocalNameTest)nodeTest).getLocalName())));
             }
+            if (nodeTest instanceof NamespaceTest) {
+                NamespaceTest namespaceTest = (NamespaceTest) nodeTest;
+                String namespace = namespaceTest.getNamespaceURI();
+                String prefix = getPrefixForNamespace (namespace);
+                if (prefix == null) {
+                    prefix = config.getNamePool().suggestPrefixForURI(namespace);
+                }
+                if (prefix == null) {
+                    NamespaceResolver resolver = queryModulex.getNamespaceResolver();
+                    Iterator<String> prefixes = resolver.iteratePrefixes();
+                    while (prefixes.hasNext()) {
+                        String p = prefixes.next();
+                        if (namespace.equals(resolver.getURIForPrefix(p, true))) {
+                            prefix = p;
+                            break;
+                        }
+                    }
+                }
+                QName qname = new QName(namespace, "*", prefix);
+                addNamespaceDeclaration(qname);
+                return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qname));
+            }
             IntSet nameCodes = nodeTest.getRequiredNodeNames();
             if (nameCodes == IntUniversalSet.getInstance()) {
                 return new PathStep (axis, new lux.xpath.NodeTest (nodeType));
@@ -311,6 +343,14 @@ public class SaxonTranslator {
         }    
     }
     
+    private String getPrefixForNamespace(String namespace) {
+        for (Map.Entry<String, String> ns : namespaceDeclarations.entrySet()) {
+            if (ns.getValue().equals(namespace))
+                return ns.getKey();
+        }
+        return null;
+    }
+
     // covers ArithmeticExpression, BooleanExpression, GeneralComparison, ValueComparison,
     // IdentityComparison, RangeExpression
     public AbstractExpression exprFor (BinaryExpression expr) {
