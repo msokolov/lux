@@ -302,22 +302,26 @@ public class SaxonTranslator {
     }
     
     public AbstractExpression exprFor (PathStep.Axis axis, NodeTest nodeTest) {
+        if (nodeTest != null && nodeTest instanceof CombinedNodeTest) {
+            return exprFor (axis, (CombinedNodeTest) nodeTest);
+        }        
+        return new PathStep (axis, nodeTestFor (nodeTest));
+    }
+
+    private lux.xpath.NodeTest nodeTestFor (NodeTest nodeTest) {
         if (nodeTest == null) {
-            return new PathStep (axis, new lux.xpath.NodeTest(ValueType.NODE));
+            return new lux.xpath.NodeTest(ValueType.NODE);
         }
         if (nodeTest instanceof DocumentNodeTest) {
-            return new PathStep (axis, nodeTestFor ((DocumentNodeTest) nodeTest));
-        }
-        if (nodeTest instanceof CombinedNodeTest) {
-            return exprFor (axis, (CombinedNodeTest) nodeTest);
+            return nodeTestFor ((DocumentNodeTest) nodeTest);
         }
         int nameCode = nodeTest.getFingerprint();
         ValueType nodeType = valueTypeForItemType(nodeTest);
         if (nameCode >= 0) { // matches a single node name 
-            return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qnameForNameCode(nameCode)));
+            return new lux.xpath.NodeTest (nodeType, qnameForNameCode(nameCode));
         } else { // matches multiple node names
             if (nodeTest instanceof LocalNameTest) {
-                return new PathStep (axis, new lux.xpath.NodeTest (nodeType, new QName(null, ((LocalNameTest)nodeTest).getLocalName(), "*")));
+                return new lux.xpath.NodeTest (nodeType, new QName(null, ((LocalNameTest)nodeTest).getLocalName(), "*"));
             }
             if (nodeTest instanceof NamespaceTest) {
                 NamespaceTest namespaceTest = (NamespaceTest) nodeTest;
@@ -325,49 +329,37 @@ public class SaxonTranslator {
                 String prefix = getPrefixForNamespace (namespace);
                 QName qname = new QName(namespace, "*", prefix);
                 addNamespaceDeclaration(qname);
-                return new PathStep (axis, new lux.xpath.NodeTest (nodeType, qname));
+                return new lux.xpath.NodeTest (nodeType, qname);
             }
             IntSet nameCodes = nodeTest.getRequiredNodeNames();
             if (nameCodes == IntUniversalSet.getInstance()) {
-                return new PathStep (axis, new lux.xpath.NodeTest (nodeType));
+                return new lux.xpath.NodeTest (nodeType);
             } 
             throw new IllegalArgumentException("Unsupported node test: " + nodeTest.toString());
-            // I think we are already handling this case as "CombinedNodeTest" above?
-            /*
-            else if (nameCodes instanceof IntComplementSet) {
-                // I think we are already handling this case as "CombinedNodeTest" above?
-                throw new IllegalArgumentException("Unsupported node test: " + nodeTest.toString());
-            } else if (nameCodes instanceof IntEmptySet) {
-                throw new IllegalArgumentException("Unsupported node test: " + nodeTest.toString());
-            }
-            IntIterator nameCodesIter = nameCodes.iterator();
-            ArrayList<AbstractExpression> tests = new ArrayList<AbstractExpression>();
-            while (nameCodesIter.hasNext()) {
-                tests.add(new PathStep (axis, new lux.xpath.NodeTest(ValueType.ELEMENT, qnameForNameCode(nameCodesIter.next()))));
-            }
-            return new SetOperation (Operator.UNION, tests.toArray(new AbstractExpression[0]));
-            */
-        }    
+        }
     }
-    
+
     private String getPrefixForNamespace(String namespace) {
         for (Map.Entry<String, String> ns : namespaceDeclarations.entrySet()) {
             if (ns.getValue().equals(namespace))
                 return ns.getKey();
         }
         String prefix = config.getNamePool().suggestPrefixForURI(namespace);
-        if (prefix != null) {
-            return prefix;
-        }
-        NamespaceResolver resolver = queryModule.getNamespaceResolver();
-        Iterator<String> prefixes = resolver.iteratePrefixes();
-        while (prefixes.hasNext()) {
-            prefix = prefixes.next();
-            if (namespace.equals(resolver.getURIForPrefix(prefix, true))) {
-                return prefix;
+        if (prefix == null) {
+            NamespaceResolver resolver = queryModule.getNamespaceResolver();
+            Iterator<String> prefixes = resolver.iteratePrefixes();
+            while (prefixes.hasNext()) {
+                String p = prefixes.next();
+                if (namespace.equals(resolver.getURIForPrefix(prefix, true))) {
+                    prefix = p;
+                    break;
+                }
             }
-        }        
-        return null;
+        }
+        if (prefix != null) {
+            namespaceDeclarations.put(prefix, namespace);
+        }
+        return prefix;
     }
 
     // covers ArithmeticExpression, BooleanExpression, GeneralComparison, ValueComparison,
@@ -559,8 +551,16 @@ public class SaxonTranslator {
     }
     
     private AbstractExpression exprFor (InstanceOfExpression expr) {
-        return new InstanceOf(expr.getRequiredItemType().toString(), 
-                exprFor (expr.getBaseExpression()));
+        ItemType type = expr.getRequiredItemType();
+        String typeExpr;
+        if (type.isPlainType()) {
+            typeExpr = type.toString();
+        } else if (type instanceof NodeTest) {
+            typeExpr = nodeTestFor((NodeTest)type).toString();
+        } else {
+            throw new LuxException ("Unsupported node test in instance-of expression: " + expr.toString());
+        }
+        return new InstanceOf(typeExpr, exprFor (expr.getBaseExpression()));
     }
 
     private ValueType valueTypeForItemType(ItemType itemType) {
