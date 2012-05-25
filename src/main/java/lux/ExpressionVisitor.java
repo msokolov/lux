@@ -21,23 +21,13 @@ import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.Let;
 import lux.xquery.ProcessingInstructionConstructor;
+import lux.xquery.Satisfies;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 
 public abstract class ExpressionVisitor {
-    private boolean reverse = false;
-    /**
-     * @return whether the sub-expressions should be visited in reverse (right-to-left)
-     * order.
-     */
-    public boolean isReverse () {
-        return reverse;
-    }
-
-    public void setReverse (boolean reverse) {
-        this.reverse = reverse;
-    }
     
+    private boolean reverse = false;
     /**
      * @return true if the visit is done; this allows visits to terminate early
      */
@@ -45,28 +35,41 @@ public abstract class ExpressionVisitor {
         return false;
     }
 
-    public abstract AbstractExpression visit (PathStep step);
-    public abstract AbstractExpression visit (PathExpression path);
-    public abstract AbstractExpression visit (Root root);
-    public abstract AbstractExpression visit (Dot dot);
-    public abstract AbstractExpression visit (BinaryOperation op);
-    public abstract AbstractExpression visit (FunCall func);
-    public abstract AbstractExpression visit (LiteralExpression literal);
-    public abstract AbstractExpression visit (Predicate predicate);
-    public abstract AbstractExpression visit (Sequence predicate);
-    public abstract AbstractExpression visit (Subsequence predicate);
-    public abstract AbstractExpression visit (SetOperation predicate);
-    public abstract AbstractExpression visit (UnaryMinus predicate);
-    public abstract AbstractExpression visit (Let let);
-    public abstract AbstractExpression visit (Variable variable);
-    public abstract AbstractExpression visit (ElementConstructor elementConstructor);
+    /**
+     * @return whether the sub-expressions should be visited in reverse (right-to-left)
+     * order.
+     */
+    public boolean isReverse () {
+        return reverse;
+    }
+    
+    public void setReverse (boolean reverse) {
+        this.reverse = reverse;
+    }
+
     public abstract AbstractExpression visit (AttributeConstructor attributeConstructor);
-    public abstract AbstractExpression visit (TextConstructor textConstructor);
-    public abstract AbstractExpression visit (FLWOR flwor);
-    public abstract AbstractExpression visit (Conditional conditional);
+    public abstract AbstractExpression visit (BinaryOperation op);
     public abstract AbstractExpression visit (CommentConstructor commentConstructor);
+    public abstract AbstractExpression visit (Conditional conditional);
     public abstract AbstractExpression visit (DocumentConstructor documentConstructor);
+    public abstract AbstractExpression visit (Dot dot);
+    public abstract AbstractExpression visit (ElementConstructor elementConstructor);
+    public abstract AbstractExpression visit (FLWOR flwor);
+    public abstract AbstractExpression visit (FunCall func);
+    public abstract AbstractExpression visit (Let let);
+    public abstract AbstractExpression visit (LiteralExpression literal);
+    public abstract AbstractExpression visit (PathExpression path);
+    public abstract AbstractExpression visit (PathStep step);
+    public abstract AbstractExpression visit (Predicate predicate);
     public abstract AbstractExpression visit (ProcessingInstructionConstructor processingInstructionConstructor);
+    public abstract AbstractExpression visit (Root root);
+    public abstract AbstractExpression visit (Satisfies satisfies);
+    public abstract AbstractExpression visit (Sequence predicate);
+    public abstract AbstractExpression visit (SetOperation predicate);
+    public abstract AbstractExpression visit (Subsequence predicate);
+    public abstract AbstractExpression visit (TextConstructor textConstructor);
+    public abstract AbstractExpression visit (UnaryMinus predicate);
+    public abstract AbstractExpression visit (Variable variable);
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

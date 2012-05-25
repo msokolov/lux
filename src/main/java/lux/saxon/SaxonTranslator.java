@@ -39,12 +39,14 @@ import lux.xquery.FunctionDefinition;
 import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
 import lux.xquery.ProcessingInstructionConstructor;
+import lux.xquery.Satisfies;
 import lux.xquery.SortKey;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 import lux.xquery.VariableDefinition;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
+import lux.xquery.Satisfies.Quantifier;
 import net.sf.saxon.expr.Atomizer;
 import net.sf.saxon.expr.AxisExpression;
 import net.sf.saxon.expr.BinaryExpression;
@@ -62,6 +64,7 @@ import net.sf.saxon.expr.LetExpression;
 import net.sf.saxon.expr.Literal;
 import net.sf.saxon.expr.NegateExpression;
 import net.sf.saxon.expr.ParentNodeExpression;
+import net.sf.saxon.expr.QuantifiedExpression;
 import net.sf.saxon.expr.RootExpression;
 import net.sf.saxon.expr.SlashExpression;
 import net.sf.saxon.expr.StaticProperty;
@@ -610,6 +613,11 @@ public class SaxonTranslator {
     public AbstractExpression exprFor (ProcessingInstruction pi) {
         return new ProcessingInstructionConstructor(exprFor(pi.getNameExpression()), exprFor(pi.getContentExpression()));
     }
+
+    public AbstractExpression exprFor (QuantifiedExpression expr) {
+        Satisfies.Quantifier quantifier = expr.getOperator() == Token.SOME ? Quantifier.SOME : Quantifier.EVERY;
+        return new Satisfies(quantifier, new Variable(qnameFor(expr.getVariableQName())), exprFor(expr.getSequence()), exprFor (expr.getAction()));
+    }
     
     public AbstractExpression exprFor (RootExpression expr) {
         return new Root();
@@ -809,6 +817,8 @@ public class SaxonTranslator {
             return exprFor ((ParentNodeExpression) expr);
         case ProcessingInstruction:
             return exprFor ((ProcessingInstruction) expr);
+        case QuantifiedExpression:
+            return exprFor ((QuantifiedExpression) expr);
         case RootExpression:
             return exprFor ((RootExpression) expr);
         case SlashExpression:

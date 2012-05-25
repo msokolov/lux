@@ -34,6 +34,7 @@ public class TestRunner {
     private static Saxon eval;
     private static int numtests;
     private static int numfailed;
+    private boolean terminateOnException = true;
     
     @BeforeClass
     public static void setup () throws Exception {
@@ -128,10 +129,12 @@ public class TestRunner {
                 XdmItem item = xq.load().evaluateSingle();
                 System.err.println (test1.getQueryText() + " returns " + item);
                 */
-                
-                // throw (e); 
-                ++numfailed;
-                return false;
+                if (terminateOnException) {
+                    throw (e); 
+                } else {
+                    ++numfailed;
+                    return false;
+                }
             }
             //System.out.println (test1.getName() + " OK (expected error)");
             return true;
@@ -160,6 +163,7 @@ public class TestRunner {
     }
     
     @Test public void testGroup () throws Exception {
+        terminateOnException = false;
         runTestGroup ("Basics");
         runTestGroup ("Expressions");
     }
