@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 
 import lux.api.LuxException;
 import lux.api.ValueType;
+import lux.saxon.xquery.InstanceOf;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.BinaryOperation.Operator;
@@ -60,6 +61,7 @@ import net.sf.saxon.expr.FilterExpression;
 import net.sf.saxon.expr.FirstItemExpression;
 import net.sf.saxon.expr.ForExpression;
 import net.sf.saxon.expr.FunctionCall;
+import net.sf.saxon.expr.InstanceOfExpression;
 import net.sf.saxon.expr.IntegerRangeTest;
 import net.sf.saxon.expr.LastItemExpression;
 import net.sf.saxon.expr.LetExpression;
@@ -99,6 +101,7 @@ import net.sf.saxon.om.NamespaceBinding;
 import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.NodeName;
 import net.sf.saxon.om.SequenceIterator;
+import net.sf.saxon.om.StandardNames;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.DocumentNodeTest;
@@ -151,12 +154,10 @@ public class SaxonTranslator {
     public XQuery queryFor(XQueryExecutable xquery) {
         XQueryExpression saxonQuery = xquery.getUnderlyingCompiledQuery();
         queryModule = saxonQuery.getStaticContext();
-        // queryModule.getNamespaceResolver().iteratePrefixes()
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
         // Namespace declarations are accumulated while walking the expression trees:
         namespaceDeclarations.clear();
-        FunctionDefinition[] defs = getFunctionDefinitions(queryModule);
-        //Namespace[] namespaceDeclarations = getNamespaceDeclarations (queryModule);
+        FunctionDefinition[] functionDefinitions = getFunctionDefinitions(queryModule);
         AbstractExpression body = exprFor (saxonQuery.getExpression());
         String defaultCollation = queryModule.getDefaultCollationName();
         if (defaultCollation.equals (CODEPOINT_COLLATION)) {
@@ -167,7 +168,9 @@ public class SaxonTranslator {
                 queryModule.getDefaultFunctionNamespace(),
                 defaultCollation,
                 getNamespaceDeclarations(queryModule), 
-                getVariableDefinitions(queryModule), defs, body);
+                getVariableDefinitions(queryModule), 
+                functionDefinitions, 
+                body);
     }
     
     public XQuery queryFor(AbstractExpression ex) {
@@ -554,10 +557,42 @@ public class SaxonTranslator {
              (exprFor (rangeTest.getValueExpression()), Operator.AGE, 
               exprFor (rangeTest.getMinValueExpression())));
     }
+    
+    private AbstractExpression exprFor (InstanceOfExpression expr) {
+        return new InstanceOf(expr.getRequiredItemType().toString(), 
+                exprFor (expr.getBaseExpression()));
+    }
 
     private ValueType valueTypeForItemType(ItemType itemType) {
         if (itemType.isAtomicType()) {
-            return ValueType.ATOMIC;
+            switch (itemType.getPrimitiveType()) {
+            case StandardNames.XS_STRING:
+            case StandardNames.XS_ANY_URI:
+                return ValueType.STRING;
+            case StandardNames.XS_DATE:
+                return ValueType.DATE;
+            case StandardNames.XS_DATE_TIME:
+                return ValueType.DATE_TIME;
+            case StandardNames.XS_INT:
+            case StandardNames.XS_INTEGER:
+                return ValueType.INT;
+            case StandardNames.XS_NUMERIC:
+                return ValueType.NUMBER;
+            case StandardNames.XS_DOUBLE:
+                return ValueType.DOUBLE;
+            case StandardNames.XS_FLOAT:
+                return ValueType.FLOAT;
+            case StandardNames.XS_DECIMAL:
+                return ValueType.DECIMAL;
+            case StandardNames.XS_BOOLEAN:
+                return ValueType.BOOLEAN;
+            case StandardNames.XS_TIME:
+                return ValueType.TIME;
+            case StandardNames.XS_UNTYPED_ATOMIC:
+            default:
+                // ?
+                return ValueType.ATOMIC;
+            }
         }
         if (itemType instanceof NodeTest) {
             NodeTest nodeTest = (NodeTest) itemType;
@@ -601,15 +636,16 @@ public class SaxonTranslator {
                 Item<?> member;
                 while ((member = iter.next()) != null) {
                     if (member instanceof AtomicValue) {
-                        items.add(new LiteralExpression (Value.convertToJava(member)));
+                        ValueType type = valueTypeForItemType(((AtomicValue) member).getPrimitiveType());
+                        items.add(new LiteralExpression (Value.convertToJava(member), type));
                     } else {
                         throw new LuxException ("unsupported node in a literal sequence: " + literal.toString());
                     }                    
                 }
                 return new Sequence (items.toArray(new LiteralExpression[0]));
             }
-            // FIXME: precision loss here for BigInteger values
-            return new LiteralExpression(Value.convertToJava(value.asItem()));
+            ValueType type = valueTypeForItemType(((AtomicValue) value).getPrimitiveType());
+            return new LiteralExpression(Value.convertToJava(value.asItem()), type);
         } catch (XPathException e) {
             throw new LuxException (e);
         }        
@@ -816,6 +852,8 @@ public class SaxonTranslator {
             return exprFor ((ForExpression) expr);
         case FunctionCall:
             return exprFor ((FunctionCall) expr);
+        case InstanceOfExpression:
+            return exprFor ((InstanceOfExpression) expr);
         case IntegerRangeTest:
             return exprFor ((IntegerRangeTest) expr);
         case LastItemExpression:
@@ -862,6 +900,7 @@ public class SaxonTranslator {
         FirstItemExpression,
         ForExpression,
         FunctionCall,
+        InstanceOfExpression,
         IntegerRangeTest,
         LastItemExpression,
         LetExpression,

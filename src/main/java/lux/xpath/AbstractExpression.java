@@ -17,7 +17,7 @@ public abstract class AbstractExpression implements Visitable {
         PathExpression, PathStep, Predicate, Binary, SetOperation,
         Literal, Root, Dot, FunctionCall, Sequence, UnaryMinus, Subsequence,
         Let, Variable, Element, Attribute, Text, FLWOR, Conditional, Comment, 
-        DocumentConstructor, ProcessingInstruction, Satisfies
+        DocumentConstructor, ProcessingInstruction, Satisfies, InstanceOf
     };
 
     private final Type type;

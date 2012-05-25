@@ -4,6 +4,7 @@
 
 package lux;
 
+import lux.saxon.xquery.InstanceOf;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
@@ -74,6 +75,11 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     @Override
     public AbstractExpression visit(FunCall func) {
         return func;
+    }
+
+    @Override
+    public AbstractExpression visit(InstanceOf expr) {
+        return expr;
     }
 
     @Override

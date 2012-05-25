@@ -42,7 +42,7 @@ public class TestCase {
     private final String scenario;
     private final String queryName;
     private final boolean xpath2;
-    private final String inputFileName;
+    //private final String inputFileName;
     private final XdmValue contextItem;
     private final ComparisonMode comparisonMode;
     
@@ -78,17 +78,9 @@ public class TestCase {
         XdmNode query = (XdmNode) testCase.axisIterator(Axis.CHILD, QUERY).next();
         queryName = query.getAttributeValue(NAME);
 
-        XdmSequenceIterator input = testCase.axisIterator(Axis.CHILD, INPUT_FILE);
-        XdmNode inputFileNode = null;
-        if (input.hasNext()) {
-            inputFileNode = (XdmNode) input.next();
-            inputFileName = inputFileNode.axisIterator(Axis.CHILD).next().getStringValue();
-        } else {
-            inputFileName = null;
-        }
-        input = testCase.axisIterator(Axis.CHILD, CONTEXT_ITEM);
-        if (input.hasNext()) {
-            String contextItemFileName = input.next().getStringValue();
+        XdmSequenceIterator context = testCase.axisIterator(Axis.CHILD, CONTEXT_ITEM);
+        if (context.hasNext()) {
+            String contextItemFileName = context.next().getStringValue();
             contextItem = catalog.getBuilder().build(new File(catalog.getDirectory() + "/TestSources/" + contextItemFileName + ".xml"));
         } else {
             contextItem = null;
@@ -99,7 +91,11 @@ public class TestCase {
         String text = IOUtils.toString (new FileInputStream(queryFile));
         
         // remove the declaration of the input variable in the query text and replace its uses with doc().
-        if (inputFileNode != null) {
+        XdmSequenceIterator input = testCase.axisIterator(Axis.CHILD, INPUT_FILE);
+        XdmNode inputFileNode = null;
+        while (input.hasNext()) {
+            inputFileNode = (XdmNode) input.next();
+            String inputFileName = inputFileNode.axisIterator(Axis.CHILD).next().getStringValue();
             String inputVariable = inputFileNode.getAttributeValue(VARIABLE);
             if (!inputVariable.isEmpty()) {
                 text = INPUT_VARIABLE_PATTERN.matcher(text).replaceFirst("");
@@ -171,10 +167,6 @@ public class TestCase {
         return xpath2;
     }
 
-    public String getInputFileName() {
-        return inputFileName;
-    }
-
     public ComparisonMode getComparisonMode() {
         return comparisonMode;
     }
@@ -193,9 +185,18 @@ public class TestCase {
         case Fragment:
         case Text:
             String result = results == null ? "" : resultToString(results);
+            boolean isNode = (!result.isEmpty() && results.iterator().next() instanceof XdmNode);
             for (String output : getOutputText()) {
-                if (result.equals(unescape(output)))
-                    return true;
+                XdmNode docWrapped = createWrappedNode(output);
+                if (isNode) {
+                    XdmNode resultDoc = createWrappedNode(result);
+                    if (areNodesEqual (docWrapped, resultDoc)) {
+                        return true;
+                    }
+                } else {
+                    if (result.equals(unescape(output)))
+                        return true;
+                }
             }
             return false;
         case XML:
@@ -215,6 +216,10 @@ public class TestCase {
         default:
             return null;
         }
+    }
+
+    private XdmNode createWrappedNode(Object node) throws SaxonApiException {
+        return catalog.getBuilder().build(new StreamSource(new ByteArrayInputStream(("<a>"+node+"</a>").getBytes())));
     }
 
     public static String resultToString(Iterable<?> results) throws XPathException {
@@ -272,6 +277,10 @@ public class TestCase {
     
     private String unescape (String s) {
         return s.replace("&amp;", "&").replace("&lt;", "<").replace("\r\n", "\n");
+    }
+
+    private String escape (String s) {
+        return s.replace("&", "&amp;").replace("<", "&lt;");
     }
     
     public XdmValue getContextItem () {

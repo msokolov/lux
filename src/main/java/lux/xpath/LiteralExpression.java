@@ -5,6 +5,9 @@
 package lux.xpath;
 
 import java.math.BigDecimal;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 
 import lux.ExpressionVisitor;
 import lux.api.LuxException;
@@ -19,6 +22,12 @@ public class LiteralExpression extends AbstractExpression {
         this (null);
     }
     
+    public LiteralExpression (Object value, ValueType valueType) {
+        super(Type.Literal);
+        this.value = value;
+        this.valueType = valueType;
+    }
+
     public LiteralExpression (Object value) {
         super(Type.Literal);
         this.value = value;
@@ -32,15 +41,21 @@ public class LiteralExpression extends AbstractExpression {
     public static final LiteralExpression ONE = new LiteralExpression (1);
     
     private static ValueType computeType (Object value) {
-        // TODO: date, dateTime, duration
+        // TODO: duration
         if (value instanceof String) {
             return ValueType.STRING;
         } else if (value instanceof Integer || value instanceof Long) {
             return ValueType.INT;
-        } else if (value instanceof Double || value instanceof Float || value instanceof BigDecimal) {
-            return ValueType.NUMBER;
+        } else if (value instanceof Double) {
+            return ValueType.DOUBLE;
+        } else if (value instanceof Float) {
+            return ValueType.FLOAT;
+        } else if (value instanceof BigDecimal) {
+            return ValueType.DECIMAL;
         } else if (value instanceof Boolean) {
             return ValueType.BOOLEAN;
+        } else if (value instanceof Date) {
+            return ValueType.DATE;
         }
         throw new LuxException ("unsupported java object type: " + value.getClass().getSimpleName());
     }
@@ -64,31 +79,103 @@ public class LiteralExpression extends AbstractExpression {
     public void toString(StringBuilder buf) {
         if (value == null) {
             buf.append ("()");
+            return;
         }
-        else if (valueType == ValueType.STRING) {
+        switch (valueType) {
+        case STRING:
             escapeString(value.toString(), buf);
-        }
-        else if (valueType == ValueType.BOOLEAN) {
+            break;
+        case BOOLEAN:
             buf.append (value).append("()");
-        }
-        else if (value instanceof Double) {
-            Double d = (Double) value;
-            if (d.isInfinite()) {
-                if (d > 0)
+            break;
+        case FLOAT:
+            Float f = (Float) value;
+            if (f.isInfinite()) {
+                if (f > 0)
                     buf.append ("xs:float('INF')");
                 else
                     buf.append ("xs:float('-INF')");
             }
-            else if (d.isNaN()) {
+            else if (f.isNaN()) {
                 buf.append ("xs:float('NaN')");
             }
             else {
-                buf.append (d);
+                buf.append ("xs:float(").append(f).append(')');
             }
-        }
-        else {
+            break;
+        case DOUBLE:
+            Double d = (Double) value;
+            if (d.isInfinite()) {
+                if (d > 0)
+                    buf.append ("xs:double('INF')");
+                else
+                    buf.append ("xs:double('-INF')");
+            }
+            else if (d.isNaN()) {
+                buf.append ("xs:double('NaN')");
+            }
+            else {
+                buf.append ("xs:double(").append(d).append(')');
+            }
+            break;
+        case DATE:
+            buf.append("xs:date(\"").append (calendarToXsDate(getCalendar())).append("\")");
+            break;
+        case DATE_TIME:
+            buf.append("xs:dateTime(\"").append (calendarToXsDateTime(getCalendar())).append("\")");
+            break;
+        case TIME:
+            buf.append("xs:time(\"").append (value).append("\")");
+            break;
+        case DECIMAL:
+            buf.append("xs:decimal(\"").append (value).append("\")");
+            break;
+        case NUMBER:
+        default:
             buf.append (value);
         }
+    }
+
+    private Calendar getCalendar() {
+        Calendar dt = Calendar.getInstance();
+        dt.setTimeZone(TimeZone.getTimeZone("UT"));
+        dt.setTime((Date) value);
+        return dt;
+    }
+    
+    public static String calendarToXsDateTime (Calendar cal)
+    {
+        String tz="";
+        int offset = cal.get(Calendar.ZONE_OFFSET);
+        String sgn;
+        if (offset < 0) {
+            sgn = "-";
+            offset = -offset;
+        } else {
+            sgn = "+";
+        }
+        int minutes = offset / 60000;
+        int hours = minutes / 60;
+        minutes = minutes % 60;
+        tz = String.format ("%s%02d:%02d", sgn, hours, minutes);
+        return String.format("%04d-%02d-%02dT%02d:%02d:%02d%s",
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH) + 1,
+                cal.get(Calendar.DAY_OF_MONTH),
+                cal.get(Calendar.HOUR_OF_DAY),
+                cal.get(Calendar.MINUTE),
+                cal.get(Calendar.SECOND),
+                tz
+        );
+    }
+
+    public static String calendarToXsDate(Calendar cal)
+    {
+        return String.format("%04d-%02d-%02dZ",
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH) + 1,
+                cal.get(Calendar.DAY_OF_MONTH)
+        );
     }
 
     public static void escapeString(String s, StringBuilder buf) {

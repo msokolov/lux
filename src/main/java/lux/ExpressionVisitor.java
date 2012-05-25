@@ -1,5 +1,6 @@
 package lux;
 
+import lux.saxon.xquery.InstanceOf;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
@@ -56,6 +57,7 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (ElementConstructor elementConstructor);
     public abstract AbstractExpression visit (FLWOR flwor);
     public abstract AbstractExpression visit (FunCall func);
+    public abstract AbstractExpression visit (InstanceOf instanceOf);
     public abstract AbstractExpression visit (Let let);
     public abstract AbstractExpression visit (LiteralExpression literal);
     public abstract AbstractExpression visit (PathExpression path);

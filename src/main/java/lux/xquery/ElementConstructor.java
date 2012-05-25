@@ -1,7 +1,5 @@
 package lux.xquery;
 
-import org.apache.commons.lang.StringUtils;
-
 import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.Namespace;
@@ -37,14 +35,6 @@ public class ElementConstructor extends AbstractExpression {
                 buf.append (' ');
                 appendNamespace(namespaces[i], buf);
             }
-        }
-        if (StringUtils.isBlank(qname.getPrefix()) && StringUtils.isNotBlank(qname.getNamespaceURI())) {
-            if (hasNamespaceDecl) {
-                buf.append(' ');
-            } else {
-                hasNamespaceDecl = true;
-            }
-            buf.append ("xmlns=\"").append (qname.getNamespaceURI()).append ("\"");
         }
         if (getContent() == null) {
             buf.append ("/>");

@@ -162,10 +162,15 @@ public class TestRunner {
         // fails since we don't implement "instance of"
         assertTrue (runTest ("Steps-leading-lone-slash-8a"));
     }
+
+    @Test public void testNameTest68() throws Exception {
+        // fails because declared type match is not enforced
+        assertTrue (runTest ("K2-NameTest-68"));
+    }
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("nametest-18"));
+        assertTrue (runTest ("op-numeric-subtract-1"));
     }
     
     @Test public void testGroup () throws Exception {
