@@ -105,12 +105,18 @@ public abstract class AbstractExpression implements Visitable {
     
     /**
      * append the sub-expression to the buffer, wrapping it in parentheses if its precedence is
-     * lower than this expression's.
+     * lower than or equal to this expression's.  We need parens when precedence is equal because
+     * otherwise operations simply group left or right, but we have the actual grouping encoded 
+     * in the expression tree and need to preserve that.
+     * 
+     * Note: we can't just blindly wrap everything in parentheses because parens have special meaning
+     * in some XPath expressions where they can introduce document-ordering.
+     * 
      * @param buf the buffer to append to
      * @param sub the sub-expression
      */
     protected void appendSub(StringBuilder buf, AbstractExpression sub) {
-        if (sub.getPrecedence() < getPrecedence()) {
+        if (sub.getPrecedence() <= getPrecedence()) {
             buf.append ('(');
             sub.toString(buf);
             buf.append (')');            
