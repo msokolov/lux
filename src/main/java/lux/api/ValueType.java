@@ -12,7 +12,7 @@ package lux.api;
  */
 public enum ValueType {
     
-    VALUE(false), 
+    VALUE("value", false, false), 
     DOCUMENT("document-node"), 
     NODE("node"), 
     ELEMENT("element"), 
@@ -21,37 +21,47 @@ public enum ValueType {
     COMMENT("comment"), 
     PROCESSING_INSTRUCTION("processing-instruction"),
         
-    ATOMIC(true), 
-    STRING(true), 
-    INT(true), 
-    NUMBER(true), 
-    BOOLEAN(true), 
-    BOOLEAN_FALSE(true), 
-    DATE(true), 
-    DATE_TIME(true), 
-    FLOAT(true), 
-    DOUBLE(true), 
-    DECIMAL(true), 
-    TIME(true), 
-    HEX_BINARY(true), 
-    BASE64_BINARY(true);
+    ATOMIC("xs:untypedAtomic", true), 
+    STRING("xs:string", true), 
+    INT("xs:int", true), 
+    // NUMBER("xs:integer", true), 
+    BOOLEAN("xs:boolean", true), 
+    BOOLEAN_FALSE("xs:boolean", true), 
+    DATE("xs:date", true), 
+    DATE_TIME("xs:dateTime", true),
+    DAY("xs:gDay", true),
+    MONTH_DAY("xs:gMonthDay", true),
+    YEAR("xs:gYear", true),
+    YEAR_MONTH("xs:gYearMonth", true),    
+    FLOAT("xs:float", true), 
+    DOUBLE("xs:double", true), 
+    DECIMAL("xs:decimal", true), 
+    TIME("xs:time", true), 
+    HEX_BINARY("xs:hexBinary", true), 
+    BASE64_BINARY("xs:base64Binary", true);
 
     public final boolean isNode;
     public final boolean isAtomic;
-    public final String nodeTest;
+    public final String name;
 
     ValueType(String nodeTest) {
         this.isNode = true;
         this.isAtomic = false;
-        this.nodeTest = nodeTest;
+        this.name = nodeTest;
     }
 
-    ValueType(boolean isAtomic) {
+    ValueType(String typeName, boolean isAtomic) {
         this.isAtomic = isAtomic;
         isNode = false;
-        nodeTest = null;
+        name = typeName;
     }
     
+    ValueType(String typeName, boolean isAtomic, boolean isNode) {
+        this.isAtomic = isAtomic;        
+        this.isNode = isNode;
+        name = typeName;
+    }
+
     /**
      * @param other another type
      * @return whether this type is a subtype of the other
@@ -98,6 +108,8 @@ public enum ValueType {
         return ValueType.VALUE;
     }
 
-}/* This Source Code Form is subject to the terms of the Mozilla Public
+}
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */

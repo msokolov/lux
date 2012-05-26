@@ -169,11 +169,11 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("K2-DirectConElemAttr-75"));
+        assertTrue (runTest ("op-multiply-yearMonthDuration2args-1"));
     }
     
     @Test public void testGroup () throws Exception {
-        terminateOnException = true;
+        terminateOnException = false;
         runTestGroup ("Basics");
         runTestGroup ("Expressions");
     }

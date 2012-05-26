@@ -193,6 +193,9 @@ public class TestCase {
             String result = results == null ? "" : resultToString(results);
             boolean isNode = (!result.isEmpty() && results.iterator().next() instanceof XdmNode);
             for (String output : getOutputText()) {
+                if ("-0".equals(output)) {
+                    output = "0";
+                }
                 XdmNode docWrapped = createWrappedNode(output);
                 if (isNode) {
                     XdmNode resultDoc = createWrappedNode(result);

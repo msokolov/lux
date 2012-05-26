@@ -121,6 +121,7 @@ import net.sf.saxon.type.ItemType;
 import net.sf.saxon.type.Type;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.Cardinality;
+import net.sf.saxon.value.GDateValue;
 import net.sf.saxon.value.Value;
 
 /**
@@ -611,11 +612,17 @@ public class SaxonTranslator {
                 return ValueType.DATE;
             case StandardNames.XS_DATE_TIME:
                 return ValueType.DATE_TIME;
+            case StandardNames.XS_G_YEAR:
+                return ValueType.YEAR;
+            case StandardNames.XS_G_YEAR_MONTH:
+                return ValueType.YEAR_MONTH;
+            case StandardNames.XS_G_DAY:
+                return ValueType.DAY;
+            case StandardNames.XS_G_MONTH_DAY:
+                return ValueType.MONTH_DAY;
             case StandardNames.XS_INT:
             case StandardNames.XS_INTEGER:
                 return ValueType.INT;
-            case StandardNames.XS_NUMERIC:
-                return ValueType.NUMBER;
             case StandardNames.XS_DOUBLE:
                 return ValueType.DOUBLE;
             case StandardNames.XS_FLOAT:
@@ -629,9 +636,9 @@ public class SaxonTranslator {
             case StandardNames.XS_HEX_BINARY:
                 return ValueType.HEX_BINARY;
             case StandardNames.XS_UNTYPED_ATOMIC:
-            default:
-                // ?
                 return ValueType.ATOMIC;
+            default:
+                return ValueType.VALUE;
             }
         }
         if (itemType instanceof NodeTest) {
@@ -676,21 +683,30 @@ public class SaxonTranslator {
                 Item<?> member;
                 while ((member = iter.next()) != null) {
                     if (member instanceof AtomicValue) {
-                        ValueType type = valueTypeForItemType(((AtomicValue) member).getPrimitiveType());
-                        items.add(new LiteralExpression (Value.convertToJava(member), type));
+                        items.add (exprFor ((AtomicValue) member));
                     } else {
                         throw new LuxException ("unsupported node in a literal sequence: " + literal.toString());
                     }                    
                 }
                 return new Sequence (items.toArray(new LiteralExpression[0]));
             }
-            ValueType type = valueTypeForItemType(((AtomicValue) value).getPrimitiveType());
-            return new LiteralExpression(Value.convertToJava(value.asItem()), type);
+            return exprFor ((AtomicValue) value);
         } catch (XPathException e) {
             throw new LuxException (e);
         }        
     }
 
+    public LiteralExpression exprFor (AtomicValue value) {
+        ValueType type = valueTypeForItemType(value.getPrimitiveType());
+        if (value instanceof GDateValue) {
+            return new LiteralExpression(value.toString(), type);
+        }
+        try {
+            return new LiteralExpression(Value.convertToJava(value.asItem()), type);
+        } catch (XPathException e) {
+            throw new LuxException (e);
+        }
+    }
     public AbstractExpression exprFor (NegateExpression expr) {
         return new UnaryMinus(exprFor (expr.getBaseExpression()));
     }

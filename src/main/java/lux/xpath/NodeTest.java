@@ -67,12 +67,12 @@ public class NodeTest {
 
     public void toString (StringBuilder buf) {
         if (name == null) {
-            buf.append (type.nodeTest).append ("()");
+            buf.append (type.name).append ("()");
             return;
         }
         switch (type) {
         case NODE: case COMMENT: case TEXT:
-            buf.append (type.nodeTest).append ("()");
+            buf.append (type.name).append ("()");
             break;
         case ATTRIBUTE:
         case ELEMENT: 
@@ -83,12 +83,12 @@ public class NodeTest {
             }
             break;
         case DOCUMENT:
-            buf.append (type.nodeTest).append("(element(");
+            buf.append (type.name).append("(element(");
             name.toString(buf);
             buf.append("))");
             break;
         case PROCESSING_INSTRUCTION:
-            buf.append (type.nodeTest).append('(').append(name.getLocalPart()).append(')');
+            buf.append (type.name).append('(').append(name.getLocalPart()).append(')');
             break;
         default:
             throw new IllegalArgumentException ("invalid node type " + type);

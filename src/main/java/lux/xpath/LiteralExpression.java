@@ -84,8 +84,12 @@ public class LiteralExpression extends AbstractExpression {
             return;
         }
         switch (valueType) {
-        case STRING:
         case ATOMIC:
+            buf.append ("xs:untypedAtomic(");
+            escapeString (value.toString(), buf);
+            buf.append (')');
+            break;
+        case STRING:
             escapeString(value.toString(), buf);
             break;
         case BOOLEAN:
@@ -143,8 +147,8 @@ public class LiteralExpression extends AbstractExpression {
             buf.append(Base64.encode((byte[])value));
             buf.append("\")");
             break;
-        case NUMBER:
         default:
+            // rely on the object's toString method
             buf.append (value);
         }
     }
