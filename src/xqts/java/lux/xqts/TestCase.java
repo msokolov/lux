@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.transform.stream.StreamResult;
@@ -35,7 +36,7 @@ import org.apache.commons.io.IOUtils;
  */
 public class TestCase {
 
-    private static final Pattern INPUT_VARIABLE_PATTERN = Pattern.compile("\\(: insert-start :\\).*\\(: insert-end :\\)", Pattern.DOTALL);
+    private static final Pattern INPUT_VARIABLE_PATTERN = Pattern.compile("(.*\\(: insert-start :\\).*)declare variable[^;]+;(.*\\(: insert-end :\\).*)", Pattern.DOTALL);
     private final Catalog catalog;
     private final String name;
     private final String path;
@@ -98,7 +99,12 @@ public class TestCase {
             String inputFileName = inputFileNode.axisIterator(Axis.CHILD).next().getStringValue();
             String inputVariable = inputFileNode.getAttributeValue(VARIABLE);
             if (!inputVariable.isEmpty()) {
-                text = INPUT_VARIABLE_PATTERN.matcher(text).replaceFirst("");
+                Matcher matcher = INPUT_VARIABLE_PATTERN.matcher(text);
+                while (matcher.matches()) {
+                    // remove input variable declarations
+                    text = matcher.replaceFirst("$1$2");
+                    matcher = INPUT_VARIABLE_PATTERN.matcher(text);
+                }
                 text = text.replace('$' + inputVariable, "fn:doc('" + catalog.getDirectory() + 
                         "/TestSources/" + inputFileName + ".xml')");
             }
@@ -277,10 +283,6 @@ public class TestCase {
     
     private String unescape (String s) {
         return s.replace("&amp;", "&").replace("&lt;", "<").replace("\r\n", "\n");
-    }
-
-    private String escape (String s) {
-        return s.replace("&", "&amp;").replace("<", "&lt;");
     }
     
     public XdmValue getContextItem () {

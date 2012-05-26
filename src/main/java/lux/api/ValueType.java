@@ -12,10 +12,29 @@ package lux.api;
  */
 public enum ValueType {
     
-    VALUE(false), DOCUMENT("document-node"), NODE("node"), ELEMENT("element"), ATTRIBUTE("attribute"), 
-        TEXT("text"), COMMENT("comment"), PROCESSING_INSTRUCTION("processing-instruction"),
-        ATOMIC(true), STRING(true), INT(true), NUMBER(true), BOOLEAN(true), BOOLEAN_FALSE(true), 
-        DATE(true), DATE_TIME(true), FLOAT(true), DOUBLE(true), DECIMAL(true), TIME(true);
+    VALUE(false), 
+    DOCUMENT("document-node"), 
+    NODE("node"), 
+    ELEMENT("element"), 
+    ATTRIBUTE("attribute"), 
+    TEXT("text"), 
+    COMMENT("comment"), 
+    PROCESSING_INSTRUCTION("processing-instruction"),
+        
+    ATOMIC(true), 
+    STRING(true), 
+    INT(true), 
+    NUMBER(true), 
+    BOOLEAN(true), 
+    BOOLEAN_FALSE(true), 
+    DATE(true), 
+    DATE_TIME(true), 
+    FLOAT(true), 
+    DOUBLE(true), 
+    DECIMAL(true), 
+    TIME(true), 
+    HEX_BINARY(true), 
+    BASE64_BINARY(true);
 
     public final boolean isNode;
     public final boolean isAtomic;

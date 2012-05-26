@@ -13,6 +13,8 @@ import lux.ExpressionVisitor;
 import lux.api.LuxException;
 import lux.api.ValueType;
 
+import com.sun.org.apache.xml.internal.security.utils.Base64;
+
 public class LiteralExpression extends AbstractExpression {
     
     private Object value;
@@ -83,6 +85,7 @@ public class LiteralExpression extends AbstractExpression {
         }
         switch (valueType) {
         case STRING:
+        case ATOMIC:
             escapeString(value.toString(), buf);
             break;
         case BOOLEAN:
@@ -130,9 +133,30 @@ public class LiteralExpression extends AbstractExpression {
         case DECIMAL:
             buf.append("xs:decimal(").append (value).append(")");
             break;
+        case HEX_BINARY:
+            buf.append("xs:hexBinary(\"");
+            appendHex(buf, (byte[])value);
+            buf.append("\")");
+            break;
+        case BASE64_BINARY:
+            buf.append("xs:base64Binary(\"");
+            buf.append(Base64.encode((byte[])value));
+            buf.append("\")");
+            break;
         case NUMBER:
         default:
             buf.append (value);
+        }
+    }
+
+    private static char hexdigits[] = new char[] { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+
+    private void appendHex(StringBuilder buf, byte[] bytes) {
+        for (byte b : bytes) {
+            int b1 = ((b & 0xF0) >> 4);
+            buf.append (hexdigits[b1]);
+            int b2 = b & 0xF;
+            buf.append (hexdigits[b2]);
         }
     }
 

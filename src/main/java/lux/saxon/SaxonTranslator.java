@@ -50,6 +50,7 @@ import lux.xquery.VariableDefinition;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
 import lux.xquery.Satisfies.Quantifier;
+import net.sf.saxon.expr.AtomicSequenceConverter;
 import net.sf.saxon.expr.Atomizer;
 import net.sf.saxon.expr.AxisExpression;
 import net.sf.saxon.expr.BinaryExpression;
@@ -238,6 +239,25 @@ public class SaxonTranslator {
         return defs;
     }
     
+    public AbstractExpression exprFor (AtomicSequenceConverter atomizer) {
+        Expression base = atomizer.getBaseExpression();
+        ItemType type = atomizer.getItemType(config.getTypeHierarchy());
+        if (!type.isAtomicType()) {
+            throw new LuxException ("AtomicSequenceConverter converting to non-atomic type: " + type);
+        }
+        AtomicType atomicType = (AtomicType) type;
+        ArrayList<AbstractExpression> abstracted = new ArrayList<AbstractExpression>();
+        if (base instanceof Block) {
+            Expression[] children = ((Block)base).getChildren();
+            for (int i = 0; i < children.length; i++) {
+                addCastExprFor (abstracted, children[i], atomicType);
+            }
+        } else {
+            addCastExprFor(abstracted, base, atomicType);
+        }
+        return new Sequence(abstracted.toArray(new AbstractExpression[0]));
+    }
+
     /* return a QName suitable for use as a constructor of the given type */
     private QName qnameFor (AtomicType type) {
         if (type.isBuiltInType()) {
@@ -410,9 +430,27 @@ public class SaxonTranslator {
     public AbstractExpression exprFor (CastExpression expr) {
         Expression base = expr.getBaseExpression();
         AtomicType type = expr.getTargetType();
-        return new FunCall (qnameFor(type), valueTypeForItemType(type), exprFor(base));
+        return castExprFor(exprFor(base), type);
     }
     
+    private AbstractExpression castExprFor (AbstractExpression ae, AtomicType type) {
+        if (type.isAbstract()) {
+            return ae;
+        }
+        return new FunCall (qnameFor(type), valueTypeForItemType(type), ae);        
+    }
+    
+    private void addCastExprFor (List<AbstractExpression> aes, Expression expr, AtomicType type) {
+        AbstractExpression child = exprFor (expr);
+        if (child instanceof Sequence) {
+            for (int i = 0; i < child.getSubs().length; i++) {
+                aes.add (castExprFor(child.getSubs()[i], type));
+            }
+        } else {
+            aes.add(castExprFor (child, type));
+        }
+    }
+
     private Sequence exprFor (Expression[] exprs) {
         AbstractExpression[] aex = new AbstractExpression [exprs.length];
         for (int i = 0 ; i < exprs.length; i++) {
@@ -588,6 +626,8 @@ public class SaxonTranslator {
                 return ValueType.BOOLEAN;
             case StandardNames.XS_TIME:
                 return ValueType.TIME;
+            case StandardNames.XS_HEX_BINARY:
+                return ValueType.HEX_BINARY;
             case StandardNames.XS_UNTYPED_ATOMIC:
             default:
                 // ?
@@ -818,6 +858,8 @@ public class SaxonTranslator {
             throw new UnsupportedOperationException ("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
         }
         switch (exprClass) {
+        case AtomicSequenceConverter:
+            return exprFor ((AtomicSequenceConverter)expr);
         case Atomizer:
             return exprFor ((Atomizer) expr);
         case AxisExpression:
@@ -889,6 +931,7 @@ public class SaxonTranslator {
     }
     
     private enum ExprClass {
+        AtomicSequenceConverter,
         Atomizer,
         AxisExpression,
         BinaryExpression,

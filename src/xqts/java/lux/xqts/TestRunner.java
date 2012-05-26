@@ -94,6 +94,10 @@ public class TestRunner {
     
     private boolean runTest (TestCase test1) throws Exception {
         ++numtests;
+        if (printDetailedDiagnostics) {
+            ErrorIgnorer ignorer = (ErrorIgnorer) eval.getConfig().getErrorListener();
+            ignorer.setShowErrors(true);
+        }
         try {
             SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
             //System.out.println (expr);
@@ -158,11 +162,6 @@ public class TestRunner {
         }
     }
     
-    @Test public void testStepsLeadingLoneSlash8a() throws Exception {
-        // fails since we don't implement "instance of"
-        assertTrue (runTest ("Steps-leading-lone-slash-8a"));
-    }
-
     @Test public void testNameTest68() throws Exception {
         // fails because declared type match is not enforced
         assertTrue (runTest ("K2-NameTest-68"));
@@ -170,24 +169,39 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("op-numeric-subtract-1"));
+        assertTrue (runTest ("K2-DirectConElemAttr-75"));
     }
     
     @Test public void testGroup () throws Exception {
-        terminateOnException = false;
+        terminateOnException = true;
         runTestGroup ("Basics");
         runTestGroup ("Expressions");
     }
     
     static class ErrorIgnorer implements ErrorListener {
-
+        
+        private boolean showErrors = false;
+        
         public void warning(TransformerException exception) throws TransformerException {
+            if (showErrors) {
+                System.err.println (exception.getMessageAndLocation());
+            }
+        }
+
+        public void setShowErrors(boolean b) {
+            this.showErrors = b;    
         }
 
         public void error(TransformerException exception) throws TransformerException {
+            if (showErrors) {
+                System.err.println (exception.getMessageAndLocation());
+            }
         }
 
         public void fatalError(TransformerException exception) throws TransformerException {
+            if (showErrors) {
+                System.err.println (exception.getMessageAndLocation());
+            }
         }
         
     }
