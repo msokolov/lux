@@ -2,16 +2,12 @@ package lux.xquery;
 
 import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
-import lux.xpath.QName;
 
 public class AttributeConstructor extends AbstractExpression {
-
-    private final QName name;
     
-    public AttributeConstructor(QName name, AbstractExpression content) {
+    public AttributeConstructor(AbstractExpression name, AbstractExpression content) {
         super(Type.Attribute);
-        this.name = name;
-        subs = new AbstractExpression[] { content };
+        subs = new AbstractExpression[] { name, content };
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {
@@ -22,14 +18,25 @@ public class AttributeConstructor extends AbstractExpression {
     @Override
     public void toString(StringBuilder buf) {
         buf.append ("attribute ");
-        name.toString (buf);
-        buf.append (" { ");
-        getContent().toString (buf);
+        buf.append ("{ ");
+        getName().toString (buf);        
+        buf.append (" } { ");
+        // This works around a test in the XQTS, but it seems broken: what if some code contains
+        // newlines?  I think it's OK? What happens is that "attribute whitespace normalization" will have
+        // converted literal CR LF characters to spaces.  The only way we should be seeing these characters
+        // here is if they were originally provided as character references.
+        String c = getContent().toString ();
+        c = c.replace ("\r", "&#xD;").replace("\n", "&#xA;");
+        buf.append (c);
         buf.append (" }");
-     }
-    
-    public final AbstractExpression getContent () {
+    }
+
+    public final AbstractExpression getName () {
         return subs[0];
+    }
+
+    public final AbstractExpression getContent () {
+        return subs[1];
     }
 
     @Override

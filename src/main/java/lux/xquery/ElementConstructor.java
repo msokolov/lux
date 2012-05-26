@@ -8,8 +8,7 @@ import lux.xpath.QName;
 public class ElementConstructor extends AbstractExpression {
 
     private final QName qname;
-    private final Namespace[] namespaces;
-    
+    private final Namespace[] namespaces;    
     
     public ElementConstructor(QName qname, Namespace[] namespaces, AbstractExpression content) {
         super(Type.Element);

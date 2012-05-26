@@ -20,6 +20,7 @@ import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
+import lux.xquery.ComputedElementConstructor;
 import lux.xquery.Conditional;
 import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
@@ -47,6 +48,11 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
         return comment;
     }
     
+    @Override
+    public AbstractExpression visit(ComputedElementConstructor element) {
+        return element;
+    }
+
     @Override
     public AbstractExpression visit(Conditional cond) {
         return cond;

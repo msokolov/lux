@@ -104,7 +104,7 @@ public class TestRunner {
             QueryStats stats = new QueryStats();
             eval.setQueryStats(stats);
             ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, test1.getContextItem());
-            Boolean comparedEqual = test1.compareResult (results);            
+            Boolean comparedEqual = test1.compareResult (results);
             if (comparedEqual == null || comparedEqual) {
                 //System.out.println (test1.getName() + " OK in " + stats.totalTime + "ms");
                 return true;
@@ -169,7 +169,7 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("predicates-14"));
+        assertTrue (runTest ("Constr-cont-eol-3"));
     }
     
     @Test public void testGroup () throws Exception {

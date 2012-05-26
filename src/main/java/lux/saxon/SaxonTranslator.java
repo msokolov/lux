@@ -32,6 +32,7 @@ import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
+import lux.xquery.ComputedElementConstructor;
 import lux.xquery.Conditional;
 import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
@@ -81,6 +82,8 @@ import net.sf.saxon.expr.flwor.FLWORExpression;
 import net.sf.saxon.expr.flwor.LocalVariableBinding;
 import net.sf.saxon.expr.instruct.Block;
 import net.sf.saxon.expr.instruct.Choose;
+import net.sf.saxon.expr.instruct.ComputedAttribute;
+import net.sf.saxon.expr.instruct.ComputedElement;
 import net.sf.saxon.expr.instruct.DocumentInstr;
 import net.sf.saxon.expr.instruct.Comment;
 import net.sf.saxon.expr.instruct.FixedAttribute;
@@ -121,6 +124,7 @@ import net.sf.saxon.type.ItemType;
 import net.sf.saxon.type.Type;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.Cardinality;
+import net.sf.saxon.value.DateTimeValue;
 import net.sf.saxon.value.GDateValue;
 import net.sf.saxon.value.Value;
 
@@ -241,6 +245,20 @@ public class SaxonTranslator {
     }
     
     public AbstractExpression exprFor (AtomicSequenceConverter atomizer) {
+        ItemType type = atomizer.getItemType(config.getTypeHierarchy());
+        if (!type.isAtomicType()) {
+            throw new LuxException ("AtomicSequenceConverter converting to non-atomic type: " + type);
+        }
+        AtomicType atomicType = (AtomicType) type;
+        Variable var = new Variable(new QName("x"));
+        
+        return new FLWOR(castExprFor(var, atomicType), 
+                new ForClause (var, null, exprFor(atomizer.getBaseExpression())));
+        // this often works, doesn't provide the type conversion:
+        // return exprFor (atomizer.getBaseExpression());
+        /*
+        // this produces expressions like: fn:string(data($x))
+        // buf if $x is a sequence, that's not allowed
         Expression base = atomizer.getBaseExpression();
         ItemType type = atomizer.getItemType(config.getTypeHierarchy());
         if (!type.isAtomicType()) {
@@ -257,6 +275,7 @@ public class SaxonTranslator {
             addCastExprFor(abstracted, base, atomicType);
         }
         return new Sequence(abstracted.toArray(new AbstractExpression[0]));
+        */
     }
 
     /* return a QName suitable for use as a constructor of the given type */
@@ -361,10 +380,6 @@ public class SaxonTranslator {
     }
 
     private String getPrefixForNamespace(String namespace) {
-        for (Map.Entry<String, String> ns : namespaceDeclarations.entrySet()) {
-            if (ns.getValue().equals(namespace))
-                return ns.getKey();
-        }
         String prefix = config.getNamePool().suggestPrefixForURI(namespace);
         if (prefix == null) {
             NamespaceResolver resolver = queryModule.getNamespaceResolver();
@@ -379,6 +394,11 @@ public class SaxonTranslator {
         }
         if (prefix != null) {
             namespaceDeclarations.put(prefix, namespace);
+        } else {
+            for (Map.Entry<String, String> ns : namespaceDeclarations.entrySet()) {
+                if (ns.getValue().equals(namespace))
+                    return ns.getKey();
+            }
         }
         return prefix;
     }
@@ -484,6 +504,16 @@ public class SaxonTranslator {
         return new CommentConstructor(exprFor(((Comment)expr).getContentExpression()));
     }
     
+    public AbstractExpression exprFor (ComputedAttribute expr) {
+        return new AttributeConstructor(exprFor(expr.getNameExpression()), 
+                exprFor(expr.getContentExpression()));
+    }
+    
+    public AbstractExpression exprFor (ComputedElement expr) {
+        return new ComputedElementConstructor(exprFor (expr.getNameExpression()), 
+                exprFor (expr.getContentExpression()));
+    }
+
     public AbstractExpression exprFor (ContextItemExpression expr) {
         return new Dot();
     }
@@ -505,7 +535,9 @@ public class SaxonTranslator {
     public AbstractExpression exprFor (FixedAttribute attribute) {
         NodeName name = attribute.getAttributeName();
         QName qname = qnameFor (name.getStructuredQName());
-        AttributeConstructor att = new AttributeConstructor(qname, exprFor (attribute.getContentExpression()));
+        AttributeConstructor att = new AttributeConstructor(
+                new LiteralExpression(qname.toString(), ValueType.STRING), 
+                exprFor (attribute.getContentExpression()));
         return att;
     }
     
@@ -698,7 +730,7 @@ public class SaxonTranslator {
 
     public LiteralExpression exprFor (AtomicValue value) {
         ValueType type = valueTypeForItemType(value.getPrimitiveType());
-        if (value instanceof GDateValue) {
+        if (value instanceof GDateValue && (! (value instanceof DateTimeValue))) {
             return new LiteralExpression(value.toString(), type);
         }
         try {
@@ -893,6 +925,10 @@ public class SaxonTranslator {
             return exprFor ((Comment) expr);
         case CompareToIntegerConstant:
             return exprFor ((CompareToIntegerConstant) expr);
+        case ComputedAttribute:
+            return exprFor ((ComputedAttribute) expr);
+        case ComputedElement:
+            return exprFor ((ComputedElement) expr);
         case ContextItemExpression:
             return exprFor ((ContextItemExpression) expr);
         case DocumentInstr:
@@ -954,6 +990,8 @@ public class SaxonTranslator {
         BinaryExpression,
         CastExpression,
         CompareToIntegerConstant,
+        ComputedAttribute,
+        ComputedElement,
         ContextItemExpression,
         Expression,
         FilterExpression,

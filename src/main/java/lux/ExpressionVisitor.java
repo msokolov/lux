@@ -16,6 +16,7 @@ import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
+import lux.xquery.ComputedElementConstructor;
 import lux.xquery.Conditional;
 import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
@@ -72,6 +73,7 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (TextConstructor textConstructor);
     public abstract AbstractExpression visit (UnaryMinus predicate);
     public abstract AbstractExpression visit (Variable variable);
+    public abstract AbstractExpression visit (ComputedElementConstructor computedElementConstructor);
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

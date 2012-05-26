@@ -5,7 +5,9 @@
 package lux.xpath;
 
 import java.math.BigDecimal;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 import lux.ExpressionVisitor;
 import lux.api.LuxException;
@@ -123,6 +125,15 @@ public class LiteralExpression extends AbstractExpression {
                 buf.append ("xs:double(").append(d).append(')');
             }
             break;
+            /*
+        case DATE:
+            buf.append("xs:date(\"").append (calendarToXsDate(getCalendar())).append("\")");
+            break;
+            */
+        
+        case DATE_TIME:
+            buf.append("xs:dateTime(\"").append (calendarToXsDateTime(getCalendar())).append("\")");
+            break;
         case TIME:
             buf.append("xs:time(\"").append (value).append("\")");
             break;
@@ -155,13 +166,56 @@ public class LiteralExpression extends AbstractExpression {
             buf.append (hexdigits[b2]);
         }
     }
+
+    private Calendar getCalendar() {
+        Calendar dt = Calendar.getInstance();
+        dt.setTimeZone(TimeZone.getTimeZone("UT"));
+        dt.setTime((Date) value);
+        return dt;
+    }
     
+    public static String calendarToXsDateTime (Calendar cal)
+    {
+        String tz="";
+        int offset = cal.get(Calendar.ZONE_OFFSET);
+        String sgn;
+        if (offset < 0) {
+            sgn = "-";
+            offset = -offset;
+        } else {
+            sgn = "+";
+        }
+        int minutes = offset / 60000;
+        int hours = minutes / 60;
+        minutes = minutes % 60;
+        tz = String.format ("%s%02d:%02d", sgn, hours, minutes);
+        return String.format("%04d-%02d-%02dT%02d:%02d:%02d%s",
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH) + 1,
+                cal.get(Calendar.DAY_OF_MONTH),
+                cal.get(Calendar.HOUR_OF_DAY),
+                cal.get(Calendar.MINUTE),
+                cal.get(Calendar.SECOND),
+                tz
+        );
+    }
+
+    public static String calendarToXsDate(Calendar cal)
+    {
+        return String.format("%04d-%02d-%02dZ",
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH) + 1,
+                cal.get(Calendar.DAY_OF_MONTH)
+        );
+    }
+
     public static void escapeString(String s, StringBuilder buf) {
         buf.append('"');
         for (char c : s.toCharArray()) {
             switch (c) {
             case '"': buf.append ("\"\""); break;
             case '&': buf.append ("&amp;"); break;
+            case '\r': buf.append("&#xD;"); break;  // XML line ending normalization removes these unless they come in as character references
             default: buf.append (c);
             }
         }
