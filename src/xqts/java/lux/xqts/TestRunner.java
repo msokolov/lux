@@ -169,7 +169,7 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("Constr-cont-eol-3"));
+        assertTrue (runTest ("VarDecl012"));
     }
     
     @Test public void testGroup () throws Exception {
