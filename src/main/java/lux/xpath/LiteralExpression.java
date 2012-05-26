@@ -90,10 +90,10 @@ public class LiteralExpression extends AbstractExpression {
             buf.append (')');
             break;
         case STRING:
-            escapeString(value.toString(), buf);
+            escapeString (value.toString(), buf);
             break;
         case BOOLEAN:
-            buf.append (value).append("()");
+            buf.append ("fn:").append(value).append("()");
             break;
         case FLOAT:
             Float f = (Float) value;
