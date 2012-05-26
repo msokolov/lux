@@ -169,7 +169,7 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("op-multiply-yearMonthDuration2args-1"));
+        assertTrue (runTest ("predicates-14"));
     }
     
     @Test public void testGroup () throws Exception {

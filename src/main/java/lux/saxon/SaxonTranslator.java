@@ -702,7 +702,8 @@ public class SaxonTranslator {
             return new LiteralExpression(value.toString(), type);
         }
         try {
-            return new LiteralExpression(Value.convertToJava(value.asItem()), type);
+            Object oval = Value.convertToJava(value.asItem());
+            return new LiteralExpression(oval, type);
         } catch (XPathException e) {
             throw new LuxException (e);
         }
