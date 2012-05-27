@@ -19,7 +19,12 @@ public class XQuery {
     private final VariableDefinition[] externalVariables;
     private final AbstractExpression body;
     
-    public XQuery (String defaultElementNamespace, String defaultFunctionNamespace, String defaultCollation, Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, AbstractExpression body) {
+    private final Boolean preserveNamespaces;
+    private final Boolean inheritNamespaces;
+    
+    public XQuery (String defaultElementNamespace, String defaultFunctionNamespace, String defaultCollation, 
+            Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, 
+            AbstractExpression body, Boolean copyNamespacesPreserve, Boolean copyNamespacesInherit) {
         this.namespaceDeclarations = namespaceDeclarations;
         this.externalVariables = variableDefinitions;
         this.defaultCollation = defaultCollation;
@@ -27,6 +32,8 @@ public class XQuery {
         this.defaultFunctionNamespace = defaultFunctionNamespace;
         this.functionDefinitions = defs;
         this.body = body;
+        this.inheritNamespaces = copyNamespacesInherit;
+        this.preserveNamespaces = copyNamespacesPreserve;
     }
     
     public XQuery (AbstractExpression body) {
@@ -37,7 +44,8 @@ public class XQuery {
         this.defaultFunctionNamespace = null;
         this.functionDefinitions = null;
         this.body = body;
-        
+        this.inheritNamespaces = null;
+        this.preserveNamespaces = null;
     }
     
     public String toString () {
@@ -47,6 +55,20 @@ public class XQuery {
     }
     
     public void toString (StringBuilder buf) {
+        if (inheritNamespaces != null || preserveNamespaces != null) {
+            buf.append ("declare copy-namespaces ");
+            if (preserveNamespaces != null && preserveNamespaces == false) {
+                buf.append ("no-preserve, ");
+            } else {
+                buf.append ("preserve, ");
+            }
+            if (inheritNamespaces != null && inheritNamespaces == true) {
+                buf.append ("inherit");
+            } else {
+                buf.append ("no-inherit");                
+            }
+            buf.append (";\n");
+        }
         if (StringUtils.isNotBlank(defaultCollation)) {
             buf.append("declare default collation \"").append(defaultCollation).append("\";\n");
         }
@@ -56,16 +78,18 @@ public class XQuery {
         if (StringUtils.isNotBlank(defaultFunctionNamespace)  && !defaultFunctionNamespace.equals(FunCall.FN_NAMESPACE)) {
             buf.append("declare default function namespace \"").append(defaultFunctionNamespace).append("\";\n");
         }
-        for (Namespace ns : namespaceDeclarations) {
-            if (ns.getPrefix().isEmpty() || "xml".equals (ns.getPrefix())) {
-                // handle this using specific mappings for element/function default namespaces
-                continue;
-                //buf.append("declare default element namespace ").append('=');                
-            } else {
-                buf.append("declare namespace ").append(ns.getPrefix()).append('=');
+        if (namespaceDeclarations != null) {
+            for (Namespace ns : namespaceDeclarations) {
+                if (ns.getPrefix().isEmpty() || "xml".equals (ns.getPrefix())) {
+                    // handle this using specific mappings for element/function default namespaces
+                    continue;
+                    //buf.append("declare default element namespace ").append('=');                
+                } else {
+                    buf.append("declare namespace ").append(ns.getPrefix()).append('=');
+                }
+                LiteralExpression.escapeString (ns.getNamespace(), buf);
+                buf.append(";\n");
             }
-            LiteralExpression.escapeString (ns.getNamespace(), buf);
-            buf.append(";\n");
         }
         if (externalVariables != null) {
             for (VariableDefinition def : externalVariables) {
@@ -108,6 +132,15 @@ public class XQuery {
     public String getDefaultFunctionNamespace () {
         return defaultFunctionNamespace;
     }
+
+    public Boolean isPreserveNamespaces() {
+        return preserveNamespaces;
+    }
+
+    public Boolean isInheritNamespaces() {
+        return inheritNamespaces;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

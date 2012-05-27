@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
 import lux.saxon.Saxon;
-import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
@@ -105,7 +104,7 @@ public abstract class BasicQueryTest {
     @Test
     public void testConvertRootedPathToPredicate() {
         assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + getQueryString(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
-        		"[exists(descendant::element(ACT)/child::element(SCENE)/root(.))]", 
+        		"[exists(descendant::ACT/child::SCENE/root(.))]", 
         		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
     
@@ -267,7 +266,7 @@ public abstract class BasicQueryTest {
         // fn:collection() is implicit
         assertQuery ("collection()//SCENE", "lux:search(\"" +
                 getQueryString(Q.SCENE).replace("\"", "\"\"")
-                + "\",2)/descendant::element(SCENE)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
+                + "\",2)/descendant::SCENE", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
     }
     
     public void assertQuery (String xpath, int facts, Q ... queries) {
@@ -289,10 +288,9 @@ public abstract class BasicQueryTest {
      */
 
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
-        Saxon saxon = new Saxon();
+        Saxon saxon = new Saxon(null, getIndexer());
         saxon.declareNamespace("lux", "lux");
         saxon.declareNamespace("ns", "http://namespace.org/#ns");
-        saxon.setContext(new SaxonContext (null, getIndexer()));
         assertQuery(xpath, optimized, facts, type, saxon, queries);
     }
 
@@ -300,7 +298,7 @@ public abstract class BasicQueryTest {
             Q ... queries) {
 
         SaxonExpr expr = saxon.compile(xpath);
-        AbstractExpression ex = saxon.getTranslator().exprFor(expr.getSaxonInternalExpression());
+        AbstractExpression ex = expr.getXPath();
         if (optimized != null) {
             assertEquals (optimized, ex.toString());
         }

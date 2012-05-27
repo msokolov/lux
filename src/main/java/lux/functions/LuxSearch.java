@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.functions;
 
 import java.io.IOException;
@@ -9,6 +5,7 @@ import java.io.IOException;
 import lux.XPathQuery;
 import lux.index.XmlField;
 import lux.index.XmlIndexer;
+import lux.saxon.Config;
 import lux.saxon.ResultIterator;
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
@@ -37,15 +34,13 @@ import org.apache.lucene.util.Version;
  * 
  */
 public class LuxSearch extends ExtensionFunctionDefinition {
-    protected final Saxon saxon;
     
-    public LuxSearch (Saxon saxon) {
-        this.saxon = saxon;
+    public LuxSearch () {
     }
     
-    private XPathQuery makeXPathQuery(String queryString, long facts) throws ParseException, org.apache.lucene.queryParser.ParseException {
+    private XPathQuery makeXPathQuery(String queryString, long facts, Saxon saxon) throws ParseException, org.apache.lucene.queryParser.ParseException {
         Query query;
-        XmlIndexer indexer = saxon.getContext().getIndexer();
+        XmlIndexer indexer = saxon.getIndexer();
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
             SrndQuery q = getSurroundQueryParser().parse2(queryString);
             query = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), getQueryFactory());
@@ -117,12 +112,13 @@ public class LuxSearch extends ExtensionFunctionDefinition {
      * Iterate over the search results
      *
      * @param query the query to execute
+     * @param saxon 
      * @return an iterator with the results of executing the query and applying the
      * expression to its result.
      * @throws XPathException
      */        
     @SuppressWarnings("rawtypes")
-    public SequenceIterator<Item> iterate(final XPathQuery query) throws XPathException {        
+    public SequenceIterator<Item> iterate(final XPathQuery query, Saxon saxon) throws XPathException {        
         try {
             return new ResultIterator (saxon, query);
         } catch (IOException e) {
@@ -136,6 +132,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         
         @SuppressWarnings("rawtypes") @Override
         public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
+            
             if (arguments.length == 0 || arguments.length > 2) {
                 throw new XPathException ("wrong number of arguments");
             }
@@ -149,15 +146,16 @@ public class LuxSearch extends ExtensionFunctionDefinition {
                 IntegerValue num  = (IntegerValue) arguments[1].next();
                 facts = num.longValue();
             }
+            Saxon saxon = ((Config)context.getConfiguration()).getSaxon();
             try {
-                query = makeXPathQuery(queryString, facts);
+                query = makeXPathQuery(queryString, facts, saxon);
             } catch (ParseException e) {
                 throw new XPathException ("Failed to parse surround query " + queryString, e);
             } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException ("Failed to parse lucene query " + queryString, e);
             }
             System.out.println ("executing xpath query: " + query);
-            return iterate (query);
+            return iterate (query, saxon);
         }
         
     }

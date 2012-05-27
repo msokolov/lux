@@ -15,7 +15,6 @@ import lux.api.QueryStats;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.saxon.Saxon;
-import lux.saxon.SaxonContext;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;
@@ -94,8 +93,7 @@ public abstract class SearchBase {
     }
     
     public static Saxon getEvaluator() {
-        Saxon eval = new Saxon();
-        eval.setContext(new SaxonContext(searcher, indexer));
+        Saxon eval = new Saxon(searcher, indexer);
         eval.setQueryStats (new QueryStats());
         return eval;
     }

@@ -34,7 +34,7 @@ public class ResultIterator implements SequenceIterator<Item>{
         if (stats != null) {
             stats.query = query.getQuery().toString();
         }
-        searcher = saxon.getContext().getSearcher();
+        searcher = saxon.getSearcher();
         docCache = saxon.getDocReader();
         docIter = searcher.searchOrdered(query);
     }

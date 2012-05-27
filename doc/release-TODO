@@ -6,6 +6,7 @@ Rigorous testing; no known severe bugs.
 *** compatibility w/ifpress
 test integration w/loader
 *** path and element name indexes
+*** Lazy Evaluation
 is that enough?
 *** XPath 2.0
 *** clean API

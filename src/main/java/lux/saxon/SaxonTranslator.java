@@ -10,8 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-
 import lux.api.LuxException;
 import lux.api.ValueType;
 import lux.saxon.xquery.InstanceOf;
@@ -44,13 +42,13 @@ import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
 import lux.xquery.ProcessingInstructionConstructor;
 import lux.xquery.Satisfies;
+import lux.xquery.Satisfies.Quantifier;
 import lux.xquery.SortKey;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 import lux.xquery.VariableDefinition;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
-import lux.xquery.Satisfies.Quantifier;
 import net.sf.saxon.expr.AtomicSequenceConverter;
 import net.sf.saxon.expr.Atomizer;
 import net.sf.saxon.expr.AxisExpression;
@@ -82,13 +80,13 @@ import net.sf.saxon.expr.flwor.FLWORExpression;
 import net.sf.saxon.expr.flwor.LocalVariableBinding;
 import net.sf.saxon.expr.instruct.Block;
 import net.sf.saxon.expr.instruct.Choose;
+import net.sf.saxon.expr.instruct.Comment;
 import net.sf.saxon.expr.instruct.ComputedAttribute;
 import net.sf.saxon.expr.instruct.ComputedElement;
+import net.sf.saxon.expr.instruct.CopyOf;
 import net.sf.saxon.expr.instruct.DocumentInstr;
-import net.sf.saxon.expr.instruct.Comment;
 import net.sf.saxon.expr.instruct.FixedAttribute;
 import net.sf.saxon.expr.instruct.FixedElement;
-import net.sf.saxon.expr.instruct.GeneralVariable;
 import net.sf.saxon.expr.instruct.GlobalVariable;
 import net.sf.saxon.expr.instruct.ProcessingInstruction;
 import net.sf.saxon.expr.instruct.UserFunctionParameter;
@@ -128,6 +126,8 @@ import net.sf.saxon.value.Cardinality;
 import net.sf.saxon.value.DateTimeValue;
 import net.sf.saxon.value.GDateValue;
 import net.sf.saxon.value.Value;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Translates Saxon XPath 2.0 Expressions into Lux AbstractExpressions.
@@ -177,7 +177,9 @@ public class SaxonTranslator {
                 getNamespaceDeclarations(queryModule), 
                 getVariableDefinitions(queryModule), 
                 functionDefinitions, 
-                body);
+                body,
+                queryModule.isPreserveNamespaces() ? true : null,
+                queryModule.isInheritNamespaces() ? null : false);
     }
     
     public XQuery queryFor(AbstractExpression ex) {
@@ -462,17 +464,6 @@ public class SaxonTranslator {
         }
         return new FunCall (qnameFor(type), valueTypeForItemType(type), ae);        
     }
-    
-    private void addCastExprFor (List<AbstractExpression> aes, Expression expr, AtomicType type) {
-        AbstractExpression child = exprFor (expr);
-        if (child instanceof Sequence) {
-            for (int i = 0; i < child.getSubs().length; i++) {
-                aes.add (castExprFor(child.getSubs()[i], type));
-            }
-        } else {
-            aes.add(castExprFor (child, type));
-        }
-    }
 
     private Sequence exprFor (Expression[] exprs) {
         AbstractExpression[] aex = new AbstractExpression [exprs.length];
@@ -518,6 +509,10 @@ public class SaxonTranslator {
 
     public AbstractExpression exprFor (ContextItemExpression expr) {
         return new Dot();
+    }
+
+    private AbstractExpression exprFor(CopyOf expr) {
+        return exprFor (expr.getSelectExpression());
     }
     
     public AbstractExpression exprFor (DocumentInstr documentInstr) {
@@ -838,21 +833,26 @@ public class SaxonTranslator {
     public AbstractExpression exprFor (FLWORExpression flwor) {  
         List<Clause> saxonClauses = flwor.getClauseList();
         int i = 0;
-        while (saxonClauses.get(i).getClauseKey() == Clause.WHERE) {
+        while (i < saxonClauses.size() && saxonClauses.get(i).getClauseKey() == Clause.WHERE) {
             // Saxon optimizes constant where clauses to the left of the expression where they
             // are no longer syntactically valid as xquery
             ++i;
         }
-        FLWORClause clauses[] = new FLWORClause[saxonClauses.size()];
-        int k = 1;
+        FLWORClause clauses[];
+        int k = 0;
         if (i < saxonClauses.size()) {
+            clauses = new FLWORClause[saxonClauses.size()];
             // get the first non-where clause
-            clauses[0] = clauseFor (saxonClauses.get(i));
-            if (i > 0) { 
-                // append any of the preamble where clauses
-                for (int j = 0; j < i; j++) {
-                    clauses[k++] = clauseFor (saxonClauses.get(j));                    
-                }
+            clauses[k++] = clauseFor (saxonClauses.get(i));
+        } else {
+            // Generate a dummy let clause??
+            clauses = new FLWORClause[saxonClauses.size() + 1];
+            clauses[k++] = new LetClause(new Variable (new QName("x")), LiteralExpression.ONE);
+        }
+        if (i > 0) { 
+            // append any of the preamble where clauses
+            for (int j = 0; j < i; j++) {
+                clauses[k++] = clauseFor (saxonClauses.get(j));                    
             }
         }
         // and the rest of the clauses...
@@ -947,6 +947,8 @@ public class SaxonTranslator {
             return exprFor ((ComputedElement) expr);
         case ContextItemExpression:
             return exprFor ((ContextItemExpression) expr);
+        case CopyOf:
+            return exprFor ((CopyOf) expr);
         case DocumentInstr:
             return exprFor ((DocumentInstr) expr);            
         case FilterExpression:
@@ -1009,6 +1011,7 @@ public class SaxonTranslator {
         ComputedAttribute,
         ComputedElement,
         ContextItemExpression,
+        CopyOf,
         Expression,
         FilterExpression,
         FirstItemExpression,

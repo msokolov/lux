@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.StringReader;
 
 import lux.ResultList;
-import lux.ShortCircuitException;
 import lux.XPathQuery;
 import lux.api.QueryStats;
 import lux.api.ValueType;
+import lux.solr.ShortCircuitException;
 import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.XdmAtomicValue;
 

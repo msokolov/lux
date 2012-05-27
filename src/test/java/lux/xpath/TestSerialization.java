@@ -25,69 +25,69 @@ public class TestSerialization {
         QName starfoo = new QName (null, "foo", "*");
         QName foostar = new QName ("#ns", "*", "foo");
 
-        assertEquals ("node()", new NodeTest (ValueType.NODE, null).toString().toString());
-        assertEquals ("node()", new NodeTest (ValueType.NODE, foo).toString().toString());
-        assertEquals ("node()", new NodeTest (ValueType.NODE, star).toString().toString());
-        assertEquals ("node()", new NodeTest (ValueType.NODE, foobar).toString().toString());
-        assertEquals ("node()", new NodeTest (ValueType.NODE, foostar).toString().toString());
-        assertEquals ("node()", new NodeTest (ValueType.NODE, starfoo).toString().toString());
+        assertEquals ("node()", new NodeTest (ValueType.NODE, null).toString());
+        assertEquals ("node()", new NodeTest (ValueType.NODE, foo).toString());
+        assertEquals ("node()", new NodeTest (ValueType.NODE, star).toString());
+        assertEquals ("node()", new NodeTest (ValueType.NODE, foobar).toString());
+        assertEquals ("node()", new NodeTest (ValueType.NODE, foostar).toString());
+        assertEquals ("node()", new NodeTest (ValueType.NODE, starfoo).toString());
 
-        assertEquals ("text()", new NodeTest (ValueType.TEXT, null).toString().toString());
-        assertEquals ("text()", new NodeTest (ValueType.TEXT, star).toString().toString());
-        assertEquals ("text()", new NodeTest (ValueType.TEXT, foo).toString().toString());
-        assertEquals ("text()", new NodeTest (ValueType.TEXT, foobar).toString().toString());
-        assertEquals ("text()", new NodeTest (ValueType.TEXT, foostar).toString().toString());
-        assertEquals ("text()", new NodeTest (ValueType.TEXT, starfoo).toString().toString());
+        assertEquals ("text()", new NodeTest (ValueType.TEXT, null).toString());
+        assertEquals ("text()", new NodeTest (ValueType.TEXT, star).toString());
+        assertEquals ("text()", new NodeTest (ValueType.TEXT, foo).toString());
+        assertEquals ("text()", new NodeTest (ValueType.TEXT, foobar).toString());
+        assertEquals ("text()", new NodeTest (ValueType.TEXT, foostar).toString());
+        assertEquals ("text()", new NodeTest (ValueType.TEXT, starfoo).toString());
 
-        assertEquals ("element()", new NodeTest (ValueType.ELEMENT, null).toString().toString());
-        assertEquals ("element(*)", new NodeTest (ValueType.ELEMENT, star).toString().toString());
-        assertEquals ("element(*:*)", new NodeTest (ValueType.ELEMENT, starstar).toString().toString());
-        assertEquals ("element(foo)", new NodeTest (ValueType.ELEMENT, foo).toString().toString());
-        assertEquals ("element(foo:bar)", new NodeTest (ValueType.ELEMENT, foobar).toString().toString());
-        assertEquals ("element(foo:*)", new NodeTest (ValueType.ELEMENT, foostar).toString().toString());
-        assertEquals ("element(*:foo)", new NodeTest (ValueType.ELEMENT, starfoo).toString().toString());
+        assertEquals ("element()", new NodeTest (ValueType.ELEMENT, null).toString());
+        assertEquals ("*", new NodeTest (ValueType.ELEMENT, star).toString());
+        assertEquals ("*:*", new NodeTest (ValueType.ELEMENT, starstar).toString());
+        assertEquals ("foo", new NodeTest (ValueType.ELEMENT, foo).toString());
+        assertEquals ("foo:bar", new NodeTest (ValueType.ELEMENT, foobar).toString());
+        assertEquals ("foo:*", new NodeTest (ValueType.ELEMENT, foostar).toString());
+        assertEquals ("*:foo", new NodeTest (ValueType.ELEMENT, starfoo).toString());
 
-        assertEquals ("attribute()", new NodeTest (ValueType.ATTRIBUTE, null).toString().toString());
-        assertEquals ("attribute(foo)", new NodeTest (ValueType.ATTRIBUTE, foo).toString().toString());
-        assertEquals ("attribute(foo:bar)", new NodeTest (ValueType.ATTRIBUTE, foobar).toString().toString());
-        assertEquals ("attribute(foo:*)", new NodeTest (ValueType.ATTRIBUTE, foostar).toString().toString());
-        assertEquals ("attribute(*:foo)", new NodeTest (ValueType.ATTRIBUTE, starfoo).toString().toString());
+        assertEquals ("attribute()", new NodeTest (ValueType.ATTRIBUTE, null).toString());
+        assertEquals ("foo", new NodeTest (ValueType.ATTRIBUTE, foo).toString());
+        assertEquals ("foo:bar", new NodeTest (ValueType.ATTRIBUTE, foobar).toString());
+        assertEquals ("foo:*", new NodeTest (ValueType.ATTRIBUTE, foostar).toString());
+        assertEquals ("*:foo", new NodeTest (ValueType.ATTRIBUTE, starfoo).toString());
 
-        assertEquals ("document-node()", new NodeTest (ValueType.DOCUMENT, null).toString().toString());
-        assertEquals ("document-node(element(foo))", new NodeTest (ValueType.DOCUMENT, foo).toString().toString());
-        assertEquals ("document-node(element(foo:bar))", new NodeTest (ValueType.DOCUMENT, foobar).toString().toString());
-        assertEquals ("document-node(element(foo:*))", new NodeTest (ValueType.DOCUMENT, foostar).toString().toString());
-        assertEquals ("document-node(element(*:foo))", new NodeTest (ValueType.DOCUMENT, starfoo).toString().toString());
+        assertEquals ("document-node()", new NodeTest (ValueType.DOCUMENT, null).toString());
+        assertEquals ("document-node(element(foo))", new NodeTest (ValueType.DOCUMENT, foo).toString());
+        assertEquals ("document-node(element(foo:bar))", new NodeTest (ValueType.DOCUMENT, foobar).toString());
+        assertEquals ("document-node(element(foo:*))", new NodeTest (ValueType.DOCUMENT, foostar).toString());
+        assertEquals ("document-node(element(*:foo))", new NodeTest (ValueType.DOCUMENT, starfoo).toString());
 
-        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, null).toString().toString());
-        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, foo).toString().toString());
-        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, foobar).toString().toString());
-        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, foostar).toString().toString());
-        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, starfoo).toString().toString());
+        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, null).toString());
+        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, foo).toString());
+        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, foobar).toString());
+        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, foostar).toString());
+        assertEquals ("comment()", new NodeTest (ValueType.COMMENT, starfoo).toString());
 
-        assertEquals ("processing-instruction()", new NodeTest (ValueType.PROCESSING_INSTRUCTION, null).toString().toString());
-        assertEquals ("processing-instruction(foo)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, foo).toString().toString());
-        assertEquals ("processing-instruction(bar)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, foobar).toString().toString());
-        assertEquals ("processing-instruction(*)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, foostar).toString().toString());
-        assertEquals ("processing-instruction(foo)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, starfoo).toString().toString());
+        assertEquals ("processing-instruction()", new NodeTest (ValueType.PROCESSING_INSTRUCTION, null).toString());
+        assertEquals ("processing-instruction(foo)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, foo).toString());
+        assertEquals ("processing-instruction(bar)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, foobar).toString());
+        assertEquals ("processing-instruction(*)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, foostar).toString());
+        assertEquals ("processing-instruction(foo)", new NodeTest (ValueType.PROCESSING_INSTRUCTION, starfoo).toString());
     }
     
     @Test public void testPathStepToString () {
         NodeTest foo = new NodeTest (ValueType.ELEMENT, FOO_QNAME);
-        assertEquals ("self::element(foo)", new PathStep (Axis.Self, foo).toString());
-        assertEquals ("child::element(foo)", new PathStep (Axis.Child, foo).toString());
-        assertEquals ("parent::element(foo)", new PathStep (Axis.Parent, foo).toString());
-        assertEquals ("ancestor::element(foo)", new PathStep (Axis.Ancestor, foo).toString());
-        assertEquals ("ancestor-or-self::element(foo)", new PathStep (Axis.AncestorSelf, foo).toString());
-        assertEquals ("descendant::element(foo)", new PathStep (Axis.Descendant, foo).toString());
-        assertEquals ("descendant-or-self::element(foo)", new PathStep (Axis.DescendantSelf, foo).toString());
-        assertEquals ("preceding::element(foo)", new PathStep (Axis.Preceding, foo).toString());
-        assertEquals ("preceding-sibling::element(foo)", new PathStep (Axis.PrecedingSibling, foo).toString());
-        assertEquals ("following::element(foo)", new PathStep (Axis.Following, foo).toString());
-        assertEquals ("following-sibling::element(foo)", new PathStep (Axis.FollowingSibling, foo).toString());
+        assertEquals ("self::foo", new PathStep (Axis.Self, foo).toString());
+        assertEquals ("child::foo", new PathStep (Axis.Child, foo).toString());
+        assertEquals ("parent::foo", new PathStep (Axis.Parent, foo).toString());
+        assertEquals ("ancestor::foo", new PathStep (Axis.Ancestor, foo).toString());
+        assertEquals ("ancestor-or-self::foo", new PathStep (Axis.AncestorSelf, foo).toString());
+        assertEquals ("descendant::foo", new PathStep (Axis.Descendant, foo).toString());
+        assertEquals ("descendant-or-self::foo", new PathStep (Axis.DescendantSelf, foo).toString());
+        assertEquals ("preceding::foo", new PathStep (Axis.Preceding, foo).toString());
+        assertEquals ("preceding-sibling::foo", new PathStep (Axis.PrecedingSibling, foo).toString());
+        assertEquals ("following::foo", new PathStep (Axis.Following, foo).toString());
+        assertEquals ("following-sibling::foo", new PathStep (Axis.FollowingSibling, foo).toString());
         
-        assertEquals ("attribute::attribute(att)", new PathStep (Axis.Attribute, new NodeTest (ValueType.ATTRIBUTE, new QName("att"))).toString());
-        assertEquals ("attribute::element(foo)", new PathStep (Axis.Attribute, foo).toString());
+        assertEquals ("attribute::att", new PathStep (Axis.Attribute, new NodeTest (ValueType.ATTRIBUTE, new QName("att"))).toString());
+        assertEquals ("attribute::foo", new PathStep (Axis.Attribute, foo).toString());
         
         NodeTest node = new NodeTest (ValueType.NODE);
         assertEquals ("self::node()", new PathStep (Axis.Self, node).toString());
@@ -130,7 +130,7 @@ public class TestSerialization {
         subseq = new Subsequence(new Dot(), LiteralExpression.ONE, new LiteralExpression(10));
         assertEquals ("subsequence(.,1,10)", subseq.toString());
         subseq = new Subsequence(new Dot(), FunCall.LastExpression, LiteralExpression.ONE);
-        assertEquals ("subsequence(.,fn:last(),1)", subseq.toString());
+        assertEquals (".[fn:last()]", subseq.toString());
         subseq = new Subsequence(new Dot(), LiteralExpression.ONE, LiteralExpression.ONE);
         assertEquals (".[1]", subseq.toString());
     }
@@ -159,18 +159,18 @@ public class TestSerialization {
         LiteralExpression foo = new LiteralExpression ("foo");
         LiteralExpression two = new LiteralExpression (2);
         LiteralExpression pi = new LiteralExpression (3.14);
-        assertEquals ("2 * 3.14", new BinaryOperation(two, Operator.MUL, pi).toString());
+        assertEquals ("2 * xs:double(3.14)", new BinaryOperation(two, Operator.MUL, pi).toString());
         assertEquals ("\"foo\" = \"foo\"", new BinaryOperation(foo, Operator.EQUALS, foo).toString());           
     }
     
     @Test public void testElementToString () {
         ElementConstructor e = new ElementConstructor (FOO_QNAME, null, null);
-        assertEquals ("element foo {  }", e.toString());
+        assertEquals ("<foo />", e.toString());
         e = new ElementConstructor (FOO_QNAME, new Namespace [] {
                 new Namespace ("", "default"),
                 new Namespace ("lux", "lux")
         }, new ElementConstructor (FOO_QNAME, null, null));
-        assertEquals ("element foo { attribute xmlns { \"default\" }, attribute xmlns:lux { \"lux\" }, element foo {  } }", e.toString());   
+        assertEquals ("<foo xmlns=\"default\" xmlns:lux=\"lux\">{<foo /> }</foo>", e.toString());   
     }
     
     @Test public void testLiteralExpressionToString () {

@@ -1,13 +1,29 @@
 package lux.api;
 
+import lux.index.XmlIndexer;
+import lux.lucene.LuxSearcher;
 import lux.xml.XmlBuilder;
 
-/** Represents an expression engine: interpreter, compiler, evaluator */
+/** Represents an expression engine: interpreter, compiler, evaluator 
+ * 
+ * compile(string) -> CompiledQuery
+ *   compileInternal() -> translate() -> aex -> optimize() -> toString() -> compileInternal()
+ *   
+ * evaluate(CompiledQuery) -> results; Object, Iterable<?>
+ * 
+ * */
 public abstract class Evaluator {
     
-    private Context context;
-    
     protected QueryStats queryStats;
+    
+    private LuxSearcher searcher;
+    
+    private XmlIndexer indexer; 
+    
+    public Evaluator (LuxSearcher searcher, XmlIndexer indexer) {
+        this.searcher = searcher;
+        this.indexer = indexer;
+    }
     
     public abstract Expression compile (String exprString) throws LuxException;
     
@@ -41,15 +57,23 @@ public abstract class Evaluator {
     public void setQueryStats (QueryStats stats) {
         queryStats = stats;
     }
-    
-    public void setContext(Context context) {
-        this.context =  context;
-    }
-    
-    public Context getContext() {
-        return context;
-    }
 
+    public LuxSearcher getSearcher() {
+        return searcher;
+    }
+    
+    public XmlIndexer getIndexer () {
+        return indexer;
+    }
+    
+    public void setSearcher(LuxSearcher searcher) {
+        this.searcher = searcher;
+    }
+    
+    public void setIndexer (XmlIndexer indexer) {
+        this.indexer = indexer;
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

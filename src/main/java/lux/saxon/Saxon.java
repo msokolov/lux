@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.saxon;
 
 import java.io.Reader;
@@ -16,8 +12,11 @@ import lux.api.ResultSet;
 import lux.functions.LuxCount;
 import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
+import lux.index.XmlIndexer;
+import lux.lucene.LuxSearcher;
 import lux.xml.XmlBuilder;
 import lux.xquery.XQuery;
+import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -43,22 +42,19 @@ public class Saxon extends Evaluator  {
     private SaxonBuilder saxonBuilder;
     private SaxonTranslator translator;
     
-    // This is a volatile thing that needs to be reset for every new query
-    // it should probably be associated with the Context? TODO: clean up the object model
-    // here and make an object that has only things that have a query lifespan
     private CachingDocReader docReader;
     
-    private static Config config;    
+    private Config config;    
     
-    public Saxon() {
-        if (config == null) {
-            config = new Config();
-            config.setDocumentNumberAllocator(new DocIDNumberAllocator());
-        }
+    public Saxon(LuxSearcher searcher, XmlIndexer indexer) {
+        super (searcher, indexer);
+        config = new Config(this);
+        config.setDocumentNumberAllocator(new DocIDNumberAllocator());
+        config.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
         processor = new Processor (config);
-        processor.registerExtensionFunction(new LuxSearch(this));
-        processor.registerExtensionFunction(new LuxCount(this));
-        processor.registerExtensionFunction(new LuxExists(this));
+        processor.registerExtensionFunction(new LuxSearch());
+        processor.registerExtensionFunction(new LuxCount());
+        processor.registerExtensionFunction(new LuxExists());
         //processor.registerExtensionFunction(new LuxRoot());
 
         xpathCompiler = processor.newXPathCompiler();
@@ -85,7 +81,7 @@ public class Saxon extends Evaluator  {
         XQuery abstractQuery = translator.queryFor (xquery);
         //AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
         //AbstractExpression expr = translator.exprFor(xquery.getUnderlyingCompiledQuery().getExpression());
-        PathOptimizer optimizer = new PathOptimizer(getContext().getIndexer());
+        PathOptimizer optimizer = new PathOptimizer(getIndexer());
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         try {
             xquery = xqueryCompiler.compile(optimizedQuery.toString());
@@ -94,12 +90,12 @@ public class Saxon extends Evaluator  {
             throw new LuxException ("Syntax error compiling: " + optimizedQuery.toString(), e);
         }
         //return new SaxonExpr(xpath, expr);
-        return new SaxonExpr(xquery);
+        return new SaxonExpr(xquery, optimizedQuery);
     }
 
     @Override
     public ResultSet<?> evaluate(Expression expr) {
-        return evaluate (expr, getContext().getContextItem());       
+        return evaluate (expr, null);
     }
     
     @Override
@@ -109,21 +105,20 @@ public class Saxon extends Evaluator  {
 
     @Override
     public ResultSet<?> iterate(Expression expr, Object contextItem) { 
-        docReader = new CachingDocReader(getContext().getSearcher().getIndexReader(), getBuilder(), getContext().getXmlFieldName());
+        docReader = new CachingDocReader(getSearcher().getIndexReader(), getBuilder(), getIndexer().getXmlFieldName());
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         try {
             return saxonExpr.evaluate((XdmItem) contextItem);
         } catch (SaxonApiException e) {
             throw new LuxException (e);
+        } finally {
+            docReader.clear();
+            docReader = null;
         }
     }
 
     public SaxonBuilder getBuilder() {
         return saxonBuilder;
-    }
-    
-    public SaxonContext getContext() {
-        return (SaxonContext) super.getContext();
     }
     
     public Config getConfig() {

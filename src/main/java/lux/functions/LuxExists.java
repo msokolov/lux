@@ -19,9 +19,7 @@ import org.apache.lucene.search.Scorer;
 
 public class LuxExists extends LuxSearch {
     
-    public LuxExists(Saxon saxon) {
-        super(saxon);
-    }
+    public LuxExists() { }
 
     @Override
     public StructuredQName getFunctionQName() {
@@ -34,11 +32,11 @@ public class LuxExists extends LuxSearch {
     }    
     
     @SuppressWarnings("rawtypes")
-    @Override public SequenceIterator<Item> iterate (XPathQuery query) throws XPathException {
+    @Override public SequenceIterator<Item> iterate (XPathQuery query, Saxon saxon) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {
-            DocIdSetIterator iter = saxon.getContext().getSearcher().search(query);
+            DocIdSetIterator iter = saxon.getSearcher().search(query);
             exists = (iter.nextDoc() != Scorer.NO_MORE_DOCS);
         } catch (IOException e) {
             throw new XPathException (e);

@@ -22,7 +22,7 @@ public class SaxonComponent extends XPathSearchComponent {
 
     @Override
     public Evaluator createEvaluator() {
-        return new Saxon();
+        return new Saxon(null, null);
     }
 
     @Override

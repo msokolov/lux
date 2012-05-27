@@ -18,9 +18,7 @@ import org.apache.lucene.search.Scorer;
 
 public class LuxCount extends LuxSearch {
     
-    public LuxCount(Saxon saxon) {
-        super(saxon);
-    }
+    public LuxCount() { }
     
     @Override
     public StructuredQName getFunctionQName() {
@@ -33,11 +31,11 @@ public class LuxCount extends LuxSearch {
     }
     
     @SuppressWarnings("rawtypes")
-    @Override public SequenceIterator<Item> iterate (XPathQuery query) throws XPathException {
+    @Override public SequenceIterator<Item> iterate (XPathQuery query, Saxon saxon) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {
-            DocIdSetIterator counter = saxon.getContext().getSearcher().search(query);
+            DocIdSetIterator counter = saxon.getSearcher().search(query);
             while (counter.nextDoc() != Scorer.NO_MORE_DOCS) {
                 ++count;
             }

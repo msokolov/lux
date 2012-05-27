@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.saxon;
 
 import lux.ExpressionVisitorBase;
@@ -10,6 +6,7 @@ import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xpath.QName;
+import lux.xquery.XQuery;
 
 public class UnOptimizer extends ExpressionVisitorBase {
 
@@ -35,6 +32,13 @@ public class UnOptimizer extends ExpressionVisitorBase {
             }
         }
         return func;
+    }
+
+    public XQuery unoptimize(XQuery xquery) {
+        AbstractExpression body = unoptimize(xquery.getBody());
+        return new XQuery (xquery.getDefaultElementNamespace(), xquery.getDefaultFunctionNamespace(), xquery.getDefaultCollation(),
+                xquery.getNamespaceDeclarations(), xquery.getVariableDefinitions(), xquery.getFunctionDefinitions(),
+                body, xquery.isPreserveNamespaces(), xquery.isInheritNamespaces());        
     }
 
 }

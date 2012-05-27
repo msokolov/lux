@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -47,9 +48,12 @@ public class TestCase {
     private final XdmValue contextItem;
     private final ComparisonMode comparisonMode;
     
+    private HashMap<String,String> externalVariables;
+    
     private final String queryText;
     //private final String inputFileText;
     private String[] outputFileText;
+    
     private final boolean expectError;
 
     static final String XQTS_NS = "http://www.w3.org/2005/02/query-test-XQTSCatalog";
@@ -60,6 +64,7 @@ public class TestCase {
     static final QName NAME = new QName("name");
     static final QName VARIABLE = new QName("variable");
     static final QName QUERY = new QName(XQTS_NS, "query");
+    static final QName INPUT_QUERY = new QName(XQTS_NS, "input-query");
     static final QName INPUT_FILE = new QName(XQTS_NS, "input-file");
     static final QName OUTPUT_FILE = new QName(XQTS_NS, "output-file");
     static final QName CONTEXT_ITEM = new QName(XQTS_NS, "contextItem");
@@ -110,6 +115,16 @@ public class TestCase {
             }
         }
         queryText = text;
+
+        // Are there input queries? If so, record the bindings for later evaluation
+        XdmSequenceIterator inputQuery = testCase.axisIterator(Axis.CHILD, INPUT_QUERY);
+        while (inputQuery.hasNext()) {
+            XdmNode q = (XdmNode) inputQuery.next();
+            if (externalVariables == null) {
+                externalVariables = new HashMap<String, String>();
+            }
+            externalVariables.put(q.getAttributeValue(VARIABLE), q.getAttributeValue(NAME));
+        }
         
         XdmSequenceIterator errors = testCase.axisIterator(Axis.CHILD, EXPECTED_ERROR);
         expectError = errors.hasNext();
@@ -298,6 +313,10 @@ public class TestCase {
 
     public boolean isExpectError() {
         return expectError;
+    }
+    
+    public HashMap<String,String> getExternalVariables () {
+        return externalVariables;
     }
  
 }

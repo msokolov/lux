@@ -8,13 +8,11 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import lux.api.Context;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.QueryStats;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
-import lux.saxon.SaxonContext;
 import lux.xml.XmlBuilder;
 
 import org.apache.solr.common.SolrException;
@@ -80,8 +78,8 @@ public abstract class XPathSearchComponent extends QueryComponent {
         int len = params.getInt( CommonParams.ROWS, -1 );
         // multiple shards not implemented
         XmlIndexer indexer = new XmlIndexer(XmlIndexer.INDEX_PATHS);
-        Context context = new SaxonContext (new LuxSearcher(searcher), indexer);
-        evaluator.setContext(context);
+        evaluator.setIndexer(indexer);
+        evaluator.setSearcher(new LuxSearcher(searcher));
         evaluator.setQueryStats(new QueryStats());
         Expression expr = evaluator.compile(rb.getQueryString());
         //SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();

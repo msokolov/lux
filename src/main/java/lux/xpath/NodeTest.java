@@ -77,7 +77,11 @@ public class NodeTest {
         case ATTRIBUTE:
         case ELEMENT: 
             if ("*".equals(name.getLocalPart())) {
-                buf.append(name.getPrefix()).append(":*");
+                if (name.getPrefix().isEmpty()) {
+                    buf.append('*');
+                } else {
+                    buf.append(name.getPrefix()).append(":*");
+                }
             } else {
                 name.toString(buf);
             }

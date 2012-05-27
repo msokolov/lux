@@ -184,6 +184,10 @@ public class XmlIndexer {
     public long getOptions() {
         return options;
     }
+
+    public String getXmlFieldName() {
+        return XmlField.XML_STORE.getName();
+    }
     
 }
 

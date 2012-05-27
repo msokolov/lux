@@ -4,23 +4,20 @@
 
 package lux.saxon;
 
+import static org.junit.Assert.assertEquals;
 import lux.index.XmlIndexer;
 import lux.xpath.AbstractExpression;
-
-import net.sf.saxon.expr.Expression;
 
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class TranslatorTest {
     
     private Saxon saxon;
     
     @Before public void setup () {
-        saxon = new Saxon();
-        saxon.setContext(new SaxonContext(null, new XmlIndexer()));
+        saxon = new Saxon(null, new XmlIndexer());
     }
     
     @Test public void testTranslate () {
@@ -171,16 +168,13 @@ public class TranslatorTest {
     
     private void roundtrip (String xpath) {
         SaxonExpr original = saxon.compile(xpath);
-        AbstractExpression aex = saxon.getTranslator().exprFor(getExpression (original));
+        AbstractExpression aex = original.getXPath();
         SaxonExpr retranslated = saxon.compile(aex.toString());
         assertEquals (xpath + " was not preserved", 
-                getExpression(original).toString(), 
-                getExpression(retranslated).toString());
+                original.getXPath().toString(), 
+                retranslated.getXPath().toString());
     }
     
-    private final Expression getExpression (SaxonExpr expr) {
-        return expr.getSaxonInternalExpression();
-    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -37,7 +37,7 @@ public class SearchTest2 extends BasicQueryTest {
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         //System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
-        AbstractExpression aex = saxon.getTranslator().exprFor(saxonExpr.getSaxonInternalExpression());
+        AbstractExpression aex = saxonExpr.getXPath();
         aex = new UnOptimizer(getIndexer().getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);

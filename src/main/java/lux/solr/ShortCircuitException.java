@@ -1,4 +1,4 @@
-package lux;
+package lux.solr;
 
 public class ShortCircuitException extends RuntimeException {
 

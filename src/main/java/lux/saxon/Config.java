@@ -32,10 +32,16 @@ import org.xml.sax.SAXException;
 
 public class Config extends Configuration implements URIResolver, EntityResolver {
 
-  private LuxFunctionLibrary luxFunctionLibrary;
+    private final LuxFunctionLibrary luxFunctionLibrary;
+    private final Saxon saxon;
 
-    public Config () {
+    /**
+     * There must be only a single configuration per Saxon and vice-versa.
+     * @param saxon the Saxon evaluator to associate with this Configuration
+     */
+    public Config (Saxon saxon) {
         super();
+        this.saxon = saxon;
         luxFunctionLibrary = new LuxFunctionLibrary();;
         // This prevents expansion of internal "parameter entities" among other things
         // getParseOptions().setEntityResolver(this);
@@ -55,18 +61,23 @@ public class Config extends Configuration implements URIResolver, EntityResolver
         return (DocIDNumberAllocator) super.getDocumentNumberAllocator();
     }
 
-  @Override
-  public LuxFunctionLibrary getIntegratedFunctionLibrary () {
-    return luxFunctionLibrary;
-  }
+    @Override
+    public LuxFunctionLibrary getIntegratedFunctionLibrary () {
+        return luxFunctionLibrary;
+    }
 
-  /** register functions with the lux function library */
-  @Override
-  public void registerExtensionFunction(ExtensionFunctionDefinition function) {
-    getIntegratedFunctionLibrary().registerFunction(function);
-  }
+    /** register functions with the lux function library */
+    @Override
+    public void registerExtensionFunction(ExtensionFunctionDefinition function) {
+        getIntegratedFunctionLibrary().registerFunction(function);
+    }
   
+    public Saxon getSaxon() {
+        return saxon;
+    }
+    
+}
 
-}/* This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */

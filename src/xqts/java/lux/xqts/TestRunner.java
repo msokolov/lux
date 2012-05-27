@@ -13,10 +13,8 @@ import lux.api.ResultSet;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.saxon.Saxon;
-import lux.saxon.SaxonContext;
 import lux.saxon.SaxonExpr;
 import lux.xqts.TestCase.ComparisonMode;
-
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 
@@ -34,13 +32,13 @@ public class TestRunner {
     private static Saxon eval;
     private static int numtests;
     private static int numfailed;
+    private static int numignored;
     private boolean terminateOnException = true;
     private boolean printDetailedDiagnostics = false;
     
     @BeforeClass
     public static void setup () throws Exception {
         dir = new RAMDirectory();
-        eval = new Saxon();
         // This indexer does nothing, the effect of which is to disable Lux search optimizations for
         // absolute expressions depending on the context. This makes it possible to evaluate tests that
         // make use of the dynamic context.  Thus we're only really testing the Translator here, and not
@@ -50,8 +48,10 @@ public class TestRunner {
         catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", eval.getProcessor());
         indexDirectory (indexer, catalog);
         searcher = new LuxSearcher(dir);
-        eval.setContext(new SaxonContext(searcher, indexer));
+        eval = new Saxon(searcher, indexer);
         numtests = 0;
+        numignored = 0;
+        numfailed = 0;
     }
     
     private static void indexDirectory(XmlIndexer indexer, Catalog catalog2) throws IOException {
@@ -83,7 +83,7 @@ public class TestRunner {
         searcher.close();
         dir.close();
         System.out.println ("Ran " + numtests + " tests");
-        System.out.println (numfailed + " tests failed");
+        System.out.println (numfailed + " tests failed; " + numignored + " ignored");
     }
 
     private boolean runTest (String caseName) throws Exception {
@@ -99,6 +99,11 @@ public class TestRunner {
             ignorer.setShowErrors(true);
         }
         try {
+            if (test1.getExternalVariables() != null) {
+                ++numignored;
+                System.out.println ("ignoring " + test1.getName() + " which relies on an external variable");
+                return true;
+            }
             SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
             //System.out.println (expr);
             QueryStats stats = new QueryStats();
@@ -134,10 +139,10 @@ public class TestRunner {
                     XdmItem item = xq.load().evaluateSingle();
                     System.err.println (test1.getQueryText() + " returns " + item);
                 }
+                ++numfailed;
                 if (terminateOnException) {
                     throw (e); 
                 } else {
-                    ++numfailed;
                     return false;
                 }
             }
@@ -169,13 +174,15 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("VarDecl012"));
+        assertTrue (runTest ("functx-fn-root-1"));
     }
     
     @Test public void testGroup () throws Exception {
         terminateOnException = false;
-        runTestGroup ("Basics");
-        runTestGroup ("Expressions");
+        runTestGroup ("MinimalConformance");
+        runTestGroup ("FunctX");
+        //runTestGroup ("Basics");
+        //runTestGroup ("Expressions");
     }
     
     static class ErrorIgnorer implements ErrorListener {
