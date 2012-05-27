@@ -25,6 +25,7 @@ import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
+import lux.xquery.FLWOR;
 import lux.xquery.Variable;
 import lux.xquery.XQuery;
 
@@ -147,7 +148,47 @@ public class PathOptimizer extends ExpressionVisitorBase {
             subs[i] = optimizeExpression (subs[i], subs.length - i - 1, facts);
         }
     }    
+
+
+    private void combineTopQueries (int n, Occur occur) {
+        combineTopQueries (n, occur, null);
+    }
+
+    /*
+     * combines the top n queries on the stack, using the boolean operator occur, and generalizing
+     * the return type to the given type.  If valueType is null, no type restriction is imposed; the 
+     * return type derives from type promotion among the constituent queries' return types.
+     */
+    private void combineTopQueries (int n, Occur occur, ValueType valueType) {
+        if (n <= 0) {
+            push (MATCH_ALL);
+            return;
+        }
+        XPathQuery query = pop();
+        if (n == 1) {
+            ValueType type = valueType == null ? query.getResultType() : query.getResultType().promote(valueType);
+            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), type, indexer.getOptions());
+        } else {
+            for (int i = 0; i < n-1; i++) {
+                query = combineQueries (pop(), occur, query, valueType);
+            }
+        }
+        push (query);
+    }
+
+    public XPathQuery getQuery() {        
+        return queryStack.get(queryStack.size()-1);
+    }
     
+    void push (XPathQuery query) {
+        queryStack.add(query);
+    }
+    
+    XPathQuery pop () {
+        return queryStack.remove(queryStack.size()-1);
+    }
+
+
     public AbstractExpression visit (Root expr) {
         push (MATCH_ALL);
         return expr;
@@ -236,6 +277,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             isMinimal = true;
         }
         else {
+            // FIXME: This depends on the indexes available; with path indexes, this should be true
             isMinimal = false;
         }
         XPathQuery query;
@@ -536,43 +578,28 @@ public class PathOptimizer extends ExpressionVisitorBase {
         combineTopQueries (sequence.getSubs().length, Occur.SHOULD);
         return sequence;
     }
-
-    private void combineTopQueries (int n, Occur occur) {
-        combineTopQueries (n, occur, null);
-    }
-
+    
     /*
-     * combines the top n queries on the stack, using the boolean operator occur, and generalizing
-     * the return type to the given type.  If valueType is null, no type restriction is imposed; the 
-     * return type derives from type promotion among the constituent queries' return types.
+     * Unoptimized expressions should call this to ensure the proper state of the query stack
      */
-    private void combineTopQueries (int n, Occur occur, ValueType valueType) {
-        if (n <= 0) {
-            push (MATCH_ALL);
-            return;
+    private void popChildQueries (AbstractExpression expr) {
+        for (int i = 0; i < expr.getSubs().length; i++) {
+            pop();
         }
-        XPathQuery query = pop();
-        if (n == 1) {
-            ValueType type = valueType == null ? query.getResultType() : query.getResultType().promote(valueType);
-            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), type, indexer.getOptions());
-        } else {
-            for (int i = 0; i < n-1; i++) {
-                query = combineQueries (pop(), occur, query, valueType);
-            }
-        }
-        push (query);
-    }
-
-    public XPathQuery getQuery() {        
-        return queryStack.get(queryStack.size()-1);
+        push (MATCH_ALL);
     }
     
-    void push (XPathQuery query) {
-        queryStack.add(query);
+    public AbstractExpression visitDefault (AbstractExpression expr) {
+        popChildQueries (expr);
+        return expr;
     }
     
-    XPathQuery pop () {
-        return queryStack.remove(queryStack.size()-1);
+    @Override
+    public AbstractExpression visit(FLWOR flwor) {
+        for (int i = 0; i < flwor.getClauses().length; i++) {
+            pop();
+        }
+        return visitDefault (flwor);
     }
 
 }

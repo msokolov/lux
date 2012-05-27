@@ -32,130 +32,141 @@ import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
 
 public abstract class ExpressionVisitorBase extends ExpressionVisitor {
-
-    @Override
-    public AbstractExpression visit(AttributeConstructor attributeConstructor) {
-        return attributeConstructor;
-    }
-
-    @Override
-    public AbstractExpression visit(BinaryOperation op) {
-        return op;
-    }
-
-    @Override
-    public AbstractExpression visit(CommentConstructor comment) {
-        return comment;
-    }
     
-    @Override
-    public AbstractExpression visit(ComputedElementConstructor element) {
-        return element;
-    }
-
-    @Override
-    public AbstractExpression visit(Conditional cond) {
-        return cond;
-    }
-    
-    @Override
-    public AbstractExpression visit(DocumentConstructor documentConstructor) {
-        return documentConstructor;
-    }
-
-    @Override
-    public AbstractExpression visit(Dot dot) {
-        return dot;
-    }
-
-    @Override
-    public AbstractExpression visit(ElementConstructor elementConstructor) {
-        return elementConstructor;
-    }
-
-    @Override
-    public AbstractExpression visit(FLWOR flwor) {
-        return flwor;
-    }
-
-    @Override
-    public AbstractExpression visit(FunCall func) {
-        return func;
-    }
-
-    @Override
-    public AbstractExpression visit(InstanceOf expr) {
+    /**
+     * Tihs method is called by every visit() method in this class. 
+     * Subclasses may extend this convenience method in order to provide a default behavior for all
+     * expressions for which they don't provide an explicit visit() override.
+     * @param expr an expression to visit
+     * @return the expression
+     */
+    protected AbstractExpression visitDefault (AbstractExpression expr) {
         return expr;
     }
 
     @Override
+    public AbstractExpression visit(AttributeConstructor attributeConstructor) {
+        return visitDefault (attributeConstructor);
+    }
+
+    @Override
+    public AbstractExpression visit(BinaryOperation op) {
+        return visitDefault (op);
+    }
+
+    @Override
+    public AbstractExpression visit(CommentConstructor comment) {
+        return visitDefault (comment);
+    }
+    
+    @Override
+    public AbstractExpression visit(ComputedElementConstructor element) {
+        return visitDefault (element);
+    }
+
+    @Override
+    public AbstractExpression visit(Conditional cond) {
+        return visitDefault (cond);
+    }
+    
+    @Override
+    public AbstractExpression visit(DocumentConstructor documentConstructor) {
+        return visitDefault (documentConstructor);
+    }
+
+    @Override
+    public AbstractExpression visit(Dot dot) {
+        return visitDefault (dot);
+    }
+
+    @Override
+    public AbstractExpression visit(ElementConstructor elementConstructor) {
+        return visitDefault (elementConstructor);
+    }
+
+    @Override
+    public AbstractExpression visit(FLWOR flwor) {
+        return visitDefault (flwor);
+    }
+
+    @Override
+    public AbstractExpression visit(FunCall func) {
+        return visitDefault (func);
+    }
+
+    @Override
+    public AbstractExpression visit(InstanceOf expr) {
+        return visitDefault (expr);
+    }
+
+    @Override
     public AbstractExpression visit(Let let) {
-        return let;
+        return visitDefault (let);
     }
 
     @Override
     public AbstractExpression visit(LiteralExpression literal) {
-        return literal;
+        return visitDefault (literal);
     }
 
     @Override
     public AbstractExpression visit(PathExpression path) {
-        return path;
+        return visitDefault (path);
     }
     
     @Override
     public AbstractExpression visit(PathStep step) {
-        return step;
+        return visitDefault (step);
     }
 
     @Override
     public AbstractExpression visit(Predicate predicate) {
-        return predicate;
+        return visitDefault (predicate);
     }
     
     @Override
     public AbstractExpression visit(ProcessingInstructionConstructor pi) {
-        return pi;
+        return visitDefault (pi);
     }
 
     @Override
     public AbstractExpression visit(Root root) {
-        return root;
+        return visitDefault (root);
     }
     
     @Override
     public AbstractExpression visit(Satisfies satisfies) {
-        return satisfies;
+        return visitDefault (satisfies);
     }
 
     @Override
     public AbstractExpression visit(Sequence seq) {
-        return seq;
+        return visitDefault (seq);
     }
     
     @Override
     public AbstractExpression visit(SetOperation setop) {
-        return setop;
+        return visitDefault (setop);
     }
     
     @Override
     public AbstractExpression visit(Subsequence subseq) {
-        return subseq;
+        return visitDefault (subseq);
     }
     
     @Override
     public AbstractExpression visit(TextConstructor textConstructor) {
-        return textConstructor;
+        return visitDefault (textConstructor);
     }
     
     @Override
     public AbstractExpression visit(UnaryMinus unaryMinus) {
-        return unaryMinus;
+        return visitDefault (unaryMinus);
     }
 
     @Override
     public AbstractExpression visit(Variable var) {
-        return var;
+        return visitDefault (var);
     }
 }
 

@@ -35,6 +35,10 @@ public class FLWOR extends AbstractExpression {
         return subs[0];
     }
     
+    public FLWORClause[] getClauses () {
+        return clauses;
+    }
+    
     public boolean isAbsolute () {
         return getReturnExpression().isAbsolute();
     }
