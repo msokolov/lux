@@ -1,30 +1,23 @@
 package lux.saxon;
 
 import lux.api.QueryContext;
-import lux.index.XmlField;
 import net.sf.saxon.s9api.XdmItem;
 
 public class SaxonContext extends QueryContext {
-
-    private XdmItem contextItem;
 
     public SaxonContext () {
     }
     
     public SaxonContext (XdmItem contextItem) {
-        this.contextItem = contextItem;
+        setContextItem(contextItem);
      }
 
-    public String getXmlFieldName() {
-        return XmlField.XML_STORE.getName();
-    }
-    
     public void setContextItem (XdmItem item) {
-        contextItem = item;
+        super.setContextItem(item);
     }
     
     public XdmItem getContextItem () {
-        return contextItem;
+        return (XdmItem) super.getContextItem();
     }
 
 }

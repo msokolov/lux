@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import lux.index.XmlField;
 import lux.xpath.QName;
 
 public class QueryContext {
@@ -27,6 +28,9 @@ public class QueryContext {
     }
     
     public Map<QName, Object> getVariableBindings() {
+        if (variables == null) {
+            return null;
+        }
         return Collections.unmodifiableMap(variables);
     }
     
@@ -36,6 +40,10 @@ public class QueryContext {
     
     public Object getContextItem () {
         return contextItem;
+    }
+    
+    public String getXmlFieldName() {
+        return XmlField.XML_STORE.getName();
     }
 
 }

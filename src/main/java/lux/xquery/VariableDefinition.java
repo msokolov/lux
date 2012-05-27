@@ -14,9 +14,13 @@ public class VariableDefinition {
     public void toString (StringBuilder buf) {
         buf.append ("declare variable ");
         variable.toString(buf);
-        buf.append (" := ");
-        value.toString (buf);
-        buf.append (";\n");
+        if (value == null) {
+            buf.append(" external;\n");
+        } else {
+            buf.append (" := ");
+            value.toString (buf);
+            buf.append (";\n");
+        }
     }
 }
 

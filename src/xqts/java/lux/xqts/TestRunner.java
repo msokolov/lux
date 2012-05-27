@@ -3,21 +3,28 @@ package lux.xqts;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 
+import lux.api.QueryContext;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.saxon.Saxon;
 import lux.saxon.SaxonExpr;
+import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
 import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
+import net.sf.saxon.s9api.XdmNode;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.RAMDirectory;
 import org.junit.AfterClass;
@@ -38,17 +45,19 @@ public class TestRunner {
     
     @BeforeClass
     public static void setup () throws Exception {
+        eval = new Saxon(null, null);
         dir = new RAMDirectory();
         // This indexer does nothing, the effect of which is to disable Lux search optimizations for
         // absolute expressions depending on the context. This makes it possible to evaluate tests that
         // make use of the dynamic context.  Thus we're only really testing the Translator here, and not
         // the Optimizer or Query components of Lux.
         XmlIndexer indexer = new XmlIndexer (0);
-        eval.getConfig().setErrorListener(new ErrorIgnorer ());
         catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", eval.getProcessor());
         indexDirectory (indexer, catalog);
         searcher = new LuxSearcher(dir);
-        eval = new Saxon(searcher, indexer);
+        eval.setIndexer (indexer);
+        eval.setSearcher(searcher);
+        eval.getConfig().setErrorListener(new ErrorIgnorer ());
         numtests = 0;
         numignored = 0;
         numfailed = 0;
@@ -80,8 +89,8 @@ public class TestRunner {
 
     @AfterClass 
     public static void cleanup () throws Exception {
-        searcher.close();
-        dir.close();
+        //searcher.close();
+        //dir.close();
         System.out.println ("Ran " + numtests + " tests");
         System.out.println (numfailed + " tests failed; " + numignored + " ignored");
     }
@@ -99,16 +108,20 @@ public class TestRunner {
             ignorer.setShowErrors(true);
         }
         try {
-            if (test1.getExternalVariables() != null) {
-                ++numignored;
-                System.out.println ("ignoring " + test1.getName() + " which relies on an external variable");
-                return true;
-            }
             SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
+            QueryContext context = new QueryContext();
+            if (test1.getExternalVariables() != null) {
+                for (Map.Entry<String,String> binding : test1.getExternalVariables().entrySet()) {
+                    String filename = binding.getValue();
+                    String text = IOUtils.toString (new FileInputStream(filename));
+                    context.bindVariable(new QName(binding.getKey()), new XdmAtomicValue(text));
+                }
+            }
+            context.setContextItem(test1.getContextItem());
             //System.out.println (expr);
             QueryStats stats = new QueryStats();
             eval.setQueryStats(stats);
-            ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, test1.getContextItem());
+            ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, context);
             Boolean comparedEqual = test1.compareResult (results);
             if (comparedEqual == null || comparedEqual) {
                 //System.out.println (test1.getName() + " OK in " + stats.totalTime + "ms");
@@ -130,8 +143,8 @@ public class TestRunner {
             }
         } catch (Exception e) {
             // Saxon's XQTS report says it doesn't check actual error codes, so neither do we
-            if (! (test1.isExpectError() ||
-                    test1.getComparisonMode() == ComparisonMode.Ignore)) {                
+            if (! (test1.isExpectError() || test1.getComparisonMode() == ComparisonMode.Ignore)) { 
+                ++numfailed;               
                 System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + e.getMessage());
                 // diagnostics:
                 if (printDetailedDiagnostics ) {
@@ -139,7 +152,6 @@ public class TestRunner {
                     XdmItem item = xq.load().evaluateSingle();
                     System.err.println (test1.getQueryText() + " returns " + item);
                 }
-                ++numfailed;
                 if (terminateOnException) {
                     throw (e); 
                 } else {
@@ -167,22 +179,19 @@ public class TestRunner {
         }
     }
     
-    @Test public void testNameTest68() throws Exception {
-        // fails because declared type match is not enforced
-        assertTrue (runTest ("K2-NameTest-68"));
-    }
-    
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        assertTrue (runTest ("functx-fn-root-1"));
+        //assertTrue (runTest ("extvardeclwithouttype-1"));
+        //assertTrue (runTest ("functx-fn-root-1"));
+        assertTrue (runTest ("K2-ExtensionExpression-12"));
     }
     
     @Test public void testGroup () throws Exception {
         terminateOnException = false;
-        runTestGroup ("MinimalConformance");
-        runTestGroup ("FunctX");
-        //runTestGroup ("Basics");
-        //runTestGroup ("Expressions");
+        //runTestGroup ("MinimalConformance");
+        //runTestGroup ("FunctX");
+        runTestGroup ("Basics");
+        runTestGroup ("Expressions");
     }
     
     static class ErrorIgnorer implements ErrorListener {

@@ -29,9 +29,9 @@ public abstract class Evaluator {
     
     public abstract Object evaluate (Expression expr);
 
-    public abstract Object evaluate (Expression xpath, Object contextItem);
+    public abstract Object evaluate (Expression xpath, QueryContext context);
     
-    public abstract Iterable<?> iterate (Expression xpath, Object contextItem);
+    public abstract Iterable<?> iterate (Expression xpath, QueryContext context);
     
     /**
      * declare a prefix-namespace binding that will remain in effect for all expressions

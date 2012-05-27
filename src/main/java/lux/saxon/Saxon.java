@@ -8,6 +8,7 @@ import lux.PathOptimizer;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
+import lux.api.QueryContext;
 import lux.api.ResultSet;
 import lux.functions.LuxCount;
 import lux.functions.LuxExists;
@@ -23,7 +24,6 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
-import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 
 /**
@@ -99,16 +99,16 @@ public class Saxon extends Evaluator  {
     }
     
     @Override
-    public ResultSet<?> evaluate(Expression expr, Object contextItem) {
-        return iterate (expr, contextItem);
+    public ResultSet<?> evaluate(Expression expr, QueryContext context) {
+        return iterate (expr, context);
     }
 
     @Override
-    public ResultSet<?> iterate(Expression expr, Object contextItem) { 
+    public ResultSet<?> iterate(Expression expr, QueryContext context) { 
         docReader = new CachingDocReader(getSearcher().getIndexReader(), getBuilder(), getIndexer().getXmlFieldName());
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         try {
-            return saxonExpr.evaluate((XdmItem) contextItem);
+            return saxonExpr.evaluate(context);
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         } finally {

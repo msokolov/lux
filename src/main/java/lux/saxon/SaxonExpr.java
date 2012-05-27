@@ -1,7 +1,11 @@
 package lux.saxon;
 
+import java.util.Map;
+
+import lux.api.QueryContext;
 import lux.api.ResultSet;
 import lux.xpath.AbstractExpression;
+import lux.xpath.QName;
 import lux.xquery.XQuery;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathExecutable;
@@ -9,6 +13,7 @@ import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
+import net.sf.saxon.s9api.XdmValue;
 
 /*
  * TODO:
@@ -59,19 +64,37 @@ public class SaxonExpr implements lux.api.Expression {
         }
         return xquery.getBody();
     }
-
     
-    public ResultSet<?> evaluate(XdmItem contextItem) throws SaxonApiException {
+    public ResultSet<?> evaluate(QueryContext context) throws SaxonApiException {
         if (xpathExec != null) {
-            XPathSelector eval = xpathExec.load();
-            if (contextItem != null)
-                eval.setContextItem(contextItem);
-            return new XdmResultSet (eval.evaluate());
+           return new XdmResultSet (evaluateXPath(context));
         }
+        if (xqueryExec != null) {
+            return new XdmResultSet (evaluateXQuery(context));
+        }
+        // TODO: throw an exception
+        return null;
+    }
+    
+    private XdmValue evaluateXQuery (QueryContext context) throws SaxonApiException {
         XQueryEvaluator eval = xqueryExec.load();
-        if (contextItem != null)
-            eval.setContextItem(contextItem);
-        return new XdmResultSet (eval.evaluate());
+        if (context != null) {
+            eval.setContextItem((XdmItem) context.getContextItem());
+            if (context.getVariableBindings() != null) {
+                for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
+                    net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
+                    eval.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
+                }
+            }
+        }
+        return eval.evaluate();
+    }
+    
+    private XdmValue evaluateXPath (QueryContext context) throws SaxonApiException {
+        XPathSelector eval = xpathExec.load();
+        if (context != null)
+            eval.setContextItem((XdmItem) context.getContextItem());
+        return eval.evaluate();
     }
     
     public String toString () {
