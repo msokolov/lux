@@ -125,20 +125,40 @@ public class LiteralExpression extends AbstractExpression {
                 buf.append ("xs:double(").append(d).append(')');
             }
             break;
-            /*
         case DATE:
-            buf.append("xs:date(\"").append (calendarToXsDate(getCalendar())).append("\")");
+            buf.append ("xs:date(\"").append(value).append("\")");
             break;
-            */
-        
         case DATE_TIME:
-            buf.append("xs:dateTime(\"").append (calendarToXsDateTime(getCalendar())).append("\")");
+            buf.append ("xs:dateTime(\"").append(value).append("\")");
             break;
         case TIME:
-            buf.append("xs:time(\"").append (value).append("\")");
+            buf.append ("xs:time(\"").append(value).append("\")");
             break;
-        case DECIMAL:
-            buf.append("xs:decimal(").append (value).append(")");
+        case DAY:
+            buf.append ("xs:gDay(\"").append(value).append("\")");
+            break;
+        case MONTH_DAY:
+            buf.append ("xs:gMonthDay(\"").append(value).append("\")");
+            break;
+        case YEAR:
+            buf.append ("xs:gYear(\"").append(value).append("\")");
+            break;
+        case YEAR_MONTH:
+            buf.append ("xs:gYearMonth(\"").append(value).append("\")");
+            break;
+            /*
+        case DATE:
+            buf.append("xs:date(\"").append (calendarToXsDate((Calendar)value)).append("\")");
+            break;
+        case DATE_TIME:
+            buf.append("xs:dateTime(\"").append (calendarToXsDateTime((Calendar)value)).append("\")");
+            break;
+        case TIME:
+            buf.append("xs:time(\"").append ((Calendar)value).append("\")");
+            break;
+            */
+        case DECIMAL:            
+            buf.append("xs:decimal(").append (((BigDecimal)value).toPlainString()).append(")");
             break;
         case HEX_BINARY:
             buf.append("xs:hexBinary(\"");
@@ -166,29 +186,29 @@ public class LiteralExpression extends AbstractExpression {
             buf.append (hexdigits[b2]);
         }
     }
-
-    private Calendar getCalendar() {
-        Calendar dt = Calendar.getInstance();
-        dt.setTimeZone(TimeZone.getTimeZone("UT"));
-        dt.setTime((Date) value);
-        return dt;
-    }
     
     public static String calendarToXsDateTime (Calendar cal)
     {
-        String tz="";
-        int offset = cal.get(Calendar.ZONE_OFFSET);
-        String sgn;
-        if (offset < 0) {
-            sgn = "-";
-            offset = -offset;
-        } else {
-            sgn = "+";
+        TimeZone tz = cal.getTimeZone();
+        String tzs = "";
+        if (tz != null) {
+            int offset = cal.get(Calendar.ZONE_OFFSET);
+            String sgn;
+            if (offset == 0) {
+                tzs = "Z";
+            } else {
+                if (offset < 0) {
+                    sgn = "-";
+                    offset = -offset;
+                } else {
+                    sgn = "+";
+                }
+                int minutes = offset / 60000;
+                int hours = minutes / 60;
+                minutes = minutes % 60;
+                tzs = String.format ("%s%02d:%02d", sgn, hours, minutes);
+            }
         }
-        int minutes = offset / 60000;
-        int hours = minutes / 60;
-        minutes = minutes % 60;
-        tz = String.format ("%s%02d:%02d", sgn, hours, minutes);
         return String.format("%04d-%02d-%02dT%02d:%02d:%02d%s",
                 cal.get(Calendar.YEAR),
                 cal.get(Calendar.MONTH) + 1,
@@ -196,7 +216,7 @@ public class LiteralExpression extends AbstractExpression {
                 cal.get(Calendar.HOUR_OF_DAY),
                 cal.get(Calendar.MINUTE),
                 cal.get(Calendar.SECOND),
-                tz
+                tzs
         );
     }
 

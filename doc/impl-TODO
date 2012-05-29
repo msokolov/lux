@@ -17,7 +17,10 @@ This might be working, but we need to test
 ** XQuery!
 running XQTS now - down to 1305 failures out of 12008 tests over a few
 days we got it down to 147 w/44 ignored.  Now w/external variables implemented:
-168 fail (none ignored). Then, running on a larger test
+168 fail (none ignored). 
+139
+124
+Then, running on a larger test
 suite: Ran 18623 tests 478 tests failed; 44 ignored (97.5% pass)
 *** Now that this is workable, do some global tests:
 **** Test performance on XQTS with Saxon alone, and with Lux/Saxon

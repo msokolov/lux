@@ -19,6 +19,7 @@ import lux.saxon.Saxon;
 import lux.saxon.SaxonExpr;
 import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
+import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
@@ -57,6 +58,7 @@ public class TestRunner {
         eval.setIndexer (indexer);
         eval.setSearcher(searcher);
         eval.getConfig().setErrorListener(new ErrorIgnorer ());
+        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, true);
         numtests = 0;
         numignored = 0;
         numfailed = 0;
@@ -182,7 +184,8 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("extvardeclwithouttype-1"));
         //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("K2-ExtensionExpression-12"));
+        assertTrue (runTest ("CastAs059"));
+        //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
     }
     
     @Test public void testGroup () throws Exception {

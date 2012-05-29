@@ -122,9 +122,9 @@ import net.sf.saxon.type.BuiltInAtomicType;
 import net.sf.saxon.type.ItemType;
 import net.sf.saxon.type.Type;
 import net.sf.saxon.value.AtomicValue;
+import net.sf.saxon.value.BigIntegerValue;
+import net.sf.saxon.value.CalendarValue;
 import net.sf.saxon.value.Cardinality;
-import net.sf.saxon.value.DateTimeValue;
-import net.sf.saxon.value.GDateValue;
 import net.sf.saxon.value.Value;
 
 import org.apache.commons.lang.StringUtils;
@@ -664,6 +664,8 @@ public class SaxonTranslator {
                 return ValueType.TIME;
             case StandardNames.XS_HEX_BINARY:
                 return ValueType.HEX_BINARY;
+            case StandardNames.XS_BASE64_BINARY:
+                return ValueType.BASE64_BINARY;
             case StandardNames.XS_UNTYPED_ATOMIC:
                 return ValueType.ATOMIC;
             default:
@@ -727,8 +729,12 @@ public class SaxonTranslator {
 
     public LiteralExpression exprFor (AtomicValue value) {
         ValueType type = valueTypeForItemType(value.getPrimitiveType());
-        if (value instanceof GDateValue && (! (value instanceof DateTimeValue))) {
-            return new LiteralExpression(value.toString(), type);
+        if (value instanceof CalendarValue) {
+            //return new LiteralExpression(((CalendarValue)value).getCalendar(), type);
+            return new LiteralExpression(value.getStringValue(), type);
+        }
+        if (value instanceof BigIntegerValue) {
+            return new LiteralExpression (((BigIntegerValue)value).getStringValue(), type);
         }
         try {
             Object oval = Value.convertToJava(value.asItem());
