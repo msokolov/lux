@@ -54,14 +54,7 @@ public class Saxon extends Evaluator  {
         processor = new Processor (config);
         processor.registerExtensionFunction(new LuxSearch());
         processor.registerExtensionFunction(new LuxCount());
-        processor.registerExtensionFunction(new LuxExists());
-        //processor.registerExtensionFunction(new LuxRoot());
-
-        xpathCompiler = processor.newXPathCompiler();
-        xpathCompiler.declareNamespace("lux", "lux");
-        xqueryCompiler = processor.newXQueryCompiler();
-        xqueryCompiler.declareNamespace("lux", "lux");
-        
+        processor.registerExtensionFunction(new LuxExists());        
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
     }
@@ -70,11 +63,11 @@ public class Saxon extends Evaluator  {
     public SaxonExpr compile(String exprString) throws LuxException {
         //XPathExecutable xpath;
         // xpathCompiler.setErrorListener (config.getErrorListener());
-        xqueryCompiler.setErrorListener(config.getErrorListener());
+        getXQueryCompiler().setErrorListener(config.getErrorListener());
         XQueryExecutable xquery;
         try {
-            xquery = xqueryCompiler.compile(exprString);
-            // xpath = xpathCompiler.compile(exprString);
+            xquery = getXQueryCompiler().compile(exprString);
+            // xpath = getXPathCompiler().compile(exprString);
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + exprString, e);
         }
@@ -84,8 +77,8 @@ public class Saxon extends Evaluator  {
         PathOptimizer optimizer = new PathOptimizer(getIndexer());
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         try {
-            xquery = xqueryCompiler.compile(optimizedQuery.toString());
-            // xpath = xpathCompiler.compile(expr.toString());
+            xquery = getXQueryCompiler().compile(optimizedQuery.toString());
+            // xpath = getXPathCompiler().compile(expr.toString());
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + optimizedQuery.toString(), e);
         }
@@ -158,7 +151,25 @@ public class Saxon extends Evaluator  {
     public void declareNamespace (String prefix, String namespace) {
         xpathCompiler.declareNamespace(prefix, namespace);
     }
-
+    
+    private XQueryCompiler getXQueryCompiler () {
+        if (xqueryCompiler == null) {
+            xqueryCompiler = processor.newXQueryCompiler();
+            xqueryCompiler.declareNamespace("lux", "lux");
+        }
+        return xqueryCompiler;
+    }
+    
+    /*
+    private XPathCompiler getXPathCompiler () {
+        if (xpathCompiler == null) {
+            xpathCompiler = processor.newXPathCompiler();
+            xpathCompiler.declareNamespace("lux", "lux");
+        }
+        return xpathCompiler;
+    }
+    */
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
