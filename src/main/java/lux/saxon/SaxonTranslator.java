@@ -487,7 +487,7 @@ public class SaxonTranslator {
         }
         l -= 2;
         AbstractExpression tail = new Conditional(exprFor (conds[l]), exprFor (actions[l]), exprFor(actions[l+1]));
-        while (--l > 0) {
+        while (l-- > 0) {
             tail = new Conditional (exprFor (conds[l]), exprFor(actions[l]), tail);
         }
         return tail;
