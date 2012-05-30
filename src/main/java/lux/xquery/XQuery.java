@@ -62,7 +62,7 @@ public class XQuery {
             } else {
                 buf.append ("preserve, ");
             }
-            if (inheritNamespaces != null && inheritNamespaces == true) {
+            if ((inheritNamespaces == null) || (inheritNamespaces == true)) {
                 buf.append ("inherit");
             } else {
                 buf.append ("no-inherit");                

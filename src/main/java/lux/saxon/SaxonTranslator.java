@@ -5,6 +5,7 @@
 package lux.saxon;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -208,12 +209,33 @@ public class SaxonTranslator {
         while (decls.hasNext()) {
             GlobalVariableDefinition decl = decls.next();
             GlobalVariable global = decl.getCompiledVariable();
-            String typeDesc = decl.getRequiredType() == null ? null : decl.getRequiredType().toString();
+            String typeDesc = null;
+            if (decl.getRequiredType() != null) {
+                // typeDesc = decl.getRequiredType().getPrimaryType().toString();
+                ItemType itemType = decl.getRequiredType().getPrimaryType();
+                if (itemType.isAtomicType()) {
+                    typeDesc = decl.getRequiredType().toString();
+                } else {
+                    // TODO: specialized element() types
+                    typeDesc = itemType.getPrimitiveItemType().toString();
+                    int cardinality = decl.getRequiredType().getCardinality();
+                    if (cardinality == StaticProperty.ALLOWS_ONE_OR_MORE) {
+                        typeDesc = typeDesc + '+';
+                    } else if (cardinality == StaticProperty.ALLOWS_ZERO_OR_MORE) {
+                        typeDesc = typeDesc + '*';
+                    } else if (cardinality == StaticProperty.ALLOWS_ZERO_OR_ONE) {
+                        typeDesc = typeDesc + '?';
+                    }
+                }
+            }
             AbstractExpression var = global != null ? exprFor(global) : new Variable(qnameFor(decl.getVariableQName()));
-            VariableDefinition def = new VariableDefinition(var, exprFor(decl.getValueExpression()), typeDesc);
+            int order = decl.getLineNumber() * 1000000 + decl.getColumnNumber();
+            VariableDefinition def = new VariableDefinition(var, exprFor(decl.getValueExpression()), typeDesc, order);
             defs.add(def);
         }
-        return defs.toArray(new VariableDefinition[0]);
+        VariableDefinition [] orderedDefs = defs.toArray(new VariableDefinition[0]);
+        Arrays.sort(orderedDefs);
+        return orderedDefs;
     }
     
     private void addNamespaceDeclaration (QName qname) {

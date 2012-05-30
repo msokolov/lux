@@ -21,7 +21,6 @@ import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
 import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.XQueryExecutable;
-import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 
 import org.apache.commons.io.IOUtils;
@@ -147,8 +146,12 @@ public class TestRunner {
         } catch (Exception e) {
             // Saxon's XQTS report says it doesn't check actual error codes, so neither do we
             if (! (test1.isExpectError() || test1.getComparisonMode() == ComparisonMode.Ignore)) { 
-                ++numfailed;               
-                System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + e.getMessage());
+                ++numfailed;
+                String error = e.getMessage();
+                if (error.length() > 1024) {
+                    error = error.substring(0, 1024);
+                }
+                System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + error);
                 // diagnostics:
                 if (printDetailedDiagnostics ) {
                     XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
@@ -186,7 +189,7 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("extvardeclwithouttype-1"));
         //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("extvardeclwithtype-8"));
+        assertTrue (runTest ("copynamespace-4"));
         //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
     }
     
