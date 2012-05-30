@@ -20,6 +20,9 @@ public class QueryContext {
      * or null to clear any existing binding.
      */
     public void bindVariable (QName varName, Object value) {
+        if (variables == null) {
+            variables = new HashMap<QName, Object>();
+        }
         if (value == null) {
             variables.remove(varName);            
         } else {

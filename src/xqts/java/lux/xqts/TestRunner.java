@@ -109,15 +109,17 @@ public class TestRunner {
             ignorer.setShowErrors(true);
         }
         try {
-            SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
             QueryContext context = new QueryContext();
             if (test1.getExternalVariables() != null) {
                 for (Map.Entry<String,String> binding : test1.getExternalVariables().entrySet()) {
                     String filename = binding.getValue();
                     String text = IOUtils.toString (new FileInputStream(filename));
-                    context.bindVariable(new QName(binding.getKey()), new XdmAtomicValue(text));
+                    SaxonExpr expr = (SaxonExpr) eval.compile(text);
+                    String val = expr.evaluate(null).iterator().next().toString();
+                    context.bindVariable(new QName(binding.getKey()), new XdmAtomicValue(val));
                 }
             }
+            SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
             context.setContextItem(test1.getContextItem());
             //System.out.println (expr);
             QueryStats stats = new QueryStats();
@@ -184,7 +186,7 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("extvardeclwithouttype-1"));
         //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("CastAs059"));
+        assertTrue (runTest ("extvardeclwithtype-1"));
         //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
     }
     

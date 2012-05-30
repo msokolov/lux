@@ -93,7 +93,7 @@ public class TestCase {
         }
         comparisonMode = readOutputText(testCase);
         
-        File queryFile = new File (catalog.getDirectory() + "/Queries/XQuery/" + path + '/' + queryName + ".xq");
+        File queryFile = new File (getQueryPath(queryName, catalog));
         String text = IOUtils.toString (new FileInputStream(queryFile));
         
         // remove the declaration of the input variable in the query text and replace its uses with doc().
@@ -123,13 +123,18 @@ public class TestCase {
             if (externalVariables == null) {
                 externalVariables = new HashMap<String, String>();
             }
-            externalVariables.put(q.getAttributeValue(VARIABLE), q.getAttributeValue(NAME));
+            String filename = q.getAttributeValue(NAME);
+            externalVariables.put(q.getAttributeValue(VARIABLE), getQueryPath(filename, catalog));
         }
         
         XdmSequenceIterator errors = testCase.axisIterator(Axis.CHILD, EXPECTED_ERROR);
         expectError = errors.hasNext();
         
         catalog.putTestCase(name, this);
+    }
+
+    private String getQueryPath(String filename, Catalog catalog) {
+        return catalog.getDirectory() + "/Queries/XQuery/" + path + '/' + filename + ".xq";
     }
 
     private ComparisonMode readOutputText(XdmNode testCase) throws IOException, FileNotFoundException {
@@ -192,10 +197,6 @@ public class TestCase {
         return comparisonMode;
     }
 
-    public String getInputText() {
-        // String text = IOUtils.toString (new FileInputStream(directory + "/TestSources/" + inputFileName));
-        return null;
-    }
 
     public String[] getOutputText() {
         return outputFileText;
@@ -218,7 +219,7 @@ public class TestCase {
                         return true;
                     }
                 } else {
-                    if (result.equals(unescape(output)))
+                    if (normalizeWhitespace(result).equals(normalizeWhitespace(unescape(output))))
                         return true;
                 }
             }
@@ -240,6 +241,10 @@ public class TestCase {
         default:
             return null;
         }
+    }
+
+    private Object normalizeWhitespace(String s) {
+        return s.replaceAll("\\s+", " ").trim();
     }
 
     private XdmNode createWrappedNode(Object node) throws SaxonApiException {
@@ -300,7 +305,7 @@ public class TestCase {
     }
     
     private String unescape (String s) {
-        return s.replace("&amp;", "&").replace("&lt;", "<").replace("\r\n", "\n");
+        return s.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;",">").replace("\r\n", "\n");
     }
     
     public XdmValue getContextItem () {

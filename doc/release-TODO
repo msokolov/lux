@@ -3,6 +3,14 @@ Be sure to preserve copyright.  Encourage ifactory to use and contribute.
 ** criteria for release 0.9
 *** Very Good Quality
 Rigorous testing; no known severe bugs.
+**** optimize for-expression
+so you can at least do: for (path) return xxx
+**** check performance
+Make sure our search tests really test what they are supposed to?
+**** deployment run-through
+package a jar; install saxon 9.4 in nexus.ifactory.com, upgrade
+ifpress-core to saxon 9.4, install in a loader, configure a solr schema,
+and run some tests.  Add pagination support
 *** compatibility w/ifpress
 test integration w/loader
 *** path and element name indexes
