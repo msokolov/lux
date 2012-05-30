@@ -170,12 +170,13 @@ public class SaxonTranslator {
         if (defaultCollation.equals (CODEPOINT_COLLATION)) {
             defaultCollation = null;
         }
+        VariableDefinition[] variableDefinitions = getVariableDefinitions(queryModule);
         return new XQuery(
                 queryModule.getDefaultElementNamespace(),
                 queryModule.getDefaultFunctionNamespace(),
                 defaultCollation,
                 getNamespaceDeclarations(queryModule), 
-                getVariableDefinitions(queryModule), 
+                variableDefinitions, 
                 functionDefinitions, 
                 body,
                 queryModule.isPreserveNamespaces() ? true : null,
