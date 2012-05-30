@@ -115,8 +115,8 @@ public class TestRunner {
                     String filename = binding.getValue();
                     String text = IOUtils.toString (new FileInputStream(filename));
                     SaxonExpr expr = (SaxonExpr) eval.compile(text);
-                    String val = expr.evaluate(null).iterator().next().toString();
-                    context.bindVariable(new QName(binding.getKey()), new XdmAtomicValue(val));
+                    XdmItem item = (XdmItem) expr.evaluate(null).iterator().next();
+                    context.bindVariable(new QName(binding.getKey()), item);
                 }
             }
             SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
@@ -186,7 +186,7 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("extvardeclwithouttype-1"));
         //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("extvardeclwithtype-1"));
+        assertTrue (runTest ("extvardeclwithtype-8"));
         //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
     }
     

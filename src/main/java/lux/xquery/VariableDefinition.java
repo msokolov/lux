@@ -5,15 +5,20 @@ import lux.xpath.AbstractExpression;
 public class VariableDefinition {
     private final AbstractExpression variable;
     private final AbstractExpression value;
+    private final String typeDesc;
     
-    public VariableDefinition (AbstractExpression abstractExpression, AbstractExpression abstractExpression2) {
+    public VariableDefinition (AbstractExpression abstractExpression, AbstractExpression abstractExpression2, String typeDesc) {
         this.variable = abstractExpression;
         this.value = abstractExpression2;
+        this.typeDesc = typeDesc;
     }
     
     public void toString (StringBuilder buf) {
         buf.append ("declare variable ");
         variable.toString(buf);
+        if (typeDesc != null) {
+            buf.append (" as ").append(typeDesc);
+        }
         if (value == null) {
             buf.append(" external;\n");
         } else {
