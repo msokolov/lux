@@ -195,10 +195,9 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        //assertTrue (runTest ("extvardeclwithouttype-1"));
-        //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("K2-SeqExprCast-425"));
-        //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
+        //assertTrue (runTest ("K2-SeqExprCast-209 "));  // appears to fail since the test harness doesn't unescape &#12316;
+        //assertTrue (runTest ("K2-NameTest-68"));  // fails since we don't handle specialized node types
+        assertTrue (runTest ("K2-SeqExprInstanceOf-72"));
     }
     
     @Test public void testGroup () throws Exception {

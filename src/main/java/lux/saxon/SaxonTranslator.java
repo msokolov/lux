@@ -651,7 +651,13 @@ public class SaxonTranslator {
         if (type.isPlainType()) {
             typeExpr = type.toString();
         } else if (type instanceof NodeTest) {
-            typeExpr = nodeTestFor((NodeTest)type).toString();
+            lux.xpath.NodeTest nodeTest = nodeTestFor((NodeTest)type);
+            ValueType nodeType = nodeTest.getType() ;
+            if (nodeType == ValueType.ELEMENT || nodeType == ValueType.ATTRIBUTE) {
+                typeExpr = nodeType.name + '(' + nodeTest.toString() + ')';
+            } else {
+                typeExpr = nodeTest.toString();                
+            }
         } else {
             throw new LuxException ("Unsupported node test in instance-of expression: " + expr.toString());
         }

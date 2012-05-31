@@ -31,6 +31,7 @@ days we got it down to 147 w/44 ignored.  Now w/external variables implemented:
 71
 43
 42
+41
 Then, running on a larger test
 suite: Ran 18623 tests 478 tests failed; 44 ignored (97.5% pass)
 *** Now that this is workable, do some global tests:

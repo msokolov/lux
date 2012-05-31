@@ -191,6 +191,9 @@ public class TestCase {
         case Fragment:
         case Text:
             String result = results == null ? "" : resultToString(results);
+            if ("-0".equals(result)) {
+                result = "0";
+            }
             boolean isNode = (!result.isEmpty() && results.iterator().next() instanceof XdmNode);
             for (String output : getOutputText()) {
                 if ("-0".equals(output)) {
