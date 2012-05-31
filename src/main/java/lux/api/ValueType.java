@@ -36,7 +36,8 @@ public enum ValueType {
     HEX_BINARY("xs:hexBinary", true), 
     BASE64_BINARY("xs:base64Binary", true), 
     MONTH("xs:gMonth", true), 
-    UNTYPED_ATOMIC("xs:untypedAtomic", true);
+    UNTYPED_ATOMIC("xs:untypedAtomic", true),
+    QNAME("xs:QName", true);
 
     public final boolean isNode;
     public final boolean isAtomic;

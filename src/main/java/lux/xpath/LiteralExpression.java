@@ -164,6 +164,14 @@ public class LiteralExpression extends AbstractExpression {
             buf.append(xqTypeName).append("(\"").append(value).append("\")");
             break;
             
+        case QNAME:
+            buf.append("fn:QName(");
+            escapeString(((QName)value).getNamespaceURI(), buf);
+            buf.append (",\"");
+            ((QName)value).toString(buf);
+            buf.append("\")");
+            break;
+            
         default:
             // rely on the object's toString method - is it only xs:int and its ilk that do this?
             buf.append (value);

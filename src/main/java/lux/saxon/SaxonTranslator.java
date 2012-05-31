@@ -697,6 +697,8 @@ public class SaxonTranslator {
                 return ValueType.BASE64_BINARY;
             case StandardNames.XS_UNTYPED_ATOMIC:
                 return ValueType.UNTYPED_ATOMIC;
+            case StandardNames.XS_QNAME:
+                return ValueType.QNAME;
             default:
                 return ValueType.ATOMIC;
             }
@@ -759,9 +761,12 @@ public class SaxonTranslator {
     public LiteralExpression exprFor (AtomicValue value) {
         ValueType type = valueTypeForItemType(value.getPrimitiveType());
         if (value instanceof CalendarValue || value instanceof DurationValue || 
-                value instanceof BigIntegerValue || value instanceof QNameValue) {
+                value instanceof BigIntegerValue) {
             //return new LiteralExpression(((CalendarValue)value).getCalendar(), type);
             return new LiteralExpression(value.getStringValue(), type, value.getPrimitiveType().getQualifiedName().toString());
+        }
+        if (value instanceof QNameValue) {
+            return new LiteralExpression (qnameFor (((QNameValue) value).getStructuredQName()), type);
         }
         try {
             Object oval = Value.convertToJava(value.asItem());

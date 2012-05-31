@@ -197,7 +197,7 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("extvardeclwithouttype-1"));
         //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("K2-SeqExprCast-480"));
+        assertTrue (runTest ("K2-SeqExprCast-425"));
         //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
     }
     
