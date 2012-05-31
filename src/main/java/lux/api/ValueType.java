@@ -37,7 +37,8 @@ public enum ValueType {
     BASE64_BINARY("xs:base64Binary", true), 
     MONTH("xs:gMonth", true), 
     UNTYPED_ATOMIC("xs:untypedAtomic", true),
-    QNAME("xs:QName", true);
+    QNAME("xs:QName", true), 
+    EMPTY("empty-sequence", false, false);
 
     public final boolean isNode;
     public final boolean isAtomic;

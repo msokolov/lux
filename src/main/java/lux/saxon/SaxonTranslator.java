@@ -653,7 +653,7 @@ public class SaxonTranslator {
         } else if (type instanceof NodeTest) {
             lux.xpath.NodeTest nodeTest = nodeTestFor((NodeTest)type);
             ValueType nodeType = nodeTest.getType() ;
-            if (nodeType == ValueType.ELEMENT || nodeType == ValueType.ATTRIBUTE) {
+            if (nodeTest.getQName() != null && (nodeType == ValueType.ELEMENT || nodeType == ValueType.ATTRIBUTE)) {
                 typeExpr = nodeType.name + '(' + nodeTest.toString() + ')';
             } else {
                 typeExpr = nodeTest.toString();                
@@ -719,6 +719,7 @@ public class SaxonTranslator {
             case Type.DOCUMENT: return ValueType.DOCUMENT;
             case Type.PROCESSING_INSTRUCTION: return ValueType.PROCESSING_INSTRUCTION;
             case Type.COMMENT: return ValueType.COMMENT;
+            case Type.EMPTY: return ValueType.EMPTY;
             }
         }
         // could be a function type? or namespace()?

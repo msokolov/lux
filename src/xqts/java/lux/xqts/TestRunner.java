@@ -197,7 +197,7 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("K2-SeqExprCast-209 "));  // appears to fail since the test harness doesn't unescape &#12316;
         //assertTrue (runTest ("K2-NameTest-68"));  // fails since we don't handle specialized node types
-        assertTrue (runTest ("K2-SeqExprInstanceOf-72"));
+        assertTrue (runTest ("K2-SeqExprInstanceOf-98"));
     }
     
     @Test public void testGroup () throws Exception {

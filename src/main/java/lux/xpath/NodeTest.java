@@ -39,7 +39,7 @@ public class NodeTest {
      * @throws NullPointerException if the type is null
      */
     public NodeTest (ValueType type, QName name) {
-        if (! type.isNode) {
+        if (type.isAtomic) {
             throw new IllegalArgumentException ("Attempt to construct a NodeTest with type " + 
                                                 type + " which is not a type of node");
         }
