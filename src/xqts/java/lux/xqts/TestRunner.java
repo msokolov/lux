@@ -59,7 +59,8 @@ public class TestRunner {
         eval.setIndexer (indexer);
         eval.setSearcher(searcher);
         eval.getConfig().setErrorListener(new ErrorIgnorer ());
-        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, true);
+        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
+        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_INHERIT_NAMESPACES, true);
         numtests = 0;
         numignored = 0;
         numfailed = 0;
@@ -196,7 +197,7 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("extvardeclwithouttype-1"));
         //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("extvardeclwithtype-23"));
+        assertTrue (runTest ("copynamespace-9"));
         //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
     }
     

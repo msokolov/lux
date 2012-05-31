@@ -18,13 +18,13 @@ public class XQuery {
     private final String defaultElementNamespace, defaultFunctionNamespace, defaultCollation;
     private final VariableDefinition[] externalVariables;
     private final AbstractExpression body;
-    
+    private final String baseURI;
     private final Boolean preserveNamespaces;
     private final Boolean inheritNamespaces;
     
     public XQuery (String defaultElementNamespace, String defaultFunctionNamespace, String defaultCollation, 
             Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, 
-            AbstractExpression body, Boolean copyNamespacesPreserve, Boolean copyNamespacesInherit) {
+            AbstractExpression body, String baseURI, Boolean copyNamespacesPreserve, Boolean copyNamespacesInherit) {
         this.namespaceDeclarations = namespaceDeclarations;
         this.externalVariables = variableDefinitions;
         this.defaultCollation = defaultCollation;
@@ -32,6 +32,7 @@ public class XQuery {
         this.defaultFunctionNamespace = defaultFunctionNamespace;
         this.functionDefinitions = defs;
         this.body = body;
+        this.baseURI = baseURI;
         this.inheritNamespaces = copyNamespacesInherit;
         this.preserveNamespaces = copyNamespacesPreserve;
     }
@@ -44,6 +45,7 @@ public class XQuery {
         this.defaultFunctionNamespace = null;
         this.functionDefinitions = null;
         this.body = body;
+        this.baseURI = null;
         this.inheritNamespaces = null;
         this.preserveNamespaces = null;
     }
@@ -57,7 +59,7 @@ public class XQuery {
     public void toString (StringBuilder buf) {
         if (inheritNamespaces != null || preserveNamespaces != null) {
             buf.append ("declare copy-namespaces ");
-            if (preserveNamespaces != null && preserveNamespaces == false) {
+            if (preserveNamespaces == null || preserveNamespaces == false) {
                 buf.append ("no-preserve, ");
             } else {
                 buf.append ("preserve, ");
@@ -69,14 +71,25 @@ public class XQuery {
             }
             buf.append (";\n");
         }
+        if (baseURI != null) {
+            buf.append ("declare base-uri ");
+            LiteralExpression.escapeString(baseURI, buf);
+            buf.append(";\n");
+        }
         if (StringUtils.isNotBlank(defaultCollation)) {
-            buf.append("declare default collation \"").append(defaultCollation).append("\";\n");
+            buf.append("declare default collation ");
+            LiteralExpression.escapeString(defaultCollation, buf);
+            buf.append(";\n");
         }
         if (StringUtils.isNotBlank(defaultElementNamespace)) {
-            buf.append("declare default element namespace \"").append(defaultElementNamespace).append("\";\n");
+            buf.append("declare default element namespace ");
+            LiteralExpression.escapeString(defaultElementNamespace, buf);
+            buf.append(";\n");
         }
         if (StringUtils.isNotBlank(defaultFunctionNamespace)  && !defaultFunctionNamespace.equals(FunCall.FN_NAMESPACE)) {
-            buf.append("declare default function namespace \"").append(defaultFunctionNamespace).append("\";\n");
+            buf.append("declare default function namespace ");
+            LiteralExpression.escapeString(defaultFunctionNamespace, buf);
+            buf.append(";\n");
         }
         if (namespaceDeclarations != null) {
             for (Namespace ns : namespaceDeclarations) {
@@ -139,6 +152,10 @@ public class XQuery {
 
     public Boolean isInheritNamespaces() {
         return inheritNamespaces;
+    }
+
+    public String getBaseURI() {
+        return baseURI;
     }
 
 }

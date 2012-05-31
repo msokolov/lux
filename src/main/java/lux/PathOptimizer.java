@@ -86,7 +86,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             main = optimize (main);
             return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(), query.getDefaultCollation(), 
                     query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(), 
-                    main, query.isPreserveNamespaces(), query.isInheritNamespaces());
+                    main, query.getBaseURI(), query.isPreserveNamespaces(), query.isInheritNamespaces());
         }
         // TODO optimize function definitions
         // do nothing

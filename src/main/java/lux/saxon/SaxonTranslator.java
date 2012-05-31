@@ -180,6 +180,7 @@ public class SaxonTranslator {
                 variableDefinitions, 
                 functionDefinitions, 
                 body,
+                queryModule.getBaseURI(),
                 queryModule.isPreserveNamespaces() ? true : null,
                 queryModule.isInheritNamespaces() ? null : false);
     }
