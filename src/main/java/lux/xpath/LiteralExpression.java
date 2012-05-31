@@ -5,9 +5,7 @@
 package lux.xpath;
 
 import java.math.BigDecimal;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 
 import lux.ExpressionVisitor;
 import lux.api.LuxException;
@@ -17,17 +15,26 @@ import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 public class LiteralExpression extends AbstractExpression {
     
-    private Object value;
-    private ValueType valueType;
+    private final Object value;
+    private final ValueType valueType;
+    private final String xqTypeName; // a built-in xquery type name, like xs:integer
     
     public LiteralExpression () {
         this (null);
     }
     
+    public LiteralExpression (Object value, ValueType valueType, String xqTypeName) {
+        super(Type.Literal);
+        this.value = value;
+        this.valueType = valueType;
+        this.xqTypeName = xqTypeName;
+    }
+
     public LiteralExpression (Object value, ValueType valueType) {
         super(Type.Literal);
         this.value = value;
         this.valueType = valueType;
+        this.xqTypeName = valueType.name;
     }
 
     public LiteralExpression (Object value) {
@@ -38,6 +45,7 @@ public class LiteralExpression extends AbstractExpression {
         } else {
             valueType = ValueType.VALUE;
         }
+        this.xqTypeName = valueType.name;
     }
 
     public static final LiteralExpression ONE = new LiteralExpression (1);
@@ -77,6 +85,10 @@ public class LiteralExpression extends AbstractExpression {
         return value;
     }
     
+    public String getXQueryTypeName() {
+        return xqTypeName;
+    }
+    
     @Override
     public void toString(StringBuilder buf) {
         if (value == null) {
@@ -84,7 +96,7 @@ public class LiteralExpression extends AbstractExpression {
             return;
         }
         switch (valueType) {
-        case ATOMIC:
+        case UNTYPED_ATOMIC:
             buf.append ("xs:untypedAtomic(");
             escapeString (value.toString(), buf);
             buf.append (')');
@@ -125,38 +137,7 @@ public class LiteralExpression extends AbstractExpression {
                 buf.append ("xs:double(").append(d).append(')');
             }
             break;
-        case DATE:
-            buf.append ("xs:date(\"").append(value).append("\")");
-            break;
-        case DATE_TIME:
-            buf.append ("xs:dateTime(\"").append(value).append("\")");
-            break;
-        case TIME:
-            buf.append ("xs:time(\"").append(value).append("\")");
-            break;
-        case DAY:
-            buf.append ("xs:gDay(\"").append(value).append("\")");
-            break;
-        case MONTH_DAY:
-            buf.append ("xs:gMonthDay(\"").append(value).append("\")");
-            break;
-        case YEAR:
-            buf.append ("xs:gYear(\"").append(value).append("\")");
-            break;
-        case YEAR_MONTH:
-            buf.append ("xs:gYearMonth(\"").append(value).append("\")");
-            break;
-            /*
-        case DATE:
-            buf.append("xs:date(\"").append (calendarToXsDate((Calendar)value)).append("\")");
-            break;
-        case DATE_TIME:
-            buf.append("xs:dateTime(\"").append (calendarToXsDateTime((Calendar)value)).append("\")");
-            break;
-        case TIME:
-            buf.append("xs:time(\"").append ((Calendar)value).append("\")");
-            break;
-            */
+
         case DECIMAL:            
             buf.append("xs:decimal(").append (((BigDecimal)value).toPlainString()).append(")");
             break;
@@ -170,8 +151,21 @@ public class LiteralExpression extends AbstractExpression {
             buf.append(Base64.encode((byte[])value));
             buf.append("\")");
             break;
+        
+        case DATE:
+        case DATE_TIME:
+        case TIME:
+        case DAY:
+        case MONTH:
+        case MONTH_DAY:
+        case YEAR:
+        case YEAR_MONTH:
+        case ATOMIC:
+            buf.append(xqTypeName).append("(\"").append(value).append("\")");
+            break;
+            
         default:
-            // rely on the object's toString method
+            // rely on the object's toString method - is it only xs:int and its ilk that do this?
             buf.append (value);
         }
     }
@@ -187,48 +181,6 @@ public class LiteralExpression extends AbstractExpression {
         }
     }
     
-    public static String calendarToXsDateTime (Calendar cal)
-    {
-        TimeZone tz = cal.getTimeZone();
-        String tzs = "";
-        if (tz != null) {
-            int offset = cal.get(Calendar.ZONE_OFFSET);
-            String sgn;
-            if (offset == 0) {
-                tzs = "Z";
-            } else {
-                if (offset < 0) {
-                    sgn = "-";
-                    offset = -offset;
-                } else {
-                    sgn = "+";
-                }
-                int minutes = offset / 60000;
-                int hours = minutes / 60;
-                minutes = minutes % 60;
-                tzs = String.format ("%s%02d:%02d", sgn, hours, minutes);
-            }
-        }
-        return String.format("%04d-%02d-%02dT%02d:%02d:%02d%s",
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH) + 1,
-                cal.get(Calendar.DAY_OF_MONTH),
-                cal.get(Calendar.HOUR_OF_DAY),
-                cal.get(Calendar.MINUTE),
-                cal.get(Calendar.SECOND),
-                tzs
-        );
-    }
-
-    public static String calendarToXsDate(Calendar cal)
-    {
-        return String.format("%04d-%02d-%02dZ",
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH) + 1,
-                cal.get(Calendar.DAY_OF_MONTH)
-        );
-    }
-
     public static void escapeString(String s, StringBuilder buf) {
         buf.append('"');
         for (char c : s.toCharArray()) {

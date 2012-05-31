@@ -126,6 +126,8 @@ import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.BigIntegerValue;
 import net.sf.saxon.value.CalendarValue;
 import net.sf.saxon.value.Cardinality;
+import net.sf.saxon.value.DurationValue;
+import net.sf.saxon.value.QNameValue;
 import net.sf.saxon.value.Value;
 
 import org.apache.commons.lang.StringUtils;
@@ -670,6 +672,8 @@ public class SaxonTranslator {
                 return ValueType.YEAR;
             case StandardNames.XS_G_YEAR_MONTH:
                 return ValueType.YEAR_MONTH;
+            case StandardNames.XS_G_MONTH:
+                return ValueType.MONTH;
             case StandardNames.XS_G_DAY:
                 return ValueType.DAY;
             case StandardNames.XS_G_MONTH_DAY:
@@ -692,9 +696,9 @@ public class SaxonTranslator {
             case StandardNames.XS_BASE64_BINARY:
                 return ValueType.BASE64_BINARY;
             case StandardNames.XS_UNTYPED_ATOMIC:
-                return ValueType.ATOMIC;
+                return ValueType.UNTYPED_ATOMIC;
             default:
-                return ValueType.VALUE;
+                return ValueType.ATOMIC;
             }
         }
         if (itemType instanceof NodeTest) {
@@ -754,16 +758,14 @@ public class SaxonTranslator {
 
     public LiteralExpression exprFor (AtomicValue value) {
         ValueType type = valueTypeForItemType(value.getPrimitiveType());
-        if (value instanceof CalendarValue) {
+        if (value instanceof CalendarValue || value instanceof DurationValue || 
+                value instanceof BigIntegerValue || value instanceof QNameValue) {
             //return new LiteralExpression(((CalendarValue)value).getCalendar(), type);
-            return new LiteralExpression(value.getStringValue(), type);
-        }
-        if (value instanceof BigIntegerValue) {
-            return new LiteralExpression (((BigIntegerValue)value).getStringValue(), type);
+            return new LiteralExpression(value.getStringValue(), type, value.getPrimitiveType().getQualifiedName().toString());
         }
         try {
             Object oval = Value.convertToJava(value.asItem());
-            return new LiteralExpression(oval, type);
+            return new LiteralExpression(oval, type, value.getPrimitiveType().getQualifiedName().toString());
         } catch (XPathException e) {
             throw new LuxException (e);
         }

@@ -34,7 +34,9 @@ public enum ValueType {
     DECIMAL("xs:decimal", true), 
     TIME("xs:time", true), 
     HEX_BINARY("xs:hexBinary", true), 
-    BASE64_BINARY("xs:base64Binary", true);
+    BASE64_BINARY("xs:base64Binary", true), 
+    MONTH("xs:gMonth", true), 
+    UNTYPED_ATOMIC("xs:untypedAtomic", true);
 
     public final boolean isNode;
     public final boolean isAtomic;
