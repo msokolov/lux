@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Map;
 
 import javax.xml.transform.ErrorListener;
@@ -22,6 +23,7 @@ import lux.xqts.TestCase.ComparisonMode;
 import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
+import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;
@@ -112,10 +114,15 @@ public class TestRunner {
             if (test1.getExternalVariables() != null) {
                 for (Map.Entry<String,String> binding : test1.getExternalVariables().entrySet()) {
                     String filename = binding.getValue();
-                    String text = IOUtils.toString (new FileInputStream(filename));
-                    SaxonExpr expr = (SaxonExpr) eval.compile(text);
-                    XdmItem item = (XdmItem) expr.evaluate(null).iterator().next();
-                    context.bindVariable(new QName(binding.getKey()), item);
+                    XdmItem item;
+                    if (filename.endsWith(".xq")) {
+                        String text = IOUtils.toString (new FileInputStream(filename));
+                        SaxonExpr expr = (SaxonExpr) eval.compile(text);
+                        item = (XdmItem) expr.evaluate(null).iterator().next();
+                    } else {
+                        item = (XdmNode) eval.getBuilder().build(new InputStreamReader(new FileInputStream (filename)));
+                    }
+                    context.bindVariable(new QName(binding.getKey()), item);                    
                 }
             }
             SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
@@ -148,7 +155,7 @@ public class TestRunner {
             if (! (test1.isExpectError() || test1.getComparisonMode() == ComparisonMode.Ignore)) { 
                 ++numfailed;
                 String error = e.getMessage();
-                if (error.length() > 1024) {
+                if (error != null && error.length() > 1024) {
                     error = error.substring(0, 1024);
                 }
                 System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + error);
@@ -189,7 +196,7 @@ public class TestRunner {
         printDetailedDiagnostics = true;
         //assertTrue (runTest ("extvardeclwithouttype-1"));
         //assertTrue (runTest ("functx-fn-root-1"));
-        assertTrue (runTest ("copynamespace-4"));
+        assertTrue (runTest ("extvardeclwithtype-23"));
         //assertTrue (runTest ("op-add-yearMonthDuration-to-dateTime-1"));
     }
     

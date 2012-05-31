@@ -9,8 +9,6 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -37,14 +35,12 @@ import org.apache.commons.io.IOUtils;
  */
 public class TestCase {
 
-    private static final Pattern INPUT_VARIABLE_PATTERN = Pattern.compile("(.*\\(: insert-start :\\).*)declare variable[^;]+;(.*\\(: insert-end :\\).*)", Pattern.DOTALL);
     private final Catalog catalog;
     private final String name;
     private final String path;
     private final String scenario;
     private final String queryName;
     private final boolean xpath2;
-    //private final String inputFileName;
     private final XdmValue contextItem;
     private final ComparisonMode comparisonMode;
     
@@ -79,6 +75,7 @@ public class TestCase {
         path = testCase.getAttributeValue(FILE_PATH);
         scenario = testCase.getAttributeValue(SCENARIO);
         xpath2 = Boolean.valueOf(testCase.getAttributeValue(IS_X_PATH2));
+        externalVariables = new HashMap<String, String>();
         this.catalog = catalog;
         
         XdmNode query = (XdmNode) testCase.axisIterator(Axis.CHILD, QUERY).next();
@@ -96,33 +93,20 @@ public class TestCase {
         File queryFile = new File (getQueryPath(queryName, catalog));
         String text = IOUtils.toString (new FileInputStream(queryFile));
         
-        // remove the declaration of the input variable in the query text and replace its uses with doc().
         XdmSequenceIterator input = testCase.axisIterator(Axis.CHILD, INPUT_FILE);
         XdmNode inputFileNode = null;
         while (input.hasNext()) {
             inputFileNode = (XdmNode) input.next();
             String inputFileName = inputFileNode.axisIterator(Axis.CHILD).next().getStringValue();
             String inputVariable = inputFileNode.getAttributeValue(VARIABLE);
-            if (!inputVariable.isEmpty()) {
-                Matcher matcher = INPUT_VARIABLE_PATTERN.matcher(text);
-                while (matcher.matches()) {
-                    // remove input variable declarations
-                    text = matcher.replaceFirst("$1$2");
-                    matcher = INPUT_VARIABLE_PATTERN.matcher(text);
-                }
-                text = text.replace('$' + inputVariable, "fn:doc('" + catalog.getDirectory() + 
-                        "/TestSources/" + inputFileName + ".xml')");
-            }
+            externalVariables.put(inputVariable, catalog.getDirectory() + "/TestSources/" + inputFileName + ".xml");
         }
         queryText = text;
-
+        
         // Are there input queries? If so, record the bindings for later evaluation
         XdmSequenceIterator inputQuery = testCase.axisIterator(Axis.CHILD, INPUT_QUERY);
         while (inputQuery.hasNext()) {
             XdmNode q = (XdmNode) inputQuery.next();
-            if (externalVariables == null) {
-                externalVariables = new HashMap<String, String>();
-            }
             String filename = q.getAttributeValue(NAME);
             externalVariables.put(q.getAttributeValue(VARIABLE), getQueryPath(filename, catalog));
         }
