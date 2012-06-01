@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
 import lux.saxon.Saxon;
+import lux.saxon.Saxon.Dialect;
 import lux.saxon.SaxonExpr;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
@@ -104,7 +105,7 @@ public abstract class BasicQueryTest {
     @Test
     public void testConvertRootedPathToPredicate() {
         assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + getQueryString(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
-        		"[exists(descendant::ACT/child::SCENE/root(.))]", 
+        		"[exists((descendant::ACT/child::SCENE)/root(.))]", 
         		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
     
@@ -288,7 +289,7 @@ public abstract class BasicQueryTest {
      */
 
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
-        Saxon saxon = new Saxon(null, getIndexer());
+        Saxon saxon = new Saxon(null, getIndexer(), Dialect.XPATH_2);
         saxon.declareNamespace("lux", "lux");
         saxon.declareNamespace("ns", "http://namespace.org/#ns");
         assertQuery(xpath, optimized, facts, type, saxon, queries);

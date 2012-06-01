@@ -1,11 +1,12 @@
-package lux.solr;
+package lux.saxon;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import lux.api.Evaluator;
-import lux.saxon.Saxon;
+import lux.saxon.Saxon.Dialect;
+import lux.solr.XmlSearchComponent;
 import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
@@ -18,11 +19,11 @@ import net.sf.saxon.value.QNameValue;
 
 import org.apache.solr.common.util.NamedList;
 
-public class SaxonComponent extends XPathSearchComponent {
+public class SaxonSearchComponent extends XmlSearchComponent {
 
     @Override
     public Evaluator createEvaluator() {
-        return new Saxon(null, null);
+        return new Saxon(null, null, Dialect.XQUERY_1);
     }
 
     @Override

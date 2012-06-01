@@ -17,6 +17,7 @@ import lux.api.ResultSet;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.saxon.Saxon;
+import lux.saxon.Saxon.Dialect;
 import lux.saxon.SaxonExpr;
 import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
@@ -48,7 +49,7 @@ public class TestRunner {
     
     @BeforeClass
     public static void setup () throws Exception {
-        eval = new Saxon(null, null);
+        eval = new Saxon(Dialect.XQUERY_1);
         dir = new RAMDirectory();
         // This indexer does nothing, the effect of which is to disable Lux search optimizations for
         // absolute expressions depending on the context. This makes it possible to evaluate tests that

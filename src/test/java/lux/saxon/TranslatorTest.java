@@ -1,11 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.saxon;
 
 import static org.junit.Assert.assertEquals;
 import lux.index.XmlIndexer;
+import lux.saxon.Saxon.Dialect;
 import lux.xpath.AbstractExpression;
 
 import org.junit.Before;
@@ -17,7 +14,7 @@ public class TranslatorTest {
     private Saxon saxon;
     
     @Before public void setup () {
-        saxon = new Saxon(null, new XmlIndexer());
+        saxon = new Saxon(null, new XmlIndexer(), Dialect.XQUERY_1);
     }
     
     @Test public void testTranslate () {

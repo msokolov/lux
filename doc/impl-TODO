@@ -14,28 +14,8 @@ When we change them our tests break!
 The main thing missing is marshalling results from Solr
 ** namespace support
 This might be working, but we need to test
-** XQuery!
-running XQTS now - down to 1305 failures out of 12008 tests over a few days
-we got it down to 147 w/44 ignored.  Now 7 tests fail.  
-*** 1 is a test harness glitch
-*** 1 is due to no schema support
-*** 3 are due to no support for type in:
-element(foo,xs:type) 
-*** 2 are due to an unexplained compile problem with the context item (.)
-Then, running on a larger test suite: Ran 18623 tests
-163 tests failed (99+% pass) - a lot of these seem to be test harness issues
-*** Now that this is workable, do some global tests:
-**** Test performance on XQTS with Saxon alone, and with Lux/Saxon
-**** develop an XQTS database query test
-Ignore queries that use the emptydocument as input Run the other queries
-against the entire test set as context: ie against the sequence of
-documents that is collection(xqts) and then run using Lux.  Make sure the
-results are consistent; compare timing.
 ** attribute index support
 This might be working, but we need to test
-** external XQuery variables
-The API can't support it currently, since we only have Saxon, which is
-long-lived.  We need to beef up the Context object.
 * api design / cleanup
 The success of this adventure is going to depend on not only a good
 implementation, but also a nice clean understandable code base so others
@@ -117,6 +97,14 @@ This should help work around some of the shortcomings of Saxon's HE
 optimizer (re: documentSort) and let us skip document retrieval for docs
 prior to the starting doc.
 * improve tests
+** leverage XQTS
+*** Test performance on XQTS with Saxon alone, and with Lux/Saxon
+show impact of Lux on compilation speed
+*** develop an XQTS database query test
+Ignore queries that use the emptydocument as input Run the other queries
+against the entire test set as context: ie against the sequence of
+documents that is collection(xqts) and then run using Lux.  Make sure the
+results are consistent; compare timing.
 ** test namespaces and attributes
 queries w/namespaces and attributes have not been tested.
 Try indexing and retrieving the reader-test documents

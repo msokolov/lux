@@ -15,6 +15,7 @@ import lux.api.QueryStats;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.saxon.Saxon;
+import lux.saxon.Saxon.Dialect;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;
@@ -93,12 +94,14 @@ public abstract class SearchBase {
     }
     
     public static Saxon getEvaluator() {
-        Saxon eval = new Saxon(searcher, indexer);
+        Saxon eval = new Saxon(searcher, indexer, Dialect.XQUERY_1);
         eval.setQueryStats (new QueryStats());
         return eval;
     }
 
 
-}/* This Source Code Form is subject to the terms of the Mozilla Public
+}
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */

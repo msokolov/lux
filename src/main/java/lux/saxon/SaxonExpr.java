@@ -55,7 +55,7 @@ public class SaxonExpr implements lux.api.Expression {
     }
 
     /**
-     * @return the XPath expression in lux's abstract representation.  If this is modeling an XQuery module,
+     * @return the optimized XPath expression in lux's abstract representation.  If this is modeling an XQuery module,
      * the expression for the body is returned.
      */
     public AbstractExpression getXPath() {

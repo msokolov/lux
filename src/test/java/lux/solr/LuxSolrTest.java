@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.SolrRequest.METHOD;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -122,11 +123,11 @@ public abstract class LuxSolrTest {
     
     protected void assertXPathSearchCount (int count, int docCount, int maxResults, String type, String value, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setParam("qt", getSolrSearchPath());
+        q.setQueryType(getSolrSearchPath());
         q.setParam("engine", getXPathEngine());
         q.setRows(maxResults);
         q.setStart(0);
-        QueryResponse rsp = solr.query (q);
+        QueryResponse rsp = solr.query (q, METHOD.POST);
         long docMatches = rsp.getResults().getNumFound();
         assertEquals (docCount, docMatches);
         NamedList<?> results = (NamedList<?>) rsp.getResponse().get("xpath-results");

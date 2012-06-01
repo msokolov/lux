@@ -1212,13 +1212,12 @@
        http://wiki.apache.org/solr/UpdateRequestProcessor
 
     -->
-    <!--  LuX Path Index
-        Extract the names and paths of all elements and attributes from the given named field,
-        which must be a valid XML document, and index as values in fields named lux_elt_name,
-        lux_att_name, and lux_path.  Enables index-assisted xpath evaluation using LuXPath.
+    
+    <!--  Lux update processor
+        Indexes the given named field as an XML document. Enables index-assisted XQuery/XPath evaluation using Lux.
      --> 
     <updateRequestProcessorChain name="lux-basic">
-       <processor class="lux.solr.XPathUpdateProcessor">
+       <processor class="lux.solr.XmlUpdateProcessor">
          <str name="xml-field-name">xml_text</str>
        </processor>
        <processor class="solr.LogUpdateProcessorFactory" />
@@ -1299,7 +1298,7 @@
        by SearchHandler) or in LocalParams
     -->
     
-  <searchComponent name="saxon" class="lux.solr.SaxonComponent">
+  <searchComponent name="saxon" class="lux.saxon.SaxonSearchComponent">
     <str name="xmlFieldName">xml_text</str>
   </searchComponent>
   

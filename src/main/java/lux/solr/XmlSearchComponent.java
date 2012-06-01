@@ -27,19 +27,17 @@ import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
 
-/*
- * dependencies:
- * xml storage - field names
- * xml document model creation from field values - make generic
- * xpath evaluation - use evaluator
+/** This component executes searches expressed as XPath or XQuery.  
+ *  Its queries will match documents that have been indexed using XmlIndexer 
+ *  with the INDEX_PATHS option.
  */
-public abstract class XPathSearchComponent extends QueryComponent {
+public abstract class XmlSearchComponent extends QueryComponent {
     
     protected IndexSchema schema;
     protected Set<String> fields = new HashSet<String>();
     protected Evaluator evaluator;
     
-    public XPathSearchComponent() {
+    public XmlSearchComponent() {
         evaluator = createEvaluator();
     }
    
@@ -54,8 +52,6 @@ public abstract class XPathSearchComponent extends QueryComponent {
         if (rb.getQueryString() == null) {
             rb.setQueryString( params.get( CommonParams.Q ) );
         }
-        
-        // QParser parser = QParser.getParser(rb.getQueryString(), "xpath", req);
     }
     
     @Override
@@ -111,7 +107,7 @@ public abstract class XPathSearchComponent extends QueryComponent {
     }
 
     @Override
-    public String getSourceId() {            
+    public String getSourceId() {
         return "lux.XPathSearchComponent";
     }
 
@@ -126,6 +122,8 @@ public abstract class XPathSearchComponent extends QueryComponent {
     }
     
 
-}/* This Source Code Form is subject to the terms of the Mozilla Public
+}
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */

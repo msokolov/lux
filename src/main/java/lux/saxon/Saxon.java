@@ -16,12 +16,15 @@ import lux.functions.LuxSearch;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.xml.XmlBuilder;
+import lux.xpath.AbstractExpression;
+import lux.xpath.FunCall;
 import lux.xquery.XQuery;
 import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
+import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
@@ -44,9 +47,11 @@ public class Saxon extends Evaluator  {
     
     private CachingDocReader docReader;
     
-    private Config config;    
+    private Config config;
     
-    public Saxon(LuxSearcher searcher, XmlIndexer indexer) {
+    private final Dialect dialect;
+    
+    public Saxon(LuxSearcher searcher, XmlIndexer indexer, Dialect dialect) {
         super (searcher, indexer);
         config = new Config(this);
         config.setDocumentNumberAllocator(new DocIDNumberAllocator());
@@ -57,32 +62,70 @@ public class Saxon extends Evaluator  {
         processor.registerExtensionFunction(new LuxExists());        
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
+        this.dialect = dialect;
+    }
+    
+    /**
+     * Creates a Saxon query evaluator with no searcher or indexer using the supplied 
+     * dialect.  A searcher and indexer must be supplied in order to compile or evaluate queries. 
+     * This constructor is used when the searcher is not available until query evaluation time.
+     */
+    public Saxon (Dialect dialect) {
+        this (null, null, dialect);
+    }
+    
+    public enum Dialect {
+        XPATH_1,
+        XPATH_2,
+        XQUERY_1
     }
 
     @Override
     public SaxonExpr compile(String exprString) throws LuxException {
-        //XPathExecutable xpath;
-        // xpathCompiler.setErrorListener (config.getErrorListener());
+        switch (dialect) {
+        case XPATH_1: case XPATH_2:
+            return compileXPath(exprString);
+        case XQUERY_1:
+            return compileXQuery(exprString);
+        default:
+            throw new LuxException ("Unsupported query dialect: " + dialect);
+        }
+    }
+
+    private SaxonExpr compileXPath(String exprString) throws LuxException {
+        XPathExecutable xpath;
+        try {
+            xpath = getXPathCompiler().compile(exprString);
+        } catch (SaxonApiException e) {
+            throw new LuxException ("Syntax error compiling: " + exprString, e);
+        }
+        AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
+        PathOptimizer optimizer = new PathOptimizer(getIndexer());
+        AbstractExpression optimizedExpr = optimizer.optimize(expr);
+        try {
+             xpath = getXPathCompiler().compile(optimizedExpr.toString());
+        } catch (SaxonApiException e) {
+            throw new LuxException ("Syntax error compiling: " + optimizedExpr.toString(), e);
+        }
+        return new SaxonExpr(xpath, optimizedExpr);
+    }
+    
+    private SaxonExpr compileXQuery(String exprString) throws LuxException {
         getXQueryCompiler().setErrorListener(config.getErrorListener());
         XQueryExecutable xquery;
         try {
             xquery = getXQueryCompiler().compile(exprString);
-            // xpath = getXPathCompiler().compile(exprString);
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + exprString, e);
         }
         XQuery abstractQuery = translator.queryFor (xquery);
-        //AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
-        //AbstractExpression expr = translator.exprFor(xquery.getUnderlyingCompiledQuery().getExpression());
         PathOptimizer optimizer = new PathOptimizer(getIndexer());
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         try {
             xquery = getXQueryCompiler().compile(optimizedQuery.toString());
-            // xpath = getXPathCompiler().compile(expr.toString());
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + optimizedQuery.toString(), e);
         }
-        //return new SaxonExpr(xpath, expr);
         return new SaxonExpr(xquery, optimizedQuery);
     }
 
@@ -149,7 +192,16 @@ public class Saxon extends Evaluator  {
     }    
     
     public void declareNamespace (String prefix, String namespace) {
-        xpathCompiler.declareNamespace(prefix, namespace);
+        switch (dialect) {
+        case XPATH_1: case XPATH_2:
+            getXPathCompiler().declareNamespace(prefix, namespace);
+            break;
+        case XQUERY_1:
+            getXQueryCompiler().declareNamespace(prefix, namespace);
+            break;
+        default:
+            break;
+        }
     }
     
     private XQueryCompiler getXQueryCompiler () {
@@ -159,16 +211,15 @@ public class Saxon extends Evaluator  {
         }
         return xqueryCompiler;
     }
-    
-    /*
+        
     private XPathCompiler getXPathCompiler () {
         if (xpathCompiler == null) {
             xpathCompiler = processor.newXPathCompiler();
             xpathCompiler.declareNamespace("lux", "lux");
+            xpathCompiler.declareNamespace("fn", FunCall.FN_NAMESPACE);
         }
         return xpathCompiler;
     }
-    */
     
 }
 

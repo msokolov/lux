@@ -21,7 +21,7 @@ import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.processor.UpdateRequestProcessor;
 import org.apache.solr.update.processor.UpdateRequestProcessorFactory;
 
-public class XPathUpdateProcessor extends UpdateRequestProcessorFactory {
+public class XmlUpdateProcessor extends UpdateRequestProcessorFactory {
     
     private String xmlFieldName;
     

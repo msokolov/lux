@@ -7,12 +7,14 @@ Rigorous testing; no known severe bugs.
 so you can at least do: for (path) return xxx
 **** check performance
 Make sure our search tests really test what they are supposed to?
+**** Pagination
+**** Solr Client
+How are we going to send XQuery to Solr?
 **** deployment run-through
-package a jar; install saxon 9.4 in nexus.ifactory.com, upgrade
-ifpress-core to saxon 9.4, install in a loader, configure a solr schema,
-and run some tests.  Add pagination support
+package a jar, install in a solr, configure a solr schema,
+and run some tests.  
 *** compatibility w/ifpress
-test integration w/loader
+test client integration w/loader
 *** path and element name indexes
 *** Lazy Evaluation
 is that enough?
