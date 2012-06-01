@@ -809,13 +809,13 @@ public class SaxonTranslator {
             return exprFor ((AtomicValue) value);
         } catch (XPathException e) {
             throw new LuxException (e);
-        }        
+        }
     }
 
     public LiteralExpression exprFor (AtomicValue value) {
         ValueType type = valueTypeForItemType(value.getPrimitiveType());
         if (value instanceof CalendarValue || value instanceof DurationValue || 
-                value instanceof BigIntegerValue) {
+            value instanceof BigIntegerValue) {
             //return new LiteralExpression(((CalendarValue)value).getCalendar(), type);
             return new LiteralExpression(value.getStringValue(), type, value.getPrimitiveType().getQualifiedName().toString());
         }

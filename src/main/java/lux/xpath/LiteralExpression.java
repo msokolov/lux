@@ -11,7 +11,7 @@ import lux.ExpressionVisitor;
 import lux.api.LuxException;
 import lux.api.ValueType;
 
-import com.sun.org.apache.xml.internal.security.utils.Base64;
+import javax.xml.bind.DatatypeConverter;
 
 public class LiteralExpression extends AbstractExpression {
     
@@ -148,7 +148,7 @@ public class LiteralExpression extends AbstractExpression {
             break;
         case BASE64_BINARY:
             buf.append("xs:base64Binary(\"");
-            buf.append(Base64.encode((byte[])value));
+            buf.append(DatatypeConverter.printBase64Binary((byte[])value));
             buf.append("\")");
             break;
         
