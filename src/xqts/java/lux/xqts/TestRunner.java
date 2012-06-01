@@ -21,9 +21,11 @@ import lux.saxon.SaxonExpr;
 import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
 import net.sf.saxon.lib.FeatureKeys;
+import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;
@@ -59,7 +61,7 @@ public class TestRunner {
         eval.setIndexer (indexer);
         eval.setSearcher(searcher);
         eval.getConfig().setErrorListener(new ErrorIgnorer ());
-        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
+        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, true);
         eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_INHERIT_NAMESPACES, true);
         numtests = 0;
         numignored = 0;
@@ -110,8 +112,8 @@ public class TestRunner {
             ErrorIgnorer ignorer = (ErrorIgnorer) eval.getConfig().getErrorListener();
             ignorer.setShowErrors(true);
         }
+        QueryContext context = new QueryContext();
         try {
-            QueryContext context = new QueryContext();
             if (test1.getExternalVariables() != null) {
                 for (Map.Entry<String,String> binding : test1.getExternalVariables().entrySet()) {
                     String filename = binding.getValue();
@@ -163,7 +165,12 @@ public class TestRunner {
                 // diagnostics:
                 if (printDetailedDiagnostics ) {
                     XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
-                    XdmItem item = xq.load().evaluateSingle();
+                    XQueryEvaluator xqeval = xq.load();
+                    for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
+                        net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
+                        xqeval.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
+                    }                    
+                    XdmItem item = xqeval.evaluateSingle();
                     System.err.println (test1.getQueryText() + " returns " + item);
                 }
                 if (terminateOnException) {
@@ -184,7 +191,7 @@ public class TestRunner {
     }
 
     private void testOneGroup (TestGroup group) throws Exception {
-        System.out.println(group.getBannerString());
+        //System.out.println(group.getBannerString());
         for (TestCase test : group.getTestCases()) {
             runTest (test);
         }
@@ -195,17 +202,29 @@ public class TestRunner {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        //assertTrue (runTest ("K2-SeqExprCast-209 "));  // appears to fail since the test harness doesn't unescape &#12316;
-        //assertTrue (runTest ("K2-NameTest-68"));  // fails since we don't handle specialized node types
-        assertTrue (runTest ("K2-SeqExprInstanceOf-98"));
+        // assertTrue (runTest ("K2-NameTest-68"));  // fails since we don't handle specialized node types
+        // Constr-cont-nsmode-11 requires schema-aware processing
+        // K2-DirectConElemContent-35 Mismatch: true is not false // requires typed elements
+        // K2-ComputeConElem-9 Mismatch: true is not false // requires typed elements
+        // These two I don't understand what's wrong with the generated expression - maybe a Saxon bug?
+        // K2-sequenceExprTypeswitch-14: The context item for axis step self::node() is undefined 
+        // K2-ExternalVariablesWithout-11: The context item is absent, so position() is undefined
+        // K2-SeqExprCast-209 Mismatch: 〜 is not &#12316; // count as pass
+        
+        //<e/>/(typeswitch (self::node())
+        //        case $i as node() return .
+        // becomes:
+        //        declare namespace zz="http://saxon.sf.net/";
+        //        (<e >{() }</e>)/(let $zz:zz_typeswitchVar := self::node() return if ($zz:zz_typeswitchVar instance of node()) then (.) else (1))
+        assertTrue (runTest ("K2-sequenceExprTypeswitch-14")); 
     }
     
     @Test public void testGroup () throws Exception {
         terminateOnException = false;
-        //runTestGroup ("MinimalConformance");
-        //runTestGroup ("FunctX");
-        runTestGroup ("Basics");
-        runTestGroup ("Expressions");
+        runTestGroup ("MinimalConformance");
+        runTestGroup ("FunctX");
+        //runTestGroup ("Basics");
+        //runTestGroup ("Expressions");
     }
     
     static class ErrorIgnorer implements ErrorListener {

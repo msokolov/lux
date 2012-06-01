@@ -25,7 +25,7 @@ public class CommentConstructor extends AbstractExpression {
 
     @Override
     public int getPrecedence () {
-        return 100;
+        return 0;
     }
 
 }

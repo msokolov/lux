@@ -59,6 +59,7 @@ public class FunCall extends AbstractExpression {
     public static final QName FN_NOT = new QName (FN_NAMESPACE, "not", "fn");
     public static final QName FN_EMPTY = new QName (FN_NAMESPACE, "empty", "fn");
     public static final QName FN_COLLECTION = new QName (FN_NAMESPACE, "collection", "fn");
+    public static final QName FN_STRING_JOIN = new QName (FN_NAMESPACE, "string-join", "fn");
 
     public static final String LOCAL_NAMESPACE = "http://www.w3.org/2005/xquery-local-functions";
     public static final String XS_NAMESPACE = "http://www.w3.org/2001/XMLSchema";    

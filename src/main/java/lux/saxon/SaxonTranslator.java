@@ -69,6 +69,7 @@ import net.sf.saxon.expr.LetExpression;
 import net.sf.saxon.expr.Literal;
 import net.sf.saxon.expr.NegateExpression;
 import net.sf.saxon.expr.ParentNodeExpression;
+import net.sf.saxon.expr.PositionVariable;
 import net.sf.saxon.expr.QuantifiedExpression;
 import net.sf.saxon.expr.RootExpression;
 import net.sf.saxon.expr.SlashExpression;
@@ -98,6 +99,7 @@ import net.sf.saxon.expr.sort.IntUniversalSet;
 import net.sf.saxon.expr.sort.SortKeyDefinition;
 import net.sf.saxon.functions.StandardFunction;
 import net.sf.saxon.functions.StandardFunction.Entry;
+import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Axis;
 import net.sf.saxon.om.Item;
@@ -174,6 +176,16 @@ public class SaxonTranslator {
             defaultCollation = null;
         }
         VariableDefinition[] variableDefinitions = getVariableDefinitions(queryModule);
+        Boolean isPreserveNamespaces = (Boolean) config.getConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES);
+        Boolean isInheritNamespaces = (Boolean) config.getConfigurationProperty(FeatureKeys.XQUERY_INHERIT_NAMESPACES);
+        if (queryModule.isPreserveNamespaces() == isPreserveNamespaces &&
+                queryModule.isInheritNamespaces() == isInheritNamespaces) {
+            // both settings are the same as the current config, so no need to insert an explicit declaration in the query
+            isPreserveNamespaces = isInheritNamespaces = null;
+        } else {
+            isPreserveNamespaces = queryModule.isPreserveNamespaces();
+            isInheritNamespaces = queryModule.isInheritNamespaces();
+        }
         return new XQuery(
                 queryModule.getDefaultElementNamespace(),
                 queryModule.getDefaultFunctionNamespace(),
@@ -183,8 +195,8 @@ public class SaxonTranslator {
                 functionDefinitions, 
                 body,
                 queryModule.getBaseURI(),
-                queryModule.isPreserveNamespaces() ? true : null,
-                queryModule.isInheritNamespaces() ? null : false);
+                isPreserveNamespaces,
+                isInheritNamespaces);
     }
     
     public XQuery queryFor(AbstractExpression ex) {
@@ -280,10 +292,9 @@ public class SaxonTranslator {
             throw new LuxException ("AtomicSequenceConverter converting to non-atomic type: " + type);
         }
         AtomicType atomicType = (AtomicType) type;
-        Variable var = new Variable(new QName("x"));
-        
+        Variable var = new Variable(new QName("x"));        
         return new FLWOR(castExprFor(var, atomicType), 
-                new ForClause (var, null, exprFor(atomizer.getBaseExpression())));
+                new ForClause (var, null, exprFor(atomizer.getBaseExpression())));        
         // this often works, doesn't provide the type conversion:
         // return exprFor (atomizer.getBaseExpression());
         /*
@@ -411,7 +422,8 @@ public class SaxonTranslator {
 
     private String getPrefixForNamespace(String namespace) {
         String prefix = config.getNamePool().suggestPrefixForURI(namespace);
-        if (prefix == null) {
+        if (prefix == null && queryModule != null) {
+            // queryModule can be null when optimizing a query fragment
             NamespaceResolver resolver = queryModule.getNamespaceResolver();
             Iterator<String> prefixes = resolver.iteratePrefixes();
             while (prefixes.hasNext()) {
@@ -429,6 +441,10 @@ public class SaxonTranslator {
                 if (ns.getValue().equals(namespace))
                     return ns.getKey();
             }
+            // this will happen if queryModule is null; it's actually ok in the only known case, which 
+            // is when we translate fragments while checking for document ordering (in which case the 
+            // exactitude of the QName translation is irrelevant).
+            prefix = "";
         }
         return prefix;
     }
@@ -438,10 +454,28 @@ public class SaxonTranslator {
     public AbstractExpression exprFor (BinaryExpression expr) {
         Expression [] operands = expr.getOperands();
         BinaryOperation.Operator op = operatorFor(expr.getOperator());
+        if (operands[0] instanceof AtomicSequenceConverter || operands[1] instanceof AtomicSequenceConverter) {
+            // Saxon optimizes some general sequences into atomic sequences in a way that 
+            // we can't represent in XQuery directly.  So we use a General Comparison in that case,
+            // and reduce the AtomicSequenceConverter to its argument sequence (losing the type cast)
+            op = generalizeOperator (op);
+        }
         return new BinaryOperation (exprFor(operands[0]), op, exprFor(operands[1]));
     }
+    
+    private static BinaryOperation.Operator generalizeOperator (BinaryOperation.Operator op) {
+        switch (op) {
+        case AEQ: return BinaryOperation.Operator.EQUALS;
+        case ANE : return BinaryOperation.Operator.NE;
+        case ALT : return BinaryOperation.Operator.LT;
+        case ALE : return BinaryOperation.Operator.LE;
+        case AGT : return BinaryOperation.Operator.GT;
+        case AGE : return BinaryOperation.Operator.GE;
+        default: return op;
+        }        
+    }
 
-    private BinaryOperation.Operator operatorFor(int op) {
+    private static BinaryOperation.Operator operatorFor(int op) {
         switch (op) {
         case Token.AND: return BinaryOperation.Operator.AND;
         case Token.OR: return BinaryOperation.Operator.OR;
@@ -578,7 +612,12 @@ public class SaxonTranslator {
         StructuredQName var = forExpr.getVariableQName();
         Expression seq = forExpr.getSequence();
         Expression returns = forExpr.getAction();
-        return new FLWOR(exprFor(returns), new ForClause (new Variable(qnameFor(var)), null, exprFor(seq)));
+        PositionVariable posvar = forExpr.getPositionVariable();
+        Variable pos = null;
+        if (posvar != null) {
+            pos = new Variable(qnameFor(posvar.getVariableQName()));
+        }
+        return new FLWOR(exprFor(returns), new ForClause (new Variable(qnameFor(var)), pos, exprFor(seq)));
     }
 
     public AbstractExpression exprFor (FunctionCall funcall) {
@@ -598,7 +637,7 @@ public class SaxonTranslator {
                 return new Sequence (exprFor (arg));
             }        
         }
-        if (funcall.getFunctionName().equals(FunCall.FN_SUBSEQUENCE)) {
+        if (functionEqualsBuiltin(funcall, "subsequence")) {
             if (funcall.getNumberOfArguments() == 2) {
                 return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
             } else {
@@ -608,6 +647,14 @@ public class SaxonTranslator {
                 return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), exprFor(funcall.getArguments()[2]));
             }
         }
+        /*
+        if (functionEqualsBuiltin(funcall, "string-join")) {
+            // undo this optimization of Saxon's
+            if (funcall.getArguments()[0] instanceof AtomicSequenceConverter) {
+                return exprFor (funcall.getArguments()[0]);
+            }
+        }
+        */
         Expression[] args = funcall.getArguments();
         AbstractExpression[] aargs = new AbstractExpression[args.length];
         for (int i = 0; i < args.length; i++) {
@@ -887,11 +934,18 @@ public class SaxonTranslator {
         int k = 0;
         if (i < saxonClauses.size()) {
             clauses = new FLWORClause[saxonClauses.size()];
-            // get the first non-where clause
-            clauses[k++] = clauseFor (saxonClauses.get(i));
+            // add clauses up to but not including the first order by clause
+            for (int j = i; j < saxonClauses.size() &&
+                    saxonClauses.get(j).getClauseKey() != Clause.ORDERBYCLAUSE; 
+                    j++) 
+            {
+                clauses[k++] = clauseFor (saxonClauses.get(j));
+            }
         } else {
-            // Generate a dummy let clause??
-            clauses = new FLWORClause[saxonClauses.size() + 1];
+            clauses = new FLWORClause[saxonClauses.size() + 1];            
+        }
+        if (k == 0) {
+            // Generate a dummy let clause if the where clause was the only clause??
             clauses[k++] = new LetClause(new Variable (new QName("x")), LiteralExpression.ONE);
         }
         if (i > 0) { 
@@ -901,8 +955,9 @@ public class SaxonTranslator {
             }
         }
         // and the rest of the clauses...
-        for (int j = i + 1; j < saxonClauses.size(); j++) {
-            clauses[k++] = clauseFor (saxonClauses.get(j));                            
+        while (k < saxonClauses.size()) {
+            clauses[k] = clauseFor (saxonClauses.get(k));
+            ++k;
         }
         return new FLWOR(exprFor (flwor.getReturnClause()), clauses);
     }

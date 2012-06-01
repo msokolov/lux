@@ -235,7 +235,10 @@ public class TestCase {
     }
 
     private XdmNode createWrappedNode(Object node) throws SaxonApiException {
-        return catalog.getBuilder().build(new StreamSource(new ByteArrayInputStream(("<a>"+node+"</a>").getBytes())));
+        String s = node.toString();
+        // remove any xml declaration; a hack sure
+        s = s.replaceFirst("<\\?xml[^>]+>", "");
+        return catalog.getBuilder().build(new StreamSource(new ByteArrayInputStream(("<a>"+s+"</a>").getBytes())));
     }
 
     public static String resultToString(Iterable<?> results) throws XPathException {
@@ -286,6 +289,7 @@ public class TestCase {
                         catalog.getProcessor().getUnderlyingConfiguration().getConversionContext()),
                 catalog.getProcessor().getUnderlyingConfiguration(),
                 DeepEqual.INCLUDE_PREFIXES |
+                DeepEqual.EXCLUDE_WHITESPACE_TEXT_NODES |
                     DeepEqual.INCLUDE_COMMENTS |
                     DeepEqual.COMPARE_STRING_VALUES |
                     DeepEqual.INCLUDE_PROCESSING_INSTRUCTIONS);

@@ -15,26 +15,15 @@ The main thing missing is marshalling results from Solr
 ** namespace support
 This might be working, but we need to test
 ** XQuery!
-running XQTS now - down to 1305 failures out of 12008 tests over a few
-days we got it down to 147 w/44 ignored.  Now w/external variables implemented:
-168 fail (none ignored). 
-139
-124
-112
-108
-94
-88
-84
-78
-80
-75
-71
-43
-42
-36
-35
-Then, running on a larger test
-suite: Ran 18623 tests 478 tests failed; 44 ignored (97.5% pass)
+running XQTS now - down to 1305 failures out of 12008 tests over a few days
+we got it down to 147 w/44 ignored.  Now 7 tests fail.  
+*** 1 is a test harness glitch
+*** 1 is due to no schema support
+*** 3 are due to no support for type in:
+element(foo,xs:type) 
+*** 2 are due to an unexplained compile problem with the context item (.)
+Then, running on a larger test suite: Ran 18623 tests
+163 tests failed (99+% pass) - a lot of these seem to be test harness issues
 *** Now that this is workable, do some global tests:
 **** Test performance on XQTS with Saxon alone, and with Lux/Saxon
 **** develop an XQTS database query test

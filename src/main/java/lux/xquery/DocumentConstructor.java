@@ -24,7 +24,7 @@ public class DocumentConstructor extends AbstractExpression {
 
     @Override
     public int getPrecedence () {
-        return 100;
+        return 0;
     }
 }
 

@@ -36,7 +36,7 @@ public class Satisfies extends AbstractExpression {
 
     @Override
     public int getPrecedence() {
-        return 100;
+        return 0;
     }
 
 }
