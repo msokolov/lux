@@ -104,8 +104,9 @@ public abstract class BasicQueryTest {
 
     @Test
     public void testConvertRootedPathToPredicate() {
-        assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + getQueryString(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
-        		"[exists((descendant::ACT/child::SCENE)/root(.))]", 
+        assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + 
+                     getQueryString(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
+        		"[(descendant::ACT/child::SCENE)/root(.)]", 
         		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
     
