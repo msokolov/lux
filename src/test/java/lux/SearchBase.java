@@ -70,7 +70,7 @@ public abstract class SearchBase {
     public static void indexAllElements(XmlIndexer indexer, Directory dir, String uri, InputStream in) throws XMLStreamException, IOException {
         IndexWriter indexWriter = indexer.getIndexWriter(dir);
         String xml = IOUtils.toString(in);
-        indexer.indexDocument(indexWriter, uri, xml);
+        indexer.indexDocument(indexWriter, '/' + uri, xml);
         XMLOutputter outputter = new XMLOutputter();
         // index all descendants
         totalDocs = 1;
@@ -85,9 +85,9 @@ public abstract class SearchBase {
             } else {
                 elementCounts.put (e.getName(), count + 1);
             }
-            ++totalDocs;
             String speech = outputter.outputString(e);
-            indexer.indexDocument (indexWriter, uri + '-' + totalDocs, speech);
+            indexer.indexDocument (indexWriter, '/' + uri + '-' + totalDocs, speech);
+            ++totalDocs;
         }
         indexWriter.commit();
         indexWriter.close();

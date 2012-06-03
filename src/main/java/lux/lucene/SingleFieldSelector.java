@@ -3,6 +3,7 @@ package lux.lucene;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;
 
+// TODO: remove
 public final class SingleFieldSelector implements FieldSelector {
 
     private final String fieldName;

@@ -1,13 +1,11 @@
 package lux.saxon;
 
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import lux.api.Evaluator;
 import lux.saxon.Saxon.Dialect;
 import lux.solr.XmlSearchComponent;
-import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
@@ -24,11 +22,6 @@ public class SaxonSearchComponent extends XmlSearchComponent {
     @Override
     public Evaluator createEvaluator() {
         return new Saxon(null, null, Dialect.XQUERY_1);
-    }
-
-    @Override
-    public Object buildDocument(String xml, XmlBuilder builder) {
-        return builder.build(new StringReader (xml));
     }
 
     @Override

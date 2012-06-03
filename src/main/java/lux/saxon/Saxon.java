@@ -141,7 +141,7 @@ public class Saxon extends Evaluator  {
 
     @Override
     public ResultSet<?> iterate(Expression expr, QueryContext context) { 
-        docReader = new CachingDocReader(getSearcher().getIndexReader(), getBuilder(), getIndexer().getXmlFieldName());
+        docReader = new CachingDocReader(getSearcher().getIndexReader(), getBuilder(), getIndexer());
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         try {
             return saxonExpr.evaluate(context);
@@ -167,16 +167,18 @@ public class Saxon extends Evaluator  {
         SaxonBuilder () {
             documentBuilder = processor.newDocumentBuilder();
         }
-        
-        public XdmNode build (Reader reader, int docID) {
+        // TODO: change to setNextDocID() followed by call to standard build()
+        public XdmNode build (Reader reader, String uri, int docID) {
             config.getDocumentNumberAllocator().setNextDocID(docID);
-            return (XdmNode) build(reader);
+            XdmNode xdmNode = (XdmNode) build(reader, uri);
+            return xdmNode;
         }
 
         @Override
-        public Object build(Reader reader) {
+        public Object build(Reader reader, String uri) {
+            uri = "lux:/" + uri;
             try {
-                return documentBuilder.build(new StreamSource (reader));
+                return documentBuilder.build(new StreamSource (reader, uri));
             } catch (SaxonApiException e) {
                throw new LuxException(e);
             }

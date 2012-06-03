@@ -124,7 +124,7 @@ public class TestRunner {
                         SaxonExpr expr = (SaxonExpr) eval.compile(text);
                         item = (XdmItem) expr.evaluate(null).iterator().next();
                     } else {
-                        item = (XdmNode) eval.getBuilder().build(new InputStreamReader(new FileInputStream (filename)));
+                        item = (XdmNode) eval.getBuilder().build(new InputStreamReader(new FileInputStream (filename)), filename);
                     }
                     context.bindVariable(new QName(binding.getKey()), item);                    
                 }

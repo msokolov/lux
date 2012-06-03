@@ -17,6 +17,7 @@ import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.Scorer;
 
 /**
+ * TODO: is this code dead now?
  * TODO: refactor into multiple collectors for counting and boolean short-circuits
  * in order to eliminate some of the tests in the inner loop here.  Also - get rid
  * of the lazy initialization in getResults(); it's just confusing
@@ -89,8 +90,9 @@ public class XPathCollector extends Collector {
         String xmlFieldName = "xml_text";
         Document document = reader.document(docnum, new SingleFieldSelector(xmlFieldName));
         String xml = document.get(xmlFieldName);
+        String uri = document.get("uri");
         Object doc;
-        doc = builder.build(new StringReader (xml));
+        doc = builder.build(new StringReader (xml), uri);
         results.add (doc);
         if (queryStats != null) {
             long t2 = System.nanoTime();

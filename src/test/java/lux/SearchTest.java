@@ -2,6 +2,9 @@ package lux;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import java.util.Iterator;
+
 import lux.api.Evaluator;
 import lux.api.LuxException;
 import lux.api.QueryStats;
@@ -11,6 +14,8 @@ import lux.saxon.SaxonExpr;
 import lux.saxon.UnOptimizer;
 import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
+
+import net.sf.saxon.s9api.XdmNode;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -99,9 +104,22 @@ public class SearchTest extends SearchBase {
     
     @Test
     public void testSearchAllScenes() throws Exception {
-        ResultSet<?> results = assertSearch("//SCENE", QUERY_MINIMAL);
+        ResultSet<?> results = assertSearch("/ACT", QUERY_MINIMAL);
+        assertEquals (5, results.size());
+        XdmNode node = (XdmNode) results.iterator().next();
+        String actURI = node.getDocumentURI().toString();
+        results = assertSearch("//SCENE", QUERY_MINIMAL);
         // every SCENE, in its ACT and in the PLAY
         assertEquals (elementCounts.get("SCENE") * 3, results.size());
+        Iterator<?> iter = results.iterator();
+        for (int i = 0; i < elementCounts.get("SCENE"); i++) {
+            // each scene, from the /PLAY document
+            node = (XdmNode) iter.next();
+            assertEquals ("lux://lux/hamlet.xml", node.getDocumentURI().toString());
+            assertEquals ("lux://lux/hamlet.xml", node.getBaseURI().toString());                
+        }
+        XdmNode act1 = (XdmNode) iter.next();
+        assertEquals (actURI, act1.getBaseURI().toString());
     }
     
     @Test

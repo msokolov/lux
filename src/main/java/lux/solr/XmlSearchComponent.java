@@ -13,7 +13,6 @@ import lux.api.Expression;
 import lux.api.QueryStats;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
-import lux.xml.XmlBuilder;
 
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
@@ -41,9 +40,7 @@ public abstract class XmlSearchComponent extends QueryComponent {
     }
    
     public abstract Evaluator createEvaluator ();
-    
-    public abstract Object buildDocument (String xml, XmlBuilder builder);
-    
+        
     public abstract void addResult(NamedList<Object> xpathResults, Object result);
 
     public void prepare(ResponseBuilder rb) throws IOException {        

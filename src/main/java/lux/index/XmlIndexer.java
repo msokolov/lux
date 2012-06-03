@@ -68,7 +68,7 @@ public class XmlIndexer {
         xmlReader.addHandler (pathMapper);
         if (isOption (INDEX_QNAMES)) {
             addField(XmlField.ELT_QNAME);
-            addField(XmlField.ELT_QNAME);
+            addField(XmlField.ATT_QNAME);
         }
         if (isOption (INDEX_PATHS)) {
             addField(XmlField.PATH);
@@ -162,11 +162,12 @@ public class XmlIndexer {
     public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
         read(new StringReader(xml));
-        addLuceneDocument(indexWriter, uri);        
+        addLuceneDocument(indexWriter, uri);     
     }
 
     private void addLuceneDocument(IndexWriter indexWriter, String uri) throws CorruptIndexException, IOException {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
+        // TODO: rename field lux_uri, add an XmlField for it, make it required. do something!!
         doc.add (new Field ("uri", uri, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
         for (XmlField field : getFields()) {
             for (Object value : getFieldValues(field)) {

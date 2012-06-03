@@ -6,13 +6,18 @@ package lux.saxon;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
-import lux.lucene.SingleFieldSelector;
+import lux.index.XmlIndexer;
 import lux.saxon.Saxon.SaxonBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.FieldSelector;
+import org.apache.lucene.document.SetBasedFieldSelector;
 import org.apache.lucene.index.IndexReader;
 
 /**
@@ -26,17 +31,21 @@ import org.apache.lucene.index.IndexReader;
 public class CachingDocReader {
     private final HashMap <Integer, XdmNode> cache = new HashMap<Integer, XdmNode>();
     private final String xmlFieldName;
-    private final SingleFieldSelector fieldSelector;
+    private final FieldSelector fieldSelector;
     private final IndexReader reader;
     private final SaxonBuilder builder;
     private int cacheHits=0;
     private int cacheMisses=0;
     
-    public CachingDocReader (IndexReader reader, SaxonBuilder builder, String xmlFieldName) {
+    public CachingDocReader (IndexReader reader, SaxonBuilder builder, XmlIndexer indexer) {
         this.reader = reader;
         this.builder = builder;
-        this.xmlFieldName = xmlFieldName;
-        fieldSelector = new SingleFieldSelector(xmlFieldName);
+        this.xmlFieldName = indexer.getXmlFieldName();
+        HashSet<String> fieldNames = new HashSet<String>();
+        fieldNames.add(xmlFieldName);
+        fieldNames.add("uri");
+        Set<String> empty = Collections.emptySet();
+        fieldSelector = new SetBasedFieldSelector(fieldNames, empty);
     }
     
     public XdmNode get (int docID) throws IOException {
@@ -47,10 +56,11 @@ public class CachingDocReader {
         Document document;
         document = reader.document(docID, fieldSelector);
         String xml = document.get(xmlFieldName);
+        String uri = document.get("uri");
         int n = xml.indexOf('\n');
         n = (n < 0 || n > 30) ? Math.min(30,xml.length()) : n-1;
         //System.out.println ("GET " + docID + " " + xml.substring(0, n));
-        XdmNode node = (XdmNode) builder.build(new StringReader (xml), docID);
+        XdmNode node = (XdmNode) builder.build(new StringReader (xml), uri, docID);
         if (node != null) {
             cache.put(docID, node);
         }
