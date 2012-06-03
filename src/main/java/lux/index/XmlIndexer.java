@@ -66,6 +66,7 @@ public class XmlIndexer {
         // accumulate XML paths and QNames for indexing
         pathMapper = new XmlPathMapper();
         xmlReader.addHandler (pathMapper);
+        addField (XmlField.URI);
         if (isOption (INDEX_QNAMES)) {
             addField(XmlField.ELT_QNAME);
             addField(XmlField.ATT_QNAME);
@@ -80,13 +81,16 @@ public class XmlIndexer {
             addField(XmlField.XML_STORE);
         }
         pathMapper.setNamespaceAware((options & NAMESPACE_AWARE) != 0);        
-        if (isOption (BUILD_JDOM) || isOption(STORE_XML)) {
+        if (isOption (BUILD_JDOM)) {
          // build a JDOM in case we want to index XPaths
             jdomBuilder = new JDOMBuilder();
             xmlReader.addHandler (jdomBuilder);
+            /*
             if (isOption (STORE_XML)) {
+                // reserialize the xml???
                 jdomSerializer = new XMLOutputter ();
             }
+            */
         }
     }
     
@@ -133,7 +137,11 @@ public class XmlIndexer {
             return pathMapper.getPathCounts().keySet();
         }
         if (XmlField.XML_STORE.equals(field)) {
-            return Collections.singletonList(jdomSerializer.outputString(getJDOM()));
+            if (jdomSerializer != null) {
+                return Collections.singletonList(jdomSerializer.outputString(getJDOM()));
+            } else {
+                return Collections.EMPTY_LIST;
+            }
         }
         if (XmlField.FULL_TEXT.equals(field)) {
            @SuppressWarnings("unchecked")
@@ -152,23 +160,18 @@ public class XmlIndexer {
             return null;
         return jdomBuilder.getDocument();
     }
-    
-    public void indexDocument(IndexWriter indexWriter, String uri, InputStream xml) throws XMLStreamException, CorruptIndexException, IOException {
-        reset();
-        read (xml);
-        addLuceneDocument(indexWriter, uri);        
-    }
 
     public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
+        uri = "lux:/" + uri;
         read(new StringReader(xml));
-        addLuceneDocument(indexWriter, uri);     
+        addLuceneDocument(indexWriter, xml, uri);
     }
 
-    private void addLuceneDocument(IndexWriter indexWriter, String uri) throws CorruptIndexException, IOException {
+    private void addLuceneDocument(IndexWriter indexWriter, String xml, String uri) throws CorruptIndexException, IOException {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
-        // TODO: rename field lux_uri, add an XmlField for it, make it required. do something!!
-        doc.add (new Field ("uri", uri, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
+        doc.add (new Field (XmlField.URI.getName(), uri, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
+        doc.add (new Field (XmlField.XML_STORE.getName(), xml, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));        
         for (XmlField field : getFields()) {
             for (Object value : getFieldValues(field)) {
                 // TODO: handle other primitive value types like int, at least, and collations, and analyzers
@@ -188,6 +191,10 @@ public class XmlIndexer {
 
     public String getXmlFieldName() {
         return XmlField.XML_STORE.getName();
+    }
+
+    public String getUriFieldName() {
+        return XmlField.URI.getName();
     }
     
 }

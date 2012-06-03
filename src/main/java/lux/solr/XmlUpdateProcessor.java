@@ -14,8 +14,12 @@ import lux.index.WhitespaceGapAnalyzer;
 import lux.index.XmlField;
 import lux.index.XmlIndexer;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
-import org.apache.solr.common.params.SolrParams;
+import org.apache.lucene.document.Field.Store;
+import org.apache.solr.common.SolrException;
+import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.SolrQueryRequest;
@@ -32,21 +36,18 @@ import org.apache.solr.update.processor.UpdateRequestProcessorFactory;
 import org.apache.solr.util.plugin.SolrCoreAware;
 
 public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements SolrCoreAware {
-    
-    private String xmlFieldName;
+
+    private XmlIndexer xmlIndexer;
     
     @Override
     public void init(@SuppressWarnings("rawtypes") final NamedList args) {
+        // don't need XmlIndexer.STORE_XML since the client passes us the xml_text field
+        xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML);
         if (args != null) {
-            SolrParams params = SolrParams.toSolrParams(args);
-            xmlFieldName = params.get("xml-field-name", "xml_text");
+            //SolrParams params = SolrParams.toSolrParams(args);
+            //xmlFieldName = params.get("xml-field-name", "xml_text");
             // add fields to config??
-            /*
-            eltNameFieldName = params.get("elt-name-field-name", "lux_elt_name_ms");
-            attNameFieldName = params.get("att-name-field-name", "lux_att_name_ms");
-            pathFieldName = params.get("path-field-name", "lux_path_ms");
-            */
-            // TODO: read namespace-aware; read namespace mapping
+            // TODO: namespace-awareness?; namespace mapping
             // TODO: read xpath index config
         }
     }
@@ -59,25 +60,59 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
     public void inform(SolrCore core) {
         IndexSchema schema = core.getSchema();
         Map<String,SchemaField> fields = schema.getFields();
-        if (fields.containsKey("lux_path")) {
-            return;
-        }
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
-        FieldType luxTextWs = fieldTypes.get("lux_text_ws");
-        if (luxTextWs == null) {
-            luxTextWs = new PathField(schema);
-            fieldTypes.put("lux_text_ws", luxTextWs);
+        for (XmlField xmlField : xmlIndexer.getFields()) {
+            if (fields.containsKey(xmlField.getName())) {
+                // Allow overriding field configuration in schema.xml?
+                continue;
+            }
+            FieldType fieldType = getFieldType(xmlField, schema);
+            if (! fieldTypes.containsKey(fieldType.getTypeName())) {
+                fieldTypes.put(fieldType.getTypeName(), fieldType);
+            } else {
+                fieldType = fieldTypes.get(fieldType.getTypeName());
+            }
+            fields.put(xmlField.getName(), new SchemaField (xmlField.getName(), fieldType, xmlField.getSolrFieldProperties(), ""));
         }
-        fields.put("lux_path", new SchemaField ("lux_path", luxTextWs, 0x213, "")); // 0x233 = INDEXED | TOKENIZED | OMIT_NORMS  | MULTIVALUED
-        fields.put("lux_elt_name", new SchemaField ("lux_elt_name", new StrField(), 0x231, ""));// INDEXED | OMIT_NORMS | OMIT_TF_POSITIONS | MULTIVALUED
-        fields.put("lux_att_name", new SchemaField ("lux_att_name", new StrField(), 0x231, ""));
         // must call this after making changes to the field map:
         schema.refreshAnalyzers();
+    }
+    
+    private FieldType getFieldType(XmlField xmlField, IndexSchema schema) {
+        // FIXME - we should store a field type name in XmlField and just look that up instead
+        // of trying to infer from the analyzer
+        Analyzer analyzer = xmlField.getAnalyzer();
+        if (analyzer == null) {
+            if (! (xmlField.isStored() == Store.YES)) {
+                throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + xmlField.getName() + "; no analyzer and not stored");
+            }
+            return new StoredStringField ();
+        }
+        if (analyzer instanceof KeywordAnalyzer) {
+            return new StringField();
+        }
+        if (analyzer instanceof WhitespaceGapAnalyzer) {
+            return new PathField (schema);
+        }
+        throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + xmlField.getName() + "; unknown analyzer type: " + analyzer);
+    }
+    
+    class StoredStringField extends StrField {
+        StoredStringField () {
+            typeName = "lux_stored_string";
+        }
+    }
+    
+    class StringField extends StrField {        
+        StringField () {
+            typeName = "string";
+        }
     }
     
     class PathField extends TextField {
 
         PathField (IndexSchema schema) {
+            typeName = "lux_text_ws";
             setAnalyzer(new WhitespaceGapAnalyzer()); 
             setQueryAnalyzer(new WhitespaceGapAnalyzer());
         }
@@ -85,7 +120,7 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
         protected Field.Index getFieldIndex(SchemaField field, String internalVal) {
             return Field.Index.ANALYZED;
         }
-    
+        
     }
 
     @Override
@@ -94,15 +129,13 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
     }
     
     public class LuxProcessorInstance extends UpdateRequestProcessor {
-        private XmlIndexer xmlIndexer;
 
         public LuxProcessorInstance (UpdateRequestProcessor next) {
             super(next);
-            // don't XmlIndexer.STORE_XML since we the client passes us the xml_text field
-            xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS);
         }
 
-        public void processAdd (AddUpdateCommand cmd) throws IOException {  
+        public void processAdd (AddUpdateCommand cmd) throws IOException {
+            String xmlFieldName = xmlIndexer.getXmlFieldName();
             Object o = cmd.getSolrInputDocument().getFieldValue(xmlFieldName);
             if (o != null) {
                 String xml = (String) o;

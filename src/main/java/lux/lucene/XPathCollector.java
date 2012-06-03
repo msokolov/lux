@@ -7,6 +7,7 @@ import lux.ResultList;
 import lux.XPathQuery;
 import lux.api.QueryStats;
 import lux.api.ValueType;
+import lux.index.XmlField;
 import lux.solr.ShortCircuitException;
 import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.XdmAtomicValue;
@@ -87,10 +88,10 @@ public class XPathCollector extends Collector {
             return;
         }
         long t1 = System.nanoTime();
-        String xmlFieldName = "xml_text";
+        String xmlFieldName = XmlField.XML_STORE.getName();
         Document document = reader.document(docnum, new SingleFieldSelector(xmlFieldName));
         String xml = document.get(xmlFieldName);
-        String uri = document.get("uri");
+        String uri = document.get(XmlField.URI.getName());
         Object doc;
         doc = builder.build(new StringReader (xml), uri);
         results.add (doc);

@@ -166,6 +166,7 @@ public class Saxon extends Evaluator  {
 
         SaxonBuilder () {
             documentBuilder = processor.newDocumentBuilder();
+            documentBuilder.setDTDValidation(false);
         }
         // TODO: change to setNextDocID() followed by call to standard build()
         public XdmNode build (Reader reader, String uri, int docID) {
@@ -176,7 +177,6 @@ public class Saxon extends Evaluator  {
 
         @Override
         public Object build(Reader reader, String uri) {
-            uri = "lux:/" + uri;
             try {
                 return documentBuilder.build(new StreamSource (reader, uri));
             } catch (SaxonApiException e) {

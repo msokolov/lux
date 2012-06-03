@@ -31,6 +31,7 @@ import org.apache.lucene.index.IndexReader;
 public class CachingDocReader {
     private final HashMap <Integer, XdmNode> cache = new HashMap<Integer, XdmNode>();
     private final String xmlFieldName;
+    private final String uriFieldName;
     private final FieldSelector fieldSelector;
     private final IndexReader reader;
     private final SaxonBuilder builder;
@@ -41,9 +42,10 @@ public class CachingDocReader {
         this.reader = reader;
         this.builder = builder;
         this.xmlFieldName = indexer.getXmlFieldName();
+        this.uriFieldName = indexer.getUriFieldName();
         HashSet<String> fieldNames = new HashSet<String>();
         fieldNames.add(xmlFieldName);
-        fieldNames.add("uri");
+        fieldNames.add(uriFieldName);
         Set<String> empty = Collections.emptySet();
         fieldSelector = new SetBasedFieldSelector(fieldNames, empty);
     }
@@ -56,7 +58,7 @@ public class CachingDocReader {
         Document document;
         document = reader.document(docID, fieldSelector);
         String xml = document.get(xmlFieldName);
-        String uri = document.get("uri");
+        String uri = document.get(uriFieldName);
         int n = xml.indexOf('\n');
         n = (n < 0 || n > 30) ? Math.min(30,xml.length()) : n-1;
         //System.out.println ("GET " + docID + " " + xml.substring(0, n));

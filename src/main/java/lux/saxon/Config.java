@@ -44,7 +44,7 @@ public class Config extends Configuration implements URIResolver, EntityResolver
         this.saxon = saxon;
         luxFunctionLibrary = new LuxFunctionLibrary();;
         // This prevents expansion of internal "parameter entities" among other things
-        // getParseOptions().setEntityResolver(this);
+        getParseOptions().setEntityResolver(this);
         optimizer = new Optimizer(this);
     }
     

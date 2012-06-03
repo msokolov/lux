@@ -154,7 +154,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException ("Failed to parse lucene query " + queryString, e);
             }
-            System.out.println ("executing xpath query: " + query);
+            //System.out.println ("executing xpath query: " + query);
             return iterate (query, saxon);
         }
         

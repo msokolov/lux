@@ -148,17 +148,17 @@ public abstract class LuxSolrTest {
 
     private static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField ("uri", path);
+        doc.addField (XmlField.URI.getName(), path);
         FileInputStream in = new FileInputStream (path);
         String buf = IOUtils.toString(in);
-        doc.addField("xml_text", buf);
+        doc.addField(XmlField.XML_STORE.getName(), buf);
         docs.add(doc);
     }
     
     private static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField ("uri", uri);
-        doc.addField("xml_text", text);
+        doc.addField (XmlField.URI.getName(), uri);
+        doc.addField(XmlField.XML_STORE.getName(), text);
         docs.add(doc);
     }
     

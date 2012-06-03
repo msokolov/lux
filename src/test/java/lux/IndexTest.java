@@ -41,11 +41,13 @@ public class IndexTest {
     public void testIndexPaths() throws Exception {
         XmlIndexer indexer = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
-        printAllTerms();
+        //printAllTerms();
         indexer.read(getClass().getResourceAsStream("hamlet.xml"));
+        /*
         for (Object s : indexer.getFieldValues(XmlField.PATH)) {
             System.out.println (s);
         }
+        */
     }
 
     @Test

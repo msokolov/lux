@@ -379,13 +379,6 @@
        when adding a document.
    -->
 
-	<!-- this field uniquely identifies this document in the index. it is usually a combination of type & id. -->
-   <!-- 
-   <field name="uniqueid" type="string" indexed="true" stored="true" required="true" />
-   <field name="id" type="string" indexed="true" stored="true" required="true" />
-   <field name="type" type="string" indexed="true" stored="true" required="true" />
-   -->
-   <field name="uri" type="string" indexed="true" stored="true" required="true" />
    <field name="size_i" type="int" indexed="false" stored="true" />
    <field name="directory_b" type="boolean" indexed="true" stored="true" />
 
@@ -469,7 +462,7 @@
  <!-- Field to use to determine and enforce document uniqueness. 
       Unless this field is marked with required="false", it will be a required field
    -->
- <uniqueKey>uri</uniqueKey>
+<!--  <uniqueKey>uri</uniqueKey> -->
 
  <!-- field for the QueryParser to use when an explicit fieldname is absent -->
  <defaultSearchField>xml_text</defaultSearchField>
