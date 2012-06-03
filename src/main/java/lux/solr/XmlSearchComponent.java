@@ -15,7 +15,6 @@ import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.xml.XmlBuilder;
 
-import org.apache.solr.common.SolrException;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
@@ -66,10 +65,7 @@ public abstract class XmlSearchComponent extends QueryComponent {
         SolrIndexSearcher searcher = req.getSearcher();
         SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         // ignored for now
-        int start = params.getInt( CommonParams.START, -1 );
-        if (start < 0) {
-          throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "'start' parameter cannot be negative");
-        }
+        int start = params.getInt( CommonParams.START, 1 );
         long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
         // multiple shards not implemented
