@@ -203,15 +203,7 @@
       <analyzer class="org.apache.lucene.analysis.el.GreekAnalyzer"/>
     </fieldType>
     -->
-
-    <!-- A text field that only splits on whitespace for exact matching of words -->
-    <fieldType name="text_ws" class="solr.TextField" positionIncrementGap="100">
-      <analyzer>
-        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-      </analyzer>
-      <str>random element for testing</str>
-    </fieldType>
-
+ 
     <fieldType name="xml_text_type" class="solr.TextField" termVectors="true" termPositions="true" termOffsets="true">
       <analyzer type="index">
       	<charFilter class="org.apache.solr.analysis.HTMLStripCharFilterFactory"/>
@@ -471,14 +463,7 @@
         alternately, change the type="ignored" to some other type e.g. "text" if you want 
         unknown fields indexed and/or stored by default --> 
    <!--dynamicField name="*" type="ignored" multiValued="true" /-->
-
-   <!-- LUX FIELD DEFINITIONS -->
-
-   <!-- text_ws = whitespace + 100 position gap -->
-   <field name="lux_path" type="text_ws"  indexed="true"  stored="false" multiValued="true" />
-   <field name="lux_elt_name" type="string"  indexed="true"  stored="false" multiValued="true" />
-   <field name="lux_att_name" type="string"  indexed="true"  stored="false" multiValued="true" />
-   
+       
  </fields>
 
  <!-- Field to use to determine and enforce document uniqueness. 

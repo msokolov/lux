@@ -6,7 +6,7 @@ public class SaxonSolrTest extends LuxSolrTest {
     }
     
     public String getSolrSearchPath () {
-        return "/xpaths";
+        return "/xquery";
     }
 }
 

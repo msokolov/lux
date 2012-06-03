@@ -1302,7 +1302,7 @@
     <str name="xmlFieldName">xml_text</str>
   </searchComponent>
   
-  <requestHandler name="/xpaths" class="solr.SearchHandler">
+  <requestHandler name="/xquery" class="solr.SearchHandler">
     <arr name="components">
       <str>saxon</str>
       <str>stats</str>

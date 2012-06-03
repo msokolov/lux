@@ -1,4 +1,4 @@
-package lux.saxon.xquery;
+package lux.xquery;
 
 import lux.ExpressionVisitor;
 import lux.xpath.AbstractExpression;

@@ -33,6 +33,7 @@ public abstract class LuxSolrTest {
     
     private static SolrServer solr;
     
+    // allow for different xquery engines
     public abstract String getXPathEngine ();
     
     public abstract String getSolrSearchPath ();
@@ -59,9 +60,9 @@ public abstract class LuxSolrTest {
         assertQueryCount (102, "*:*");
         assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":config");
         assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":schema");
-        assertQueryCount (2, XmlField.ELT_QNAME.getName() + ":str");
         assertQueryCount (1, XmlField.PATH.getName() + ":\"{} schema types fieldType\"");
         assertQueryCount (1, XmlField.PATH.getName() + ":schema");
+        assertQueryCount (102, XmlField.PATH.getName() + ":\"{}\"");
         assertQueryCount (1, XmlField.PATH.getName() + ":\"{} config luceneMatchVersion\"");
     }
     
@@ -75,6 +76,11 @@ public abstract class LuxSolrTest {
         // This also tests lazy evaluation - like paging within xpath.  Because we only retrieve
         // the first value (in document order), we only need to retrieve one value.
         assertXPathSearchCount (1, 1, "xs:double", "1", "number((/doc/test)[1])");
+    }
+    
+    @Test public void testLiteral () throws Exception {
+        // no documents were retrieved, 1 result returned = 12
+        assertXPathSearchCount(1, 0, "xs:double", "12", "xs:double(12.0)");
     }
     
     @Test public void testFirstPage () throws Exception {
@@ -97,14 +103,14 @@ public abstract class LuxSolrTest {
         try {
             solr.query (q);
             assertFalse (true);
-        } catch (SolrServerException e) {            
+        } catch (SolrServerException e) {
         }
     }
     
     @Test
     public void testSyntaxError () throws Exception {
         try {
-            assertQueryCount(0, "{!type=xpath}hey bad boy");
+            assertXPathSearchCount(0, 0, "", "", "hey bad boy");
             assertTrue ("expected ParseException to be thrown for syntax error", false);
         } catch (SolrServerException e) {
         }
@@ -112,7 +118,6 @@ public abstract class LuxSolrTest {
     
     protected void assertQueryCount (int count, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setParam("engine", getXPathEngine());
         QueryResponse rsp = solr.query (q);
         assertEquals (count, rsp.getResults().getNumFound());
     }
@@ -124,7 +129,6 @@ public abstract class LuxSolrTest {
     protected void assertXPathSearchCount (int count, int docCount, int maxResults, String type, String value, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
         q.setQueryType(getSolrSearchPath());
-        q.setParam("engine", getXPathEngine());
         q.setRows(maxResults);
         q.setStart(0);
         QueryResponse rsp = solr.query (q, METHOD.POST);

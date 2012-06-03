@@ -9,16 +9,7 @@ support.
 At some point we'll want to put this up in a collaboration environment.
 Consider Collabnet?  GitHub?
 ** ifpress
-Make sure the update handler is compatible?  It keeps existing fields in
-place?  Provide a mechanism to notify it about other indexes?
 
-This is going to be a bit confusing if people are used to the existing
-system?  It's now XPath only (no sorting)...
-
-*** upload to ifactory maven repo
-*** install in loader sandbox
-add a dependency on lux; add configuration to schema/solrconfig
-update sandbox to exec xpath using lux? use when present
 ** lucene
 mention on the mailing list?
 ** xml-dev

@@ -13,7 +13,6 @@ import java.util.Map;
 
 import lux.api.LuxException;
 import lux.api.ValueType;
-import lux.saxon.xquery.InstanceOf;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.BinaryOperation.Operator;
@@ -39,6 +38,7 @@ import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
 import lux.xquery.FunctionDefinition;
+import lux.xquery.InstanceOf;
 import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
 import lux.xquery.ProcessingInstructionConstructor;
