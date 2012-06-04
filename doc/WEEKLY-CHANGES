@@ -17,6 +17,9 @@ using a function.
 
 5/10-5/13; solr components working again (broken by switch to lucene pull api); code cleanup
 
+6/3; XQuery 1.0; XQTS 99% passing; API cleanup; Solr field autoconfig;
+PubFactory sandbox testing
+
 UPCOMING
 
 ****** value and word indexes

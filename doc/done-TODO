@@ -90,6 +90,9 @@ user-callable versions as well supporting some form of lucene query syntx.
 *** optimize absolute (rooted) context-free expressions
 The optimizer considers inserting one of the lux function whenever such a
 sub-expression occurs.
+** Solr integration
+UpdateProcessor and SearchComponent
+** XQuery Evaluator
 * packaging
 ** solr request handler
 restored to working order
