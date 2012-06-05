@@ -20,6 +20,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
+import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.SolrQueryRequest;
@@ -38,14 +39,17 @@ import org.apache.solr.util.plugin.SolrCoreAware;
 public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements SolrCoreAware {
 
     private XmlIndexer xmlIndexer;
+    private String xmlFieldName;
     
     @Override
     public void init(@SuppressWarnings("rawtypes") final NamedList args) {
         // don't need XmlIndexer.STORE_XML since the client passes us the xml_text field
         xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML);
         if (args != null) {
-            //SolrParams params = SolrParams.toSolrParams(args);
-            //xmlFieldName = params.get("xml-field-name", "xml_text");
+            SolrParams params = SolrParams.toSolrParams(args);
+            // accept override from configuration so we can piggyback on existing 
+            // document storage
+            xmlFieldName = params.get("xml-field-name", xmlIndexer.getXmlFieldName());
             // add fields to config??
             // TODO: namespace-awareness?; namespace mapping
             // TODO: read xpath index config
@@ -135,7 +139,6 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
         }
 
         public void processAdd (AddUpdateCommand cmd) throws IOException {
-            String xmlFieldName = xmlIndexer.getXmlFieldName();
             Object o = cmd.getSolrInputDocument().getFieldValue(xmlFieldName);
             if (o != null) {
                 String xml = (String) o;
