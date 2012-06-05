@@ -50,6 +50,8 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
             // document storage
             String xmlFieldName = params.get("xmlFieldName", xmlIndexer.getXmlFieldName());
             XmlField.XML_STORE.setName (xmlFieldName);
+            String uriFieldName = params.get("uriFieldName", xmlIndexer.getUriFieldName());
+            XmlField.URI.setName (uriFieldName);
             // add fields to config??
             // TODO: namespace-awareness?; namespace mapping
             // TODO: read xpath index config
