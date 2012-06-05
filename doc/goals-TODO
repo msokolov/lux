@@ -1,6 +1,5 @@
 * Mission
-Bring the power of XML to a wider community by fostering a new web
-developer ecosystem based on XQuery against an indexed data store.
+Provide an easy-to-use XML query tool.
 ** analogy to LAMP
 Ultimately we can provide an easy-to-use and easy-to-install alternative to
 PHP/MySQL for XML document-oriented sites.

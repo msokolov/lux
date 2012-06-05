@@ -58,6 +58,7 @@ of the index know what is available there.
 
 *** implemented using surround parser / span queries
 * tests
+** testing doc() and collection()
 ** search test coverage
 Run search tests for everything in query test, comparing "raw" against
 indexed results.
@@ -81,6 +82,8 @@ attribute name indexes.
 *** ExpressionVisitor
 machinery for optimizers and other tree visitors like UnOptimizer.
 ** Indexer
+*** base-uri
+We now attach a base uri to each result document
 ** Lux Function Library for XPath/XQuery 
 lux:search, lux:count, lux:exists execute a lucene query, returning
 documents, count, and boolean respectively, which are then processed by the

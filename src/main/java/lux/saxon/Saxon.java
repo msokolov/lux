@@ -1,7 +1,11 @@
 package lux.saxon;
 
+import java.io.IOException;
 import java.io.Reader;
 
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
 import lux.PathOptimizer;
@@ -13,6 +17,7 @@ import lux.api.ResultSet;
 import lux.functions.LuxCount;
 import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
+import lux.index.XmlField;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 import lux.xml.XmlBuilder;
@@ -29,11 +34,15 @@ import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
 
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.TermQuery;
+
 /**
  * Implementation of a lux query/expression evaluator using Saxon
  *
  */
-public class Saxon extends Evaluator  {
+public class Saxon extends Evaluator implements URIResolver {
 
     private Processor processor;
     public Processor getProcessor() {
@@ -59,7 +68,7 @@ public class Saxon extends Evaluator  {
         processor = new Processor (config);
         processor.registerExtensionFunction(new LuxSearch());
         processor.registerExtensionFunction(new LuxCount());
-        processor.registerExtensionFunction(new LuxExists());        
+        processor.registerExtensionFunction(new LuxExists()); 
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
         this.dialect = dialect;
@@ -80,6 +89,20 @@ public class Saxon extends Evaluator  {
         XQUERY_1
     }
 
+    public Source resolve(String href, String base) throws TransformerException {
+        try {
+            DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(XmlField.URI.getName(), href)));
+            int docID = disi.nextDoc();
+            if (docID == DocIdSetIterator.NO_MORE_DOCS) {
+                throw new LuxException("document '" +  href + "' not found");
+            }
+            XdmNode doc = getDocReader().get(docID);
+            return doc.asSource(); 
+        } catch (IOException e) {
+            throw new TransformerException(e);
+        }
+    }
+    
     @Override
     public SaxonExpr compile(String exprString) throws LuxException {
         switch (dialect) {
@@ -111,7 +134,6 @@ public class Saxon extends Evaluator  {
     }
     
     private SaxonExpr compileXQuery(String exprString) throws LuxException {
-        getXQueryCompiler().setErrorListener(config.getErrorListener());
         XQueryExecutable xquery;
         try {
             xquery = getXQueryCompiler().compile(exprString);
@@ -146,7 +168,7 @@ public class Saxon extends Evaluator  {
         try {
             return saxonExpr.evaluate(context);
         } catch (SaxonApiException e) {
-            throw new LuxException (e);
+            return new XdmResultSet(e);
         } finally {
             docReader.clear();
             docReader = null;
@@ -210,6 +232,7 @@ public class Saxon extends Evaluator  {
         if (xqueryCompiler == null) {
             xqueryCompiler = processor.newXQueryCompiler();
             xqueryCompiler.declareNamespace("lux", "lux");
+            xqueryCompiler.setErrorListener(config.getErrorListener());
         }
         return xqueryCompiler;
     }

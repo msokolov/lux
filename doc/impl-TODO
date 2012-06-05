@@ -1,9 +1,9 @@
 * bugs
 ** visit(Dot) has possibly incorrect resultType (DOCUMENT)
 ** standard function library untested
-A bunch of functions, including collection(), doc(), etc are untested.  We
-don't know if we're doing the right thing in terms of query generation
-based on their args.  See PathOptimizer.fnArgParity
+A bunch of functions are untested.  We don't know if we're doing the right
+thing in terms of query generation based on their args.  See
+PathOptimizer.fnArgParity
 ** failure to optimize deep path query properly
 see the expression in SearchTest.testTrailingStringCall - it ends up
 including some booleans instead of all paths
@@ -16,21 +16,20 @@ The main thing missing is marshalling results from Solr
 This might be working, but we need to test
 ** attribute index support
 This might be working, but we need to test
-** base-uri
-attach a base uri to each result document
-** doc
 * api design / cleanup
 The success of this adventure is going to depend on not only a good
 implementation, but also a nice clean understandable code base so others
 can extend it too.
+** remove these notes from the release
 ** make clean package dependencies 
 *** fill out the generic API
 *** put all the Saxon-specific code in a package
 * better tests generally
 **  Object lifecycle
-Saxon currently holds the DocIdAllocator, but this should really be in
-SaxonContext.  Make sure that long-lived objects stay in Evaluator (Saxon)
-and short-lived ones in Context (SaxonContext).
+Saxon currently holds the DocIdAllocator and CachingDocReader, but these
+should really be an object with query life-span.  Make sure that long-lived
+objects stay in Evaluator (Saxon) and short-lived ones in Context
+(SaxonContext).
 ** search test2
 refactor and merge w/search test - check opto facts against actual behavior
 ** search test all index types
@@ -40,9 +39,12 @@ test all atomic result types
 * new indexes
 ** value indexes
 ** word indexes
+** directory (uri component) index
+also link to collection()?
 ** sorting
 * optimization ideas
 There are a few more things we can optimize using the "basic" indexing setup
+** count(collection())
 ** optimize not(empty(X)) -> exists(X), and not(exists(X)) -> empty(X)
 ** simplify some path queries
 Sometimes we generate a query like 

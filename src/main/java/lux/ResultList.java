@@ -7,8 +7,18 @@ import lux.api.ResultSet;
 
 public class ResultList<T> extends ArrayList<T> implements ResultSet<T> {
     
+    private Exception ex;
+    
     @Override public Iterator<T> iterator () {
         return new DebugIter<T> (super.iterator());
+    }
+    
+    public void setException (Exception ex) {
+        this.ex = ex;
+    }
+    
+    public Exception getException () {
+        return ex;
     }
     
     class DebugIter<S> implements Iterator<S> {

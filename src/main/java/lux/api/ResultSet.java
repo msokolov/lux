@@ -6,6 +6,8 @@ package lux.api;
  */
 public interface ResultSet<T> extends Iterable<T> {
     int size();
+    
+    Exception getException ();
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -18,9 +18,9 @@ import lux.index.XmlField;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrRequest.METHOD;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.SolrRequest.METHOD;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -95,11 +95,25 @@ public abstract class LuxSolrTest {
         assertXPathSearchCount (10, 100, "element", "doc", "//doc[test[number(.) > 5]]");
     }
     
-    @Test public void testQueryMismatch () throws Exception {
+    @Test public void testDocFunction () throws Exception {
+        assertXPathSearchCount (1, 0, "document", "doc", "doc('test50')");        
+        assertXPathSearchCount (0, 0, "error", "document '/foo' not found", "doc('/foo')");  
+    }
+    
+    @Test public void testCollectionFunction () throws Exception {
+        assertXPathSearchCount (1, 1, "xs:string", "solr/conf/schema.xml", "collection()[1]/base-uri()");
+        // TODO: optimize count(collection ())
+        // TODO: return an integer
+        assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())");  
+    }
+    
+    @Test public void testQueryError () throws Exception {
         SolrQuery q = new SolrQuery("lux_elt_name_ms:config");
         q.setParam("qt", getSolrSearchPath());
         q.setParam("defType", "lucene");
+        // TODO: return compile errors in the response; don't throw an exception
         // send an ordinary Lucene query to the XPathSearchComponent
+        // throws a prefix undefined error
         try {
             solr.query (q);
             assertFalse (true);
@@ -136,13 +150,18 @@ public abstract class LuxSolrTest {
         assertEquals (docCount, docMatches);
         NamedList<?> results = (NamedList<?>) rsp.getResponse().get("xpath-results");
         assertEquals (count, results.size());
-        assertEquals (type, results.getName(0));
-        String returnValue = results.getVal(0).toString();
-        if (returnValue.startsWith ("<")) {
-            // assume the returned value is an element - hack to avoid real parsing 
-            assertEquals (value, returnValue.substring(1, returnValue.indexOf('>')));
+        if (type.equals("error")) {
+            String error = (String) rsp.getResponse().get("xpath-error");
+            assertEquals (value, error);
         } else {
-            assertEquals (value, returnValue);
+            assertEquals (type, results.getName(0));
+            String returnValue = results.getVal(0).toString();
+            if (returnValue.startsWith ("<")) {
+                // assume the returned value is an element - hack to avoid real parsing 
+                assertEquals (value, returnValue.substring(1, returnValue.indexOf('>')));
+            } else {
+                assertEquals (value, returnValue);
+            }
         }
     }
 

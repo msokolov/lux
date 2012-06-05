@@ -15,14 +15,7 @@ package lux.saxon;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
-import javax.xml.transform.stream.StreamSource;
-
 import lux.functions.LuxFunctionLibrary;
-
-
 import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 
@@ -30,7 +23,7 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class Config extends Configuration implements URIResolver, EntityResolver {
+public class Config extends Configuration implements EntityResolver {
 
     private final LuxFunctionLibrary luxFunctionLibrary;
     private final Saxon saxon;
@@ -41,16 +34,13 @@ public class Config extends Configuration implements URIResolver, EntityResolver
      */
     public Config (Saxon saxon) {
         super();
+        setURIResolver (saxon);
         this.saxon = saxon;
         luxFunctionLibrary = new LuxFunctionLibrary();;
         // This prevents expansion of internal "parameter entities" among other things
         getParseOptions().setEntityResolver(this);
         optimizer = new Optimizer(this);
-    }
-    
-    public Source resolve(String href, String base) throws TransformerException {
-        return new StreamSource (new ByteArrayInputStream (new byte[0]));
-    }
+    }    
 
     // disable dtd processing
     public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
