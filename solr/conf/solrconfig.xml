@@ -1218,7 +1218,7 @@
      --> 
     <updateRequestProcessorChain name="lux-basic">
        <processor class="lux.solr.XmlUpdateProcessor">
-         <str name="xml-field-name">xml_text</str>
+<!--          <str name="xmlFieldName">lux_xml</str> -->
        </processor>
        <processor class="solr.LogUpdateProcessorFactory" />
        <processor class="solr.RunUpdateProcessorFactory" />
@@ -1299,7 +1299,7 @@
     -->
     
   <searchComponent name="saxon" class="lux.saxon.SaxonSearchComponent">
-    <str name="xmlFieldName">xml_text</str>
+<!--     <str name="xmlFieldName">lux_xml_text</str> -->
   </searchComponent>
   
   <requestHandler name="/xquery" class="solr.SearchHandler">

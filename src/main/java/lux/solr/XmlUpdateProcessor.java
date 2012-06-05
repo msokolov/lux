@@ -39,7 +39,6 @@ import org.apache.solr.util.plugin.SolrCoreAware;
 public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements SolrCoreAware {
 
     private XmlIndexer xmlIndexer;
-    private String xmlFieldName;
     
     @Override
     public void init(@SuppressWarnings("rawtypes") final NamedList args) {
@@ -49,7 +48,8 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
             SolrParams params = SolrParams.toSolrParams(args);
             // accept override from configuration so we can piggyback on existing 
             // document storage
-            xmlFieldName = params.get("xml-field-name", xmlIndexer.getXmlFieldName());
+            String xmlFieldName = params.get("xmlFieldName", xmlIndexer.getXmlFieldName());
+            XmlField.XML_STORE.setName (xmlFieldName);
             // add fields to config??
             // TODO: namespace-awareness?; namespace mapping
             // TODO: read xpath index config
@@ -139,13 +139,13 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
         }
 
         public void processAdd (AddUpdateCommand cmd) throws IOException {
-            Object o = cmd.getSolrInputDocument().getFieldValue(xmlFieldName);
+            Object o = cmd.getSolrInputDocument().getFieldValue(XmlField.XML_STORE.getName());
             if (o != null) {
                 String xml = (String) o;
                 try {
                     xmlIndexer.read (new StringReader(xml));
                 } catch (XMLStreamException e) {
-                    log.error ("Failed to parse " + xmlFieldName, e);
+                    log.error ("Failed to parse " + XmlField.XML_STORE, e);
                 }
                 for (XmlField field : xmlIndexer.getFields()) {
                     for (Object value : xmlIndexer.getFieldValues(field)) {

@@ -17,7 +17,7 @@ import org.apache.solr.schema.FieldProperties;
  */
 public class XmlField {
     // the name of the field as it appears in queries, and in the index
-    private final String name;
+    private String name;
     
     // a collation for ordering strings - placeholder for future implementation
     // private String collation;
@@ -51,6 +51,15 @@ public class XmlField {
 
     public String getName() {
         return name;
+    }
+    
+    /**
+     * The field name may be changed, so that it can be read from configuration.  However, field names
+     * must be stable for a given index installation.
+     * @param name
+     */
+    public void setName (String name) {
+        this.name = name;
     }
 
     public Analyzer getAnalyzer() {
