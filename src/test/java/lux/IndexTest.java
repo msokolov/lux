@@ -10,7 +10,6 @@ import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.index.XmlField;
 import lux.index.XmlIndexer;
 import lux.lucene.LuxSearcher;
 
@@ -33,13 +32,13 @@ public class IndexTest {
 
     @Test
     public void testIndexQNames() throws Exception {
-        buildIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexPaths() throws Exception {
-        XmlIndexer indexer = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
+        XmlIndexer indexer = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
         //printAllTerms();
         indexer.read(getClass().getResourceAsStream("hamlet.xml"));
@@ -52,7 +51,7 @@ public class IndexTest {
 
     @Test
     public void testIndexQNamesAndPaths() throws Exception {
-        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
     }
 

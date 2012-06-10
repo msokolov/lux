@@ -62,9 +62,6 @@ especially collapsing document-sorting expressions
 ** Document Set
 using hamlet for lucene tests, solr config + fake docs for solr
 ** Performance Measurement
-** Query Set
-evolving; leverage XQTS? Is there a useful XPath-only subset? I don't see
-that.  We could still generate dummy data by ramifying the XQTS data?
 * Basic Implementation
 ** SOLR Pagination
 when start > 1, change doc-start = 1 and scan forward

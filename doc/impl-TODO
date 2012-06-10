@@ -12,7 +12,7 @@ When we change them our tests break!
 * missing features
 ** support for full set of atomic types
 The main thing missing is marshalling results from Solr
-** namespace support
+** namespace support (in indexes)
 This might be working, but we need to test
 ** attribute index support
 This might be working, but we need to test
@@ -101,11 +101,10 @@ evaluation, and we have separate lux:count and lux:exists methods.
 This should help work around some of the shortcomings of Saxon's HE
 optimizer (re: documentSort) and let us skip document retrieval for docs
 prior to the starting doc.
-* improve tests
-** leverage XQTS
-*** Test performance on XQTS with Saxon alone, and with Lux/Saxon
+* testing
+** Test performance on XQTS with Saxon alone, and with Lux/Saxon
 show impact of Lux on compilation speed
-*** develop an XQTS database query test
+** develop an XQTS database query test
 Ignore queries that use the emptydocument as input Run the other queries
 against the entire test set as context: ie against the sequence of
 documents that is collection(xqts) and then run using Lux.  Make sure the
@@ -113,12 +112,3 @@ results are consistent; compare timing.
 ** test namespaces and attributes
 queries w/namespaces and attributes have not been tested.
 Try indexing and retrieving the reader-test documents
-* perf test
-some kind of comparison with something
-* API packaging
-** rename Saxon
-** configuration
-*** Object Model
-Saxon Xdm vs JDOM vs DOM vs ?
-*** language
-XPath / XQuery

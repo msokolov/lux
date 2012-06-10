@@ -17,6 +17,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import lux.xml.JDOMBuilder;
+import lux.xml.Serializer;
 import lux.xml.XmlReader;
 
 import org.apache.lucene.document.Field;
@@ -34,6 +35,7 @@ public class XmlIndexer {
     
     private XmlReader xmlReader;
     private JDOMBuilder jdomBuilder;
+    private Serializer serializer;
     private XMLOutputter jdomSerializer;
     private XmlPathMapper pathMapper;
     private List<XmlField> fields = new ArrayList<XmlField>();
@@ -79,6 +81,8 @@ public class XmlIndexer {
         }
         if (isOption (STORE_XML)) {
             addField(XmlField.XML_STORE);
+            serializer = new Serializer();
+            xmlReader.addHandler(serializer);
         }
         pathMapper.setNamespaceAware((options & NAMESPACE_AWARE) != 0);        
         if (isOption (BUILD_JDOM)) {
@@ -137,6 +141,9 @@ public class XmlIndexer {
             return pathMapper.getPathCounts().keySet();
         }
         if (XmlField.XML_STORE.equals(field)) {
+            if (serializer != null) {
+                return Collections.singletonList(serializer.getDocument());
+            }
             if (jdomSerializer != null) {
                 return Collections.singletonList(jdomSerializer.outputString(getJDOM()));
             } else {
@@ -165,12 +172,21 @@ public class XmlIndexer {
         reset();
         uri = "lux:/" + uri;
         read(new StringReader(xml));
-        addLuceneDocument(indexWriter, xml, uri);
+        addLuceneDocument(indexWriter, uri);
+    }
+    
+    public void indexDocument(IndexWriter indexWriter, String uri, InputStream xmlStream) throws XMLStreamException, CorruptIndexException, IOException {
+        reset();
+        String path = uri.startsWith("lux:/") ? uri.substring(5) : uri;
+        path = path.replace('\\', '/');
+        read(xmlStream);
+        addLuceneDocument(indexWriter, path);
     }
 
-    private void addLuceneDocument(IndexWriter indexWriter, String xml, String uri) throws CorruptIndexException, IOException {
+    private void addLuceneDocument(IndexWriter indexWriter, String uri) throws CorruptIndexException, IOException {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
         doc.add (new Field (XmlField.URI.getName(), uri, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
+        String xml = (String) getFieldValues(XmlField.XML_STORE).iterator().next();
         doc.add (new Field (XmlField.XML_STORE.getName(), xml, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));        
         for (XmlField field : getFields()) {
             for (Object value : getFieldValues(field)) {

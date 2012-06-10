@@ -3,102 +3,28 @@ package lux.xqts;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Map;
-
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.TransformerException;
 
 import lux.api.QueryContext;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
-import lux.index.XmlIndexer;
-import lux.lucene.LuxSearcher;
-import lux.saxon.Saxon;
-import lux.saxon.Saxon.Dialect;
 import lux.saxon.SaxonExpr;
 import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
-import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
-import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmValue;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.store.RAMDirectory;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestRunner {
+public class TestRunner extends RunnerBase {
 
-    protected static Catalog catalog;
-    private static RAMDirectory dir;
-    private static LuxSearcher searcher;
-    private static Saxon eval;
-    private static int numtests;
-    private static int numfailed;
-    private static int numignored;
-    private boolean terminateOnException = true;
-    private boolean printDetailedDiagnostics = false;
-    
     @BeforeClass
-    public static void setup () throws Exception {
-        eval = new Saxon(Dialect.XQUERY_1);
-        dir = new RAMDirectory();
-        // This indexer does nothing, the effect of which is to disable Lux search optimizations for
-        // absolute expressions depending on the context. This makes it possible to evaluate tests that
-        // make use of the dynamic context.  Thus we're only really testing the Translator here, and not
-        // the Optimizer or Query components of Lux.
-        XmlIndexer indexer = new XmlIndexer (0);
-        catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", eval.getProcessor());
-        indexDirectory (indexer, catalog);
-        searcher = new LuxSearcher(dir);
-        eval.setIndexer (indexer);
-        eval.setSearcher(searcher);
-        eval.getConfig().setErrorListener(new ErrorIgnorer ());
-        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, true);
-        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_INHERIT_NAMESPACES, true);
-        numtests = 0;
-        numignored = 0;
-        numfailed = 0;
-    }
-    
-    private static void indexDirectory(XmlIndexer indexer, Catalog catalog2) throws IOException {
-        IndexWriter indexWriter = indexer.getIndexWriter(dir);
-/*
-        File dir = new File(catalog.getDirectory() + "/TestSources");
-        int count = 0;
-        System.out.println ("indexing test sources...");        
-        for (File source : dir.listFiles()) {
-            if (! source.getName().endsWith(".xml")) {
-                // skip the dtds and schemas and xquery files
-                continue;
-            }
-            try {
-                indexer.indexDocument (indexWriter, source.getName(), new FileInputStream(source));
-            } catch (XMLStreamException e) {
-                System.err.println ("Failed to index " + source.getName() + ": " + e.getMessage());
-            }
-            ++count;
-        }
-        System.out.println ("indexed " + count + " documents");
-*/
-        indexWriter.commit();
-        indexWriter.close();
-    }
-
-    @AfterClass 
-    public static void cleanup () throws Exception {
-        //searcher.close();
-        //dir.close();
-        System.out.println ("Ran " + numtests + " tests");
-        System.out.println (numfailed + " tests failed; " + numignored + " ignored");
+    public static void setup() throws Exception {
+        // By default, no indexes are created, and no Lux query optimizations are performed.
+        setup(0, "TestSources");
     }
 
     private boolean runTest (String caseName) throws Exception {
@@ -115,26 +41,16 @@ public class TestRunner {
         }
         QueryContext context = new QueryContext();
         try {
-            if (test1.getExternalVariables() != null) {
-                for (Map.Entry<String,String> binding : test1.getExternalVariables().entrySet()) {
-                    String filename = binding.getValue();
-                    XdmItem item;
-                    if (filename.endsWith(".xq")) {
-                        String text = IOUtils.toString (new FileInputStream(filename));
-                        SaxonExpr expr = (SaxonExpr) eval.compile(text);
-                        item = (XdmItem) expr.evaluate(null).iterator().next();
-                    } else {
-                        item = (XdmNode) eval.getBuilder().build(new InputStreamReader(new FileInputStream (filename)), filename);
-                    }
-                    context.bindVariable(new QName(binding.getKey()), item);                    
-                }
-            }
+            bindExternalVariables(test1, context);
             SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
             context.setContextItem(test1.getContextItem());
             //System.out.println (expr);
             QueryStats stats = new QueryStats();
             eval.setQueryStats(stats);
             ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, context);
+            if (results.getException() != null) {
+                throw results.getException();
+            }
             Boolean comparedEqual = test1.compareResult (results);
             if (comparedEqual == null || comparedEqual) {
                 //System.out.println (test1.getName() + " OK in " + stats.totalTime + "ms");
@@ -217,7 +133,8 @@ public class TestRunner {
         // becomes:
         //        declare namespace zz="http://saxon.sf.net/";
         //        (<e >{() }</e>)/(let $zz:zz_typeswitchVar := self::node() return if ($zz:zz_typeswitchVar instance of node()) then (.) else (1))
-        assertTrue (runTest ("K2-sequenceExprTypeswitch-14")); 
+        //assertTrue (runTest ("K2-sequenceExprTypeswitch-14"));
+        assertTrue (runTest ("fn-id-dtd-5"));
     }
     
     @Test public void testGroup () throws Exception {
@@ -228,31 +145,20 @@ public class TestRunner {
         //runTestGroup ("Expressions");
     }
     
-    static class ErrorIgnorer implements ErrorListener {
-        
-        private boolean showErrors = false;
-        
-        public void warning(TransformerException exception) throws TransformerException {
-            if (showErrors) {
-                System.err.println (exception.getMessageAndLocation());
-            }
-        }
-
-        public void setShowErrors(boolean b) {
-            this.showErrors = b;    
-        }
-
-        public void error(TransformerException exception) throws TransformerException {
-            if (showErrors) {
-                System.err.println (exception.getMessageAndLocation());
-            }
-        }
-
-        public void fatalError(TransformerException exception) throws TransformerException {
-            if (showErrors) {
-                System.err.println (exception.getMessageAndLocation());
-            }
-        }
+    /*
+     * Run test cases, replacing the context item with collection().
+     * Compare results and timing using Lux with results and timing using Saxon
+     * alone fetching files from the file system.
+     * 
+     * To do this, we need to:
+     * 1. Change the processing of context items when we load the tests to bind external variables to collection()
+     * 2. Change the test runner so it compares results from Lux and Saxon (not from XQTS)
+     * 2a. the test runner should skip tests that throw errors, and those that use the emptydoc as context
+     * 3. Change setup() so it actually indexes the content and optimizes the queries
+     * 
+     * We also need to update Lux so that it optimizes (specifically) the use of collection() via a variable.
+     */
+    @Test public void testBenchmark () throws Exception {
         
     }
     

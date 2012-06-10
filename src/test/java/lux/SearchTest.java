@@ -94,6 +94,12 @@ public class SearchTest extends SearchBase {
         // path indexes make this exact
         ResultSet<?> results = assertSearch ("/ACT", QUERY_EXACT);
         assertEquals (elementCounts.get("ACT") + 0, results.size());
+        // Make sure that collection() is optimized
+        results = assertSearch ("collection()/ACT", QUERY_EXACT);
+        assertEquals (elementCounts.get("ACT") + 0, results.size());
+        // and that references to variables are optimized
+        results = assertSearch ("let $context := collection() return $context/ACT", QUERY_EXACT);
+        assertEquals (elementCounts.get("ACT") + 0, results.size());
     }
     
     @Test

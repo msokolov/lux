@@ -71,8 +71,9 @@ we got it down to 147 w/44 ignored.  Now 7 tests fail.
 *** 3 are due to no support for type in:
 element(foo,xs:type) 
 *** 2 are due to an unexplained compile problem with the context item (.)
-Then, running on a larger test suite: Ran 18623 tests
-163 tests failed (99+% pass) - a lot of these seem to be test harness issues
+Then, running on a larger test suite: Ran 18623 tests; 29 tests fail -
+mostly these are related to collection() and a few unicode surrogate
+issues.
 * lux components
 ** Translator
 converts Saxon's internal Expression tree to a Lux AbstractExpression tree.

@@ -1,0 +1,10 @@
+<test xmlns="http://lux.net/#test" id="test">
+  <!-- this is a comment -->
+  <x:title xmlns:x="http://lux.net{test}">TEST</x:title>
+  <entities>&amp;>0</entities>
+  This is some markup &lt;that> is escaped
+  <?process this ?>
+  <entities xmlns="#2" xmlns:y="#y" y:y="y" id="2">ģ</entities>
+  <y:y xmlns:y="#z"></y:y>
+  The end.
+</test>

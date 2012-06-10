@@ -318,7 +318,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(FunCall funcall) {
         QName name = funcall.getName();
         // Try special function optimizations, like count(), exists(), etc.
-        FunCall luxfunc = optimizeFunCall (funcall);
+        AbstractExpression luxfunc = optimizeFunCall (funcall);
         if (luxfunc != funcall) {
             return luxfunc;
         }
@@ -369,9 +369,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @return an optimized function, or the original function call
      */
     
-    public FunCall optimizeFunCall (FunCall funcall) {
+    public AbstractExpression optimizeFunCall (FunCall funcall) {
         AbstractExpression[] subs = funcall.getSubs();
-        if (subs.length != 1 || ! subs[0].isAbsolute()) {            
+        if (subs.length > 1 || (subs.length == 1 && !subs[0].isAbsolute())) {
             return funcall;
         }
         XPathQuery query = pop();
@@ -398,10 +398,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 qname = FunCall.LUX_EXISTS;
             }
             else if (funcall.getName().equals(FunCall.FN_COLLECTION)) {
+                // We ignore any arguments to collection()
+                push (MATCH_ALL);
+                return new Root();
+                /*
                 functionFacts = XPathQuery.DOCUMENT_RESULTS;
                 returnType = ValueType.DOCUMENT;
                 // TODO: treat argument as lucene filter query?
                 qname = FunCall.LUX_SEARCH;
+                */
             }
             if (qname != null) {
                 long facts;

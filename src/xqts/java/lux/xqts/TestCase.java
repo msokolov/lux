@@ -8,10 +8,14 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+
+import lux.api.ResultSet;
+import lux.xqts.TestCase.VariableBinding.Type;
 
 import net.sf.saxon.expr.sort.CodepointCollator;
 import net.sf.saxon.expr.sort.GenericAtomicComparer;
@@ -20,6 +24,7 @@ import net.sf.saxon.query.QueryResult;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
@@ -44,13 +49,14 @@ public class TestCase {
     private final XdmValue contextItem;
     private final ComparisonMode comparisonMode;
     
-    private HashMap<String,String> externalVariables;
+    private HashMap<String,VariableBinding> externalVariables;
     
     private final String queryText;
     //private final String inputFileText;
     private String[] outputFileText;
     
     private final boolean expectError;
+    private String principalData;
 
     static final String XQTS_NS = "http://www.w3.org/2005/02/query-test-XQTSCatalog";
     static final QName COMPARE = new QName("compare");
@@ -59,9 +65,11 @@ public class TestCase {
     static final QName FILE_PATH = new QName("FilePath");
     static final QName NAME = new QName("name");
     static final QName VARIABLE = new QName("variable");
+    static final QName ROLE = new QName("role");
     static final QName QUERY = new QName(XQTS_NS, "query");
     static final QName INPUT_QUERY = new QName(XQTS_NS, "input-query");
     static final QName INPUT_FILE = new QName(XQTS_NS, "input-file");
+    static final QName INPUT_URI = new QName(XQTS_NS, "input-URI");
     static final QName OUTPUT_FILE = new QName(XQTS_NS, "output-file");
     static final QName CONTEXT_ITEM = new QName(XQTS_NS, "contextItem");
     private static final QName EXPECTED_ERROR = new QName(XQTS_NS, "expected-error");   
@@ -75,7 +83,7 @@ public class TestCase {
         path = testCase.getAttributeValue(FILE_PATH);
         scenario = testCase.getAttributeValue(SCENARIO);
         xpath2 = Boolean.valueOf(testCase.getAttributeValue(IS_X_PATH2));
-        externalVariables = new HashMap<String, String>();
+        externalVariables = new HashMap<String, VariableBinding>();
         this.catalog = catalog;
         
         XdmNode query = (XdmNode) testCase.axisIterator(Axis.CHILD, QUERY).next();
@@ -84,7 +92,7 @@ public class TestCase {
         XdmSequenceIterator context = testCase.axisIterator(Axis.CHILD, CONTEXT_ITEM);
         if (context.hasNext()) {
             String contextItemFileName = context.next().getStringValue();
-            contextItem = catalog.getBuilder().build(new File(catalog.getDirectory() + "/TestSources/" + contextItemFileName + ".xml"));
+            contextItem = catalog.getBuilder().build(new File(catalog.getSourceFileByID(contextItemFileName)));
         } else {
             contextItem = null;
         }
@@ -92,29 +100,45 @@ public class TestCase {
         
         File queryFile = new File (getQueryPath(queryName, catalog));
         String text = IOUtils.toString (new FileInputStream(queryFile));
-        
-        XdmSequenceIterator input = testCase.axisIterator(Axis.CHILD, INPUT_FILE);
-        XdmNode inputFileNode = null;
-        while (input.hasNext()) {
-            inputFileNode = (XdmNode) input.next();
-            String inputFileName = inputFileNode.axisIterator(Axis.CHILD).next().getStringValue();
-            String inputVariable = inputFileNode.getAttributeValue(VARIABLE);
-            externalVariables.put(inputVariable, catalog.getDirectory() + "/TestSources/" + inputFileName + ".xml");
-        }
         queryText = text;
+        
+        bindExternalVariables(testCase, catalog, INPUT_FILE, VariableBinding.Type.FILE);
+        bindExternalVariables(testCase, catalog, INPUT_URI, VariableBinding.Type.URI);
         
         // Are there input queries? If so, record the bindings for later evaluation
         XdmSequenceIterator inputQuery = testCase.axisIterator(Axis.CHILD, INPUT_QUERY);
         while (inputQuery.hasNext()) {
             XdmNode q = (XdmNode) inputQuery.next();
             String filename = q.getAttributeValue(NAME);
-            externalVariables.put(q.getAttributeValue(VARIABLE), getQueryPath(filename, catalog));
+            VariableBinding binding = new VariableBinding();
+            binding.type = Type.FILE;
+            binding.value = getQueryPath(filename, catalog);
+            externalVariables.put(q.getAttributeValue(VARIABLE), binding);
         }
         
         XdmSequenceIterator errors = testCase.axisIterator(Axis.CHILD, EXPECTED_ERROR);
         expectError = errors.hasNext();
         
         catalog.putTestCase(name, this);
+    }
+
+    private void bindExternalVariables(XdmNode testCase, Catalog catalog, QName elementName, Type type) {
+        XdmSequenceIterator input = testCase.axisIterator(Axis.CHILD, elementName);
+        XdmNode inputFileNode = null;
+        while (input.hasNext()) {
+            inputFileNode = (XdmNode) input.next();
+            String inputVariable = inputFileNode.getAttributeValue(VARIABLE);
+            String role = inputFileNode.getAttributeValue(ROLE);
+            String inputFileName = inputFileNode.axisIterator(Axis.CHILD).next().getStringValue();
+            VariableBinding binding = new VariableBinding();
+            binding.type = type;
+            binding.role = role;
+            binding.value = catalog.getSourceFileByID(inputFileName);
+            externalVariables.put(inputVariable, binding);
+            if ("principal-data".equals (role)) {
+                principalData = inputFileName;
+            }
+        }
     }
 
     private String getQueryPath(String filename, Catalog catalog) {
@@ -171,6 +195,20 @@ public class TestCase {
 
     public String getQueryText() {
         return queryText;
+    }
+
+    public String getBenchmarkQueryText() {
+        String benchQueryText = queryText;
+        for (Map.Entry<String,VariableBinding> entry : externalVariables.entrySet()) {
+            VariableBinding binding = entry.getValue();
+            String name = entry.getKey();
+            if ("principal-data".equals (binding.role)) {
+                benchQueryText = benchQueryText.replace
+                    ("declare variable $" + name + " external;",
+                     "declare variable $" + name + " := collection();");
+            }
+        }
+        return benchQueryText;
     }
 
     public boolean isXpath2() {
@@ -279,8 +317,10 @@ public class TestCase {
     
     private boolean areNodesEqual (XdmNode node1, XdmNode node2) throws XPathException {
         if (node2.getNodeKind() != XdmNodeKind.DOCUMENT) {
-            // node1 will always be a document - compare against its root element
-            node1 = (XdmNode) node1.axisIterator(Axis.CHILD).next();
+            // compare root elements
+            if (node1.getNodeKind() == XdmNodeKind.DOCUMENT) {
+                node1 = (XdmNode) node1.axisIterator(Axis.CHILD).next();
+            }
         }
         return DeepEqual.deepEquals(
                 SingletonIterator.makeIterator(node1.getUnderlyingNode()),
@@ -299,6 +339,10 @@ public class TestCase {
         return s.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;",">").replace("\r\n", "\n");
     }
     
+    public String getPrincipalData () {
+        return principalData;
+    }
+    
     public XdmValue getContextItem () {
         return contextItem;
     }
@@ -311,10 +355,49 @@ public class TestCase {
         return expectError;
     }
     
-    public HashMap<String,String> getExternalVariables () {
+    public HashMap<String,VariableBinding> getExternalVariables () {
         return externalVariables;
     }
- 
+
+    static class VariableBinding {
+        enum Type { URI, FILE };
+        String value;
+        String role;
+        Type type;
+    }
+
+    public Boolean compareResult(ResultSet<?> results, XdmValue value) throws XPathException, SaxonApiException {
+        XdmSequenceIterator iter = value.iterator();
+        for (Object o: results) {
+            XdmItem result = (XdmItem) o;
+            XdmItem item = iter.next();
+            if (item.isAtomicValue()) {
+                if (! (item.getStringValue().equals(result.getStringValue()))) {
+                    System.err.println (item.getStringValue() + " is not " + result.getStringValue());
+                    return false;
+                }
+            }
+            else {
+                XdmNode expected = nodeFor(item);
+                XdmNode node = nodeFor((XdmItem) result);
+                if (! areNodesEqual (expected, node)) {
+                    //System.err.println (node.toString() + " is not " + expected.toString());
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private XdmNode nodeFor(XdmItem item) throws SaxonApiException {
+        XdmNode itemNode;
+        if (item.isAtomicValue()) {
+            itemNode = createWrappedNode(item);
+        } else {
+            itemNode = (XdmNode) item;
+        }
+        return itemNode;
+    } 
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -793,9 +793,9 @@ public class SaxonTranslator {
             if (len == 0) {
                 return new LiteralExpression();
             }
+            SequenceIterator<?> iter = value.iterate();
             if (len > 1) {
                 ArrayList<LiteralExpression> items = new ArrayList<LiteralExpression>();
-                SequenceIterator<?> iter = value.iterate();
                 Item<?> member;
                 while ((member = iter.next()) != null) {
                     if (member instanceof AtomicValue) {
@@ -806,7 +806,7 @@ public class SaxonTranslator {
                 }
                 return new Sequence (items.toArray(new LiteralExpression[0]));
             }
-            return exprFor ((AtomicValue) value);
+            return exprFor ((AtomicValue) iter.next());
         } catch (XPathException e) {
             throw new LuxException (e);
         }

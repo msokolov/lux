@@ -1,8 +1,4 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-package lux;
+package lux.xml;
 
 import static org.junit.Assert.*;
 
@@ -16,6 +12,7 @@ import lux.index.XmlPathMapper;
 import lux.xml.JDOMBuilder;
 import lux.xml.XmlReader;
 
+import org.apache.commons.io.IOUtils;
 import org.jdom.Document;
 import org.junit.Test;
 
@@ -47,6 +44,10 @@ public class XmlReaderTest {
         assertTrue (pathMapper.getEltQNameCounts().isEmpty());
         assertTrue (pathMapper.getAttQNameCounts().isEmpty());
         
+        String xml = serializer.getDocument();
+        in = getClass().getClassLoader().getResourceAsStream ("lux/reader-test-normal.xml");
+        String original = IOUtils.toString(in);
+        assertEquals (original, xml);
     }
     
     @Test public void testReadDocumentNamespaceAware () throws Exception {
@@ -67,6 +68,11 @@ public class XmlReaderTest {
         assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} entities{%232} @id"));
         assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} entities{http%3A%2F%2Flux.net%2F%23test}"));
         
+
+        String xml = serializer.getDocument();
+        in = getClass().getClassLoader().getResourceAsStream ("lux/reader-test-ns-normal.xml");
+        String original = IOUtils.toString(in);
+        assertEquals (original, xml);
     }
     
     @Test public void testReadDocumentNamespaceUnaware () throws Exception {
@@ -88,17 +94,22 @@ public class XmlReaderTest {
         assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test x:title"));
         
     }
+    
+    private XmlReader xmlReader;
+    private Serializer serializer;
 
     private Document readDocument(InputStream in, boolean namespaceAware) throws XMLStreamException {
-        XmlReader reader = new XmlReader ();
+        xmlReader = new XmlReader ();
         // build a JDOM in case we want to index XPaths
         JDOMBuilder jdomBuilder = new JDOMBuilder();
         // accumulate XML paths and QNames for indexing
         pathMapper = new XmlPathMapper();
-        reader.addHandler (jdomBuilder);
-        reader.addHandler (pathMapper);
+        xmlReader.addHandler (jdomBuilder);
+        xmlReader.addHandler (pathMapper);
         pathMapper.setNamespaceAware(namespaceAware);
-        reader.read (new InputStreamReader (in));
+        serializer = new Serializer();
+        xmlReader.addHandler(serializer);
+        xmlReader.read (new InputStreamReader (in));
      
         Document doc = jdomBuilder.getDocument();
         return doc;
@@ -109,6 +120,8 @@ public class XmlReaderTest {
     }
  
 
-}/* This Source Code Form is subject to the terms of the Mozilla Public
+}
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */

@@ -1,0 +1,9 @@
+<test id="test">
+  <!-- this is a comment -->
+  <title>TEST</title>
+  <entities>&amp;>0</entities>
+  This is some markup &lt;that> is escaped
+  <?process this ?>
+  <entities id="2">ģ</entities>
+  The end.
+</test>

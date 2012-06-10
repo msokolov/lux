@@ -19,10 +19,22 @@ public class LuxSearcher extends IndexSearcher {
       super (searcher.getIndexReader());
   }
 
+
+  /**
+   * @param query the Lucene query
+   * @return the unordered results of the query as a Lucene DocIdSetIterator.  Unordered means the order
+   * is not predictable and may change with subsequent calls. 
+   * @throws IOException
+   */
   public DocIdSetIterator search (Query query) throws IOException {
       return new DocIterator (query, false);
   }
 
+  /**
+   * @param query the Lucene query
+   * @return the results of the query as a Lucene DocIdSetIterator in docID order
+   * @throws IOException
+   */
   public DocIdSetIterator searchOrdered (Query query) throws IOException {
       return new DocIterator (query, true);
   }

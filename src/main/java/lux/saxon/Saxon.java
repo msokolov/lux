@@ -9,6 +9,7 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
 import lux.PathOptimizer;
+import lux.XPathQuery;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
@@ -24,7 +25,10 @@ import lux.xml.XmlBuilder;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
 import lux.xquery.XQuery;
+import net.sf.saxon.expr.XPathContext;
+import net.sf.saxon.lib.CollectionURIResolver;
 import net.sf.saxon.lib.FeatureKeys;
+import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -33,6 +37,7 @@ import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.DocIdSetIterator;
@@ -42,7 +47,7 @@ import org.apache.lucene.search.TermQuery;
  * Implementation of a lux query/expression evaluator using Saxon
  *
  */
-public class Saxon extends Evaluator implements URIResolver {
+public class Saxon extends Evaluator implements URIResolver, CollectionURIResolver {
 
     private Processor processor;
     public Processor getProcessor() {
@@ -60,17 +65,22 @@ public class Saxon extends Evaluator implements URIResolver {
     
     private final Dialect dialect;
     
+    private CollectionURIResolver defaultCollectionURIResolver;
+    
     public Saxon(LuxSearcher searcher, XmlIndexer indexer, Dialect dialect) {
         super (searcher, indexer);
         config = new Config(this);
         config.setDocumentNumberAllocator(new DocIDNumberAllocator());
         config.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
+        defaultCollectionURIResolver = config.getCollectionURIResolver();
+        config.setCollectionURIResolver(this);
         processor = new Processor (config);
         processor.registerExtensionFunction(new LuxSearch());
         processor.registerExtensionFunction(new LuxCount());
-        processor.registerExtensionFunction(new LuxExists()); 
+        processor.registerExtensionFunction(new LuxExists());
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
+        reinitDocReader();
         this.dialect = dialect;
     }
     
@@ -89,7 +99,12 @@ public class Saxon extends Evaluator implements URIResolver {
         XQUERY_1
     }
 
+    /**
+     * implements URIResolver so as to resolve uris in service of fn:doc()
+     */
     public Source resolve(String href, String base) throws TransformerException {
+        String path = href.startsWith("lux:/") ? href.substring(5) : href;
+        path = path.replace('\\', '/');
         try {
             DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(XmlField.URI.getName(), href)));
             int docID = disi.nextDoc();
@@ -102,7 +117,20 @@ public class Saxon extends Evaluator implements URIResolver {
             throw new TransformerException(e);
         }
     }
-    
+
+    /**
+     * implements CollectionURIResolver so as to resolve uris in service of fn:collection().
+     * For now, all collections retrieve all documents.  TODO: implement directory-based collections.
+     */
+    public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
+        if (href.startsWith("lux:")) {
+            String path = href.substring(5);
+            path = path.replace('\\', '/');
+            return new LuxSearch().iterate(XPathQuery.MATCH_ALL, this);
+        }
+        return defaultCollectionURIResolver.resolve(href, base, context);
+    }
+        
     @Override
     public SaxonExpr compile(String exprString) throws LuxException {
         switch (dialect) {
@@ -163,7 +191,6 @@ public class Saxon extends Evaluator implements URIResolver {
 
     @Override
     public ResultSet<?> iterate(Expression expr, QueryContext context) { 
-        docReader = new CachingDocReader(getSearcher().getIndexReader(), getBuilder(), getIndexer());
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         try {
             return saxonExpr.evaluate(context);
@@ -171,7 +198,6 @@ public class Saxon extends Evaluator implements URIResolver {
             return new XdmResultSet(e);
         } finally {
             docReader.clear();
-            docReader = null;
         }
     }
 
@@ -246,6 +272,27 @@ public class Saxon extends Evaluator implements URIResolver {
         return xpathCompiler;
     }
     
+    @Override 
+    public void setSearcher (LuxSearcher searcher) {
+        super.setSearcher(searcher);
+        reinitDocReader();
+    }
+
+    private void reinitDocReader() {
+        if (getSearcher() != null && getIndexer() != null) {
+            docReader = new CachingDocReader(getSearcher().getIndexReader(), getBuilder(), getIndexer());
+        } else {
+            docReader = null;
+        }
+    }
+    
+
+    @Override 
+    public void setIndexer(XmlIndexer indexer) {
+        super.setIndexer(indexer);
+        reinitDocReader();
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -84,7 +84,7 @@ public class XPathQuery extends Query {
     public static final int DOCUMENT_RESULTS=0x00000018;
     
 
-    private final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT, true);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT, true);
     
     private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.NODE, true);
 
