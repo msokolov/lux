@@ -3,6 +3,7 @@ package lux.xml;
 import static org.junit.Assert.*;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -131,6 +132,19 @@ public class XmlReaderTest {
         assertEquals ("{} test entities|&>0\u0000\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(2));
         assertEquals ("{} test token|ȑȒȓȔȕȖȗȘ", xpathValueMapper.getPathValues().get(5));
         assertEquals ("{} test token|\u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", xpathValueMapper.getPathValues().get(5));
+    }
+    
+    @Test
+    public void testXPathValueHashString () throws Exception {
+        char[] buf = new char[XPathValueMapper.HASH_SIZE];
+        XPathValueMapper.hashString("        12345678".toCharArray(), buf);
+        assertEquals ("\u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", new String(buf));
+        Arrays.fill(buf, '\0');
+        XPathValueMapper.hashString("        !!!!!!!!".toCharArray(), buf);
+        assertEquals ("\u0201\u0201\u0201\u0201\u0201\u0201\u0201\u0201", new String(buf));
+        Arrays.fill(buf, '\0');
+        XPathValueMapper.hashString("!!!!!!!!        ".toCharArray(), buf);
+        assertEquals ("\u020f\u020f\u020f\u020f\u020f\u020f\u020f\u020f", new String(buf));
     }
 
     private void handleDocument(StAXHandler handler, String path) throws XMLStreamException {

@@ -17,7 +17,7 @@ import javax.xml.stream.XMLStreamReader;
  */
 public class XPathValueMapper extends XmlPathMapper {
     
-    private static final int HASH_SIZE = 8;
+    public static final int HASH_SIZE = 8;
     int depth;
     int[] valueOffsets = new int[16];
     char[][] values = new char[16][HASH_SIZE];
@@ -82,7 +82,7 @@ public class XPathValueMapper extends XmlPathMapper {
         }
     }
     
-    private char[] hashString(char[] value, char[] buf) {
+    public static char[] hashString(char[] value, char[] buf) {
         Arrays.fill(buf, '\u0000');
         for (int i = 0; i < value.length && i < HASH_SIZE; i++) {
             buf[i % HASH_SIZE] = value[i];
