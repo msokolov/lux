@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.index;
 
 import static javax.xml.stream.XMLStreamConstants.*;
@@ -18,13 +14,10 @@ import lux.xml.StAXHandler;
 
 /**
  * Accumulate counts of QNames and QName paths.
- * 
- * @author sokolov
- *
  */
 public class XmlPathMapper implements StAXHandler {
     
-    private StringBuilder currentPath = new StringBuilder();
+    protected StringBuilder currentPath = new StringBuilder();
     private HashMap<QName, Integer> eltQNameCounts = new HashMap<QName, Integer>();
     private HashMap<QName, Integer> attQNameCounts = new HashMap<QName, Integer>();
     private HashMap<String, Integer> pathCounts = new HashMap<String, Integer>();
@@ -41,7 +34,7 @@ public class XmlPathMapper implements StAXHandler {
         return pathCounts;
     }
     
-    private boolean namespaceAware = false;
+    private boolean namespaceAware = true;
 
     /*
      * If false, the default, QNames are represented using prefix:localName without regard to
@@ -80,7 +73,7 @@ public class XmlPathMapper implements StAXHandler {
         }
     }
 
-    private QName getEventAttQName(XMLStreamReader reader, int i) {
+    protected QName getEventAttQName(XMLStreamReader reader, int i) {
         return createQName (reader.getAttributeLocalName(i), reader.getAttributePrefix(i), reader.getAttributeNamespace(i));
     }
 
@@ -115,7 +108,7 @@ public class XmlPathMapper implements StAXHandler {
      * @param qname
      * @return the encoded qname
      */
-    private String encodeQName (QName qname) {
+    protected String encodeQName (QName qname) {
         String encns = null;
         if (!isNamespaceAware()) {
             if (qname.getPrefix().isEmpty()) {

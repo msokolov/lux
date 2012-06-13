@@ -34,6 +34,7 @@ public class RunnerBase {
     private static RAMDirectory dir;
     private static LuxSearcher searcher;
     protected static Saxon eval;
+    protected static int collectionSize;
     protected static int numtests;
     protected static int numfailed;
     private static int numignored;
@@ -70,11 +71,11 @@ public class RunnerBase {
         File[] listing = dir.listFiles();
         // swap the order - Saxon iterates over directories in descending alpha order? and we need to match that
         // so the results will be comparable
-        for (int i = 0; i < listing.length/2; i++) {
+        /*for (int i = 0; i < listing.length/2; i++) {
             File swap = listing[i];
             listing[i] = listing [listing.length - i - 1];
             listing [listing.length - i - 1] = swap;
-        }
+        }*/
         for (File source : listing) {
             if (! source.getName().endsWith(".xml")) {
                 // skip the dtds and schemas and xquery files
@@ -87,6 +88,7 @@ public class RunnerBase {
             }
             ++count;
         }
+        collectionSize = count;
         System.out.println ("indexed " + count + " documents");
         indexWriter.commit();
         indexWriter.close();

@@ -11,7 +11,7 @@ import org.apache.lucene.analysis.TokenStream;
 /**
  * pretty much a clone of SolrIndexAnalyzer, but without the rest of solr.
  * If no analyzer is registered for a field name, a default analyzer is returned.  The
- * default analyzer is teh analyzer mapped to the null key.  By default, null is mapped to
+ * default analyzer is the analyzer mapped to the null key.  By default, null is mapped to
  * an instance of KeywordAnalyzer (an analyzer that returns a single token for the entire field value).
  */
 public final class MultiFieldAnalyzer extends Analyzer {

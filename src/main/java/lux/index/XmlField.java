@@ -41,6 +41,11 @@ public class XmlField {
         this.isStored = isStored;
     }
     
+    // TODO: Formalize the relationship of each of these fields to the corresponding StAXHandler that extracts its values.
+    // Also come up with a naming convention that makes that pattern clearer.
+    // ELT_QNAME, ATT_QNAME, PATH <-> lux.index.XmlPathMapper
+    // XML_STORE <-> lux.xml.Serializer
+    // PATH_VALUE <-> ? lux.index.XPathValueMapper ?
     // TODO: make uri field unique.  Also - can we fallback and re-use "uri" if it exists???
     public final static XmlField URI = new XmlField ("lux_uri", new KeywordAnalyzer(), Store.YES);
     public final static XmlField ELT_QNAME = new XmlField ("lux_elt_name", new KeywordAnalyzer(), Store.NO);

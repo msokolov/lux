@@ -8,5 +8,6 @@
   <?process this ?>
   <entities xmlns="#2" xmlns:y="#y" y:y="y" id="2">&#x123;</entities>
   <y:y xmlns:y="#z" />
+  <token>0000000012345678</token>
   The end.
 </test>

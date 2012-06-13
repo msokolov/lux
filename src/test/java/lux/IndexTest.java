@@ -25,6 +25,14 @@ import org.junit.Test;
 
 /**
  * measures space and time for different indexing options
+ * 
+ * The timings are off; we'd need to run this repeatedly to avoid transient startup effects which
+ * overwhelm the measurements for a single run.
+ * 
+ * But the space numbers (in bytes) should be valid (from Directory.sizeInBytes()):
+ * XML storage: 3664896
+ * qnames = 3692544 - 3664896 = 27648 = 0.75%
+ * paths = 3717120 - 3664896 = 52224 = 1.4%
  */
 public class IndexTest {
     
