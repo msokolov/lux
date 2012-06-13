@@ -10,8 +10,10 @@ import javax.xml.stream.XMLStreamReader;
 
 /**
  * Accumulates index keys composed of XML paths (including only child steps) and their string values.
- * String values are represented by 8-byte hashes of their first N characters.  If the value fits in 
- * 8 bytes, it is padded with nulls (unicode 0).
+ * String values are represented by 8-character hashes of their first N characters.  If the value fits in 
+ * 8 characters, it is padded with nulls (unicode 0).  The hash algorithm is analogous to that used by 
+ * java.lang.String, but arithmetic is done with shorts rather than ints, and we keep more of them so that
+ * the likelihood of collisions is very small.
  */
 public class XPathValueMapper extends XmlPathMapper {
     
@@ -80,10 +82,13 @@ public class XPathValueMapper extends XmlPathMapper {
         }
     }
     
-    private char [] hashString(char[] value, char[] buf) {
+    private char[] hashString(char[] value, char[] buf) {
         Arrays.fill(buf, '\u0000');
-        for (int i = 0; i < value.length; i++) {
-            buf[i % HASH_SIZE] += value[i];            
+        for (int i = 0; i < value.length && i < HASH_SIZE; i++) {
+            buf[i % HASH_SIZE] = value[i];
+        }
+        for (int i = HASH_SIZE; i < value.length; i++) {
+            buf[i % HASH_SIZE] = (char)(buf[i % HASH_SIZE] * 15 + value[i]);       
         }
         return buf;
     }
@@ -92,7 +97,7 @@ public class XPathValueMapper extends XmlPathMapper {
         for (int j = 0; j <= depth; j++) {
             int k = valueOffsets[j];
             for (int i = textStart; i < textLength + textStart; i++) {
-                values[j][k] += textCharacters[i];
+                values[j][k] = (char)(values[j][k] * 15 + textCharacters[i]);
                 if (k == HASH_SIZE - 1) {
                     k = 0;
                 } else {

@@ -7,6 +7,6 @@
   <![CDATA[This is some markup <that> is escaped]]>
   <?process this ?>
   <entities id="2">&#x123;</entities>
-  <token>0000000012345678</token>
+  <token>        12345678</token>
   The end.
 </test>
