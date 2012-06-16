@@ -14,6 +14,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.index.field.FieldValues;
 import lux.index.field.XmlField;
+import lux.index.field.XmlField.NameKind;
 import lux.xml.JDOMBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
@@ -86,7 +87,10 @@ public class XmlIndexer {
         addField (XmlField.URI);
         if (isOption (INDEX_QNAMES) || isOption (INDEX_PATHS)) {
             // accumulate XML paths and QNames for indexing
-            if (isOption (INDEX_VALUES)) {
+            if (isOption (INDEX_FULLTEXT)) {
+                pathMapper = new QNameTextMapper();                
+            }
+            else if (isOption (INDEX_VALUES)) {
                 pathMapper = new XPathValueMapper();
             } else {
                 pathMapper = new XmlPathMapper();
@@ -97,10 +101,11 @@ public class XmlIndexer {
         if (isOption (INDEX_QNAMES)) {
             addField(XmlField.ELT_QNAME);
             addField(XmlField.ATT_QNAME);
-            if (isOption (INDEX_VALUES)) {
-                //TODO
-                //addField(XmlField.ELT_QNAME_VALUE);
-                //addField(XmlField.ATT_QNAME_VALUE);
+            if (isOption (INDEX_FULLTEXT)) {
+                addField (XmlField.QNAME_TEXT);
+            }
+            else if (isOption (INDEX_VALUES)) {
+                addField(XmlField.QNAME_VALUE);
             }
         }
         if (isOption (INDEX_PATHS)) {
@@ -109,9 +114,11 @@ public class XmlIndexer {
                 addField(XmlField.PATH_VALUE);                
             }
         }
+        /*
         if (isOption (INDEX_FULLTEXT)) {
             addField(XmlField.FULL_TEXT);
         }
+        */
         if (isOption (STORE_XML)) {
             addField(XmlField.XML_STORE);
             serializer = new Serializer();
@@ -128,7 +135,11 @@ public class XmlIndexer {
     
     public void addField (XmlField field) {
         fields.add(field);
-        fieldAnalyzers.put(field.getName(), field.getAnalyzer());
+        if (field.getNameKind() == NameKind.PREFIX) {
+            fieldAnalyzers.putPrefix(field.getName(), field.getAnalyzer());            
+        } else {
+            fieldAnalyzers.put(field.getName(), field.getAnalyzer());
+        }
     }
     
     public void read (InputStream xml, String uri) throws XMLStreamException {

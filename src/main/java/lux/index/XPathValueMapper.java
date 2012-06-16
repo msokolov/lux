@@ -16,8 +16,6 @@ import javax.xml.stream.XMLStreamReader;
  * java.lang.String, but arithmetic is done with shorts rather than ints, and we keep more of them so that
  * the likelihood of collisions is very small.
  * 
- * This turns out to be terrifically inefficient.  A single 
- * 
  */
 public class XPathValueMapper extends XmlPathMapper {
     

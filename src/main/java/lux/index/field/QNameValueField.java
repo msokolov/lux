@@ -12,15 +12,15 @@ import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.util.Version;
 
-public class PathValueField extends XmlField {
+public class QNameValueField extends XmlField {
     
-    private static final PathValueField instance = new PathValueField();
+    private static final QNameValueField instance = new QNameValueField();
     
-    public static PathValueField getInstance() {
+    public static QNameValueField getInstance() {
         return instance;
     }
     
-    protected PathValueField () {
+    protected QNameValueField () {
         super ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_34), Store.NO, Type.TOKENS);
     }
     
@@ -30,7 +30,7 @@ public class PathValueField extends XmlField {
         XPathValueMapper mapper = (XPathValueMapper) indexer.getPathMapper();        
         return new FieldValues (this, Collections.singleton
                 (new TokenizedField(getName(), 
-                        new PathValueTokenStream
+                        new QNameValueTokenStream
                         (mapper.getPathValues()), Store.NO, Index.ANALYZED, TermVector.NO)));
     }
 

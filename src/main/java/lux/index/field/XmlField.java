@@ -28,6 +28,10 @@ public abstract class XmlField {
         TOKENS, STRING, INT
     };
     
+    public enum NameKind {
+        STATIC, PREFIX
+    }
+    
     private final Type type;    
     
     // an Analyzer for text fields; if null, the field is not indexed
@@ -35,11 +39,18 @@ public abstract class XmlField {
 
     private final Store isStored;
     
+    private final NameKind nameKind;
+    
     public XmlField (String name, Analyzer analyzer, Store isStored, Type type) {
+        this (name, analyzer, isStored, type, NameKind.STATIC);
+    }
+    
+    public XmlField (String name, Analyzer analyzer, Store isStored, Type type, NameKind nameKind) {
         this.name = name;
         this.analyzer = analyzer;
         this.isStored = isStored;
         this.type = type;
+        this.nameKind = nameKind;
     }
 
     /**
@@ -61,6 +72,9 @@ public abstract class XmlField {
     public static final XmlField PATH_VALUE = PathValueField.getInstance();
     public static final XmlField XML_STORE = DocumentField.getInstance();
     public static final XmlField FULL_TEXT = FullTextField.getInstance();
+    public static final XmlField QNAME_VALUE = QNameValueField.getInstance();
+    public static final XmlField QNAME_TEXT = QNameTextField.getInstance();
+    
     /** Note that field name uniqueness is not enforced by the API, but if two fields with different 
      * options share the same name, unpredictable behavior will ensue!  This is an historical quirk 
      * of Lucene, which allows
@@ -98,6 +112,10 @@ public abstract class XmlField {
 
     public Store isStored() {
         return isStored;
+    }
+    
+    public NameKind getNameKind () {
+        return nameKind;
     }
     
     /**

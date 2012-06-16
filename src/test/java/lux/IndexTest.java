@@ -11,6 +11,7 @@ import java.io.IOException;
 import javax.xml.stream.XMLStreamException;
 
 import lux.index.XmlIndexer;
+import lux.index.field.XmlField;
 import lux.lucene.LuxSearcher;
 
 import org.apache.lucene.index.IndexReader;
@@ -42,6 +43,10 @@ import org.junit.Test;
  * paths: 2328576 - 2274304 = 54272 = 2.4%
  * path-values alone: 755712
  * path-values (w/docs): 2714624 - 2274304 = 19%
+ * qname-values (as phrases): 2631680 - 2274304 = 357376 = 16%
+ * qname-values (hashed into single tokens): 2542592 - 2274304 = 11.8%
+ * qname-words w/o terminal tokens: 2683904 - 2274304 = 18%
+ * qname-words + terminal tokens: 2786304 - 2274304 = 22%
  */
 public class IndexTest {
     
@@ -88,7 +93,26 @@ public class IndexTest {
         buildIndex ("path-values", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
     }
+    
 
+    @Test
+    public void testIndexQNameValues() throws Exception {
+        buildIndex ("qname-values and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_VALUES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
+    }
+
+    @Test
+    public void testIndexQNameText() throws Exception {
+        buildIndex ("qname-text and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
+    }
+    
+    @Test
+    public void testIndexQNameTextOnly() throws Exception {
+        buildIndex ("qname-text", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
+        printAllTerms();
+    }
 
     @Test
     public void testIndexPathValues() throws Exception {
@@ -138,7 +162,11 @@ public class IndexTest {
     private void printAllTerms() throws Exception {
         IndexReader reader = IndexReader.open(dir);
         TermEnum terms = reader.terms();
+        System.out.println ("Printing all terms (except uri)");
         while (terms.next()) {
+            if (terms.term().field().equals(XmlField.URI.getName())) {
+                continue;
+            }
             System.out.println (terms.term().toString() + ' ' + terms.docFreq());
         }
         reader.close();

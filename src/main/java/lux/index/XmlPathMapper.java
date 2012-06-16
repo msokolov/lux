@@ -21,10 +21,14 @@ import lux.xml.StAXHandler;
  * is empty. The sequence of element QNames may be followed by a single attribute QName of the form:
  * <code>@local-name{namespace}</code>.  Namespaces are encoded using URL-encoding so they will not 
  * contain unexpected characters (such as space and {}).
+ * 
+ * TODO: a bunch of optimizations are possible here; there is a duplication of work in the subclasses,
+ * unneeded String creation, etc.  Come back and fix that once we've settled on a definite implementation!
  */
 public class XmlPathMapper implements StAXHandler {
     
     protected StringBuilder currentPath = new StringBuilder();
+    protected QName currentQName;
     private HashMap<QName, Integer> eltQNameCounts = new HashMap<QName, Integer>();
     private HashMap<QName, Integer> attQNameCounts = new HashMap<QName, Integer>();
     private HashMap<String, Integer> pathCounts = new HashMap<String, Integer>();
@@ -57,23 +61,23 @@ public class XmlPathMapper implements StAXHandler {
 
     public void handleEvent(XMLStreamReader reader, int eventType) {
         if (eventType == START_ELEMENT) {
-            QName qname = getEventQName(reader);
+            currentQName = getEventQName(reader);
             // qnameStack.add(qname);
             currentPath.append (' ');
-            currentPath.append(encodeQName(qname));
-            incrCount(eltQNameCounts, qname);
+            currentPath.append(encodeQName(currentQName));
+            incrCount(eltQNameCounts, currentQName);
             String curPath = currentPath.toString();
             incrCount(pathCounts, curPath);
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 QName attQName = getEventAttQName (reader, i);
                 incrCount (attQNameCounts, attQName);
-                incrCount(pathCounts, curPath + " @" + encodeQName(attQName));
+                incrCount (pathCounts, curPath + " @" + encodeQName(attQName));
             }
         }
         else if (eventType == END_ELEMENT) {
-            QName qname = getEventQName(reader);
+            currentQName = getEventQName(reader);
             // snip off the last path step, including its '/' separator char
-            currentPath.setLength(currentPath.length() - encodeQName(qname).length() - 1);
+            currentPath.setLength(currentPath.length() - encodeQName(currentQName).length() - 1);
         }
         else if (eventType == START_DOCUMENT) {
             currentPath.append("{}");
