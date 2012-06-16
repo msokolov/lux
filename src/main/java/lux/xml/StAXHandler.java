@@ -11,6 +11,10 @@ public interface StAXHandler {
      */
     void handleEvent (XMLStreamReader reader, int eventType);
 
+    /**
+     * reinitialize any internal state and prepare the handler for re-use
+     */
+    void reset();
 
 }
 

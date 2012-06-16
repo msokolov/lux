@@ -3,8 +3,8 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.XPathQuery;
-import lux.index.XmlField;
 import lux.index.XmlIndexer;
+import lux.index.field.XmlField;
 import lux.saxon.Config;
 import lux.saxon.ResultIterator;
 import lux.saxon.Saxon;

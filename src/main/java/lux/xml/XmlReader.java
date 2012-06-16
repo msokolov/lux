@@ -87,6 +87,12 @@ public class XmlReader {
         }
     }
     
+    public void reset () {
+        for (StAXHandler handler : handlers) {
+            handler.reset ();
+        }
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -263,6 +263,11 @@ public class JDOMBuilder implements StAXHandler {
             }
         }
     }
+    
+    public void reset() {
+        current = null;
+        doc = null;
+    }
 }
 
 

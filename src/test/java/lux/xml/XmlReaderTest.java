@@ -19,7 +19,7 @@ import org.junit.Test;
 
 public class XmlReaderTest {
 
-    private static final String CONTENT = "TEST &>0 This is some markup <that> is escaped ģ 0000000012345678 The end.";
+    private static final String CONTENT = "TEST &>0 This is some markup <that> is escaped ģ 12345678 The end.";
         
     @Test 
     public void testJDOMBuilder() throws Exception {
@@ -56,7 +56,7 @@ public class XmlReaderTest {
         assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test entities @id"));
         assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{} test entities"));
         
-        pathMapper.clear();
+        pathMapper.reset();
         assertTrue (pathMapper.getPathCounts().isEmpty());
         assertTrue (pathMapper.getEltQNameCounts().isEmpty());
         assertTrue (pathMapper.getAttQNameCounts().isEmpty());
@@ -127,11 +127,11 @@ public class XmlReaderTest {
     public void testXPathValueMapper () throws Exception {
         XPathValueMapper xpathValueMapper = new XPathValueMapper();
         handleDocument (xpathValueMapper, "lux/reader-test.xml");
-        assertEquals ("{} test @id|test\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(0));
-        assertEquals ("{} test title|TEST\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(1));
-        assertEquals ("{} test entities|&>0\u0000\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(2));
-        assertEquals ("{} test token|ȑȒȓȔȕȖȗȘ", xpathValueMapper.getPathValues().get(5));
-        assertEquals ("{} test token|\u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", xpathValueMapper.getPathValues().get(5));
+        assertEquals ("{} test @id test\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(0));
+        assertEquals ("{} test title TEST\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(1));
+        assertEquals ("{} test entities &>0\u0000\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(2));
+        assertEquals ("{} test token ȑȒȓȔȕȖȗȘ", xpathValueMapper.getPathValues().get(5));
+        assertEquals ("{} test token \u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", xpathValueMapper.getPathValues().get(5));
     }
     
     @Test
@@ -156,7 +156,7 @@ public class XmlReaderTest {
 
     private String normalize (String s) {
         return s == null ? null : s.replaceAll ("\\s+", " ").trim();
-    } 
+    }
 
 }
 

@@ -14,6 +14,13 @@ import lux.xml.StAXHandler;
 
 /**
  * Accumulate counts of QNames and QName paths.
+ * 
+ * Each path is a string of path components, separated by single space characters.
+ * The first path component is always <code>{}</code>.  The others are element 
+ * QNames of the form <code>local-name{namespace}</code>, where <code>{namespace}</code> is omitted when the namespace 
+ * is empty. The sequence of element QNames may be followed by a single attribute QName of the form:
+ * <code>@local-name{namespace}</code>.  Namespaces are encoded using URL-encoding so they will not 
+ * contain unexpected characters (such as space and {}).
  */
 public class XmlPathMapper implements StAXHandler {
     
@@ -126,7 +133,7 @@ public class XmlPathMapper implements StAXHandler {
         return qname.getLocalPart() + '{' + encns + '}';
     }
     
-    public void clear() {
+    public void reset() {
         eltQNameCounts.clear();
         attQNameCounts.clear();
         pathCounts.clear();

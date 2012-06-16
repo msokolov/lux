@@ -90,7 +90,7 @@ public abstract class SearchBase {
             ++totalDocs;
         }
         indexWriter.commit();
-        indexWriter.close();
+        indexWriter.close(true);
     }
     
     public static Saxon getEvaluator() {

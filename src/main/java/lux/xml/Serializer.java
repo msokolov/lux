@@ -167,6 +167,13 @@ public class Serializer implements StAXHandler {
         doc.append(namespace);
         doc.append("\"");
     }
+    
+    public void reset () {
+        doc = null;
+        namespaceContexts = null;
+        inScopeNamespaces = null;
+        namespaceContexts = null;
+    }
 
     private void appendQName(XMLStreamReader r) {
         String elemPrefix = r.getPrefix();

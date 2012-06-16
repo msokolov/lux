@@ -7,7 +7,7 @@ import lux.ResultList;
 import lux.XPathQuery;
 import lux.api.QueryStats;
 import lux.api.ValueType;
-import lux.index.XmlField;
+import lux.index.field.XmlField;
 import lux.solr.ShortCircuitException;
 import lux.xml.XmlBuilder;
 import net.sf.saxon.s9api.XdmAtomicValue;

@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import lux.index.XmlField;
+import lux.index.field.XmlField;
 import lux.xpath.QName;
 
 public class QueryContext {

@@ -6,6 +6,6 @@
   <?process this ?>
   <entities xmlns="#2" xmlns:y="#y" y:y="y" id="2">ģ</entities>
   <y:y xmlns:y="#z"></y:y>
-  <token>0000000012345678</token>
+  <token>        12345678</token>
   The end.
 </test>

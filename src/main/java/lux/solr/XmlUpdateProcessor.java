@@ -11,8 +11,8 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 
 import lux.index.WhitespaceGapAnalyzer;
-import lux.index.XmlField;
 import lux.index.XmlIndexer;
+import lux.index.field.XmlField;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
@@ -144,8 +144,9 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
             Object o = cmd.getSolrInputDocument().getFieldValue(XmlField.XML_STORE.getName());
             if (o != null) {
                 String xml = (String) o;
+                String uri = (String) cmd.getSolrInputDocument().getFieldValue(XmlField.URI.getName());
                 try {
-                    xmlIndexer.read (new StringReader(xml));
+                    xmlIndexer.read (new StringReader(xml), uri);
                 } catch (XMLStreamException e) {
                     log.error ("Failed to parse " + XmlField.XML_STORE, e);
                 }

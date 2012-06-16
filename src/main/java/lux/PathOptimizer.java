@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import lux.api.ValueType;
-import lux.index.XmlField;
 import lux.index.XmlIndexer;
+import lux.index.field.XmlField;
 import lux.lucene.LuxTermQuery;
 import lux.lucene.SurroundTerm;
 import lux.xpath.AbstractExpression;

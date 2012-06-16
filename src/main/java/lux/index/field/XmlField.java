@@ -1,12 +1,13 @@
-package lux.index;
+package lux.index.field;
+
+import lux.index.XmlIndexer;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.util.Version;
+import org.apache.lucene.document.Fieldable;
 import org.apache.solr.schema.FieldProperties;
 
 /**
@@ -15,7 +16,7 @@ import org.apache.solr.schema.FieldProperties;
  * Value and Text fields tied to QName and Path, and eventually also for
  * some xpath indexing, and typed indexes.
  */
-public class XmlField {
+public abstract class XmlField {
     // the name of the field as it appears in queries, and in the index
     private String name;
     
@@ -23,23 +24,29 @@ public class XmlField {
     // private String collation;
     
     // a datatype - placeholder for future implementation; for now everything is STRING
-    /*
     public enum Type {
-        STRING, INT
+        TOKENS, STRING, INT
     };
-    private Type type;
-    */
+    
+    private final Type type;    
     
     // an Analyzer for text fields; if null, the field is not indexed
     private final Analyzer analyzer;
 
     private final Store isStored;
     
-    public XmlField (String name, Analyzer analyzer, Store isStored) {
+    public XmlField (String name, Analyzer analyzer, Store isStored, Type type) {
         this.name = name;
         this.analyzer = analyzer;
         this.isStored = isStored;
+        this.type = type;
     }
+
+    /**
+     * @param indexer
+     * @return the accumulated values of the field 
+     */
+    public abstract Iterable<Fieldable> getFieldValues (XmlIndexer indexer);
     
     // TODO: Formalize the relationship of each of these fields to the corresponding StAXHandler that extracts its values.
     // Also come up with a naming convention that makes that pattern clearer.
@@ -47,20 +54,34 @@ public class XmlField {
     // XML_STORE <-> lux.xml.Serializer
     // PATH_VALUE <-> ? lux.index.XPathValueMapper ?
     // TODO: make uri field unique.  Also - can we fallback and re-use "uri" if it exists???
-    public final static XmlField URI = new XmlField ("lux_uri", new KeywordAnalyzer(), Store.YES);
-    public final static XmlField ELT_QNAME = new XmlField ("lux_elt_name", new KeywordAnalyzer(), Store.NO);
-    public final static XmlField ATT_QNAME = new XmlField ("lux_att_name", new KeywordAnalyzer(), Store.NO);
-    public final static XmlField PATH = new XmlField ("lux_path", new WhitespaceGapAnalyzer(), Store.NO);
-    public final static XmlField XML_STORE = new XmlField ("lux_xml", null, Store.YES);
-    public static final XmlField FULL_TEXT = new XmlField ("lux_text", new StandardAnalyzer(Version.LUCENE_34), Store.YES);
-
-    public String getName() {
+    public static final XmlField URI = URIField.getInstance();
+    public static final XmlField ELT_QNAME = ElementQNameField.getInstance();
+    public static final XmlField ATT_QNAME = AttributeQNameField.getInstance();
+    public static final XmlField PATH = PathField.getInstance();
+    public static final XmlField PATH_VALUE = PathValueField.getInstance();
+    public static final XmlField XML_STORE = DocumentField.getInstance();
+    public static final XmlField FULL_TEXT = FullTextField.getInstance();
+    /** Note that field name uniqueness is not enforced by the API, but if two fields with different 
+     * options share the same name, unpredictable behavior will ensue!  This is an historical quirk 
+     * of Lucene, which allows
+     * indexing a field in different ways at different times without enforcing a consistent schema.
+     * @return the unique name of the field, used in queries and when adding values during indexing
+     */
+    public String getName () {
         return name;
     }
     
     /**
-     * The field name may be changed, so that it can be read from configuration.  However, field names
-     * must be stable for a given index installation.
+     * @return The type of data stored in the field.  This may be STRING, INT, or TOKENS.  TOKENS represent 
+     * pre-tokenized fields that define their own analyzers.
+     */
+    public Type getType () {
+        return type;
+    }
+    
+    /**
+     * The field name may be changed (!), so that they can be read from configuration.  However, field names
+     * must be stable for a given index installation.  This function is intended for internal use only.
      * @param name
      */
     public void setName (String name) {

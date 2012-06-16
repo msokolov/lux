@@ -9,11 +9,15 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 
 /**
- * Accumulates index keys composed of XML paths (including only child steps) and their string values.
- * String values are represented by 8-character hashes of their first N characters.  If the value fits in 
- * 8 characters, it is padded with nulls (unicode 0).  The hash algorithm is analogous to that used by 
+ * 
+ * Each path-value is a string of path components, as defined in {@see XmlPathMapper}, followed by
+ * a value token.  Element and attribute string values are represented by 8-character hashes of their first N characters.  
+ * If the value fits in 8 characters, it is padded with nulls (unicode 0).  The hash algorithm is analogous to that used by 
  * java.lang.String, but arithmetic is done with shorts rather than ints, and we keep more of them so that
  * the likelihood of collisions is very small.
+ * 
+ * This turns out to be terrifically inefficient.  A single 
+ * 
  */
 public class XPathValueMapper extends XmlPathMapper {
     
@@ -22,12 +26,17 @@ public class XPathValueMapper extends XmlPathMapper {
     int[] valueOffsets = new int[16];
     char[][] values = new char[16][HASH_SIZE];
     char[] attValue = new char[HASH_SIZE];
-    private ArrayList<String> pathValues = new ArrayList<String>();
+    private ArrayList<char[]> pathValues = new ArrayList<char[]>();
     
-    public ArrayList<String> getPathValues() {
+    public ArrayList<char[]> getPathValues() {
         return pathValues;
     }
 
+    public void reset () {
+        super.reset();
+        pathValues.clear();
+    }
+    
     public void handleEvent(XMLStreamReader reader, int eventType) {
         switch (eventType) {
         case START_DOCUMENT:
@@ -48,10 +57,10 @@ public class XPathValueMapper extends XmlPathMapper {
                 int l = currentPath.length();
                 for (int i = 0; i < reader.getAttributeCount(); i++) {
                     QName attQName = getEventAttQName (reader, i);
-                    currentPath.append(" @").append(encodeQName(attQName)).append('|');
+                    currentPath.append(" @").append(encodeQName(attQName)).append(' ');                    
                     hashString (reader.getAttributeValue(i).toCharArray(), attValue);
                     currentPath.append(attValue);
-                    pathValues.add(currentPath.toString());
+                    addValue();
                     // rewind currentPath
                     currentPath.setLength(l);
                 }
@@ -61,8 +70,8 @@ public class XPathValueMapper extends XmlPathMapper {
         case END_ELEMENT:
         {
             int l = currentPath.length();
-            currentPath.append('|').append(values[depth]);
-            pathValues.add(currentPath.toString());
+            currentPath.append(' ').append(values[depth]);
+            addValue();
             --depth;
             currentPath.setLength(l);
             super.handleEvent(reader, eventType);
@@ -80,6 +89,12 @@ public class XPathValueMapper extends XmlPathMapper {
             super.handleEvent(reader, eventType);
             break;
         }
+    }
+
+    private void addValue() {
+        char[] value = new char[currentPath.length()];
+        currentPath.getChars(0, currentPath.length(), value, 0);
+        pathValues.add(value);
     }
     
     public static char[] hashString(char[] value, char[] buf) {
