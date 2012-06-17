@@ -22,5 +22,9 @@ public final class AttributeQNameField extends XmlField {
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         return new FieldValues (this, indexer.getPathMapper().getAttQNameCounts().keySet());
     }
-
+    
+    @Override
+    public Iterable<?> getValues(XmlIndexer indexer) {
+        return indexer.getPathMapper().getAttQNameCounts().keySet();
+    }
 }

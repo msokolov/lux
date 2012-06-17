@@ -23,4 +23,9 @@ public class PathField extends XmlField {
         return new FieldValues (this, indexer.getPathMapper().getPathCounts().keySet());
     }
 
+    @Override
+    public Iterable<?> getValues(XmlIndexer indexer) {
+        return indexer.getPathMapper().getPathCounts().keySet();
+    }
+
 }

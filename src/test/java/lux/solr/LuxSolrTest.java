@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.solr;
 
 import static org.junit.Assert.assertEquals;
@@ -45,9 +41,8 @@ public abstract class LuxSolrTest {
         solr = new EmbeddedSolrServer(coreContainer, "");
         solr.deleteByQuery("*:*");
         Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
-        // TODO: don't use the actual config as test data - it will have to change!
-        addSolrDocFromFile("solr/conf/schema.xml", docs);
-        addSolrDocFromFile("solr/conf/solrconfig.xml", docs);
+        addSolrDocFromFile("src/test/resources/conf/schema.xml", docs);
+        addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs);
         for (int i = 1; i <= 100; i++) {
             addSolrDoc ("test" + i, "<doc><test id='" + i + "'>" + i + "</test><test>cat</test></doc>", docs);
         }
@@ -101,7 +96,7 @@ public abstract class LuxSolrTest {
     }
     
     @Test public void testCollectionFunction () throws Exception {
-        assertXPathSearchCount (1, 1, "xs:string", "solr/conf/schema.xml", "collection()[1]/base-uri()");
+        assertXPathSearchCount (1, 1, "xs:string", "src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
         // TODO: optimize count(collection ())
         // TODO: return an integer
         assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())");  

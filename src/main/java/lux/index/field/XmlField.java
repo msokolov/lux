@@ -53,11 +53,21 @@ public abstract class XmlField {
         this.nameKind = nameKind;
     }
 
-    /**
-     * @param indexer
-     * @return the accumulated values of the field 
+    /** Wraps the values as Fieldable, which include the values and the Lucene indexing options.
+     * XmlIndexer.indexDocument calls this.
+     * @param indexer the indexer that holds the field values
+     * @return the accumulated values of the field, as Fieldables
      */
     public abstract Iterable<Fieldable> getFieldValues (XmlIndexer indexer);
+
+    /** The Solr XmlUpdateProcessor calls this.  If it returns null, the caller should use the values
+     * from getFieldValues() instead.
+     * @param indexer the indexer that holds the field values
+     * @return the accumulated values of the field, as primitive objects
+     */
+    public Iterable<?> getValues (XmlIndexer indexer) {
+        return null;
+    }
     
     // TODO: Formalize the relationship of each of these fields to the corresponding StAXHandler that extracts its values.
     // Also come up with a naming convention that makes that pattern clearer.

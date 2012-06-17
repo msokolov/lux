@@ -25,8 +25,6 @@ import org.junit.Test;
  * observed when optimizations are undone, and observe that expected optimizations are 
  * in fact being applied.
  * 
- * @author sokolov
- *
  */
 public class SearchTest extends SearchBase {
     

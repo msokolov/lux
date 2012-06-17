@@ -6,13 +6,10 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.index.field.FieldValues;
 import lux.index.field.XmlField;
 import lux.index.field.XmlField.NameKind;
 import lux.xml.JDOMBuilder;
@@ -27,7 +24,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Version;
 import org.jdom.Document;
-import org.jdom.filter.ContentFilter;
 import org.jdom.output.XMLOutputter;
 
 /**
@@ -40,6 +36,9 @@ import org.jdom.output.XMLOutputter;
  * 
  * This is all kind of a mess, and not readily extendable.  If you want to add a new type of field (a new XmlField instance),
  * you have to modify the indexer, which has knowledge of all the possible fields.  This is not a good design.
+ * 
+ * Also, not every combination of indexing options will actually work.  We need to consider which things
+ * one might actually want to turn on and off.
  * 
  * We could make each field act as a StAXHandler factory?
  * For efficiency though, some fields share the same handler instance.  For now, we leave things as they are;
@@ -77,7 +76,7 @@ public class XmlIndexer {
     public final static int INDEX_FULLTEXT= 0x00000080;
     public final static int INDEX_VALUES=   0x00000100;
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
-    public final static int DEFAULT_OPTIONS = BUILD_JDOM | STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_VALUES;
+    public final static int DEFAULT_OPTIONS = BUILD_JDOM | STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
 
     
     public XmlIndexer (int options) {
@@ -169,50 +168,6 @@ public class XmlIndexer {
     
     public Collection<XmlField> getFields () {
         return fields;
-    }
-    
-    public Iterable<Fieldable> getAnalyzedField (XmlField field) {
-        // FIXME: create an array/list of Tokens in XPathValueMapper, wrap a TokenValues around it,
-        // and create a Fieldable around that.  Put the code in the right class (this one or XmlField)
-        //Rename this function and getFieldValues()
-        return new FieldValues (field, null);
-    }
-    
-    // TODO: break up this method, distributing it amongst the fields:
-    // XmlField.getValues (XMLIndexer)
-    public Iterable<?> getFieldValues (XmlField field) {
-        if (XmlField.ELT_QNAME.equals(field)) {
-            return pathMapper.getEltQNameCounts().keySet();
-        }
-        if (XmlField.ATT_QNAME.equals(field)) {
-            return pathMapper.getAttQNameCounts().keySet();
-        }
-        if (XmlField.PATH.equals(field)) {
-            return pathMapper.getPathCounts().keySet();
-        }
-        if (XmlField.PATH_VALUE.equals(field)) {
-            return pathMapper.getPathCounts().keySet();
-        }
-        if (XmlField.XML_STORE.equals(field)) {
-            if (serializer != null) {
-                return Collections.singletonList(serializer.getDocument());
-            }
-            if (jdomSerializer != null) {
-                return Collections.singletonList(jdomSerializer.outputString(getJDOM()));
-            } else {
-                return Collections.EMPTY_LIST;
-            }
-        }
-        if (XmlField.FULL_TEXT.equals(field)) {
-           @SuppressWarnings("unchecked")
-           final Iterator<Object> textIter = getJDOM().getDescendants (new ContentFilter(ContentFilter.TEXT | ContentFilter.CDATA));
-           return new Iterable<Object> () {
-            public Iterator<Object> iterator() {
-                return textIter;
-            }
-           };
-        }
-        return Collections.EMPTY_SET;
     }
     
     public Document getJDOM() {

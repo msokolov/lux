@@ -9,11 +9,13 @@ import javax.xml.stream.XMLStreamException;
 import lux.index.WhitespaceGapAnalyzer;
 import lux.index.XmlIndexer;
 import lux.index.field.XmlField;
+import lux.index.field.XmlField.Type;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.Fieldable;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.SolrParams;
@@ -38,8 +40,10 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
     
     @Override
     public void init(@SuppressWarnings("rawtypes") final NamedList args) {
-        // don't need XmlIndexer.STORE_XML since the client passes us the xml_text field
-        xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML);
+        // TODO: check if we are unnecessarily serializing the document
+        // We don't need XmlIndexer.STORE_XML to do that since the client passes us the xml_text field
+        // but we declare the field to the indexer so that it gets defined in the schema
+        xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS);
         if (args != null) {
             SolrParams params = SolrParams.toSolrParams(args);
             // accept override from configuration so we can piggyback on existing 
@@ -55,29 +59,36 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
     }
     
 
-    /** Called when each core is initialized; we ensure that lux fields are configured.
-     * TODO: drive this from {@link XmlIndexer#getFields()}
-     * also: xml_text
-     *  */
+    /** Called when each core is initialized; we ensure that Lux fields are configured.
+     */
     public void inform(SolrCore core) {
         IndexSchema schema = core.getSchema();
-        Map<String,SchemaField> fields = schema.getFields();
-        Map<String,FieldType> fieldTypes = schema.getFieldTypes();
+        // XML_STORE is not included in the indexer's field list; we just use what came in on the request
+        informField (XmlField.XML_STORE, schema);
         for (XmlField xmlField : xmlIndexer.getFields()) {
-            if (fields.containsKey(xmlField.getName())) {
-                // Allow overriding field configuration in schema.xml?
-                continue;
-            }
-            FieldType fieldType = getFieldType(xmlField, schema);
-            if (! fieldTypes.containsKey(fieldType.getTypeName())) {
-                fieldTypes.put(fieldType.getTypeName(), fieldType);
-            } else {
-                fieldType = fieldTypes.get(fieldType.getTypeName());
-            }
-            fields.put(xmlField.getName(), new SchemaField (xmlField.getName(), fieldType, xmlField.getSolrFieldProperties(), ""));
+            informField (xmlField, schema);
         }
         // must call this after making changes to the field map:
         schema.refreshAnalyzers();
+    }
+    
+    private void informField (XmlField xmlField, IndexSchema schema) {
+        Map<String,SchemaField> fields = schema.getFields();
+        Map<String,FieldType> fieldTypes = schema.getFieldTypes();
+        if (fields.containsKey(xmlField.getName())) {
+            // The Solr schema defines this field
+            return;
+        }
+        // look up the type of this field using the mapping in this class
+        FieldType fieldType = getFieldType(xmlField, schema);
+        if (! fieldTypes.containsKey(fieldType.getTypeName())) {
+            // The Solr schema does not define this field type, so add it
+            fieldTypes.put(fieldType.getTypeName(), fieldType);
+        } else {
+            fieldType = fieldTypes.get(fieldType.getTypeName());
+        }
+        // Add the field to the schema
+        fields.put(xmlField.getName(), new SchemaField (xmlField.getName(), fieldType, xmlField.getSolrFieldProperties(), ""));        
     }
     
     private FieldType getFieldType(XmlField xmlField, IndexSchema schema) {
@@ -90,11 +101,14 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
             }
             return new StoredStringField ();
         }
-        if (analyzer instanceof KeywordAnalyzer) {
+        if (xmlField.getType() == Type.TOKENS) {
+            return new FieldableField();
+        }
+        if (analyzer == null || analyzer instanceof KeywordAnalyzer) {
             return new StringField();
         }
         if (analyzer instanceof WhitespaceGapAnalyzer) {
-            return new PathField (schema);
+            return new PathField ();
         }
         throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + xmlField.getName() + "; unknown analyzer type: " + analyzer);
     }
@@ -105,7 +119,7 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
         }
     }
     
-    class StringField extends StrField {        
+    class StringField extends StrField {
         StringField () {
             typeName = "string";
         }
@@ -113,7 +127,7 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
     
     class PathField extends TextField {
 
-        PathField (IndexSchema schema) {
+        PathField () {
             typeName = "lux_text_ws";
             setAnalyzer(new WhitespaceGapAnalyzer()); 
             setQueryAnalyzer(new WhitespaceGapAnalyzer());
@@ -123,6 +137,19 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
             return Field.Index.ANALYZED;
         }
         
+    }
+    
+    /**
+     * enable pass-through of a Fieldable to Solr; this enables analysis to be performed outside of Solr
+     */
+    class FieldableField extends StrField {
+        FieldableField () {
+            typeName = "fieldable";
+        }
+
+        Fieldable createField(SchemaField field, Object val, float boost) {
+            return (Fieldable) val;
+        }
     }
 
     @Override
@@ -147,9 +174,19 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
                     log.error ("Failed to parse " + XmlField.XML_STORE, e);
                 }
                 for (XmlField field : xmlIndexer.getFields()) {
-                    for (Object value : xmlIndexer.getFieldValues(field)) {
-                        // TODO: handle other primitive value types
-                        cmd.getSolrInputDocument().addField(field.getName(), value.toString());
+                    if (field == XmlField.URI || field == XmlField.XML_STORE) {
+                        // uri and xml are provided externally
+                        continue;
+                    }
+                    Iterable<?> values = field.getValues(xmlIndexer);
+                    if (values != null) {
+                        for (Object value : values) {
+                            cmd.getSolrInputDocument().addField(field.getName(), value);
+                        }
+                    } else {
+                        for (Fieldable value : field.getFieldValues(xmlIndexer)) {
+                            cmd.getSolrInputDocument().addField(field.getName(), value);
+                        }
                     }
                 }
             }

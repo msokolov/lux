@@ -1,47 +1,16 @@
 package lux.index.field;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 import lux.index.XPathValueMapper;
 
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
-class PathValueTokenStream extends TokenStream {
+final class PathValueTokenStream extends ValueTokenStream {
 
-    protected final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-    protected int pos = 0;
-    protected char[] value;
-    private Iterable<char[]> values;
-    private Iterator<char[]> valueIter;
-    
     PathValueTokenStream (Iterable<char[]> values) {
-        setValues (values);
+        super (values);
     }
     
-    void setValues (Iterable<char[]> values) {
-        this.values = values;
-        reset();
-    }
-    
-    @Override
-    public void reset () {
-        valueIter = values.iterator();
-        advanceValue();
-    }
-    
-    protected boolean advanceValue () {
-        pos = 0;
-        if (valueIter.hasNext()) {
-            value = valueIter.next();
-            return true;
-        } else {
-            value = null;
-            return false;
-        }            
-    }
-
     @Override
     public boolean incrementToken() throws IOException {
         if (pos >= value.length) {

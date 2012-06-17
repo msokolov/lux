@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import lux.index.XPathValueMapper;
 
-class QNameValueTokenStream extends PathValueTokenStream {
+final class QNameValueTokenStream extends ValueTokenStream {
     
     private static final int HASH_SIZE = XPathValueMapper.HASH_SIZE;
     private int bufpos;

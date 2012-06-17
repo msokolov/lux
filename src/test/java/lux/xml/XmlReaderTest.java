@@ -127,11 +127,11 @@ public class XmlReaderTest {
     public void testXPathValueMapper () throws Exception {
         XPathValueMapper xpathValueMapper = new XPathValueMapper();
         handleDocument (xpathValueMapper, "lux/reader-test.xml");
-        assertEquals ("{} test @id test\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(0));
-        assertEquals ("{} test title TEST\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(1));
-        assertEquals ("{} test entities &>0\u0000\u0000\u0000\u0000\u0000", xpathValueMapper.getPathValues().get(2));
-        assertEquals ("{} test token ȑȒȓȔȕȖȗȘ", xpathValueMapper.getPathValues().get(5));
-        assertEquals ("{} test token \u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", xpathValueMapper.getPathValues().get(5));
+        assertEquals ("{} test @id test\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(0)));
+        assertEquals ("{} test title TEST\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(1)));
+        assertEquals ("{} test entities &>0\0\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(2)));
+        assertEquals ("{} test token ȑȒȓȔȕȖȗȘ", String.valueOf(xpathValueMapper.getPathValues().get(5)));
+        assertEquals ("{} test token \u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", String.valueOf(xpathValueMapper.getPathValues().get(5)));
     }
     
     @Test

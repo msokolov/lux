@@ -27,5 +27,14 @@ public class DocumentField extends XmlField {
         }
         return new FieldValues (this, Collections.singleton(doc));
     }
+    
+    @Override
+    public Iterable<?> getValues(XmlIndexer indexer) {
+        String doc = indexer.getDocumentText();
+        if (doc == null) {
+            return Collections.emptySet();
+        }
+        return Collections.singleton(doc);
+    }
 
 }

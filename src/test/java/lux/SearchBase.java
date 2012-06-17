@@ -38,7 +38,8 @@ public abstract class SearchBase {
     public static void setUp() throws Exception {
         // create an in-memory Lucene index, index some content
         dir = new RAMDirectory();
-        indexer = new XmlIndexer ();
+        //indexer = new XmlIndexer (XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM);
+        indexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM);
         indexAllElements (indexer, dir, "lux/hamlet.xml");
         searcher = new LuxSearcher(dir);
     }
