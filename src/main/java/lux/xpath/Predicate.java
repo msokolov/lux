@@ -5,7 +5,7 @@ import lux.ExpressionVisitor;
 public class Predicate extends AbstractExpression {
     
     public Predicate (AbstractExpression base, AbstractExpression filter) {
-        super (Type.Predicate);
+        super (Type.PREDICATE);
         subs = new AbstractExpression[] { base, filter };
     }
     

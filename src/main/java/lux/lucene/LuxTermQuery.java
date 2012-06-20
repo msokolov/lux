@@ -4,6 +4,11 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.ToStringUtils;
 
+/**
+ * An extension of TermQuery that whose toString method produces an expression that can be parsed by
+ * most query parsers (including lucene's standard query parser and its surround query parser).
+ *
+ */
 public class LuxTermQuery extends TermQuery {
 
     public LuxTermQuery(Term t) {
@@ -23,13 +28,17 @@ public class LuxTermQuery extends TermQuery {
           buffer.append(":");
         }
         // quote the term text in case it is an operator
-        buffer.append ('\"');
-        if (term.text().indexOf('\"') >= 0) {
-            buffer.append (term.text().replace ("\"", "\\\""));
-        } else {
-            buffer.append (term.text());
+        buffer.append ('"');
+        String value = term.text();
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '"': buffer.append("\\\""); break;
+                case '\\': buffer.append("\\\\"); break;
+                default: buffer.append(c); break;
+            }
         }
-        buffer.append ('\"');
+        buffer.append ('"');
         buffer.append(ToStringUtils.boost(boost));
         return buffer.toString();
     }

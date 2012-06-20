@@ -16,12 +16,12 @@ import lux.ExpressionVisitor;
 public class Subsequence extends AbstractExpression {
 
     public Subsequence (AbstractExpression sequence, AbstractExpression start, AbstractExpression length) {
-        super (Type.Subsequence);
+        super (Type.SUBSEQUENCE);
         subs = new AbstractExpression[] { sequence, start, length };
     }
     
     public Subsequence (AbstractExpression sequence, AbstractExpression start) {
-        super (Type.Subsequence);
+        super (Type.SUBSEQUENCE);
         subs = new AbstractExpression[] { sequence, start };
     }
     
@@ -86,7 +86,7 @@ public class Subsequence extends AbstractExpression {
             buf.append (')');
         }
         else if (getLengthExpr().equals(LiteralExpression.ONE) && 
-                (getStartExpr().getType() == Type.Literal ||
+                (getStartExpr().getType() == Type.LITERAL ||
                         getStartExpr().equals(FunCall.LastExpression))) 
         {
             appendSub(buf, getSequence());

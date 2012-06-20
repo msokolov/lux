@@ -5,7 +5,7 @@ import lux.ExpressionVisitor;
 public class Sequence extends AbstractExpression {
     
     public Sequence (AbstractExpression ... contents) {
-        super (Type.Sequence);
+        super (Type.SEQUENCE);
         subs = contents;
     }
     
@@ -40,7 +40,7 @@ public class Sequence extends AbstractExpression {
     }
 
     private static void appendSeqItem(StringBuilder buf, String separator, int precedence, AbstractExpression arg) {
-        if (arg.getType() == Type.Sequence) {
+        if (arg.getType() == Type.SEQUENCE) {
             appendSeqContents (buf, arg.getSubs(), separator, precedence);
         } else {
             if (arg.getPrecedence() < precedence) {

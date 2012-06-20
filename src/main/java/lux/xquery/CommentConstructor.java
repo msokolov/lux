@@ -8,7 +8,7 @@ public class CommentConstructor extends AbstractExpression {
     private final AbstractExpression content;
     
     public CommentConstructor (AbstractExpression abstractExpression) {
-        super (Type.Comment);
+        super (Type.COMMENT);
         this.content = abstractExpression;
     }
     

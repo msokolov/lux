@@ -9,7 +9,7 @@ public class Variable extends AbstractExpression {
     private QName name;
     
     public Variable (QName qname) {
-        super (Type.Variable);
+        super (Type.VARIABLE);
         name = qname;
     }
     

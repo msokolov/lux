@@ -8,7 +8,7 @@ public class SetOperation extends AbstractExpression {
     private final Operator operator;    
     
     public SetOperation (Operator operator, AbstractExpression ... ops) {
-        super (Type.SetOperation);
+        super (Type.SET_OPERATION);
         subs = ops;
         this.operator = operator;
     }

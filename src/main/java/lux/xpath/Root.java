@@ -5,7 +5,7 @@ import lux.ExpressionVisitor;
 public class Root extends AbstractExpression {
 
     public Root () {
-        super (Type.Root);
+        super (Type.ROOT);
         subs = new AbstractExpression[0];
     }
     

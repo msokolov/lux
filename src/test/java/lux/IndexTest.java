@@ -13,8 +13,13 @@ import lux.lucene.LuxSearcher;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.TermEnum;
+import org.apache.lucene.queryParser.surround.parser.ParseException;
+import org.apache.lucene.queryParser.surround.parser.QueryParser;
+import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
+import org.apache.lucene.queryParser.surround.query.SrndQuery;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.store.RAMDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -68,8 +73,20 @@ public class IndexTest {
     
     @Test
     public void testIndexPathsOnly () throws Exception {
-        buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);        
+        IndexTestSupport indexTestSupport = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);        
         assertTotalDocs ();
+        assertPathQuery(indexTestSupport);
+    }
+
+    private void assertPathQuery(IndexTestSupport indexTestSupport) throws ParseException, IOException {
+        SrndQuery q = new QueryParser ().parse2("w(w({},\"ACT\"),\"SCENE\")");
+        Query q2 = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(),  new BasicQueryFactory());
+        DocIdSetIterator iter = indexTestSupport.searcher.search(q2);
+        int count = 0;
+        while (iter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+            ++ count;
+        }
+        assertEquals (5, count);
     }
     
     @Test @Ignore
@@ -86,8 +103,16 @@ public class IndexTest {
 
     @Test
     public void testIndexPathValuesOnly() throws Exception {
-        buildIndex ("path-values", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.BUILD_JDOM);
+        IndexTestSupport indexTestSupport = buildIndex ("path-values", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
+        assertPathQuery(indexTestSupport);
+    }
+    
+    @Test
+    public void testIndexPathText () throws Exception {
+        IndexTestSupport indexTestSupport = buildIndex ("path-text", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);
+        assertTotalDocs ();
+        assertPathQuery(indexTestSupport);
     }
     
 
@@ -145,14 +170,13 @@ public class IndexTest {
         dir.close();
     }
     
-    private XmlIndexer buildIndex (String desc, int options) throws XMLStreamException, IOException {
-        XmlIndexer indexer = new XmlIndexer (options);
+    private IndexTestSupport buildIndex (String desc, int options) throws XMLStreamException, IOException {
         long t0 = System.currentTimeMillis();
-        SearchBase.indexAllElements (indexer, dir, "lux/hamlet.xml");
+        IndexTestSupport indexTestSupport = new IndexTestSupport (options, dir);
         System.out.println 
              (String.format("indexed %s in %d ms %d bytes", desc, 
                      (System.currentTimeMillis()-t0), dir.sizeInBytes()));
-        return indexer;
+        return indexTestSupport;
     }
 
     private void printAllTerms() throws Exception {

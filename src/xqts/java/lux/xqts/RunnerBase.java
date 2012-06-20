@@ -108,7 +108,6 @@ public class RunnerBase {
                 String filename = binding.getValue().value;
                 XdmItem item;
                 if (binding.getValue().type == VariableBinding.Type.FILE) {
-                    // FIXME - get the actual filename by looking up in the XQTS resource description markup
                     if (filename.endsWith(".xq")) {
                         String text = IOUtils.toString (new FileInputStream(filename));
                         SaxonExpr expr = (SaxonExpr) eval.compile(text);

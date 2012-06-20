@@ -9,14 +9,18 @@ import java.util.HashMap;
 
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
+import lux.index.field.QNameTextField;
 import lux.index.field.XmlField;
 import lux.lucene.LuxTermQuery;
 import lux.lucene.SurroundTerm;
 import lux.xpath.AbstractExpression;
+import lux.xpath.AbstractExpression.Type;
+import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.BinaryOperation;
 import lux.xpath.Dot;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
+import lux.xpath.NodeTest;
 import lux.xpath.PathExpression;
 import lux.xpath.PathStep;
 import lux.xpath.PathStep.Axis;
@@ -220,6 +224,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // This is a counting expr if its base expr is
         query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
         push (query);
+        if (predicate.getFilter().getType() == Type.BINARY_OPERATION && indexer.isOption(XmlIndexer.INDEX_FULLTEXT)) {
+            return optimizeComparison(predicate);
+        }
         return predicate;
     }
     
@@ -258,7 +265,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         ValueType resultType = (orient == ResultOrientation.RIGHT) ? rq.getResultType() : lq.getResultType();
         if (rSlop != null && lSlop != null) {
             // total slop is the distance between the two path components.
-            query = lq.combine(rq, Occur.MUST, resultType, rSlop + lSlop);
+            query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop);
         } else {
             query = combineQueries (lq, Occur.MUST, rq, resultType);
         }
@@ -325,8 +332,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // see if the function args can be converted to searches.
         optimizeSubExpressions(funcall, 0);
         Occur occur;
-        if (! name.getNamespaceURI().equals (FunCall.FN_NAMESPACE)) {
-            // There's something squirrely here - we know nothing about this function; it's best 
+        if (! (name.getNamespaceURI().equals (FunCall.FN_NAMESPACE) || name.getNamespaceURI().equals(FunCall.XS_NAMESPACE))) {
+            // We know nothing about this function; it's best 
             // not to attempt any optimization, so we will throw away any filters coming from the
             // function arguments
             occur = Occur.SHOULD;
@@ -334,7 +341,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // a built-in XPath 2 function
         else if (fnArgParity.containsKey(name.getLocalPart())) {
             occur = fnArgParity.get(name.getLocalPart());
+            // what does it mean if occur is null here??
         } else {
+            // for functions in fn: and xs: namespaces not listed below, we assume that
+            // their result will be empty if any of their arguments are, so we combine their argument 
+            // queries with AND
             occur = Occur.MUST;
         }
         if (occur == Occur.SHOULD) {
@@ -348,7 +359,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return funcall;
     }
 
-    // FIXME: fill out the rest of this table
+    // TODO: fill out the rest of this table
     protected static HashMap<String, Occur> fnArgParity = new HashMap<String, Occur>();
     static {
         fnArgParity.put("collection", null);
@@ -441,9 +452,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query;
         // TODO - explain the difference between these two overrides!!!
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
-            query = lq.combine(rq, occur, resultType, -1);
+            query = lq.combineSpanQueries(rq, occur, resultType, -1);
         } else {
-            query = lq.combine(occur, rq, occur, resultType);
+            query = lq.combineBooleanQueries(occur, rq, occur, resultType);
         }
         return query;
     }
@@ -485,22 +496,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
             occur = Occur.MUST;
         case OR:
             minimal = true;
-        case EQUALS: case NE: case LT: case GT: case LE: case GE:
             type = ValueType.BOOLEAN;
             break;
-            
+
         case ADD: case SUB: case DIV: case MUL: case IDIV: case MOD:
             type = ValueType.ATOMIC;
-            // Casting an empty sequence to an operand of an operator expeciting atomic values raises an error
+            // Casting an empty sequence to an operand of an operator expecting atomic values raises an error
             // and to be properly error-preserving we use SHOULD here
             // occur = Occur.MUST
             break;
-            
-        case AEQ: case ANE: case ALT: case ALE: case AGT: case AGE:
+    
+        case AEQ: case EQUALS:
+        case ANE: case ALT: case ALE: case AGT: case AGE:
+        case NE: case LT: case GT: case LE: case GE:
             type = ValueType.BOOLEAN;
-            // occur = Occur.MUST;
             break;
-            
+    
         case IS: case BEFORE: case AFTER:
             // occur = Occur.MUST;
             break;
@@ -523,9 +534,54 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return op;
     }
 
+    private AbstractExpression optimizeComparison(Predicate predicate) {
+        LiteralExpression value = null;
+        AbstractExpression path = null;
+        BinaryOperation op = (BinaryOperation) predicate.getFilter();
+        if (!(op.getOperator() == Operator.EQUALS || op.getOperator() == Operator.AEQ)) {
+            return predicate;
+        }
+        if (op.getOperand1().getType() == Type.LITERAL) {
+            value = (LiteralExpression) op.getOperand1();
+            path = op.getOperand2();
+        }
+        else if (op.getOperand2().getType() == Type.LITERAL) {
+            value = (LiteralExpression) op.getOperand2();
+            path = op.getOperand1();
+        }
+        if (path != null) {
+            // TODO: add test for minimality of existing query ???
+            AbstractExpression last = path.getRightmost();
+            if (last.getType() != Type.PATH_STEP) {
+                last = predicate.getBase().getRightmost();
+            }            
+            if (last.getType() == Type.PATH_STEP) {
+                NodeTest nodeTest = ((PathStep) last).getNodeTest();
+                QName nodeName = nodeTest.getQName();
+                if ("*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
+                    return predicate;
+                }
+                LuxTermQuery termQuery = null;
+                if (nodeTest.getType() == ValueType.ELEMENT) {
+                    termQuery = QNameTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
+                } 
+                else if (nodeTest.getType() == ValueType.ATTRIBUTE) {
+                    termQuery = QNameTextField.getInstance().makeAttributeValueQuery(nodeName, value.getValue().toString());
+                }
+                if (termQuery != null) {
+                    XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexer.getOptions());
+                    XPathQuery baseQuery = pop();
+                    query = combineQueries (query, Occur.MUST, baseQuery, baseQuery.getResultType());
+                    push(query);
+                }
+            }
+        }
+        return predicate;
+    }
+
     @Override
     public AbstractExpression visit(LiteralExpression literal) {
-        push (UNINDEXED);
+        push (MATCH_ALL);
         return literal;
     }
     

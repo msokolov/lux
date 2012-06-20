@@ -29,7 +29,7 @@ public class PathStep extends AbstractExpression {
     private final NodeTest nodeTest;
 
     public PathStep (Axis axis, NodeTest nodeTest) {
-        super (Type.PathStep);
+        super (Type.PATH_STEP);
         this.axis = axis;
         this.nodeTest = nodeTest;
     }

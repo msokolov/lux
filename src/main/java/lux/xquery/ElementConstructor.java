@@ -11,7 +11,7 @@ public class ElementConstructor extends AbstractExpression {
     private final Namespace[] namespaces;    
     
     public ElementConstructor(QName qname, Namespace[] namespaces, AbstractExpression content) {
-        super(Type.Element);
+        super(Type.ELEMENT);
         this.qname = qname;
         this.subs = new AbstractExpression[] { content };
         this.namespaces = namespaces;

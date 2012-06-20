@@ -1,0 +1,39 @@
+
+It seems as if one should use the hashing approach for value indexes?  At
+least in terms of space savings, it's significant, and if all you want it
+for is searching for element- or attribute-value matches.  In conjunction
+with paths, that would be pretty good.
+
+What advantages would there be to keeping the QName path-value indexes
+expanded as multiple tokens?  You would end up with distinct tokens for
+each *instance* of a given QName or path meaning in theory you could count
+them with a query.  EG: you could quickly find
+collection()[./descendant::foo[2]] (how?)  with a qname-value index by
+finding all docs with the term and filtering by term freq - this looks kind
+of hairy; I don't see term frequency filtering as a first-class query
+anywhere
+
+Text Indexing 
+
+Single field: here each word is indexed as QName:word.  Value-matching is
+possible if we include terminals for each node (start and end tokens that
+mark the node boundaries).  Within-node and-queries are also sort-of
+possible, at least to some degree of approximation, using position-based
+queries with a largish slop.
+
+Multi-field: creates dynamic fields named according to QName.  This works
+essentially the same as single field (since Lucene internally indexes terms
+as field:value), but avoids any confusion about delimiting the name/value
+boundary.  It runs into a little messiness in terms of managing the Solr
+schema, though?
+
+Start and end tokens present a challenge; ideally we would define a custom
+analyzer that would insert such things, but we also want to allow
+customization of the analyzer for other more usual purposes.  I suppose we
+could create a "wrapping tokenizer" at least in Lucene world.
+
+Query optimization w/text index
+
+Predicates having one value constant and the other a node sequence (with a
+query); find the trailing QName of the query and generate a
+lux_node_<QName>:value query term.

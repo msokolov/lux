@@ -217,14 +217,14 @@ public class XPathQuery extends Query {
      */
     public XPathQuery combine(XPathQuery precursor, Occur occur) {
         ValueType combinedType = occur == Occur.SHOULD ? valueType.promote(precursor.valueType) : this.valueType;
-        return combine(occur, precursor, occur, combinedType);
+        return combineBooleanQueries(occur, precursor, occur, combinedType);
     }
 
     /**
      * Combines this query with another, while specifying a valueType
      * restriction for the resultant query's results.
      */
-    public XPathQuery combine(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type) {
+    public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type) {
         long resultFacts = combineQueryFacts (this, precursor);
         Query result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
         return getQuery(result, resultFacts, type, 0);
@@ -236,7 +236,7 @@ public class XPathQuery extends Query {
      * distance between the two queries.  Generates Lucene SpanQuerys, and
      * the constituent queries must be span queries as well.
      */
-    public XPathQuery combine(XPathQuery precursor, Occur occur, ValueType type, int distance) {
+    public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance) {
         long resultFacts = combineQueryFacts (this, precursor);
         Query result = combineSpans (this.query, occur, precursor.query, distance);
         return new XPathQuery(expr, result, resultFacts, type);

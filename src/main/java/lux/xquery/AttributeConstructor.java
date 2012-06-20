@@ -6,7 +6,7 @@ import lux.xpath.AbstractExpression;
 public class AttributeConstructor extends AbstractExpression {
     
     public AttributeConstructor(AbstractExpression name, AbstractExpression content) {
-        super(Type.Attribute);
+        super(Type.ATTRIBUTE);
         subs = new AbstractExpression[] { name, content };
     }
 

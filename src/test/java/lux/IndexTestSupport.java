@@ -20,38 +20,43 @@ import org.apache.lucene.store.RAMDirectory;
 import org.jdom.Element;
 import org.jdom.filter.ElementFilter;
 import org.jdom.output.XMLOutputter;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
-public abstract class SearchBase {
+/**
+ * Test support class that sets up a lucene index and generates and indexes documents from hamlet.xml.
+ */
+public class IndexTestSupport {
 
-    private static Directory dir;
-    protected static LuxSearcher searcher;
-    protected static XmlIndexer indexer;
-    protected static int totalDocs;
-    protected static int QUERY_EXACT = 0x00000001;
-    protected static int QUERY_NO_DOCS = 0x00000002;
-    protected static int QUERY_MINIMAL = 0x00000004;
-    protected static int QUERY_CONSTANT = 0x00000008;
+    Directory dir;
+    LuxSearcher searcher;
+    XmlIndexer indexer;
+    int totalDocs;
+    HashMap<String,Integer> elementCounts = new HashMap<String,Integer>();
+        
+    public final static int QUERY_EXACT = 0x00000001;
+    public final static int QUERY_NO_DOCS = 0x00000002;
+    public final static int QUERY_MINIMAL = 0x00000004;
+    public final static int QUERY_CONSTANT = 0x00000008;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    public IndexTestSupport() throws XMLStreamException, IOException {
+        this (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM|
+                //0,
+                 XmlIndexer.INDEX_FULLTEXT,
+              new RAMDirectory());
+    }
+    
+    public IndexTestSupport(int options, Directory dir) throws XMLStreamException, IOException {
         // create an in-memory Lucene index, index some content
-        dir = new RAMDirectory();
-        //indexer = new XmlIndexer (XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM);
-        indexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM);
+        indexer = new XmlIndexer (options);
+        this.dir = dir;
         indexAllElements (indexer, dir, "lux/hamlet.xml");
         searcher = new LuxSearcher(dir);
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    public void close() throws Exception {
         searcher.close();
         dir.close();
     }
 
-    protected static HashMap<String,Integer> elementCounts = new HashMap<String,Integer>();
-    
     /**
      * index and store all elements of an xml document found on the classpath
      * 
@@ -59,12 +64,12 @@ public abstract class SearchBase {
      * @throws XMLStreamException
      * @throws IOException
      */
-    public static void indexAllElements(XmlIndexer indexer, Directory dir, String filename) throws XMLStreamException, IOException {
+    public void indexAllElements(XmlIndexer indexer, Directory dir, String filename) throws XMLStreamException, IOException {
         indexAllElements(indexer, dir, filename, SearchTest.class.getClassLoader().getResourceAsStream(filename));
         System.out.println ("Indexed " + totalDocs + " documents from " + filename);
     }
     
-    public static void indexAllElements(XmlIndexer indexer, Directory dir, String uri, InputStream in) throws XMLStreamException, IOException {
+    public void indexAllElements(XmlIndexer indexer, Directory dir, String uri, InputStream in) throws XMLStreamException, IOException {
         IndexWriter indexWriter = indexer.getIndexWriter(dir);
         String xml = IOUtils.toString(in);
         indexer.indexDocument(indexWriter, '/' + uri, xml);
@@ -90,7 +95,7 @@ public abstract class SearchBase {
         indexWriter.close(true);
     }
     
-    public static Saxon getEvaluator() {
+    public Saxon getEvaluator() {
         Saxon eval = new Saxon(searcher, indexer, Dialect.XQUERY_1);
         eval.setQueryStats (new QueryStats());
         return eval;

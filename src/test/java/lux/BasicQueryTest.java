@@ -21,8 +21,6 @@ import org.junit.Test;
 /**
  * Tests the parsing of XPath expressions and the generation
  * of a supporting Lucene query using node name indexes, and using path indexes.
- * 
- * TODO: add some tests with empty steps like self::* and self::node() axis 
  */
 public abstract class BasicQueryTest {
 
@@ -37,8 +35,9 @@ public abstract class BasicQueryTest {
 
     public enum Q {
         ATTR, SCENE, SCENE_ACT, 
-            ACT, ACT1, ACT2, ACT_SCENE, ACT_SCENE1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
-            ACT_ID, MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
+            ACT, ACT1, ACT2, ACT_CONTENT, ACT_CONTENT1, ACT_SCENE, ACT_SCENE1, ACT_SCENE_CONTENT, ACT_SCENE_CONTENT1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
+            ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
+            MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
             LUX_FOO, 
     };
     
@@ -120,9 +119,8 @@ public abstract class BasicQueryTest {
     }
 
     @Test public void testTwoElementPaths () throws Exception {
-        
         assertQuery ("//*/ACT/SCENE", 0, ValueType.ELEMENT, Q.ACT_SCENE);
-
+        assertQuery ("/ACT/SCENE", 0, ValueType.ELEMENT, Q.ACT_SCENE1);
         assertQuery ("/ACT//SCENE", 0, ValueType.ELEMENT, Q.ACT_SCENE2);
     }
     
@@ -174,16 +172,21 @@ public abstract class BasicQueryTest {
     }
     
     @Test public void testElementValue () throws Exception {
-        assertQuery ("/ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT1);
+        assertQuery ("/ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT1);
 
-        assertQuery ("/ACT[SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE1);
+        assertQuery ("/ACT[SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
 
-        assertQuery ("//ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT);
+        assertQuery ("//ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT);
 
-        assertQuery ("//ACT[SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE);
-
+        assertQuery ("//ACT[SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT);
     }
     
+    @Test public void testAttributeValue () throws Exception {
+        assertQuery ("/ACT[@id=123]", 0, ValueType.ELEMENT, Q.ACT_ID_123);
+
+        assertQuery ("/ACT[SCENE/@id=123]", 0, ValueType.ELEMENT, Q.ACT_SCENE_ID_123);
+    }
+
     @Test public void testAncestorOrSelf () throws Exception {
         assertQuery ("/ancestor-or-self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
     }

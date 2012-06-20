@@ -9,7 +9,7 @@ import lux.xpath.AbstractExpression;
 public class Conditional extends AbstractExpression {
     
     public Conditional (AbstractExpression condition, AbstractExpression trueAction, AbstractExpression falseAction) {
-        super (Type.Conditional);
+        super (Type.CONDITIONAL);
         subs = new AbstractExpression[] { condition, trueAction, falseAction };
     }
     

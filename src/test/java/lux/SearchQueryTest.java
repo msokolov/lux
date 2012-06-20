@@ -16,8 +16,24 @@ import net.sf.saxon.s9api.XdmItem;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-public class SearchTest2 extends BasicQueryTest {
-        
+/**
+ * executes all the BasicQueryTest test cases using path indexes and compares results against
+ * an unindexed baseline.
+ *
+ */
+public class SearchQueryTest extends BasicQueryTest {
+    private static IndexTestSupport index;
+    
+    @BeforeClass
+    public static void setup () throws Exception {
+        index = new IndexTestSupport();
+    }
+    
+    @AfterClass
+    public static void tearDown() throws Exception {
+        index.close();
+    }
+    
     @Override
     public String getQueryString(Q q) {
         switch (q) {
@@ -32,16 +48,25 @@ public class SearchTest2 extends BasicQueryTest {
         return new XmlIndexer (XmlIndexer.INDEX_PATHS);
     }
 
+    /**
+     * @param xpath the path to test
+     * @param optimized ignored
+     * @param facts ignored
+     * @param queries ignored
+     */
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
-        Saxon saxon = SearchBase.getEvaluator();
+        Saxon saxon = index.getEvaluator();
         SaxonExpr saxonExpr = saxon.compile(xpath);
+        optimized = saxonExpr.toString();
+        long t = System.currentTimeMillis();
         ResultSet<?> results = saxon.evaluate(saxonExpr);
-        //System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
+        System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results from " +
+        saxon.getQueryStats().docCount + " documents");
         AbstractExpression aex = saxonExpr.getXPath();
         aex = new UnOptimizer(getIndexer().getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
-        assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());        
+        assertEquals ("result count mismatch for: " + optimized, baseResult.size(), results.size());        
         Iterator<?> baseIter = baseResult.iterator();
         Iterator<?> resultIter = results.iterator();
         for (int i = 0 ; i < results.size(); i++) {
@@ -51,16 +76,6 @@ public class SearchTest2 extends BasicQueryTest {
             assertEquals (base.getStringValue(), r.getStringValue());
         }
         // TODO: also assert facts about query optimizations
-    }
-    
-    @BeforeClass
-    public static void setUp() throws Exception {
-        SearchBase.setUp();
-    }
-    
-    @AfterClass
-    public static void tearDown() throws Exception {
-        SearchBase.tearDown();
     }
 
 }

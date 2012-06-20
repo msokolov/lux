@@ -8,6 +8,7 @@ import java.util.Arrays;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
+import lux.index.QNameTextMapper;
 import lux.index.XPathValueMapper;
 import lux.index.XmlPathMapper;
 import lux.xml.JDOMBuilder;
@@ -45,6 +46,15 @@ public class XmlReaderTest {
     public void testPathMapper() throws Exception {
         XmlPathMapper pathMapper = new XmlPathMapper();
         handleDocument(pathMapper, "lux/reader-test.xml");
+        assertPathMapperKeys(pathMapper);
+        
+        pathMapper.reset();
+        assertTrue (pathMapper.getPathCounts().isEmpty());
+        assertTrue (pathMapper.getEltQNameCounts().isEmpty());
+        assertTrue (pathMapper.getAttQNameCounts().isEmpty());
+    }
+
+    private void assertPathMapperKeys(XmlPathMapper pathMapper) {
         // elements
         assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("title")));
         assertEquals (Integer.valueOf(2), pathMapper.getEltQNameCounts().get(new QName("entities")));
@@ -55,11 +65,6 @@ public class XmlReaderTest {
         assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test @id"));
         assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test entities @id"));
         assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{} test entities"));
-        
-        pathMapper.reset();
-        assertTrue (pathMapper.getPathCounts().isEmpty());
-        assertTrue (pathMapper.getEltQNameCounts().isEmpty());
-        assertTrue (pathMapper.getAttQNameCounts().isEmpty());
     }
     
     @Test 
@@ -127,6 +132,10 @@ public class XmlReaderTest {
     public void testXPathValueMapper () throws Exception {
         XPathValueMapper xpathValueMapper = new XPathValueMapper();
         handleDocument (xpathValueMapper, "lux/reader-test.xml");
+        assertTestPathValues(xpathValueMapper);
+    }
+
+    private void assertTestPathValues(XPathValueMapper xpathValueMapper) {
         assertEquals ("{} test @id test\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(0)));
         assertEquals ("{} test title TEST\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(1)));
         assertEquals ("{} test entities &>0\0\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(2)));
@@ -145,6 +154,24 @@ public class XmlReaderTest {
         Arrays.fill(buf, '\0');
         XPathValueMapper.hashString("!!!!!!!!        ".toCharArray(), buf);
         assertEquals ("\u020f\u020f\u020f\u020f\u020f\u020f\u020f\u020f", new String(buf));
+    }
+    
+    @Test
+    public void testQNameTextMapper () throws Exception {
+        QNameTextMapper mapper = new QNameTextMapper();
+        handleDocument (mapper, "lux/reader-test.xml");
+        assertPathMapperKeys(mapper);
+        assertEquals ("@id", mapper.getNames().get(0));
+        assertEquals ("luxsor test luxeor", mapper.getValues().get(0));
+        assertEquals ("title", mapper.getNames().get(1));
+        assertEquals ("luxsor TEST luxeor", mapper.getValues().get(1));
+        assertEquals ("entities", mapper.getNames().get(2));
+        assertEquals ("luxsor &>0 luxeor", mapper.getValues().get(2));
+        assertEquals ("token", mapper.getNames().get(5));
+        assertEquals ("luxsor         12345678 luxeor", mapper.getValues().get(5));
+        assertEquals ("test", mapper.getNames().get(6));
+        assertEquals ("luxsor This is some markup <that> is escaped The end. luxeor", 
+                normalize (mapper.getValues().get(6)));
     }
 
     private void handleDocument(StAXHandler handler, String path) throws XMLStreamException {

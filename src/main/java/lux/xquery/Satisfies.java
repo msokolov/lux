@@ -9,7 +9,7 @@ public class Satisfies extends AbstractExpression {
     private final Variable var;
     
     public Satisfies (Quantifier quantifier, Variable var, AbstractExpression sequence, AbstractExpression condition) {
-        super (Type.Satisfies);
+        super (Type.SATISFIES);
         this.quantifier = quantifier;
         this.var = var;
         subs = new AbstractExpression[] { sequence, condition };

@@ -24,21 +24,21 @@ public class LiteralExpression extends AbstractExpression {
     }
     
     public LiteralExpression (Object value, ValueType valueType, String xqTypeName) {
-        super(Type.Literal);
+        super(Type.LITERAL);
         this.value = value;
         this.valueType = valueType;
         this.xqTypeName = xqTypeName;
     }
 
     public LiteralExpression (Object value, ValueType valueType) {
-        super(Type.Literal);
+        super(Type.LITERAL);
         this.value = value;
         this.valueType = valueType;
         this.xqTypeName = valueType.name;
     }
 
     public LiteralExpression (Object value) {
-        super(Type.Literal);
+        super(Type.LITERAL);
         this.value = value;
         if (value != null) {
             valueType = computeType (value);
@@ -51,7 +51,6 @@ public class LiteralExpression extends AbstractExpression {
     public static final LiteralExpression ONE = new LiteralExpression (1);
     
     private static ValueType computeType (Object value) {
-        // TODO: duration
         if (value instanceof String) {
             return ValueType.STRING;
         } else if (value instanceof Integer || value instanceof Long) {

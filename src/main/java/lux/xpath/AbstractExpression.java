@@ -14,10 +14,10 @@ public abstract class AbstractExpression implements Visitable {
     protected AbstractExpression subs[];
 
     public enum Type {
-        PathExpression, PathStep, Predicate, Binary, SetOperation,
-        Literal, Root, Dot, FunctionCall, Sequence, UnaryMinus, Subsequence,
-        Let, Variable, Element, Attribute, Text, FLWOR, Conditional, Comment, 
-        DocumentConstructor, ProcessingInstruction, Satisfies, InstanceOf
+        PATH_EXPRESSION, PATH_STEP, PREDICATE, BINARY_OPERATION, SET_OPERATION,
+        LITERAL, ROOT, DOT, FUNCTION_CALL, SEQUENCE, UNARY_MINUS, SUBSEQUENCE,
+        LET, VARIABLE, ELEMENT, ATTRIBUTE, TEXT, FLWOR, CONDITIONAL, COMMENT,         
+        DOCUMENT_CONSTRUCTOR, PROCESSING_INSTRUCTION, SATISFIES, INSTANCE_OF
     };
 
     private final Type type;
@@ -125,14 +125,18 @@ public abstract class AbstractExpression implements Visitable {
         }
     }
     
-
-
     /**
-     * @return the tail of this expression - only has meaning for PathExpressions, which strip off the 
-     * return everything after the leftmost step.
+     * @return the tail of this expression - null unless this is a PathExpression {@see PathExpression#getTail}.
      */
     public AbstractExpression getTail() {
         return null;
+    }
+
+    /**
+     * @return the rightmost sub-expression of this expression - this, unless this is a PathExpression {@see PathExpression#getRightmost}.
+     */
+    public AbstractExpression getRightmost () {
+        return this;
     }
 
     public enum Direction { Left, Right };
@@ -149,10 +153,6 @@ public abstract class AbstractExpression implements Visitable {
     public abstract int getPrecedence ();
 
 }
-
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,

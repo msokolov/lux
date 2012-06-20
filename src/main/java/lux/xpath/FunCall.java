@@ -9,7 +9,7 @@ public class FunCall extends AbstractExpression {
     private final ValueType returnType;
 
     public FunCall (QName name, ValueType returnType, AbstractExpression ... arguments) {
-        super (Type.FunctionCall);
+        super (Type.FUNCTION_CALL);
         this.name = name;
         this.subs = arguments;
         this.returnType = returnType;
@@ -101,6 +101,20 @@ public class FunCall extends AbstractExpression {
     public AbstractExpression replaceRoot(FunCall search) {        
         if (name.equals(FN_COLLECTION)) {
             return search;
+        }
+        return this;
+    }
+    
+    /**
+     * @return for functions that return (one of) their arguments, the argument's rightmost subexpression is returned.
+     * For other functions, the function expression itself is returned.
+     */
+    @Override
+    public AbstractExpression getRightmost () {
+        if (name.getNamespaceURI().equals(XS_NAMESPACE) ||
+                (name.getNamespaceURI().equals(FN_NAMESPACE) && 
+                        name.getLocalPart().equals("data"))) {
+            return subs[0].getRightmost();
         }
         return this;
     }

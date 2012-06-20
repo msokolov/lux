@@ -1,7 +1,8 @@
 package lux;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+
+import static lux.IndexTestSupport.*;
 
 import java.util.Iterator;
 
@@ -17,23 +18,37 @@ import lux.xquery.XQuery;
 
 import net.sf.saxon.s9api.XdmNode;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * Check a variety of XPath queries, ensuring that results are consistent with those 
- * observed when optimizations are undone, and observe that expected optimizations are 
- * in fact being applied.
- * 
+ * Check a variety of XPath queries, ensuring that results when executed using the default indexing
+ * settings, as provided by IndexTestSupport, are consistent with an unindexed baseline,
+ * and test that expected optimizations are in fact being applied. 
  */
-public class SearchTest extends SearchBase {
+public class SearchTest {
     
     private static final int MIL = 1000000;
-
+    private static IndexTestSupport index;
+    private static int totalDocs;
+    
+    @BeforeClass
+    public static void setup () throws Exception {
+        index = new IndexTestSupport();
+        totalDocs= index.totalDocs;
+    }
+    
+    @AfterClass
+    public static void tearDown() throws Exception {
+        index.close();
+    }
+    
     @Test
     public void testSearchAllDocs() throws Exception {
-        ResultSet<?> results = assertSearch("/", QUERY_EXACT);
-        assertEquals (totalDocs, results.size());
+        ResultSet<?> results = assertSearch("/", IndexTestSupport.QUERY_EXACT);
+        assertEquals (index.totalDocs, results.size());
     }
     
     @Test
@@ -91,19 +106,19 @@ public class SearchTest extends SearchBase {
     public void testSearchAct() throws Exception {
         // path indexes make this exact
         ResultSet<?> results = assertSearch ("/ACT", QUERY_EXACT);
-        assertEquals (elementCounts.get("ACT") + 0, results.size());
+        assertEquals (index.elementCounts.get("ACT") + 0, results.size());
         // Make sure that collection() is optimized
         results = assertSearch ("collection()/ACT", QUERY_EXACT);
-        assertEquals (elementCounts.get("ACT") + 0, results.size());
+        assertEquals (index.elementCounts.get("ACT") + 0, results.size());
         // and that references to variables are optimized
         results = assertSearch ("let $context := collection() return $context/ACT", QUERY_EXACT);
-        assertEquals (elementCounts.get("ACT") + 0, results.size());
+        assertEquals (index.elementCounts.get("ACT") + 0, results.size());
     }
     
     @Test
     public void testSearchActScene() throws Exception {
         ResultSet<?> results = assertSearch("/ACT/SCENE", QUERY_MINIMAL);
-        assertEquals (elementCounts.get("SCENE") + 0, results.size());
+        assertEquals (index.elementCounts.get("SCENE") + 0, results.size());
     }
     
     @Test
@@ -114,9 +129,9 @@ public class SearchTest extends SearchBase {
         String actURI = node.getDocumentURI().toString();
         results = assertSearch("//SCENE", QUERY_MINIMAL);
         // every SCENE, in its ACT and in the PLAY
-        assertEquals (elementCounts.get("SCENE") * 3, results.size());
+        assertEquals (index.elementCounts.get("SCENE") * 3, results.size());
         Iterator<?> iter = results.iterator();
-        for (int i = 0; i < elementCounts.get("SCENE"); i++) {
+        for (int i = 0; i < index.elementCounts.get("SCENE"); i++) {
             // each scene, from the /PLAY document
             node = (XdmNode) iter.next();
             assertEquals ("lux://lux/hamlet.xml", node.getDocumentURI().toString());
@@ -130,20 +145,20 @@ public class SearchTest extends SearchBase {
     public void testSearchAllSceneDocs() throws Exception {
         ResultSet<?> results = assertSearch("(/)[.//SCENE]", QUERY_EXACT);
         // every SCENE, in its ACT and in the PLAY
-        assertEquals (elementCounts.get("SCENE") + elementCounts.get("ACT") + 1, results.size());
+        assertEquals (index.elementCounts.get("SCENE") + index.elementCounts.get("ACT") + 1, results.size());
     }
     
     @Test
     public void testSearchAllSceneDocsRoot() throws Exception {
         ResultSet<?> results = assertSearch("//SCENE/root()", QUERY_EXACT);
         // every SCENE, in its ACT and in the PLAY
-        assertEquals (elementCounts.get("SCENE") + elementCounts.get("ACT") + 1, results.size());
+        assertEquals (index.elementCounts.get("SCENE") + index.elementCounts.get("ACT") + 1, results.size());
     }
     
     @Test
     public void testCountDocs () throws Exception {
         // every SCENE, in its ACT and in the PLAY
-        int sceneDocCount = elementCounts.get("SCENE") + elementCounts.get("ACT") + 1;
+        int sceneDocCount = index.elementCounts.get("SCENE") + index.elementCounts.get("ACT") + 1;
 
         ResultSet<?> results = assertSearch("count (//SCENE/root())", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
@@ -178,12 +193,12 @@ public class SearchTest extends SearchBase {
     public void testTextComparison () {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR >= //PERSONA";
-        Saxon saxon = getEvaluator();
+        Saxon saxon = index.getEvaluator();
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
         AbstractExpression aex = saxonExpr.getXPath();
-        aex = new UnOptimizer(indexer.getOptions()).unoptimize(aex);
+        aex = new UnOptimizer(index.indexer.getOptions()).unoptimize(aex);
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
         assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());        
@@ -193,12 +208,12 @@ public class SearchTest extends SearchBase {
     public void testComparisonPredicate () {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR[. >= //PERSONA]";
-        Saxon saxon = getEvaluator();
+        Saxon saxon = index.getEvaluator();
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results");
         XQuery optimized = saxonExpr.getXQuery();
-        XQuery unoptimized = new UnOptimizer(indexer.getOptions()).unoptimize(optimized);
+        XQuery unoptimized = new UnOptimizer(index.indexer.getOptions()).unoptimize(optimized);
         SaxonExpr baseline = saxon.compile(unoptimized.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
         assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());
@@ -219,6 +234,9 @@ public class SearchTest extends SearchBase {
         // sequences (they were broken in that first impl).
         // /PLAY/PERSONAE/PGROUP/PERSONA
         ResultSet<?> results = assertSearch("count (//PERSONA[.='ROSENCRANTZ'])", 0);
+        // FIXME: this test is currently failing since it tries to parse the query 
+        // using the surround query parser, but we insert a term: prefix with the element
+        // name
         assertEquals ("4", results.iterator().next().toString());
         results = assertSearch("count (//PERSONA[.='ROSENCRANTZ']) + count(//PERSONA[.='GUILDENSTERN'])", 0);
         assertEquals (1, results.size());
@@ -351,7 +369,7 @@ public class SearchTest extends SearchBase {
      * @throws LuxException
      */
     protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount) throws LuxException {
-        Evaluator eval = getEvaluator();
+        Evaluator eval = index.getEvaluator();
         SaxonExpr expr = (SaxonExpr) eval.compile(query);
         System.out.println (expr);
         ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr);

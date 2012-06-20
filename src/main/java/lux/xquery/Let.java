@@ -9,7 +9,7 @@ public class Let extends AbstractExpression {
     private QName name;
     
     public Let (QName name, AbstractExpression assignment, AbstractExpression returnExp) {
-        super (Type.Let);
+        super (Type.LET);
         subs = new AbstractExpression [] { assignment, returnExp };
         this.name = name;
     }

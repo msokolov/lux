@@ -6,7 +6,7 @@ import lux.xpath.AbstractExpression;
 public class DocumentConstructor extends AbstractExpression {
     
     public DocumentConstructor (AbstractExpression content) {
-        super (Type.DocumentConstructor);
+        super (Type.DOCUMENT_CONSTRUCTOR);
         subs = new AbstractExpression[] { content };
     }
     

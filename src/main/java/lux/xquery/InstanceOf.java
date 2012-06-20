@@ -8,7 +8,7 @@ public class InstanceOf extends AbstractExpression {
     private final String typeName;
     
     public InstanceOf (String typeName, AbstractExpression valueExpr) {
-        super (Type.InstanceOf);
+        super (Type.INSTANCE_OF);
         this.typeName = typeName;
         subs = new AbstractExpression [] { valueExpr };
     }

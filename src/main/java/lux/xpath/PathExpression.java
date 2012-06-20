@@ -14,7 +14,7 @@ import lux.ExpressionVisitor;
 public class PathExpression extends AbstractExpression {
     
     public PathExpression (AbstractExpression lhs, AbstractExpression rhs) {
-        super (Type.PathExpression);
+        super (Type.PATH_EXPRESSION);
         subs = new AbstractExpression[2];
         subs[0] = lhs;
         subs[1] = rhs;
@@ -59,7 +59,7 @@ public class PathExpression extends AbstractExpression {
     }
 
     /**
-     * @return the expression left after removing the left-most sub-expression.
+     * @return the expression remaining after removing the left-most sub-expression (the CDR).
      */
     public AbstractExpression getTail() {
         AbstractExpression left = subs[0].getTail();
@@ -68,7 +68,13 @@ public class PathExpression extends AbstractExpression {
         }
         return new PathExpression (left, subs[1]);
     }
-
+    
+    /**
+     * @return the rightmost step of this path expression
+     */
+    public AbstractExpression getRightmost() {
+        return subs[1].getRightmost();
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -180,7 +180,7 @@ public class TestSerialization {
         assertEquals ("\"<\"", new LiteralExpression("<").toString());
     }
     
-    // TODO:
+    // TODO: add more serialization tests
     // testAttributeToString
     // testTextToString
     // testFLWORToString

@@ -16,10 +16,8 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
 
 /*
- * TODO:
- *  
- *  get/set/clear external variable bindings
- *  get/set/clear ContextItem
+ * Wraps an abstract Lux expression as well as an executable Saxon expression;
+ * either an XQuery or an XPath expression.
  */
 public class SaxonExpr implements lux.api.Expression {
 

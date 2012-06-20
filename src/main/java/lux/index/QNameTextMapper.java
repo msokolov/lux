@@ -8,19 +8,13 @@ import java.util.Arrays;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 
+import lux.index.field.QNameTextField;
+
 /**
  * Accumulates text for each element and each attribute.
  */
 public class QNameTextMapper extends XmlPathMapper {
 
-    // FIXME: come up with a query that can match an entire text range
-    // without relying on magic start/end of record values.  A possible fix is to create a wrapping 
-    // TokenStream that pulls tokens using the user-provided Analyzer, and whenever it sees a 
-    // large position gap, inserts end/start tokens (plus handling edge cases at field start/end)
-    // There, we can use \0 as a separator since it can't appear in XML and we can
-    // protect it from deletion via analysis.
-    private static final String RECORD_END = " luxeor";
-    private static final String RECORD_START = "luxsor ";
     private int depth = -1;
     private StringBuilder[] stack;
     private ArrayList<String> names;
@@ -65,16 +59,17 @@ public class QNameTextMapper extends XmlPathMapper {
                 String name = '@' + encodeQName(attQName);
                 names.add(name);
                 // surround value by terminal markers
-                buf.append(RECORD_START).append (reader.getAttributeValue(i)).append(RECORD_END);
+                buf.append(QNameTextField.RECORD_START).append (reader.getAttributeValue(i)).append(QNameTextField.RECORD_END);
                 values.add(buf.toString());
                 buf.setLength(0);
             }
-            buf.append(RECORD_START);
+            buf.append(QNameTextField.RECORD_START);
             break;
             
         case END_ELEMENT:
+            super.handleEvent(reader, eventType);
             buf = popStackFrame();
-            buf.append(RECORD_END);
+            buf.append(QNameTextField.RECORD_END);
             names.add(encodeQName(currentQName));
             values.add(buf.toString());
             break;
