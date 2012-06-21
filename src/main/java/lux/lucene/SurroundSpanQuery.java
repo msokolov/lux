@@ -1,23 +1,32 @@
 package lux.lucene;
 
-import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.Query;
-
 /**
- * This query exists only to serve as a placeholder in an intermediate query compilation
- * phase so that span queries can be printed out in surround query parser language;
- * it doesn't actually query anything.
+ * Model a SpanNearQuery
  */
-public class SurroundSpanQuery extends Query {
+public class SurroundSpanQuery extends ParseableQuery {
     
-    private Query[] clauses;
+    private ParseableQuery[] clauses;
     private int slop;
     private boolean inOrder;
 
-    public SurroundSpanQuery(int slop, boolean inOrder, Occur occur, Query ... clauses) {
+    public SurroundSpanQuery(int slop, boolean inOrder, ParseableQuery ... clauses) {
         this.clauses = clauses;
         this.slop= slop;
         this.inOrder= inOrder;
+    }
+    
+    public String toXml (String field) {
+        StringBuilder buf = new StringBuilder("<SpanNear");
+        if (inOrder) {
+            buf.append (" inOrder=\"true\"");
+        }
+        buf.append (" slop=\"").append(slop).append('"');
+        buf.append ('>');
+        for (ParseableQuery q : clauses) {
+            buf.append(q.toXml(field));
+        }
+        buf.append ("</SpanNear>");
+        return buf.toString();
     }
     
     @Override
@@ -43,7 +52,6 @@ public class SurroundSpanQuery extends Query {
         return buf.toString();
     }
 
-    @Override
     public String toString(String field) {
         return field + ":(" + toString() + ')';
     }

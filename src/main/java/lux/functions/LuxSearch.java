@@ -2,7 +2,6 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.XPathQuery;
 import lux.index.XmlIndexer;
 import lux.index.field.XmlField;
 import lux.saxon.Config;
@@ -35,10 +34,14 @@ import org.apache.lucene.util.Version;
  */
 public class LuxSearch extends ExtensionFunctionDefinition {
     
+    private BasicQueryFactory queryFactory;
+    private QueryParser surroundQueryParser;
+    private org.apache.lucene.queryParser.QueryParser queryParser;
+    
     public LuxSearch () {
     }
     
-    private XPathQuery makeXPathQuery(String queryString, long facts, Saxon saxon) throws ParseException, org.apache.lucene.queryParser.ParseException {
+    private Query parseQuery(String queryString, long facts, Saxon saxon) throws ParseException, org.apache.lucene.queryParser.ParseException {
         Query query;
         XmlIndexer indexer = saxon.getIndexer();
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
@@ -47,31 +50,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         } else {
             query = getQueryParser().parse(queryString);
         }
-        return XPathQuery.getQuery(query, facts, indexer.getOptions());
-    }
-    
-    private BasicQueryFactory queryFactory;
-    protected BasicQueryFactory getQueryFactory () {
-        if (queryFactory == null) {
-            queryFactory = new BasicQueryFactory();
-        }
-        return queryFactory;
-    }
-    
-    private QueryParser surroundQueryParser;
-    protected QueryParser getSurroundQueryParser () {
-        if (surroundQueryParser == null) {
-            surroundQueryParser = new QueryParser ();//Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
-        }
-        return surroundQueryParser;
-    }
-    
-    private org.apache.lucene.queryParser.QueryParser queryParser;
-    private org.apache.lucene.queryParser.QueryParser getQueryParser () {
-        if (queryParser == null) {
-            queryParser = new org.apache.lucene.queryParser.QueryParser (Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
-        }
-        return queryParser;
+        return query;
     }
     
     @Override
@@ -118,7 +97,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
      * @throws XPathException
      */        
     @SuppressWarnings("rawtypes")
-    public SequenceIterator<Item> iterate(final XPathQuery query, Saxon saxon) throws XPathException {        
+    public SequenceIterator<Item> iterate(final Query query, Saxon saxon, long facts) throws XPathException {        
         try {
             return new ResultIterator (saxon, query);
         } catch (IOException e) {
@@ -127,8 +106,6 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     }
     
     class LuxSearchCall extends ExtensionFunctionCall {
-        
-        private XPathQuery query;
         
         @SuppressWarnings("rawtypes") @Override
         public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
@@ -147,18 +124,41 @@ public class LuxSearch extends ExtensionFunctionDefinition {
                 facts = num.longValue();
             }
             Saxon saxon = ((Config)context.getConfiguration()).getSaxon();
+            Query query;
             try {
-                query = makeXPathQuery(queryString, facts, saxon);
+                query = parseQuery(queryString, facts, saxon);
             } catch (ParseException e) {
                 throw new XPathException ("Failed to parse surround query " + queryString, e);
             } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException ("Failed to parse lucene query " + queryString, e);
             }
             //System.out.println ("executing xpath query: " + query);
-            return iterate (query, saxon);
+            return iterate (query, saxon, facts);
         }
         
     }
+    
+    protected BasicQueryFactory getQueryFactory () {
+        if (queryFactory == null) {
+            queryFactory = new BasicQueryFactory();
+        }
+        return queryFactory;
+    }
+    
+    protected QueryParser getSurroundQueryParser () {
+        if (surroundQueryParser == null) {
+            surroundQueryParser = new QueryParser ();//Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
+        }
+        return surroundQueryParser;
+    }
+    
+    protected org.apache.lucene.queryParser.QueryParser getQueryParser () {
+        if (queryParser == null) {
+            queryParser = new org.apache.lucene.queryParser.QueryParser (Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
+        }
+        return queryParser;
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

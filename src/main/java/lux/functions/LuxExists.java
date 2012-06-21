@@ -3,7 +3,6 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.XPathQuery;
-import lux.api.ValueType;
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.Item;
@@ -15,6 +14,7 @@ import net.sf.saxon.value.BooleanValue;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
 public class LuxExists extends LuxSearch {
@@ -32,7 +32,7 @@ public class LuxExists extends LuxSearch {
     }    
     
     @SuppressWarnings("rawtypes")
-    @Override public SequenceIterator<Item> iterate (XPathQuery query, Saxon saxon) throws XPathException {
+    @Override public SequenceIterator<Item> iterate (Query query, Saxon saxon, long facts) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {
@@ -45,7 +45,7 @@ public class LuxExists extends LuxSearch {
         if (exists) {
             ++ saxon.getQueryStats().docCount;
         }
-        if (query.getResultType()== ValueType.BOOLEAN_FALSE) {
+        if ((facts & XPathQuery.BOOLEAN_FALSE) != 0) {
             exists = !exists;
         }
         return SingletonIterator.makeIterator((Item)BooleanValue.get(exists));

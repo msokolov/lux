@@ -9,7 +9,6 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
 import lux.PathOptimizer;
-import lux.XPathQuery;
 import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
@@ -41,6 +40,7 @@ import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TermQuery;
 
 /**
@@ -126,7 +126,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         if (href.startsWith("lux:")) {
             String path = href.substring(5);
             path = path.replace('\\', '/');
-            return new LuxSearch().iterate(XPathQuery.MATCH_ALL, this);
+            return new LuxSearch().iterate(new MatchAllDocsQuery(), this, 0);
         }
         return defaultCollectionURIResolver.resolve(href, base, context);
     }

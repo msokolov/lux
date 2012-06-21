@@ -4,25 +4,18 @@
 
 package lux;
 
-import java.io.IOException;
-import java.util.Set;
-
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
+import lux.lucene.BooleanPQuery;
+import lux.lucene.MatchAllQuery;
+import lux.lucene.ParseableQuery;
 import lux.lucene.SurroundBoolean;
 import lux.lucene.SurroundMatchAll;
 import lux.lucene.SurroundSpanQuery;
 
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.Weight;
 
 /**
  * Wraps a Lucene Query, with advice as to how to process its results as XPath.
@@ -36,9 +29,9 @@ import org.apache.lucene.search.Weight;
  * correct doc set still may need additional evaluation though if the results
  * are not to be documents.
  */
-public class XPathQuery extends Query {
+public class XPathQuery {
 
-    private final Query query;
+    private final ParseableQuery query;
     private Expression expr;
     private ValueType valueType;
     private final boolean immutable;
@@ -84,11 +77,11 @@ public class XPathQuery extends Query {
     public static final int DOCUMENT_RESULTS=0x00000018;
     
 
-    public final static XPathQuery MATCH_ALL = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.DOCUMENT, true);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(null, MatchAllQuery.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, new MatchAllDocsQuery(), MINIMAL, ValueType.NODE, true);
+    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, MatchAllQuery.getInstance(), MINIMAL, ValueType.NODE, true);
 
-    private final static XPathQuery UNINDEXED = new XPathQuery(null, new MatchAllDocsQuery(), 0, ValueType.VALUE, true);
+    private final static XPathQuery UNINDEXED = new XPathQuery(null, MatchAllQuery.getInstance(), 0, ValueType.VALUE, true);
 
     private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
@@ -103,7 +96,7 @@ public class XPathQuery extends Query {
      * @param valueType the type of results returned by the xpath expression, as specifically as 
      * can be determined.
      */
-    protected XPathQuery(Expression expr, Query query, long resultFacts, ValueType valueType, boolean immutable) {
+    protected XPathQuery(Expression expr, ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
         this.expr = expr;
         this.query = query;
         this.facts = resultFacts;
@@ -111,7 +104,7 @@ public class XPathQuery extends Query {
         this.immutable = immutable;
     }
     
-    protected XPathQuery(Expression expr, Query query, long resultFacts, ValueType valueType) {
+    protected XPathQuery(Expression expr, ParseableQuery query, long resultFacts, ValueType valueType) {
         this (expr, query, resultFacts, valueType, false);
     }
     
@@ -122,8 +115,8 @@ public class XPathQuery extends Query {
      * @param options the indexer options; controls which type of match-all query may be returned
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
-    public static XPathQuery getQuery (Query query, long resultFacts, ValueType valueType, long options) {
-        if ((query instanceof MatchAllDocsQuery && resultFacts == MINIMAL) ||
+    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, long options) {
+        if ((query instanceof MatchAllQuery && resultFacts == MINIMAL) ||
                 query == SurroundMatchAll.getInstance()) {
             if (valueType == ValueType.DOCUMENT) {
                 if ((options & XmlIndexer.INDEX_PATHS) != 0) {
@@ -141,7 +134,7 @@ public class XPathQuery extends Query {
         return new XPathQuery (null, query, resultFacts, valueType);
     }
     
-    public static XPathQuery getQuery (Query query, long resultFacts, long options) {
+    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, long options) {
         return getQuery (query, resultFacts, typeFromFacts(resultFacts), options);
     }
     
@@ -171,7 +164,7 @@ public class XPathQuery extends Query {
         return ValueType.VALUE;                
     }
     
-    public Query getQuery() {
+    public ParseableQuery getParseableQuery() {
         return query;
     }
     
@@ -226,7 +219,7 @@ public class XPathQuery extends Query {
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type) {
         long resultFacts = combineQueryFacts (this, precursor);
-        Query result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
+        ParseableQuery result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
         return getQuery(result, resultFacts, type, 0);
     }
 
@@ -238,7 +231,7 @@ public class XPathQuery extends Query {
      */
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance) {
         long resultFacts = combineQueryFacts (this, precursor);
-        Query result = combineSpans (this.query, occur, precursor.query, distance);
+        ParseableQuery result = combineSpans (this.query, occur, precursor.query, distance);
         return new XPathQuery(expr, result, resultFacts, type);
     }
 
@@ -254,30 +247,28 @@ public class XPathQuery extends Query {
         }
     }
 
-    private static Query combineBoolean (Query a, Occur aOccur, Query b, Occur bOccur) {
-        BooleanQuery bq = new BooleanQuery();
-        if (a instanceof MatchAllDocsQuery) {
+    private static ParseableQuery combineBoolean (ParseableQuery a, Occur aOccur, ParseableQuery b, Occur bOccur) {
+        if (a instanceof MatchAllQuery) {
             if (bOccur != Occur.MUST_NOT) {
                 return b;
             }
-        } else {
-            bq.add(new BooleanClause(a, aOccur));
         }
-        if (b instanceof MatchAllDocsQuery) {
+        if (b instanceof MatchAllQuery) {
             if (aOccur != Occur.MUST_NOT) {
                 return a;
             }
-        } else {
-            bq.add(new BooleanClause(b, bOccur));
         }
-        return bq;
+        return new BooleanPQuery(new BooleanPQuery.Clause(a, aOccur), new BooleanPQuery.Clause(b,  bOccur));
     }
     
-    private static Query combineSpans (Query a, Occur occur, Query b, int distance) {
+    private static ParseableQuery combineSpans (ParseableQuery a, Occur occur, ParseableQuery b, int distance) {
 
         // distance == 0 means the two queries are adjacent
         if (distance == 0) {
-            return new SurroundSpanQuery(distance, true, occur, a, b);
+            if (occur != Occur.MUST) {
+                throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
+            }
+            return new SurroundSpanQuery(distance, true, a, b);
         }
 
         // don't create a span query for //foo; a single term is enough
@@ -289,7 +280,10 @@ public class XPathQuery extends Query {
             return a;
         }
         if (distance > 0) {
-            return new SurroundSpanQuery(distance, true, occur, a, b);
+            if (occur != Occur.MUST) {
+                throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
+            }
+            return new SurroundSpanQuery(distance, true, a, b);
         }
         // distance = -1
         return new SurroundBoolean (occur, a, b);
@@ -315,52 +309,6 @@ public class XPathQuery extends Query {
     public String toString () {
         return query == null ? "" : query.toString();
     }
-
-    /* 
-     * Wrapped methods from org.apache.lucene.search.Query
-     */
-
-    @Override
-    public String toString(String field) {
-       return query.toString(field);
-    }
-
-    @SuppressWarnings("deprecation")
-    public Weight createWeight(org.apache.lucene.search.Searcher searcher) throws IOException {
-        return query.createWeight (searcher);
-    }
-
-    public Query rewrite(IndexReader reader) throws IOException {
-        Query rq = query.rewrite (reader);
-        if (rq == null) {
-            System.err.println ("query.rewrite returned null for: " + this);
-        }
-        return rq;
-    }
-
-    // return an XPathQuery??
-    public Query combine(Query[] queries) {
-        return query.combine (queries);
-    }
-
-    public void extractTerms(Set<Term> terms) {
-        query.extractTerms (terms);
-    }
-
-    /** Returns a hash code value for this object.*/
-    @Override public int hashCode() {
-        return query.hashCode();
-    }
-
-  /** Returns true iff <code>o</code> is equal to this. */
-  @Override
-  public boolean equals(Object o) {
-    if (!(o instanceof XPathQuery))
-      return false;
-    XPathQuery other = (XPathQuery)o;
-    return (expr == null ? (other.expr == null) : expr.equals (other.expr)) &&
-            super.equals (o);
-  }
 
   public void setFact(int fact, boolean t) {
       if (immutable) throw new LuxException ("attempt to modify immutable query");

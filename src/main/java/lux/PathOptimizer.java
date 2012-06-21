@@ -12,11 +12,12 @@ import lux.index.XmlIndexer;
 import lux.index.field.QNameTextField;
 import lux.index.field.XmlField;
 import lux.lucene.LuxTermQuery;
+import lux.lucene.ParseableQuery;
 import lux.lucene.SurroundTerm;
 import lux.xpath.AbstractExpression;
 import lux.xpath.AbstractExpression.Type;
-import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.BinaryOperation;
+import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.Dot;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
@@ -35,7 +36,6 @@ import lux.xquery.XQuery;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.Query;
 
 /**
  * Prepares an XPath expression tree for indexed execution against a
@@ -171,7 +171,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = pop();
         if (n == 1) {
             ValueType type = valueType == null ? query.getResultType() : query.getResultType().promote(valueType);
-            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), type, indexer.getOptions());
+            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), type, indexer.getOptions());
         } else {
             for (int i = 0; i < n-1; i++) {
                 query = combineQueries (pop(), occur, query, valueType);
@@ -298,9 +298,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     && getQuery().getResultType() == ValueType.DOCUMENT) {
                 type = ValueType.DOCUMENT;
             }
-            query = XPathQuery.getQuery(MATCH_ALL.getQuery(), getQuery().getFacts(), type, indexer.getOptions());
+            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), getQuery().getFacts(), type, indexer.getOptions());
         } else {
-            Query termQuery = nodeNameTermQuery(step.getAxis(), name);
+            ParseableQuery termQuery = nodeNameTermQuery(step.getAxis(), name);
             query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexer.getOptions());
         }
        push(query);
@@ -352,7 +352,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (int i = funcall.getSubs().length; i > 0; --i) {
                 pop();
             }
-            push (XPathQuery.getQuery(MATCH_ALL.getQuery(), 0, ValueType.VALUE, indexer.getOptions()));
+            push (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), 0, ValueType.VALUE, indexer.getOptions()));
         } else {
             combineTopQueries(funcall.getSubs().length, occur, funcall.getReturnType());
         }
@@ -440,7 +440,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // but isn't generally true.  If we really need it, move this logic up to the caller - it has nothing
         // to do with optimizing this funcall.
         if (query.isImmutable()) {
-            query = XPathQuery.getQuery(query.getQuery(), query.getFacts(), ValueType.INT, indexer.getOptions());
+            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), ValueType.INT, indexer.getOptions());
         } else {
             query.setType(ValueType.INT);
         }
@@ -450,7 +450,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private XPathQuery combineQueries(XPathQuery rq, Occur occur, XPathQuery lq, ValueType resultType) {
         XPathQuery query;
-        // TODO - explain the difference between these two overrides!!!
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
             query = lq.combineSpanQueries(rq, occur, resultType, -1);
         } else {
@@ -459,7 +458,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return query;
     }
     
-    private Query nodeNameTermQuery(Axis axis, QName name) {
+    private ParseableQuery nodeNameTermQuery(Axis axis, QName name) {
         if (indexer.isOption (XmlIndexer.INDEX_PATHS)) {
             String nodeName = name.getEncodedName();
             if (axis == Axis.Attribute) {

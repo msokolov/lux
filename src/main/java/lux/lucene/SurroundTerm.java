@@ -1,7 +1,6 @@
 package lux.lucene;
 
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.TermQuery;
 
 /**
  * Surround parser doesn't support multiple fields in a query?  This term
@@ -9,14 +8,14 @@ import org.apache.lucene.search.TermQuery;
  * the surround parser.
  *
  */
-public class SurroundTerm extends TermQuery {
+public class SurroundTerm extends LuxTermQuery {
 
     public SurroundTerm(Term t) {
         super(t);
     }
 
     @Override
-    public String toString(String field) {
+    public String toString (String field) {
         return LuxTermQuery.toString(field, getTerm(), getBoost());
     }
 

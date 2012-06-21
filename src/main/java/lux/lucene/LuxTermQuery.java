@@ -1,29 +1,48 @@
 package lux.lucene;
 
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.ToStringUtils;
 
 /**
- * An extension of TermQuery that whose toString method produces an expression that can be parsed by
- * most query parsers (including lucene's standard query parser and its surround query parser).
+ * An analogue of TermQuery whose toString method produces an expression that can be parsed by
+ * Lucene's standard query parser (and its surround query parser).
  *
  */
-public class LuxTermQuery extends TermQuery {
+public class LuxTermQuery extends ParseableQuery {
 
-    public LuxTermQuery(Term t) {
-        super(t);
+    private final Term term;
+    
+    private final float boost;
+    
+    public LuxTermQuery(Term t, float boost) {
+        this.term = t;
+        this.boost = boost;
     }
     
-    @Override
+    public LuxTermQuery(Term t) {
+        this (t, 1.0f);
+    }
+    
+    public String toXml (String field) {
+        StringBuilder buffer = new StringBuilder("<TermQuery");
+        if (term.field() != null && !term.field().equals(field)) {
+            buffer.append (" fieldName=\"").append (field).append ("\"");
+        }
+        if (boost != 1) {
+            buffer.append (" boost=\"").append(boost).append("\"");
+        }
+        buffer.append(">").append(term.text()).append("</TermQuery>");
+        return buffer.toString();
+    }
+    
     public String toString (String field) {
-        return LuxTermQuery.toString (field, getTerm(), getBoost());
+        return LuxTermQuery.toString (field, term, boost);
     }
     
     public static String toString (String field, Term term, float boost) {
 
         StringBuilder buffer = new StringBuilder();
-        if (!term.field().equals(field)) {
+        if (!term.field().equals(field) && !term.field().isEmpty()) {
           buffer.append(term.field());
           buffer.append(":");
         }
@@ -41,6 +60,14 @@ public class LuxTermQuery extends TermQuery {
         buffer.append ('"');
         buffer.append(ToStringUtils.boost(boost));
         return buffer.toString();
+    }
+
+    public Term getTerm() {
+        return term;
+    }
+
+    public float getBoost() {
+        return boost;
     }
 
 }

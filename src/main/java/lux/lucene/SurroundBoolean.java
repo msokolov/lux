@@ -1,23 +1,38 @@
 package lux.lucene;
 
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.Query;
 
-public class SurroundBoolean extends Query {
-    private Query queries[];
-    private String operator;
+/**
+ * simplified BooleanQuery model for the surround query parser
+ * - all clauses have the same occur value, which must be AND
+ * or OR, not NOT.
+ */
+public class SurroundBoolean extends ParseableQuery {
+    private ParseableQuery queries[];
+    private Occur occur;
     
-    public SurroundBoolean (Occur occur, Query ... queries) {
+    public SurroundBoolean (Occur occur, ParseableQuery ... queries) {
         this.queries = queries;
-        this.operator = occur == Occur.MUST ? " AND " : " OR ";
+        this.occur = occur;
     }
 
-    @Override
+    public String toXml (String field) {
+        StringBuilder buf = new StringBuilder("<BooleanQuery>");
+        for (ParseableQuery q : queries) {
+            buf.append ("<Clause occur=\"").append (occur).append("\">");
+            buf.append (q.toXml(field));
+            buf.append("</Clause>");
+        }
+        buf.append ("</BooleanQuery>");
+        return buf.toString();
+    }
+    
     public String toString(String field) {
         StringBuilder buf = new StringBuilder();
         if (queries.length > 0) {
             buf.append(queries[0].toString());
         }
+        String operator = occur == Occur.MUST ? " AND " : " OR ";
         for (int i = 1; i < queries.length; i++) {
             buf.append (operator);
             buf.append (queries[i].toString());

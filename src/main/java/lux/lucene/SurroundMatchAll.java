@@ -1,13 +1,12 @@
 package lux.lucene;
 
-import org.apache.lucene.search.Query;
 
 /**
  * This query exists only to serve as a placeholder in an intermediate query compilation
  * phase.  It prints out a "match all" in surround query parser language;
  * it doesn't actually query anything.
  */
-public class SurroundMatchAll extends Query {
+public class SurroundMatchAll extends ParseableQuery {
     
     private static final SurroundMatchAll INSTANCE = new SurroundMatchAll();
     
@@ -15,7 +14,10 @@ public class SurroundMatchAll extends Query {
         return INSTANCE;
     }
     
-    @Override
+    public String toXml(String field) {
+        return "<SpanTermQuery fieldName=\"" + field + "\">{}</SpanTermQuery>";
+    }
+    
     public String toString(String field) {
         return "{}";
     }

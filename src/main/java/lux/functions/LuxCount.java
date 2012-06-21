@@ -2,7 +2,6 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.XPathQuery;
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.Item;
@@ -14,6 +13,7 @@ import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
 public class LuxCount extends LuxSearch {
@@ -31,7 +31,7 @@ public class LuxCount extends LuxSearch {
     }
     
     @SuppressWarnings("rawtypes")
-    @Override public SequenceIterator<Item> iterate (XPathQuery query, Saxon saxon) throws XPathException {
+    @Override public SequenceIterator<Item> iterate (Query query, Saxon saxon, long facts) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {

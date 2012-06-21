@@ -2,7 +2,6 @@ package lux.saxon;
 
 import java.io.IOException;
 
-import lux.XPathQuery;
 import lux.api.LuxException;
 import lux.api.QueryStats;
 import lux.lucene.LuxSearcher;
@@ -13,13 +12,14 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
 @SuppressWarnings("rawtypes")
 public class ResultIterator implements SequenceIterator<Item>{
     
     private final DocIdSetIterator docIter;
-    private final XPathQuery query;
+    private final Query query;
     private final QueryStats stats;
     private final LuxSearcher searcher;
     private final Saxon saxon;
@@ -27,12 +27,12 @@ public class ResultIterator implements SequenceIterator<Item>{
     private Item current = null;
     private int position = 0;
     
-    public ResultIterator (Saxon saxon, XPathQuery query) throws IOException {
+    public ResultIterator (Saxon saxon, Query query) throws IOException {
         this.query = query;
         this.saxon = saxon;
         this.stats = saxon.getQueryStats();
         if (stats != null) {
-            stats.query = query.getQuery().toString();
+            stats.query = query.toString();
         }
         searcher = saxon.getSearcher();
         docCache = saxon.getDocReader();
