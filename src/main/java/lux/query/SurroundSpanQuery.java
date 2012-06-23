@@ -1,4 +1,4 @@
-package lux.lucene;
+package lux.query;
 
 /**
  * Model a SpanNearQuery
@@ -15,7 +15,7 @@ public class SurroundSpanQuery extends ParseableQuery {
         this.inOrder= inOrder;
     }
     
-    public String toXml (String field) {
+    public String toXmlString (String field) {
         StringBuilder buf = new StringBuilder("<SpanNear");
         if (inOrder) {
             buf.append (" inOrder=\"true\"");
@@ -23,7 +23,7 @@ public class SurroundSpanQuery extends ParseableQuery {
         buf.append (" slop=\"").append(slop).append('"');
         buf.append ('>');
         for (ParseableQuery q : clauses) {
-            buf.append(q.toXml(field));
+            buf.append(q.toXmlString(field));
         }
         buf.append ("</SpanNear>");
         return buf.toString();

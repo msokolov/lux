@@ -1,4 +1,4 @@
-package lux.lucene;
+package lux.query;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.util.ToStringUtils;
@@ -8,22 +8,22 @@ import org.apache.lucene.util.ToStringUtils;
  * Lucene's standard query parser (and its surround query parser).
  *
  */
-public class LuxTermQuery extends ParseableQuery {
+public class TermPQuery extends ParseableQuery {
 
     private final Term term;
     
     private final float boost;
     
-    public LuxTermQuery(Term t, float boost) {
+    public TermPQuery(Term t, float boost) {
         this.term = t;
         this.boost = boost;
     }
     
-    public LuxTermQuery(Term t) {
+    public TermPQuery(Term t) {
         this (t, 1.0f);
     }
     
-    public String toXml (String field) {
+    public String toXmlString (String field) {
         StringBuilder buffer = new StringBuilder("<TermsQuery");
         appendContents(field, buffer);
         buffer.append("</TermsQuery>");
@@ -41,7 +41,7 @@ public class LuxTermQuery extends ParseableQuery {
     }
     
     public String toString (String field) {
-        return LuxTermQuery.toString (field, term, boost);
+        return TermPQuery.toString (field, term, boost);
     }
     
     public static String toString (String field, Term term, float boost) {

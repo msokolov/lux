@@ -1,7 +1,7 @@
 package lux.api;
 
 import lux.index.XmlIndexer;
-import lux.lucene.LuxSearcher;
+import lux.search.LuxSearcher;
 import lux.xml.XmlBuilder;
 
 /** Represents an expression engine: interpreter, compiler, evaluator 

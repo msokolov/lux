@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import lux.index.QNameTextMapper;
 import lux.index.XmlIndexer;
-import lux.lucene.LuxTermQuery;
+import lux.query.TermPQuery;
 import lux.xpath.QName;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -50,18 +50,18 @@ public class QNameTextField extends XmlField {
         return fields;
     }
     
-    public LuxTermQuery makeElementValueQuery (QName qname, String value) {
+    public TermPQuery makeElementValueQuery (QName qname, String value) {
         String fieldName = getName() + qname.getEncodedName();
         return makeValueQuery (fieldName, value);
     }
 
-    public LuxTermQuery makeAttributeValueQuery (QName qname, String value) {
+    public TermPQuery makeAttributeValueQuery (QName qname, String value) {
         String fieldName = getName() + '@' + qname.getEncodedName();
         return makeValueQuery (fieldName, value);
     }
 
-    private LuxTermQuery makeValueQuery (String fieldName, String value) {
-        return new LuxTermQuery(new Term(fieldName, value));        
+    private TermPQuery makeValueQuery (String fieldName, String value) {
+        return new TermPQuery(new Term(fieldName, value));        
     }
     
 }

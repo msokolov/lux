@@ -1,8 +1,8 @@
 package lux.saxon;
 
-import lux.ExpressionVisitorBase;
+import lux.compiler.ExpressionVisitorBase;
 import lux.index.XmlIndexer;
-import lux.lucene.SurroundMatchAll;
+import lux.query.SurroundMatchAll;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
@@ -27,7 +27,7 @@ public class UnOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(FunCall func) {
         if (func.getName().equals(luxSearchQName)) {
             if ((indexOptions & XmlIndexer.INDEX_PATHS) != 0) {
-                func.getSubs()[0] = new LiteralExpression (SurroundMatchAll.getInstance().toXml(""));
+                func.getSubs()[0] = new LiteralExpression (SurroundMatchAll.getInstance().toXmlString(""));
             } else {
                 func.getSubs()[0] = new LiteralExpression ("*:*");
             }

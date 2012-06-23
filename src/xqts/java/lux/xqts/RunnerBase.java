@@ -11,10 +11,10 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.api.QueryContext;
 import lux.index.XmlIndexer;
-import lux.lucene.LuxSearcher;
 import lux.saxon.Saxon;
 import lux.saxon.Saxon.Dialect;
 import lux.saxon.SaxonExpr;
+import lux.search.LuxSearcher;
 import lux.xpath.QName;
 import lux.xqts.TestCase.VariableBinding;
 import net.sf.saxon.lib.FeatureKeys;

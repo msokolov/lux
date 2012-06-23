@@ -1,8 +1,4 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-package lux;
+package lux.compiler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,9 +7,9 @@ import lux.api.ValueType;
 import lux.index.XmlIndexer;
 import lux.index.field.QNameTextField;
 import lux.index.field.XmlField;
-import lux.lucene.LuxTermQuery;
-import lux.lucene.ParseableQuery;
-import lux.lucene.SurroundTerm;
+import lux.query.TermPQuery;
+import lux.query.ParseableQuery;
+import lux.query.SurroundTerm;
 import lux.xpath.AbstractExpression;
 import lux.xpath.AbstractExpression.Type;
 import lux.xpath.BinaryOperation;
@@ -431,7 +427,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 // apply no restrictions to the enclosing scope:
                 push (MATCH_ALL);
                 return new FunCall (qname, returnType, 
-                        new LiteralExpression (query.getParseableQuery().toXml("")),
+                        new LiteralExpression (query.getParseableQuery().toXmlString("")),
                         new LiteralExpression (facts));
             }
         }
@@ -470,7 +466,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             String nodeName = name.getEncodedName();
             String fieldName = (axis == Axis.Attribute) ? attrQNameField : elementQNameField;
             Term term = new Term (fieldName, nodeName);
-            return new LuxTermQuery (term);
+            return new TermPQuery (term);
         }
     }
     
@@ -560,7 +556,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 if ("*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
                     return predicate;
                 }
-                LuxTermQuery termQuery = null;
+                TermPQuery termQuery = null;
                 if (nodeTest.getType() == ValueType.ELEMENT) {
                     termQuery = QNameTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
                 } 
@@ -636,7 +632,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
          */
         String defaultField = ""; //indexer.isOption(XmlIndexer.INDEX_PATHS) ? XmlField.PATH.getName() :XmlField.ELT_QNAME.getName();
         return new FunCall (FunCall.LUX_SEARCH, query.getResultType(), 
-                new LiteralExpression (query.getParseableQuery().toXml(defaultField)),
+                new LiteralExpression (query.getParseableQuery().toXmlString(defaultField)),
                 new LiteralExpression (query.getFacts() | facts));
     }
 

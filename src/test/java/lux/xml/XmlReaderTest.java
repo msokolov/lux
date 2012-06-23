@@ -170,7 +170,7 @@ public class XmlReaderTest {
         assertEquals ("token", mapper.getNames().get(5));
         assertEquals ("        12345678", mapper.getValues().get(5));
         assertEquals ("test", mapper.getNames().get(6));
-        assertEquals ("This is some markup <that> is escaped The end.", 
+        assertEquals ("This is some markup <that> is escaped The end.#`", 
                 normalize (mapper.getValues().get(6)));
     }
 

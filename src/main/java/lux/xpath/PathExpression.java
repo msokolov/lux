@@ -4,7 +4,7 @@
 
 package lux.xpath;
 
-import lux.ExpressionVisitor;
+import lux.compiler.ExpressionVisitor;
 
 /**
  * A path expression represents two expressions joined with a "/"

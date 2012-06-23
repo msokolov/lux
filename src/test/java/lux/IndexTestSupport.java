@@ -9,9 +9,9 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.api.QueryStats;
 import lux.index.XmlIndexer;
-import lux.lucene.LuxSearcher;
 import lux.saxon.Saxon;
 import lux.saxon.Saxon.Dialect;
+import lux.search.LuxSearcher;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;

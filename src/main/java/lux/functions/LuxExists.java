@@ -2,7 +2,7 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.XPathQuery;
+import lux.compiler.XPathQuery;
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.Item;

@@ -7,6 +7,8 @@ import static org.junit.Assert.assertSame;
 import java.util.ArrayList;
 
 import lux.api.ValueType;
+import lux.compiler.ExpressionVisitorBase;
+import lux.compiler.XPathQuery;
 import lux.index.XmlIndexer;
 import lux.saxon.Saxon;
 import lux.saxon.Saxon.Dialect;

@@ -1,6 +1,6 @@
 package lux.xquery;
 
-import lux.ExpressionVisitor;
+import lux.compiler.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.Namespace;
 import lux.xpath.QName;

@@ -2,18 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package lux;
+package lux.compiler;
 
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
-import lux.lucene.BooleanPQuery;
-import lux.lucene.MatchAllQuery;
-import lux.lucene.ParseableQuery;
-import lux.lucene.SurroundBoolean;
-import lux.lucene.SurroundMatchAll;
-import lux.lucene.SurroundSpanQuery;
+import lux.query.BooleanPQuery;
+import lux.query.MatchAllPQuery;
+import lux.query.ParseableQuery;
+import lux.query.SurroundBoolean;
+import lux.query.SurroundMatchAll;
+import lux.query.SurroundSpanQuery;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
@@ -77,11 +77,11 @@ public class XPathQuery {
     public static final int DOCUMENT_RESULTS=0x00000018;
     
 
-    public final static XPathQuery MATCH_ALL = new XPathQuery(null, MatchAllQuery.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(null, MatchAllPQuery.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, MatchAllQuery.getInstance(), MINIMAL, ValueType.NODE, true);
+    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, MatchAllPQuery.getInstance(), MINIMAL, ValueType.NODE, true);
 
-    private final static XPathQuery UNINDEXED = new XPathQuery(null, MatchAllQuery.getInstance(), 0, ValueType.VALUE, true);
+    private final static XPathQuery UNINDEXED = new XPathQuery(null, MatchAllPQuery.getInstance(), 0, ValueType.VALUE, true);
 
     private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
@@ -116,7 +116,7 @@ public class XPathQuery {
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
     public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, long options) {
-        if ((query instanceof MatchAllQuery && resultFacts == MINIMAL) ||
+        if ((query instanceof MatchAllPQuery && resultFacts == MINIMAL) ||
                 query == SurroundMatchAll.getInstance()) {
             if (valueType == ValueType.DOCUMENT) {
                 if ((options & XmlIndexer.INDEX_PATHS) != 0) {
@@ -248,12 +248,12 @@ public class XPathQuery {
     }
 
     private static ParseableQuery combineBoolean (ParseableQuery a, Occur aOccur, ParseableQuery b, Occur bOccur) {
-        if (a instanceof MatchAllQuery) {
+        if (a instanceof MatchAllPQuery) {
             if (bOccur != Occur.MUST_NOT) {
                 return b;
             }
         }
-        if (b instanceof MatchAllQuery) {
+        if (b instanceof MatchAllPQuery) {
             if (aOccur != Occur.MUST_NOT) {
                 return a;
             }

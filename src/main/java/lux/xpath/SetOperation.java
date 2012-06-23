@@ -1,6 +1,6 @@
 package lux.xpath;
 
-import lux.ExpressionVisitor;
+import lux.compiler.ExpressionVisitor;
 import lux.xpath.BinaryOperation.Operator;
 
 public class SetOperation extends AbstractExpression {

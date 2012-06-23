@@ -1,4 +1,4 @@
-package lux.lucene;
+package lux.query;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
@@ -27,13 +27,13 @@ public class SurroundBoolean extends BooleanPQuery {
         return buf.toString();
     }
     
-    public String toXml (String field) {
+    public String toXmlString (String field) {
         if (getOccur().equals(Occur.MUST)) {
-            return super.toXml(field);
+            return super.toXmlString(field);
         }        
         StringBuilder buf = new StringBuilder ("<SpanOr>");
         for (Clause clause : getClauses()) {
-            buf.append (clause.getQuery().toXml(field));
+            buf.append (clause.getQuery().toXmlString(field));
         }
         buf.append ("</SpanOr>");
         return buf.toString();

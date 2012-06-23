@@ -1,4 +1,4 @@
-package lux.lucene;
+package lux.query;
 
 import org.apache.lucene.index.Term;
 
@@ -8,7 +8,7 @@ import org.apache.lucene.index.Term;
  * the surround parser.
  *
  */
-public class SurroundTerm extends LuxTermQuery {
+public class SurroundTerm extends TermPQuery {
 
     public SurroundTerm(Term t) {
         super(t);
@@ -16,11 +16,11 @@ public class SurroundTerm extends LuxTermQuery {
 
     @Override
     public String toString (String field) {
-        return LuxTermQuery.toString(field, getTerm(), getBoost());
+        return TermPQuery.toString(field, getTerm(), getBoost());
     }
     
 
-    public String toXml (String field) {
+    public String toXmlString (String field) {
         StringBuilder buffer = new StringBuilder("<SpanTerm");
         appendContents(field, buffer);
         buffer.append("</SpanTerm>");

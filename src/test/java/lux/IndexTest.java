@@ -8,7 +8,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.index.XmlIndexer;
 import lux.index.field.XmlField;
-import lux.lucene.LuxSearcher;
+import lux.search.LuxSearcher;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;

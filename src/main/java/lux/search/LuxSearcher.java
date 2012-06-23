@@ -1,4 +1,4 @@
-package lux.lucene;
+package lux.search;
 
 import java.io.IOException;
 

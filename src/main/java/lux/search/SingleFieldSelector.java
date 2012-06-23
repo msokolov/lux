@@ -1,4 +1,4 @@
-package lux.lucene;
+package lux.search;
 
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;

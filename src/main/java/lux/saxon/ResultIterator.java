@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import lux.api.LuxException;
 import lux.api.QueryStats;
-import lux.lucene.LuxSearcher;
+import lux.search.LuxSearcher;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmItem;

@@ -1,4 +1,4 @@
-package lux;
+package lux.compiler;
 
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;

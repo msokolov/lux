@@ -1,4 +1,4 @@
-package lux;
+package lux.search;
 
 import java.util.ArrayList;
 import java.util.Iterator;

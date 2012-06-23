@@ -55,6 +55,12 @@ XmlIndexer manages multiple index options, and we pass it around so consumers
 of the index know what is available there.
 ** qname index
 ** path index
+** value indexes
+index key: <QName> | <first N chars of value>
+we could have path value indexes too:
+{} <QName> <QName> ... | <first N chars>
+in fact this index can probably just replace the QName or path index
+** word indexes
 
 *** implemented using surround parser / span queries
 * tests

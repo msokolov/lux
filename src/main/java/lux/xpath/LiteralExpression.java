@@ -7,9 +7,9 @@ package lux.xpath;
 import java.math.BigDecimal;
 import java.util.Date;
 
-import lux.ExpressionVisitor;
 import lux.api.LuxException;
 import lux.api.ValueType;
+import lux.compiler.ExpressionVisitor;
 
 import javax.xml.bind.DatatypeConverter;
 

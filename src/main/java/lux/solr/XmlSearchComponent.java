@@ -9,7 +9,7 @@ import lux.api.Expression;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
 import lux.index.XmlIndexer;
-import lux.lucene.LuxSearcher;
+import lux.search.LuxSearcher;
 
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;

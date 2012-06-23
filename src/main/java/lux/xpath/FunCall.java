@@ -1,7 +1,7 @@
 package lux.xpath;
 
-import lux.ExpressionVisitor;
 import lux.api.ValueType;
+import lux.compiler.ExpressionVisitor;
 
 public class FunCall extends AbstractExpression {
 

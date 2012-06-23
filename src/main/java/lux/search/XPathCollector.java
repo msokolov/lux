@@ -1,12 +1,11 @@
-package lux.lucene;
+package lux.search;
 
 import java.io.IOException;
 import java.io.StringReader;
 
-import lux.ResultList;
-import lux.XPathQuery;
 import lux.api.QueryStats;
 import lux.api.ValueType;
+import lux.compiler.XPathQuery;
 import lux.index.field.XmlField;
 import lux.solr.ShortCircuitException;
 import lux.xml.XmlBuilder;

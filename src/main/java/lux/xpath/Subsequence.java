@@ -4,7 +4,7 @@
 
 package lux.xpath;
 
-import lux.ExpressionVisitor;
+import lux.compiler.ExpressionVisitor;
 
 /**
  * represents numeric literal predicates like [1]; last-predicates like

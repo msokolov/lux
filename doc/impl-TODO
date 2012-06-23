@@ -1,10 +1,11 @@
+* word index followthrough
+** rename query classes
+** search function
+** query constructors
+** test multiword queries
+** test queries in complex path relations
+** recast queries as XdmNodes
 * new indexes
-** value indexes
-index key: <QName> | <first N chars of value>
-we could have path value indexes too:
-{} <QName> <QName> ... | <first N chars>
-in fact this index can probably just replace the QName or path index
-** word indexes
 ** directory (uri component) index
 also link to collection()?
 ** sorting
@@ -29,9 +30,8 @@ This might be working, but we need to test
 ** attribute index support
 This might be working, but we need to test
 * api design / cleanup
-The success of this adventure is going to depend on not only a good
-implementation, but also a nice clean understandable code base so others
-can extend it too.
+** parseable query
+rename and consolidate naming of subclasses
 ** remove these notes from the release
 ** make clean package dependencies 
 *** fill out the generic API

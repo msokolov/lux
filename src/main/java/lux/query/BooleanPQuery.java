@@ -1,4 +1,5 @@
-package lux.lucene;
+package lux.query;
+
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
@@ -18,11 +19,11 @@ public class BooleanPQuery extends ParseableQuery {
         }
     }
 
-    public String toXml (String field) {
+    public String toXmlString (String field) {
         StringBuilder buf = new StringBuilder("<BooleanQuery>");
         for (Clause clause : clauses) {
             buf.append ("<Clause occurs=\"").append (clause.getOccurAttribute()).append("\">");
-            buf.append (clause.getQuery().toXml(field));
+            buf.append (clause.getQuery().toXmlString(field));
             buf.append("</Clause>");
         }
         buf.append ("</BooleanQuery>");
@@ -50,7 +51,7 @@ public class BooleanPQuery extends ParseableQuery {
             else if (occur == Occur.MUST) {
                 buf.append ('+');
             }
-            boolean isTerm = clause.getQuery() instanceof LuxTermQuery;
+            boolean isTerm = clause.getQuery() instanceof TermPQuery;
             if (!isTerm) {
                 buf.append ('(');
             }
@@ -62,6 +63,19 @@ public class BooleanPQuery extends ParseableQuery {
         return buf.toString();
     }
     
+    public String toSurround(String field) {
+        StringBuilder buf = new StringBuilder();
+        Clause [] clauses = getClauses();
+        if (clauses.length > 0) {
+            buf.append(clauses[0].getQuery().toString());
+        }
+        String operator = getOccur() == Occur.MUST ? " AND " : " OR ";
+        for (int i = 1; i < clauses.length; i++) {
+            buf.append (operator);
+            buf.append (clauses[i].getQuery().toString());
+        }
+        return buf.toString();
+    }    
     public static class Clause {
         private final Occur occur;
         private final ParseableQuery query;        

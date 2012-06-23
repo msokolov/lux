@@ -1,6 +1,6 @@
 package lux.xpath;
 
-import lux.ExpressionVisitor;
+import lux.compiler.ExpressionVisitor;
 
 public class Predicate extends AbstractExpression {
     
