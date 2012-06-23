@@ -234,9 +234,6 @@ public class SearchTest {
         // sequences (they were broken in that first impl).
         // /PLAY/PERSONAE/PGROUP/PERSONA
         ResultSet<?> results = assertSearch("count (//PERSONA[.='ROSENCRANTZ'])", 0);
-        // FIXME: this test is currently failing since it tries to parse the query 
-        // using the surround query parser, but we insert a term: prefix with the element
-        // name
         assertEquals ("4", results.iterator().next().toString());
         results = assertSearch("count (//PERSONA[.='ROSENCRANTZ']) + count(//PERSONA[.='GUILDENSTERN'])", 0);
         assertEquals (1, results.size());

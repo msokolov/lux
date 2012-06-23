@@ -43,6 +43,83 @@ public class QNameQueryTest extends BasicQueryTest {
     }
 
     @Override
+    public String getQueryXml(Q q) {
+        switch (q) {
+        case ATTR: return "<TermsQuery fieldName=\"lux_att_name\">attr</TermsQuery>";
+        case SCENE: return "<TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery>";
+        case ACT_SCENE: 
+        case ACT_SCENE1:
+        case ACT_SCENE2:
+        case ACT_SCENE3:
+        case ACT_SCENE_CONTENT:
+        case ACT_SCENE_CONTENT1:
+        case ACT_AND_SCENE: 
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause></BooleanQuery>";
+        case SCENE_ACT: 
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause></BooleanQuery>";
+        case ACT_OR_SCENE: 
+            return "<BooleanQuery><Clause occurs=\"should\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" + 
+                "<Clause occurs=\"should\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause></BooleanQuery>";
+        case ACT_SCENE_SPEECH:
+            return 
+                "<BooleanQuery><Clause occurs=\"should\">" +
+                  "<BooleanQuery>" +
+                    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">TITLE</TermsQuery></Clause>" + 
+                    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SPEECH</TermsQuery></Clause>" +
+                   "</BooleanQuery>" +
+                "</Clause><Clause occurs=\"should\">" +
+                  "<BooleanQuery><Clause occurs=\"should\">" +
+                    "<BooleanQuery>" +
+                      "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">TITLE</TermsQuery></Clause>" + 
+                      "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" +
+                    "</BooleanQuery>" +
+                  "</Clause><Clause occurs=\"should\">" +
+                  "<BooleanQuery>" +
+                    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">TITLE</TermsQuery></Clause>" + 
+                    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+                  "</BooleanQuery>" +
+                  "</Clause></BooleanQuery>" +
+                "</Clause></BooleanQuery>";
+        case ACT:
+        case ACT1:
+        case ACT2:
+        case ACT_CONTENT:
+        case ACT_CONTENT1:
+            return "<TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery>";
+        case ACT_ID_123:
+        case ACT_ID: 
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause></BooleanQuery>";
+        case ACT_SCENE_ID_123:
+            return 
+                "<BooleanQuery><Clause occurs=\"must\">" +
+                "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause></BooleanQuery>" +
+                "</Clause>" +
+                "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" + 
+                "</BooleanQuery>";
+        case PLAY_ACT_OR_PERSONAE_TITLE: 
+            return 
+                "<BooleanQuery>" +
+                "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">TITLE</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><BooleanQuery>" +
+                  "<Clause occurs=\"must\"><BooleanQuery>" +
+                    "<Clause occurs=\"should\"><TermsQuery fieldName=\"lux_elt_name\">PERSONAE</TermsQuery></Clause>" + 
+                    "<Clause occurs=\"should\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" + 
+                  "</BooleanQuery></Clause>" +
+                  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">PLAY</TermsQuery></Clause>" + 
+                "</BooleanQuery></Clause>" +
+                "</BooleanQuery>";
+        case MATCH_ALL: return "<MatchAllDocsQuery />";
+        case AND: return "<TermsQuery fieldName=\"lux_elt_name\">AND</TermsQuery>";
+        case LUX_FOO: return "<TermsQuery fieldName=\"lux_elt_name\">foo{lux}</TermsQuery>";
+        default: throw new UnsupportedOperationException("unregistered query enum: " + q);
+        }
+    }
+
+    @Override
     public XmlIndexer getIndexer() {
         return new XmlIndexer(XmlIndexer.INDEX_QNAMES);
     }

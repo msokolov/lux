@@ -33,6 +33,13 @@ public abstract class BasicQueryTest {
      */
     public abstract String getQueryString (Q q);
 
+    /**
+     * each test case uses one or more enums to retrieve the expected generated query
+     * @param q query enum identifying the test case
+     * @return the query expected for this case
+     */
+    public abstract String getQueryXml (Q q);
+    
     public enum Q {
         ATTR, SCENE, SCENE_ACT, 
             ACT, ACT1, ACT2, ACT_CONTENT, ACT_CONTENT1, ACT_SCENE, ACT_SCENE1, ACT_SCENE_CONTENT, ACT_SCENE_CONTENT1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
@@ -100,7 +107,7 @@ public abstract class BasicQueryTest {
     @Test
     public void testConvertRootedPathToPredicate() {
         assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + 
-                     getQueryString(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
+                     getQueryXml(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
         		"[(descendant::ACT/child::SCENE)/root(.)]", 
         		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
@@ -266,7 +273,7 @@ public abstract class BasicQueryTest {
     @Test public void testCollection () throws Exception {
         // fn:collection() is implicit
         assertQuery ("collection()//SCENE", "lux:search(\"" +
-                getQueryString(Q.SCENE).replace("\"", "\"\"")
+                getQueryXml(Q.SCENE).replace("\"", "\"\"")
                 + "\",2)/descendant::SCENE", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
     }
     
@@ -307,7 +314,7 @@ public abstract class BasicQueryTest {
         ex.accept(extractor);
         assertEquals ("wrong number of queries for " + xpath, queries.length, extractor.queries.size());
         for (int i = 0; i < queries.length; i++) {
-            assertEquals (getQueryString(queries[i]), extractor.queries.get(i).toString());
+            assertEquals (getQueryXml(queries[i]), extractor.queries.get(i).toString());
         }
         if (queries.length > 0) {
             boolean isMinimal = (facts & XPathQuery.MINIMAL) != 0;

@@ -9,16 +9,32 @@ public class BooleanPQuery extends ParseableQuery {
     public BooleanPQuery (Clause ... clauses) {
         this.clauses = clauses;
     }
+    
+    public BooleanPQuery (Occur occur, ParseableQuery ... queries) {
+        clauses = new Clause[queries.length];
+        int i = 0;
+        for (ParseableQuery query : queries) {
+            clauses[i++] = new Clause(query, occur);
+        }
+    }
 
     public String toXml (String field) {
         StringBuilder buf = new StringBuilder("<BooleanQuery>");
         for (Clause clause : clauses) {
-            buf.append ("<Clause occur=\"").append (clause.getOccur()).append("\">");
+            buf.append ("<Clause occurs=\"").append (clause.getOccurAttribute()).append("\">");
             buf.append (clause.getQuery().toXml(field));
             buf.append("</Clause>");
         }
         buf.append ("</BooleanQuery>");
         return buf.toString();
+    }
+    
+    public Occur getOccur () {
+        return clauses[0].occur;
+    }
+    
+    public Clause[] getClauses() {
+        return clauses;
     }
     
     public String toString(String field) {
@@ -54,9 +70,18 @@ public class BooleanPQuery extends ParseableQuery {
             this.occur = occur;
             this.query = query;
         }
-
-        public Occur getOccur() {
+        
+        public Occur getOccur () {
             return occur;
+        }
+
+        public String getOccurAttribute() {
+            switch (occur) {
+            case MUST: return "must";
+            case SHOULD: return "should";
+            case MUST_NOT: return "mustNot";
+            default: return "";
+            }
         }
 
         public ParseableQuery getQuery() {

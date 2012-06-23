@@ -162,15 +162,15 @@ public class XmlReaderTest {
         handleDocument (mapper, "lux/reader-test.xml");
         assertPathMapperKeys(mapper);
         assertEquals ("@id", mapper.getNames().get(0));
-        assertEquals ("luxsor test luxeor", mapper.getValues().get(0));
+        assertEquals ("test", mapper.getValues().get(0));
         assertEquals ("title", mapper.getNames().get(1));
-        assertEquals ("luxsor TEST luxeor", mapper.getValues().get(1));
+        assertEquals ("TEST", mapper.getValues().get(1));
         assertEquals ("entities", mapper.getNames().get(2));
-        assertEquals ("luxsor &>0 luxeor", mapper.getValues().get(2));
+        assertEquals ("&>0", mapper.getValues().get(2));
         assertEquals ("token", mapper.getNames().get(5));
-        assertEquals ("luxsor         12345678 luxeor", mapper.getValues().get(5));
+        assertEquals ("        12345678", mapper.getValues().get(5));
         assertEquals ("test", mapper.getNames().get(6));
-        assertEquals ("luxsor This is some markup <that> is escaped The end. luxeor", 
+        assertEquals ("This is some markup <that> is escaped The end.", 
                 normalize (mapper.getValues().get(6)));
     }
 

@@ -1,5 +1,7 @@
 package lux.lucene;
 
+import lux.index.field.XmlField;
+
 
 /**
  * This query exists only to serve as a placeholder in an intermediate query compilation
@@ -15,7 +17,10 @@ public class SurroundMatchAll extends ParseableQuery {
     }
     
     public String toXml(String field) {
-        return "<SpanTermQuery fieldName=\"" + field + "\">{}</SpanTermQuery>";
+        if (field.equals(XmlField.PATH.getName())) {
+            return "<SpanTerm>{}</SpanTerm>";
+        }
+        return "<SpanTerm fieldName=\"" + XmlField.PATH.getName() + "\">{}</SpanTerm>";
     }
     
     public String toString(String field) {

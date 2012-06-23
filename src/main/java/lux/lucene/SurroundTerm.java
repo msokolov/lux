@@ -18,6 +18,15 @@ public class SurroundTerm extends LuxTermQuery {
     public String toString (String field) {
         return LuxTermQuery.toString(field, getTerm(), getBoost());
     }
+    
+
+    public String toXml (String field) {
+        StringBuilder buffer = new StringBuilder("<SpanTerm");
+        appendContents(field, buffer);
+        buffer.append("</SpanTerm>");
+        return buffer.toString();
+    }
+    
 
 }
 

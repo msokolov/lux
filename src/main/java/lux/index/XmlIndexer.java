@@ -60,7 +60,7 @@ public class XmlIndexer {
     
     private int options = 0;
     
-    private static final Version luceneVersion = Version.LUCENE_34;
+    public static final Version LUCENE_VERSION = Version.LUCENE_34;
     
     public XmlIndexer () {
         this (DEFAULT_OPTIONS);
@@ -202,7 +202,7 @@ public class XmlIndexer {
     }
 
     public IndexWriter getIndexWriter(Directory dir) throws CorruptIndexException, LockObtainFailedException, IOException {
-        return new IndexWriter(dir, new IndexWriterConfig(luceneVersion, fieldAnalyzers));
+        return new IndexWriter(dir, new IndexWriterConfig(LUCENE_VERSION, fieldAnalyzers));
     }
 
     public long getOptions() {

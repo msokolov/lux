@@ -14,17 +14,61 @@ public class QNameTextQueryTest extends QNameQueryTest {
         switch (q) {
         case ACT_CONTENT:
         case ACT_CONTENT1:
-            return "+lux_elt_name:\"ACT\" +lux_node_ACT:\"luxsor content luxeor\"";
+            return "+lux_elt_name:\"ACT\" +lux_node_ACT:\"content\"";
         case ACT_SCENE_CONTENT:
         case ACT_SCENE_CONTENT1:
-            return "+(+lux_elt_name:\"SCENE\" +lux_elt_name:\"ACT\") +lux_node_SCENE:\"luxsor content luxeor\"";
+            return "+(+lux_elt_name:\"SCENE\" +lux_elt_name:\"ACT\") +lux_node_SCENE:\"content\"";
         case ACT_ID_123:
-            return "+(+lux_att_name:\"id\" +lux_elt_name:\"ACT\") +lux_node_@id:\"luxsor 123 luxeor\"";
+            return "+(+lux_att_name:\"id\" +lux_elt_name:\"ACT\") +lux_node_@id:\"123\"";
         case ACT_SCENE_ID_123:
-            return "+(+(+lux_att_name:\"id\" +lux_elt_name:\"SCENE\") +lux_elt_name:\"ACT\") +lux_node_@id:\"luxsor 123 luxeor\"";
+            return "+(+(+lux_att_name:\"id\" +lux_elt_name:\"SCENE\") +lux_elt_name:\"ACT\") +lux_node_@id:\"123\"";
         
         default:
             return super.getQueryString(q);
+        }
+    }
+    
+    public String getQueryXml (Q q) {
+        switch (q) {
+        case ACT_CONTENT:
+        case ACT_CONTENT1:
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_ACT\">content</TermsQuery></Clause></BooleanQuery>";
+        case ACT_SCENE_CONTENT:
+        case ACT_SCENE_CONTENT1:
+            return "<BooleanQuery>" +
+                    "<Clause occurs=\"must\"><BooleanQuery>" +
+                      "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" + 
+            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+                      "</BooleanQuery></Clause>" +
+                    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_SCENE\">content</TermsQuery></Clause>" +
+            		"</BooleanQuery>";
+    
+        case ACT_ID_123:
+            return "<BooleanQuery><Clause occurs=\"must\">" +
+            		 "<BooleanQuery>" +
+            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" +
+            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+            		 "</BooleanQuery></Clause>" +
+            		 "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +
+            		"</BooleanQuery>";
+        case ACT_SCENE_ID_123:
+            return "<BooleanQuery>" +
+            		 "<Clause occurs=\"must\">" +
+            		  "<BooleanQuery>" +
+            		   "<Clause occurs=\"must\">" +
+            		    "<BooleanQuery>" +
+            		     "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" +
+            		     "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" +
+            		     "</BooleanQuery>" +
+            		    "</Clause>" +
+            		    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+            		   "</BooleanQuery>" +
+            		  "</Clause>" +
+            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +
+            		"</BooleanQuery>";
+
+        default:
+            return super.getQueryXml(q);    
         }
     }
     

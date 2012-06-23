@@ -431,7 +431,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 // apply no restrictions to the enclosing scope:
                 push (MATCH_ALL);
                 return new FunCall (qname, returnType, 
-                        new LiteralExpression (query.toString()),
+                        new LiteralExpression (query.getParseableQuery().toXml("")),
                         new LiteralExpression (facts));
             }
         }
@@ -464,7 +464,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (axis == Axis.Attribute) {
                 nodeName = '@' + nodeName;
             }
-            Term term = new Term ("", nodeName);
+            Term term = new Term (XmlField.PATH.getName(), nodeName);
             return new SurroundTerm (term);
         } else {
             String nodeName = name.getEncodedName();
@@ -627,8 +627,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     private FunCall createSearchCall(XPathQuery query, int facts) {
+        // FIXME: don't pass XML query as a String, but as an XdmNode.  Either create 
+        // that directly in the ParseableQuery (PQuery?) - best, or parse it here
+        // Then lux:search can convert to DOM and let lucene.CoreParser deal with that
+        /*
+         * TODO: neaten queries by using defaultField; we'd also need to supply this
+         * when querying, of course.
+         */
+        String defaultField = ""; //indexer.isOption(XmlIndexer.INDEX_PATHS) ? XmlField.PATH.getName() :XmlField.ELT_QNAME.getName();
         return new FunCall (FunCall.LUX_SEARCH, query.getResultType(), 
-                new LiteralExpression (query.toString()),
+                new LiteralExpression (query.getParseableQuery().toXml(defaultField)),
                 new LiteralExpression (query.getFacts() | facts));
     }
 

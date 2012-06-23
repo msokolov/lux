@@ -8,8 +8,6 @@ import java.util.Arrays;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 
-import lux.index.field.QNameTextField;
-
 /**
  * Accumulates text for each element and each attribute.
  */
@@ -59,17 +57,19 @@ public class QNameTextMapper extends XmlPathMapper {
                 String name = '@' + encodeQName(attQName);
                 names.add(name);
                 // surround value by terminal markers
-                buf.append(QNameTextField.RECORD_START).append (reader.getAttributeValue(i)).append(QNameTextField.RECORD_END);
+                // buf.append(QNameTextField.RECORD_START).
+                buf.append (reader.getAttributeValue(i));
+                //buf.append(QNameTextField.RECORD_END);
                 values.add(buf.toString());
                 buf.setLength(0);
             }
-            buf.append(QNameTextField.RECORD_START);
+            //buf.append(QNameTextField.RECORD_START);
             break;
             
         case END_ELEMENT:
             super.handleEvent(reader, eventType);
             buf = popStackFrame();
-            buf.append(QNameTextField.RECORD_END);
+            //buf.append(QNameTextField.RECORD_END);
             names.add(encodeQName(currentQName));
             values.add(buf.toString());
             break;

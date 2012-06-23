@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Iterator;
 
+import lux.BasicQueryTest.Q;
 import lux.api.ResultSet;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
@@ -39,6 +40,19 @@ public class SearchQueryTest extends BasicQueryTest {
         switch (q) {
         case ACT_SCENE: return "w(\"ACT\",\"SCENE\")";
         case SCENE: return "\"SCENE\"";
+        default: throw new UnsupportedOperationException("No query string for " + q + " in " + getClass().getSimpleName());
+        }
+    }
+
+    
+    @Override
+    public String getQueryXml (Q q) {
+        switch (q) {
+        case ACT_SCENE: return "<SpanNear ordered=\"true\" slop=\"1\">" +
+        		"<SpanTerm>ACT</SpanTerm>" +
+        		"<SpanTerm>SCENE</SpanTerm>" +
+        		"</SpanNear>";
+        case SCENE: return "SCENE";
         default: throw new UnsupportedOperationException("No query string for " + q + " in " + getClass().getSimpleName());
         }
     }

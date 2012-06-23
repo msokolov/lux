@@ -7,36 +7,35 @@ import org.apache.lucene.search.BooleanClause.Occur;
  * - all clauses have the same occur value, which must be AND
  * or OR, not NOT.
  */
-public class SurroundBoolean extends ParseableQuery {
-    private ParseableQuery queries[];
-    private Occur occur;
+public class SurroundBoolean extends BooleanPQuery {
     
     public SurroundBoolean (Occur occur, ParseableQuery ... queries) {
-        this.queries = queries;
-        this.occur = occur;
-    }
-
-    public String toXml (String field) {
-        StringBuilder buf = new StringBuilder("<BooleanQuery>");
-        for (ParseableQuery q : queries) {
-            buf.append ("<Clause occur=\"").append (occur).append("\">");
-            buf.append (q.toXml(field));
-            buf.append("</Clause>");
-        }
-        buf.append ("</BooleanQuery>");
-        return buf.toString();
+        super (occur, queries);
     }
     
     public String toString(String field) {
         StringBuilder buf = new StringBuilder();
-        if (queries.length > 0) {
-            buf.append(queries[0].toString());
+        Clause [] clauses = getClauses();
+        if (clauses.length > 0) {
+            buf.append(clauses[0].getQuery().toString());
         }
-        String operator = occur == Occur.MUST ? " AND " : " OR ";
-        for (int i = 1; i < queries.length; i++) {
+        String operator = getOccur() == Occur.MUST ? " AND " : " OR ";
+        for (int i = 1; i < clauses.length; i++) {
             buf.append (operator);
-            buf.append (queries[i].toString());
+            buf.append (clauses[i].getQuery().toString());
         }
+        return buf.toString();
+    }
+    
+    public String toXml (String field) {
+        if (getOccur().equals(Occur.MUST)) {
+            return super.toXml(field);
+        }        
+        StringBuilder buf = new StringBuilder ("<SpanOr>");
+        for (Clause clause : getClauses()) {
+            buf.append (clause.getQuery().toXml(field));
+        }
+        buf.append ("</SpanOr>");
         return buf.toString();
     }
 }

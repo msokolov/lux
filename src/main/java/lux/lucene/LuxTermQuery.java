@@ -24,15 +24,20 @@ public class LuxTermQuery extends ParseableQuery {
     }
     
     public String toXml (String field) {
-        StringBuilder buffer = new StringBuilder("<TermQuery");
+        StringBuilder buffer = new StringBuilder("<TermsQuery");
+        appendContents(field, buffer);
+        buffer.append("</TermsQuery>");
+        return buffer.toString();
+    }
+
+    protected void appendContents(String field, StringBuilder buffer) {
         if (term.field() != null && !term.field().equals(field)) {
-            buffer.append (" fieldName=\"").append (field).append ("\"");
+            buffer.append (" fieldName=\"").append (term.field()).append ("\"");
         }
         if (boost != 1) {
             buffer.append (" boost=\"").append(boost).append("\"");
         }
-        buffer.append(">").append(term.text()).append("</TermQuery>");
-        return buffer.toString();
+        buffer.append(">").append(term.text());
     }
     
     public String toString (String field) {

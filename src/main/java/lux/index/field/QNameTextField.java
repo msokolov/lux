@@ -23,8 +23,8 @@ public class QNameTextField extends XmlField {
     /**
      * @see QNameTextMapper
      */
-    public static final String RECORD_END = " luxeor";
-    public static final String RECORD_START = "luxsor ";
+    //public static final String RECORD_END = " luxeor";
+    //public static final String RECORD_START = "luxsor ";
     
     public static QNameTextField getInstance() {
         return instance;
@@ -60,20 +60,8 @@ public class QNameTextField extends XmlField {
         return makeValueQuery (fieldName, value);
     }
 
-    // FIXME: come up with a query that can match an entire text range
-    // without relying on magic start/end of record values.  It's a bit hard to see how this can be
-    // done without some "sentinels" to mark these positions.  Consider how queries work: find matching terms
-    // and then do logic on them, maybe using positions.  Searching for the absence of a term won't wash.
-    // We can at least use safer tokens (that will never collide with actual terms) by creating a wrapping 
-    // TokenStream that pulls tokens using the user-provided Analyzer, and whenever it sees a 
-    // large position gap, inserts end/start tokens (plus handling edge cases at field start/end)
-    // There, we can use \0 as a separator since it can't appear in XML and we can
-    // protect it from deletion via analysis.
-
     private LuxTermQuery makeValueQuery (String fieldName, String value) {
-        StringBuilder valueBuf = new StringBuilder ();
-        valueBuf.append (RECORD_START).append(value).append(RECORD_END);
-        return new LuxTermQuery(new Term(fieldName, valueBuf.toString()));        
+        return new LuxTermQuery(new Term(fieldName, value));        
     }
     
 }

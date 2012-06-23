@@ -2,6 +2,7 @@ package lux.lucene;
 
 //  FIXME: come up with a better naming convention for these queries that identifies
 // them as all of piece
+// TODO augment methods returning strings with methods accepting stringbuilders
 public abstract class ParseableQuery {
     /**
      * @param field the prevailing field in the query's surrounding context.  
