@@ -73,22 +73,22 @@ public class XQuery {
         }
         if (baseURI != null) {
             buf.append ("declare base-uri ");
-            LiteralExpression.escapeString(baseURI, buf);
+            LiteralExpression.quoteString(baseURI, buf);
             buf.append(";\n");
         }
         if (StringUtils.isNotBlank(defaultCollation)) {
             buf.append("declare default collation ");
-            LiteralExpression.escapeString(defaultCollation, buf);
+            LiteralExpression.quoteString(defaultCollation, buf);
             buf.append(";\n");
         }
         if (StringUtils.isNotBlank(defaultElementNamespace)) {
             buf.append("declare default element namespace ");
-            LiteralExpression.escapeString(defaultElementNamespace, buf);
+            LiteralExpression.quoteString(defaultElementNamespace, buf);
             buf.append(";\n");
         }
         if (StringUtils.isNotBlank(defaultFunctionNamespace)  && !defaultFunctionNamespace.equals(FunCall.FN_NAMESPACE)) {
             buf.append("declare default function namespace ");
-            LiteralExpression.escapeString(defaultFunctionNamespace, buf);
+            LiteralExpression.quoteString(defaultFunctionNamespace, buf);
             buf.append(";\n");
         }
         if (namespaceDeclarations != null) {
@@ -100,7 +100,7 @@ public class XQuery {
                 } else {
                     buf.append("declare namespace ").append(ns.getPrefix()).append('=');
                 }
-                LiteralExpression.escapeString (ns.getNamespace(), buf);
+                LiteralExpression.quoteString (ns.getNamespace(), buf);
                 buf.append(";\n");
             }
         }

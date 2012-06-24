@@ -1,5 +1,8 @@
 package lux.query;
 
+import lux.xpath.QName;
+import lux.xquery.ElementConstructor;
+
 import org.apache.lucene.index.Term;
 
 /**
@@ -10,6 +13,8 @@ import org.apache.lucene.index.Term;
  */
 public class SurroundTerm extends TermPQuery {
 
+    private static final QName SPAN_TERM_QNAME = new QName("SpanTerm");
+
     public SurroundTerm(Term t) {
         super(t);
     }
@@ -18,15 +23,17 @@ public class SurroundTerm extends TermPQuery {
     public String toString (String field) {
         return TermPQuery.toString(field, getTerm(), getBoost());
     }
-    
 
     public String toXmlString (String field) {
         StringBuilder buffer = new StringBuilder("<SpanTerm");
-        appendContents(field, buffer);
+        appendContents("", buffer);
         buffer.append("</SpanTerm>");
         return buffer.toString();
     }
     
+    public ElementConstructor toXmlNode (String field) {
+        return toXmlNode("", SPAN_TERM_QNAME);
+    }
 
 }
 

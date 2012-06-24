@@ -420,15 +420,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 if (query.isImmutable()) {
                     facts = functionFacts | XPathQuery.MINIMAL;
                 } else {
-                    query.setType(ValueType.INT);
+                    query.setType(returnType);
                     query.setFact(functionFacts, true);
                     facts = query.getFacts();
                 }
                 // apply no restrictions to the enclosing scope:
                 push (MATCH_ALL);
-                return new FunCall (qname, returnType, 
-                        new LiteralExpression (query.getParseableQuery().toXmlString("")),
-                        new LiteralExpression (facts));
+                return createSearchCall(qname, query, facts);
             }
         }
         // No optimization, but indicate that this function returns an int?
@@ -619,21 +617,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
         int j = queryStack.size() - i - 1;
         XPathQuery query = queryStack.get(j);
         queryStack.set (j, MATCH_ALL);
-        return createSearchCall(query, facts);
+        facts |= query.getFacts();
+        return createSearchCall(FunCall.LUX_SEARCH, query, facts);
     }
     
-    private FunCall createSearchCall(XPathQuery query, int facts) {
-        // FIXME: don't pass XML query as a String, but as an XdmNode.  Either create 
-        // that directly in the ParseableQuery (PQuery?) - best, or parse it here
-        // Then lux:search can convert to DOM and let lucene.CoreParser deal with that
-        /*
-         * TODO: neaten queries by using defaultField; we'd also need to supply this
-         * when querying, of course.
-         */
-        String defaultField = ""; //indexer.isOption(XmlIndexer.INDEX_PATHS) ? XmlField.PATH.getName() :XmlField.ELT_QNAME.getName();
-        return new FunCall (FunCall.LUX_SEARCH, query.getResultType(), 
-                new LiteralExpression (query.getParseableQuery().toXmlString(defaultField)),
-                new LiteralExpression (query.getFacts() | facts));
+    private FunCall createSearchCall (QName functionName, XPathQuery query, long facts) {
+        String defaultField = indexer.isOption(XmlIndexer.INDEX_PATHS) ? XmlField.PATH.getName() :XmlField.ELT_QNAME.getName();
+        return new FunCall (functionName, query.getResultType(), 
+                //new LiteralExpression (query.getParseableQuery().toString(defaultField)),
+                query.getParseableQuery().toXmlNode(defaultField),
+                new LiteralExpression (facts));
     }
 
     @Override

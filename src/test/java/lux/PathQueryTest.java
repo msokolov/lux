@@ -51,18 +51,18 @@ public class PathQueryTest extends BasicQueryTest {
             		"</Clause></BooleanQuery>";
         case ACT1:
             return "<SpanNear inOrder=\"true\" slop=\"0\">" +
-            		"<SpanTerm fieldName=\"lux_path\">{}</SpanTerm>" +
+            		"<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
             		"<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +
             		"</SpanNear>";
         case ACT_CONTENT1:
             return "<BooleanQuery><Clause occurs=\"must\">" +
-            "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">{}</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
+            "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
             "</Clause><Clause occurs=\"must\">" +
             "<TermsQuery fieldName=\"lux_node_ACT\">content</TermsQuery>" +
             "</Clause></BooleanQuery>";
         case ACT2:
             return "<SpanNear inOrder=\"true\" slop=\"1\">" +
-            		"<SpanTerm fieldName=\"lux_path\">{}</SpanTerm>" +
+            		"<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
             		"<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +
             		"</SpanNear>";
         case ACT_SCENE_CONTENT:
@@ -82,7 +82,7 @@ public class PathQueryTest extends BasicQueryTest {
 
             return "<BooleanQuery><Clause occurs=\"must\">" +
                 "<SpanNear inOrder=\"true\" slop=\"0\">" +
-                    "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">{}</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
+                    "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
                     "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
                 "</SpanNear>" +
                     "</Clause><Clause occurs=\"must\">" +
@@ -92,7 +92,7 @@ public class PathQueryTest extends BasicQueryTest {
         case ACT_SCENE1:
             return "<SpanNear inOrder=\"true\" slop=\"0\">" +
             		"<SpanNear inOrder=\"true\" slop=\"0\">" +
-            		"<SpanTerm fieldName=\"lux_path\">{}</SpanTerm>" +
+            		"<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
             		"<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +
             		"</SpanNear>" +
             		"<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
@@ -100,7 +100,7 @@ public class PathQueryTest extends BasicQueryTest {
         case ACT_SCENE2:
             return "<SpanNear inOrder=\"true\" slop=\"98\">" +
             "<SpanNear inOrder=\"true\" slop=\"0\">" +
-            "<SpanTerm fieldName=\"lux_path\">{}</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
             "<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +
             "</SpanNear>" +
             "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
@@ -128,7 +128,7 @@ public class PathQueryTest extends BasicQueryTest {
         case ACT_SCENE_ID_123:
             return "<BooleanQuery><Clause occurs=\"must\">" +
             "<SpanNear inOrder=\"true\" slop=\"0\">" +
-              "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">{}</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
+              "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
               "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm><SpanTerm fieldName=\"lux_path\">@id</SpanTerm></SpanNear>" +
             "</SpanNear></Clause>" +
             "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +
@@ -148,7 +148,7 @@ public class PathQueryTest extends BasicQueryTest {
         case ACT_ID_123:
             return "<BooleanQuery><Clause occurs=\"must\">" +
             		"<SpanNear inOrder=\"true\" slop=\"0\">" +
-            		  "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">{}</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
+            		  "<SpanNear inOrder=\"true\" slop=\"0\"><SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanNear>" +
             		  "<SpanTerm fieldName=\"lux_path\">@id</SpanTerm>" +
             		"</SpanNear></Clause>" +
             		"<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +
@@ -158,14 +158,14 @@ public class PathQueryTest extends BasicQueryTest {
             "<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +
             "<SpanTerm fieldName=\"lux_path\">@id</SpanTerm>" +
             "</SpanNear>";
-        case MATCH_ALL: return "<SpanTerm fieldName=\"lux_path\">{}</SpanTerm>";
+        case MATCH_ALL: return "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>";
         case AND: return "<SpanTerm fieldName=\"lux_path\">AND</SpanTerm>";
-        case LUX_FOO: return "<SpanTerm fieldName=\"lux_path\">foo{lux}</SpanTerm>";
+        case LUX_FOO: return "<SpanTerm fieldName=\"lux_path\">foo&#x7B;lux&#x7D;</SpanTerm>";
         case PLAY_ACT_OR_PERSONAE_TITLE:
             return "<SpanNear inOrder=\"true\" slop=\"0\">" +
             		"<SpanNear inOrder=\"true\" slop=\"0\">" +
             		  "<SpanNear inOrder=\"true\" slop=\"0\">" +
-            		    "<SpanTerm fieldName=\"lux_path\">{}</SpanTerm><SpanTerm fieldName=\"lux_path\">PLAY</SpanTerm>" +
+            		    "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm><SpanTerm fieldName=\"lux_path\">PLAY</SpanTerm>" +
             		  "</SpanNear>" +
             		  "<SpanOr><SpanTerm fieldName=\"lux_path\">PERSONAE</SpanTerm><SpanTerm fieldName=\"lux_path\">ACT</SpanTerm></SpanOr>" +
             		"</SpanNear>" +

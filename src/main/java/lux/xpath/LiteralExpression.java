@@ -1,6 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package lux.xpath;
 
@@ -87,7 +84,10 @@ public class LiteralExpression extends AbstractExpression {
     public String getXQueryTypeName() {
         return xqTypeName;
     }
-    
+
+    /**
+     * renders the literal as parseable XQuery.  Note that 
+     */
     @Override
     public void toString(StringBuilder buf) {
         if (value == null) {
@@ -97,11 +97,11 @@ public class LiteralExpression extends AbstractExpression {
         switch (valueType) {
         case UNTYPED_ATOMIC:
             buf.append ("xs:untypedAtomic(");
-            escapeString (value.toString(), buf);
+            quoteString (value.toString(), buf);
             buf.append (')');
             break;
         case STRING:
-            escapeString (value.toString(), buf);
+            quoteString (value.toString(), buf);
             break;
         case BOOLEAN:
             buf.append ("fn:").append(value).append("()");
@@ -165,7 +165,7 @@ public class LiteralExpression extends AbstractExpression {
             
         case QNAME:
             buf.append("fn:QName(");
-            escapeString(((QName)value).getNamespaceURI(), buf);
+            quoteString(((QName)value).getNamespaceURI(), buf);
             buf.append (",\"");
             ((QName)value).toString(buf);
             buf.append("\")");
@@ -188,17 +188,38 @@ public class LiteralExpression extends AbstractExpression {
         }
     }
     
-    public static void escapeString(String s, StringBuilder buf) {
-        buf.append('"');
+    /**
+     * Append the string to the buffer, with characters escaped appropriately for XML (and XQuery) text.
+     * The characters ", &, <, >, {, }, and \r are replaced with character entities or numeric character references.
+     * @param s the appended string
+     * @param buf the buffer appended to
+     */
+    public static void escapeText (String s, StringBuilder buf) {
         for (char c : s.toCharArray()) {
             switch (c) {
-            case '"': buf.append ("\"\""); break;
+            case '{' : buf.append("&#x7B;"); break;
+            case '}' : buf.append("&#x7D;"); break;
+            //case '"': buf.append ("\"\""); break;
+            case '>': buf.append ("&gt;"); break;
+            case '<': buf.append ("&lt;"); break;
+            case '"': buf.append ("&quot;"); break;
             case '&': buf.append ("&amp;"); break;
             case '\r': buf.append("&#xD;"); break;  // XML line ending normalization removes these unless they come in as character references
             default: buf.append (c);
             }
-        }
-        buf.append('"');
+        }        
+    }
+    
+    /**
+     * Append the string to the buffer, escaped as in {@link #escapeText(String, StringBuilder)}, surrounded
+     * by double quotes (").
+     * @param s the appended string
+     * @param buf the buffer appended to
+     */
+    public static void quoteString(String s, StringBuilder buf) {
+        buf.append ('"');
+        escapeText (s, buf);
+        buf.append ('"');
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {

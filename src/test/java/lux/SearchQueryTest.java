@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Iterator;
 
-import lux.BasicQueryTest.Q;
+import lux.api.LuxException;
 import lux.api.ResultSet;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
@@ -74,10 +74,14 @@ public class SearchQueryTest extends BasicQueryTest {
         optimized = saxonExpr.toString();
         long t = System.currentTimeMillis();
         ResultSet<?> results = saxon.evaluate(saxonExpr);
+        if (results.getException() != null) {
+            throw new LuxException(results.getException());
+        }
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results from " +
         saxon.getQueryStats().docCount + " documents");
         AbstractExpression aex = saxonExpr.getXPath();
         aex = new UnOptimizer(getIndexer().getOptions()).unoptimize(aex);
+        // TODO: don't re-optimize here !!
         SaxonExpr baseline = saxon.compile(aex.toString());
         ResultSet<?> baseResult = saxon.evaluate(baseline);
         assertEquals ("result count mismatch for: " + optimized, baseResult.size(), results.size());        

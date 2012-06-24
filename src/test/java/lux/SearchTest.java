@@ -37,6 +37,7 @@ public class SearchTest {
     @BeforeClass
     public static void setup () throws Exception {
         index = new IndexTestSupport();
+        // new IndexTestSupport(XmlIndexer.INDEX_QNAMES|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM, new RAMDirectory());
         totalDocs= index.totalDocs;
     }
     
@@ -98,8 +99,13 @@ public class SearchTest {
     public void testPathOrder () {
         // make sure that order is *not* significant in the generated query; 
         // it should be (SCENE AND ACT):
+        // Overall there are 20 scenes in 5 acts in 1 play
+        // 40 = 20 (SCENEs in /PLAY) + 20 (SCENEs in the 5 /ACTs together)
+        assertSearch ("40", "count(//ACT/root()//SCENE)", 0, 6);
+        // 10 = 5 (ACTs in /PLAY) + 5 /ACT documents.
+        assertSearch ("10", "count(//SCENE/root()//ACT)", 0, 6);
+        // Why did we think this?:
         // 120 = 20 (scenes) * 5 (acts) in 1 /PLAY + 20 scenes in 5 /ACT documents
-        assertSearch ("120", "count(//SCENE/root()//ACT)", 0, 6);
     }
     
     @Test
@@ -231,7 +237,7 @@ public class SearchTest {
     public void testMultipleAbsolutePaths() throws Exception {
         // Our first naive implementation tried to fetch all relevant documents
         // using a single database query - this test tests multiple independent
-        // sequences (they were broken in that first impl).
+        // sequences.
         // /PLAY/PERSONAE/PGROUP/PERSONA
         ResultSet<?> results = assertSearch("count (//PERSONA[.='ROSENCRANTZ'])", 0);
         assertEquals ("4", results.iterator().next().toString());
@@ -255,15 +261,18 @@ public class SearchTest {
     
     @Test
     public void testSkipDocs () throws Exception {
-        // Failed to optimize this in two different ways.
+        // Earlier implementations failed to indicate that the returned sequence of documents is sorted in document
+        // order, causing Saxon to pull the entire result sequence.
         //
-        // find the 4th document with a SCENE in it; We shouldn't need to retrieve the first 3
-        // 
-        // Even if we do retrieve those, we shouldn't need to get the rest of them,
-        // but actually Saxon decides it needs to sort one sequence or another 
-        // so we end up retrieving all the documents that match the query and don't short-circuit.
+        // TODO: We shouldn't need to retrieve (the text of) the first 3 documents in the first query below since
+        // they are going to be discarded
 
         assertSearch ("KING CLAUDIUS", "subsequence((/)[.//SCENE], 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);
+        assertSearch ("BERNARDO", "(//SCENE/SPEECH)[1]/SPEAKER/string()", null, 1);
+    }
+    
+    @Test
+    public void testSkipDocs2 () throws Exception {
         assertSearch ("BERNARDO", "(//SCENE/SPEECH)[1]/SPEAKER/string()", null, 1);
     }
     

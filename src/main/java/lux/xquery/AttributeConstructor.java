@@ -21,14 +21,18 @@ public class AttributeConstructor extends AbstractExpression {
         buf.append ("{ ");
         getName().toString (buf);        
         buf.append (" } { ");
+        appendValue (buf);
+        buf.append (" }");
+    }
+    
+    public void appendValue (StringBuilder buf) {
         // This works around a test in the XQTS, but it seems broken: what if some code contains
         // newlines?  I think it's OK? What happens is that "attribute whitespace normalization" will have
         // converted literal CR LF characters to spaces.  The only way we should be seeing these characters
-        // here is if they were originally provided as character references.
+        // here is if they were originally provided as character references.        
         String c = getContent().toString ();
         c = c.replace ("\r", "&#xD;").replace("\n", "&#xA;");
-        buf.append (c);
-        buf.append (" }");
+        buf.append (c);        
     }
 
     public final AbstractExpression getName () {
@@ -45,10 +49,6 @@ public class AttributeConstructor extends AbstractExpression {
     }
 
 }
-
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,

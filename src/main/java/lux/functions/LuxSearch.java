@@ -1,6 +1,5 @@
 package lux.functions;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import lux.index.XmlIndexer;
@@ -9,11 +8,13 @@ import lux.saxon.Config;
 import lux.saxon.ResultIterator;
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
+import net.sf.saxon.dom.NodeOverNodeInfo;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.NodeKindTest;
@@ -24,9 +25,11 @@ import net.sf.saxon.value.SequenceType;
 import org.apache.lucene.queryParser.surround.parser.ParseException;
 import org.apache.lucene.queryParser.surround.parser.QueryParser;
 import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
+import org.apache.lucene.queryParser.surround.query.SrndQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.xmlparser.CoreParser;
 import org.apache.lucene.xmlparser.ParserException;
+import org.w3c.dom.Element;
 
 /**
  * Executes a Lucene search query and returns documents.
@@ -42,19 +45,23 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     public LuxSearch () {
     }
     
-    private Query parseQuery(String queryString, long facts, Saxon saxon) throws ParseException, org.apache.lucene.queryParser.ParseException, ParserException {
-        Query query;
+    private Query parseQuery(Item<?> queryArg, long facts, Saxon saxon) throws ParseException, org.apache.lucene.queryParser.ParseException, ParserException {
         XmlIndexer indexer = saxon.getIndexer();
-        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
-            /*
-            SrndQuery q = getSurroundQueryParser().parse2(queryString);
-            query = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), getQueryFactory());
-            */
-            query = getXmlQueryParser().parse(new ByteArrayInputStream(queryString.getBytes()));
-        } else {
-            query = getQueryParser().parse(queryString);
+        if (queryArg instanceof NodeInfo) {
+            NodeInfo queryNodeInfo = (NodeInfo) queryArg;
+            NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
+            if (queryDocument instanceof Element) {
+                return getXmlQueryParser().getQuery((Element) queryDocument);
+            }
+            // maybe it was a text node?
         }
-        return query;
+        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
+            // parse the string value using the surround query parser?
+            SrndQuery q = getSurroundQueryParser().parse2(queryArg.getStringValue());
+            return q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), getQueryFactory());
+        } else {
+            return getQueryParser().parse(queryArg.getStringValue());
+        }
     }
     
     @Override
@@ -70,7 +77,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] { 
-                SequenceType.SINGLE_STRING,
+                SequenceType.SINGLE_ITEM,
                 SequenceType.OPTIONAL_INTEGER
                 };
     }
@@ -117,11 +124,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             if (arguments.length == 0 || arguments.length > 2) {
                 throw new XPathException ("wrong number of arguments");
             }
-            Item arg = arguments[0].next();        
-            if (arg == null) {
-                throw new XPathException ("search arg is null");
-            }
-            String queryString = arg.getStringValue();
+            Item queryArg = arguments[0].next();        
             long facts=0;
             if (arguments.length >= 2) {
                 IntegerValue num  = (IntegerValue) arguments[1].next();
@@ -130,13 +133,13 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             Saxon saxon = ((Config)context.getConfiguration()).getSaxon();
             Query query;
             try {
-                query = parseQuery(queryString, facts, saxon);
+                query = parseQuery(queryArg, facts, saxon);
             } catch (ParseException e) {
-                throw new XPathException ("Failed to parse surround query " + queryString, e);
+                throw new XPathException ("Failed to parse surround query " + queryArg.getStringValue(), e);
             } catch (org.apache.lucene.queryParser.ParseException e) {
-                throw new XPathException ("Failed to parse lucene query " + queryString, e);
+                throw new XPathException ("Failed to parse lucene query " + queryArg.getStringValue(), e);
             } catch (ParserException e) {
-                throw new XPathException ("Failed to parse xml query " + queryString, e);
+                throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
             //System.out.println ("executing xpath query: " + query);
             return iterate (query, saxon, facts);

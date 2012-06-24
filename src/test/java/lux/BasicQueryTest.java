@@ -108,8 +108,8 @@ public abstract class BasicQueryTest {
 
     @Test
     public void testConvertRootedPathToPredicate() {
-        assertQuery ("//ACT/SCENE/root()", "lux:search(\"" + 
-                     getQueryXml(Q.ACT_SCENE).replace("\"", "\"\"") + "\",24)" +
+        assertQuery ("//ACT/SCENE/root()", "lux:search(" + 
+                     getQueryXml(Q.ACT_SCENE) + ",24)" +
         		"[(descendant::ACT/child::SCENE)/root(.)]", 
         		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
@@ -274,9 +274,9 @@ public abstract class BasicQueryTest {
     
     @Test public void testCollection () throws Exception {
         // fn:collection() is implicit
-        assertQuery ("collection()//SCENE", "lux:search(\"" +
-                getQueryXml(Q.SCENE).replace("\"", "\"\"")
-                + "\",2)/descendant::SCENE", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
+        assertQuery ("collection()//SCENE", "lux:search(" +
+                getQueryXml(Q.SCENE)
+                + ",2)/descendant::SCENE", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
     }
     
     public void assertQuery (String xpath, int facts, Q ... queries) {
@@ -298,7 +298,7 @@ public abstract class BasicQueryTest {
      */
 
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
-        Saxon saxon = new Saxon(null, getIndexer(), Dialect.XPATH_2);
+        Saxon saxon = new Saxon(null, getIndexer(), Dialect.XQUERY_1);
         saxon.declareNamespace("lux", "lux");
         saxon.declareNamespace("ns", "http://namespace.org/#ns");
         assertQuery(xpath, optimized, facts, type, saxon, queries);
@@ -317,6 +317,7 @@ public abstract class BasicQueryTest {
         assertEquals ("wrong number of queries for " + xpath, queries.length, extractor.queries.size());
         for (int i = 0; i < queries.length; i++) {
             assertEquals (getQueryXml(queries[i]), extractor.queries.get(i).toString());
+            //assertEquals (getQueryString(queries[i]), extractor.queries.get(i).toString());
         }
         if (queries.length > 0) {
             boolean isMinimal = (facts & XPathQuery.MINIMAL) != 0;
@@ -366,8 +367,11 @@ public abstract class BasicQueryTest {
         public FunCall visit (FunCall funcall) {
             if (funcall.getName().equals (FunCall.LUX_SEARCH)
                     || funcall.getName().equals (FunCall.LUX_COUNT) 
-                    || funcall.getName().equals (FunCall.LUX_EXISTS)) {
-                String q = ((LiteralExpression)funcall.getSubs()[0]).getValue().toString();
+                    || funcall.getName().equals (FunCall.LUX_EXISTS)) 
+            {
+                AbstractExpression queryArg = funcall.getSubs()[0];
+                String q = (queryArg instanceof LiteralExpression) ? ((LiteralExpression)queryArg).getValue().toString()
+                        : queryArg.toString();
                 long facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
                 queries.add( new MockQuery (q, facts));
             }

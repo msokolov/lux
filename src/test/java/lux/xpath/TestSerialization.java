@@ -164,20 +164,20 @@ public class TestSerialization {
     }
     
     @Test public void testElementToString () {
-        ElementConstructor e = new ElementConstructor (FOO_QNAME, null, null);
+        ElementConstructor e = new ElementConstructor (FOO_QNAME);
         assertEquals ("<foo />", e.toString());
         e = new ElementConstructor (FOO_QNAME, new Namespace [] {
                 new Namespace ("", "default"),
                 new Namespace ("lux", "lux")
-        }, new ElementConstructor (FOO_QNAME, null, null));
-        assertEquals ("<foo xmlns=\"default\" xmlns:lux=\"lux\">{<foo /> }</foo>", e.toString());   
+        }, new ElementConstructor (FOO_QNAME));
+        assertEquals ("<foo xmlns=\"default\" xmlns:lux=\"lux\"><foo /></foo>", e.toString());   
     }
     
     @Test public void testLiteralExpressionToString () {
         assertEquals ("1", LiteralExpression.ONE.toString());
         assertEquals ("\"1\"", new LiteralExpression("1").toString());
         assertEquals ("\"&amp;\"", new LiteralExpression("&").toString());
-        assertEquals ("\"<\"", new LiteralExpression("<").toString());
+        assertEquals ("\"&lt;\"", new LiteralExpression("<").toString());
     }
     
     // TODO: add more serialization tests

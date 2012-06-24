@@ -23,6 +23,8 @@ including some booleans instead of all paths
 ** don't use schema.xml and solrconfig.xml as test data !
 When we change them our tests break!
 * missing features
+** raise exception when query parse fails
+this is currently getting swallowed internally and only printed to stderr
 ** support for full set of atomic types
 The main thing missing is marshalling results from Solr
 ** namespace support (in indexes)

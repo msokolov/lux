@@ -1,10 +1,21 @@
 package lux.query;
 
+import lux.xpath.AbstractExpression;
+import lux.xpath.LiteralExpression;
+import lux.xpath.QName;
+import lux.xpath.Sequence;
+import lux.xquery.AttributeConstructor;
+import lux.xquery.ElementConstructor;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
 public class BooleanPQuery extends ParseableQuery {
 
+    private static final QName CLAUSE_QNAME = new QName("Clause");
+    private static final LiteralExpression OCCURS_ATT_NAME = new LiteralExpression("occurs");
+    private static final AttributeConstructor MUST_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("must"));
+    private static final AttributeConstructor SHOULD_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("should"));
+    private static final AttributeConstructor MUST_NOT_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("mustNot"));
     private Clause clauses[];
     
     public BooleanPQuery (Clause ... clauses) {
@@ -75,7 +86,32 @@ public class BooleanPQuery extends ParseableQuery {
             buf.append (clauses[i].getQuery().toString());
         }
         return buf.toString();
-    }    
+    }
+
+    @Override
+    public ElementConstructor toXmlNode(String field) {
+        if (clauses.length == 1 && clauses[0].occur == Occur.MUST) {
+            return clauses[0].getQuery().toXmlNode(field);
+        }
+        AbstractExpression[] clauseExprs = new AbstractExpression[clauses.length];
+        int i = 0;
+        for (Clause clause : clauses) {
+            AbstractExpression q = clause.getQuery().toXmlNode(field);
+            AttributeConstructor occurAtt = null;
+            if (clause.occur == Occur.MUST) {
+                occurAtt = MUST_OCCUR_ATT;                
+            }
+            else if (clause.occur == Occur.SHOULD) {
+                occurAtt = SHOULD_OCCUR_ATT;                 
+            }
+            else if (clause.occur == Occur.MUST_NOT) {
+                occurAtt = MUST_NOT_OCCUR_ATT;
+            }
+            clauseExprs[i++] = new ElementConstructor(CLAUSE_QNAME, q, occurAtt);
+        }
+        return new ElementConstructor(new QName("BooleanQuery"), new Sequence(clauseExprs));
+    }
+    
     public static class Clause {
         private final Occur occur;
         private final ParseableQuery query;        

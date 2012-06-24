@@ -32,13 +32,13 @@ public class QNameTextQueryTest extends QNameQueryTest {
         switch (q) {
         case ACT_CONTENT:
         case ACT_CONTENT1:
-            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_ACT\">content</TermsQuery></Clause></BooleanQuery>";
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_ACT\">content</TermsQuery></Clause></BooleanQuery>";
         case ACT_SCENE_CONTENT:
         case ACT_SCENE_CONTENT1:
             return "<BooleanQuery>" +
                     "<Clause occurs=\"must\"><BooleanQuery>" +
-                      "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" + 
-            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+                      "<Clause occurs=\"must\"><TermsQuery>SCENE</TermsQuery></Clause>" + 
+            		  "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" +
                       "</BooleanQuery></Clause>" +
                     "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_SCENE\">content</TermsQuery></Clause>" +
             		"</BooleanQuery>";
@@ -47,7 +47,7 @@ public class QNameTextQueryTest extends QNameQueryTest {
             return "<BooleanQuery><Clause occurs=\"must\">" +
             		 "<BooleanQuery>" +
             		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" +
-            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+            		  "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" +
             		 "</BooleanQuery></Clause>" +
             		 "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +
             		"</BooleanQuery>";
@@ -58,10 +58,10 @@ public class QNameTextQueryTest extends QNameQueryTest {
             		   "<Clause occurs=\"must\">" +
             		    "<BooleanQuery>" +
             		     "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" +
-            		     "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" +
+            		     "<Clause occurs=\"must\"><TermsQuery>SCENE</TermsQuery></Clause>" +
             		     "</BooleanQuery>" +
             		    "</Clause>" +
-            		    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+            		    "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" +
             		   "</BooleanQuery>" +
             		  "</Clause>" +
             		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +

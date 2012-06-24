@@ -1,15 +1,25 @@
 package lux.query;
 
 import lux.index.field.XmlField;
+import lux.xpath.LiteralExpression;
+import lux.xpath.QName;
+import lux.xquery.AttributeConstructor;
+import lux.xquery.ElementConstructor;
 
 
 /**
  * This query exists only to serve as a placeholder in an intermediate query compilation
- * phase.  It prints out a "match all" in surround query parser language;
- * it doesn't actually query anything.
+ * phase.  It prints out a query designed to match all documents in surround query parser language; 
+ * because there is no built-in match-all query in that dialect, it prints term query matching the start
+ * of a path in the lux_path field, which always begins with a fixed token: {}.
+ * 
+ * TODO: determine how much efficiency is lost by using a SpanTerm query rather than a real MatchAllDocsQuery.
  */
 public class SurroundMatchAll extends ParseableQuery {
-    
+
+    private static final ElementConstructor INSTANCE_ELEMENT_CONSTRUCTOR = 
+            new ElementConstructor (new QName("SpanTerm"), new LiteralExpression("{}"), 
+                    new AttributeConstructor(new LiteralExpression ("fieldName"), new LiteralExpression (XmlField.PATH.getName())));
     private static final SurroundMatchAll INSTANCE = new SurroundMatchAll();
     
     public static final SurroundMatchAll getInstance () {
@@ -25,6 +35,11 @@ public class SurroundMatchAll extends ParseableQuery {
     
     public String toString(String field) {
         return "{}";
+    }
+
+    @Override
+    public ElementConstructor toXmlNode(String field) {
+        return INSTANCE_ELEMENT_CONSTRUCTOR;
     }
 
 }

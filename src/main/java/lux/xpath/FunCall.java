@@ -78,12 +78,19 @@ public class FunCall extends AbstractExpression {
     
     @Override
     public boolean isDocumentOrdered () {
-        return !returnType.isAtomic && 
-                super.isDocumentOrdered() &&
-                (name.getNamespaceURI().equals(LUX_NAMESPACE) || 
-                 (name.getNamespaceURI().equals(FN_NAMESPACE) &&
-                         ! name.getLocalPart().equals ("reverse") &&
-                         ! name.getLocalPart().equals("unordered")));
+        if (returnType.isAtomic) {
+            return false;
+        }
+        if (name.getNamespaceURI().equals(LUX_NAMESPACE)) {
+            if (name.getLocalPart().equals("search"))
+                return true;
+        }
+        if (name.getNamespaceURI().equals(FN_NAMESPACE) &&
+                ! name.getLocalPart().equals ("reverse") &&
+                ! name.getLocalPart().equals("unordered")) {
+            return super.isDocumentOrdered();
+        }
+        return false;
     }
     
     public boolean isAbsolute () {

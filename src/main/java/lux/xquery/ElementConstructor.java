@@ -2,19 +2,43 @@ package lux.xquery;
 
 import lux.compiler.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
+import lux.xpath.LiteralExpression;
 import lux.xpath.Namespace;
 import lux.xpath.QName;
 
 public class ElementConstructor extends AbstractExpression {
 
     private final QName qname;
-    private final Namespace[] namespaces;    
+    private final Namespace[] namespaces;
+    private final AttributeConstructor[] attributes;
     
-    public ElementConstructor(QName qname, Namespace[] namespaces, AbstractExpression content) {
+    /**
+     * Make an element constructor - this models literal element constructors, not computed element
+     * constructors.
+     * @param qname the name of the element
+     * @param namespaces this element's namespace declarations
+     * @param content the content of the element
+     * @param attributes the element's literal attributes - these AttributeConstructors 
+     * may only have LiteralExpressions for their names and values
+     */
+    public ElementConstructor(QName qname, Namespace[] namespaces, AbstractExpression content, AttributeConstructor ... attributes) {
         super(Type.ELEMENT);
         this.qname = qname;
         this.subs = new AbstractExpression[] { content };
         this.namespaces = namespaces;
+        this.attributes = attributes;
+    }
+    
+    public ElementConstructor (QName qname, AbstractExpression content, AttributeConstructor ... attributes) {
+        this (qname, null, content, attributes);
+    }
+
+    public ElementConstructor (QName qname, AttributeConstructor ... attributes) {
+        super(Type.ELEMENT);
+        this.qname = qname;
+        this.subs = new AbstractExpression[0];
+        this.namespaces = null;
+        this.attributes = attributes;
     }
 
     public AbstractExpression accept(ExpressionVisitor visitor) {
@@ -26,28 +50,67 @@ public class ElementConstructor extends AbstractExpression {
     public void toString(StringBuilder buf) {
         buf.append ('<');
         qname.toString(buf);
-        buf.append (' ');
-        boolean hasNamespaceDecl = namespaces != null && namespaces.length > 0;
-        if (hasNamespaceDecl) {
+        boolean hasNsDecl = namespaces != null && namespaces.length > 0;
+        if (hasNsDecl) {
+            buf.append (' ');
             appendNamespace(namespaces[0], buf);
             for (int i = 1; i < namespaces.length; i++) {
                 buf.append (' ');
                 appendNamespace(namespaces[i], buf);
             }
         }
+        if (attributes != null && attributes.length > 0) {
+            if (attributes[0] != null) {
+                buf.append (' ');
+                appendAttribute(attributes[0], buf);
+            }
+            for (int i = 1; i < attributes.length; i++) {
+                if (attributes[i] != null) {
+                    buf.append (' ');
+                    appendAttribute(attributes[i], buf);
+                }
+            }
+        }
         if (getContent() == null) {
-            buf.append ("/>");
+            buf.append (" />");
         } else {
-            buf.append (">{");
-            getContent().toString(buf);
-            buf.append (" }</");
+            buf.append ('>');
+            switch (getContent().getType()) {
+            case ELEMENT: 
+                getContent().toString(buf);
+                break;
+            case LITERAL:
+                LiteralExpression.escapeText(((LiteralExpression)getContent()).getValue().toString(), buf);
+                break;
+            case SEQUENCE:
+            {
+                boolean allElements = true;
+                for (AbstractExpression kid : getContent().getSubs()) {
+                    if (kid.getType() != Type.ELEMENT) {
+                        allElements = false;
+                        break;
+                    }
+                }
+                if (allElements) {
+                    for (AbstractExpression kid : getContent().getSubs()) {
+                        kid.toString(buf);
+                    }
+                    break;
+                }
+            }
+            default:
+                buf.append ('{');
+                getContent().toString(buf);
+                buf.append ('}');
+            }
+            buf.append("</");
             qname.toString(buf);
             buf.append ('>');
         }
     }
     
     private AbstractExpression getContent() {
-        return subs[0];
+        return subs.length > 0 ? subs[0] : null;
     }
 
     private void appendNamespace (Namespace ns, StringBuilder buf) {
@@ -58,7 +121,13 @@ public class ElementConstructor extends AbstractExpression {
         }
         buf.append ("=\"");
         buf.append (ns.getNamespace());
-        buf.append ("\"");        
+        buf.append ('"');
+    }
+
+    private void appendAttribute (AttributeConstructor attr, StringBuilder buf) {
+        buf.append (((LiteralExpression)attr.getName()).getValue().toString());
+        buf.append ('=');
+        LiteralExpression.quoteString(((LiteralExpression)attr.getContent()).getValue().toString(), buf);
     }
 
     @Override

@@ -1,5 +1,10 @@
 package lux.query;
 
+import lux.xpath.AbstractExpression;
+import lux.xpath.QName;
+import lux.xpath.Sequence;
+import lux.xquery.ElementConstructor;
+
 import org.apache.lucene.search.BooleanClause.Occur;
 
 /**
@@ -8,7 +13,8 @@ import org.apache.lucene.search.BooleanClause.Occur;
  * or OR, not NOT.
  */
 public class SurroundBoolean extends BooleanPQuery {
-    
+    private static final QName SPAN_OR_QNAME = new QName("SpanOr");
+
     public SurroundBoolean (Occur occur, ParseableQuery ... queries) {
         super (occur, queries);
     }
@@ -17,12 +23,12 @@ public class SurroundBoolean extends BooleanPQuery {
         StringBuilder buf = new StringBuilder();
         Clause [] clauses = getClauses();
         if (clauses.length > 0) {
-            buf.append(clauses[0].getQuery().toString());
+            buf.append(clauses[0].getQuery().toString(field));
         }
         String operator = getOccur() == Occur.MUST ? " AND " : " OR ";
         for (int i = 1; i < clauses.length; i++) {
             buf.append (operator);
-            buf.append (clauses[i].getQuery().toString());
+            buf.append (clauses[i].getQuery().toString(field));
         }
         return buf.toString();
     }
@@ -37,6 +43,26 @@ public class SurroundBoolean extends BooleanPQuery {
         }
         buf.append ("</SpanOr>");
         return buf.toString();
+    }
+    
+    public ElementConstructor toXmlNode(String field) {
+        if (getOccur().equals(Occur.MUST)) {
+            return super.toXmlNode(field);
+        }        
+        Clause [] clauses = getClauses();
+        if (clauses.length == 1) {
+            // TODO: handle Occur.MUST_NOT
+            if (getOccur().equals(Occur.MUST_NOT)) {
+                throw new UnsupportedOperationException("SurroundBoolean doesn't support MUST_NOT");
+            }
+            return new ElementConstructor (SPAN_OR_QNAME, clauses[0].getQuery().toXmlNode(field));
+        }
+        AbstractExpression[] clauseExprs = new AbstractExpression[clauses.length];
+        int i = 0;
+        for (Clause q : clauses) {
+            clauseExprs [i++] = q.getQuery().toXmlNode(field);
+        }
+        return new ElementConstructor (SPAN_OR_QNAME, new Sequence(clauseExprs));
     }
 }
 

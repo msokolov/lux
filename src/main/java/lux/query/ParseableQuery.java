@@ -23,7 +23,7 @@ public abstract class ParseableQuery {
      * @return an xml object representation of the query,
      * in a format suitable for parsing by one the Lucene XML Query Parser
      */
-    //public abstract ElementConstructor toXmlNode(String field);
+    public abstract ElementConstructor toXmlNode(String field);
     
     /**
      * @param field the prevailing field in the query's surrounding context.
