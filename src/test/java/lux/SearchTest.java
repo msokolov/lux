@@ -97,7 +97,8 @@ public class SearchTest {
     
     @Test
     public void testPathOrder () {
-        // make sure that order is *not* significant in the generated query; 
+        // Make sure that the Optimizer doesn't incorrectly assert 
+        // order is *not* significant in the generated query; 
         // it should be (SCENE AND ACT):
         // Overall there are 20 scenes in 5 acts in 1 play
         // 40 = 20 (SCENEs in /PLAY) + 20 (SCENEs in the 5 /ACTs together)
@@ -239,11 +240,10 @@ public class SearchTest {
         // using a single database query - this test tests multiple independent
         // sequences.
         // /PLAY/PERSONAE/PGROUP/PERSONA
-        ResultSet<?> results = assertSearch("count (//PERSONA[.='ROSENCRANTZ'])", 0);
-        assertEquals ("4", results.iterator().next().toString());
-        results = assertSearch("count (//PERSONA[.='ROSENCRANTZ']) + count(//PERSONA[.='GUILDENSTERN'])", 0);
-        assertEquals (1, results.size());
-        assertEquals ("8", results.iterator().next().toString());       
+        assertSearch("4", "count (//PERSONA[.='ROSENCRANTZ'])", 0, 4);
+        // we retrieved 8 documents from search, because there are two queries generated, but
+        // only 5 unique docs, and we cache, so only 5 docs are actually retrieved
+        assertSearch("8", "count (//PERSONA[.='ROSENCRANTZ']) + count(//PERSONA[.='GUILDENSTERN'])", 0, 8);
     }
     
     @Test
@@ -309,7 +309,7 @@ public class SearchTest {
     @Test
     public void testDocumentIdentity() throws Exception {
         /* This test confirms that document identity is preserved when creating Saxon documents. */
-        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1164);        
+        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1670, 1164);        
     }
     
     @Test
@@ -321,8 +321,8 @@ public class SearchTest {
          * /ACT[2]/SCENE[1], but since this will already have been created, its Saxon document 
          * number would be low using the built-in numbering scheme, and the order mismatch causes 
          * Saxon to terminate the intersection prematurely. */
-        assertSearch ("5", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))", null, 7);
-        assertSearch ("6", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))", null, 8);
+        assertSearch ("5", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))", null, 9, 8);
+        assertSearch ("6", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))", null, 10, 8);
     }
     
     @Test
@@ -352,17 +352,26 @@ public class SearchTest {
     protected ResultSet<?> assertSearch(String query, Integer props) throws LuxException {
         return assertSearch(query, props, null);
     }
-
-    protected void assertSearch(String expectedResult, String query, Integer props, Integer docCount) throws LuxException {
-        ResultSet<?> results = assertSearch (query, props, docCount);
+    
+    protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount) throws LuxException {
+        return assertSearch (query, props, docCount, null);
+    }
+    
+    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer facts, Integer docCount) throws LuxException {
+        return assertSearch (expectedResult, query, facts, docCount, null);
+    }
+    
+    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException {
+        ResultSet<?> results = assertSearch (query, props, docCount, cacheMisses);
         boolean hasResults = results.iterator().hasNext();
         String result = hasResults ? results.iterator().next().toString() : null;
         if (expectedResult == null) {            
             assertTrue ("results not empty, got: " + result, !hasResults);
-            return;
+            return results;
         }
         assertTrue ("no results", hasResults);
         assertEquals ("incorrect query result", expectedResult, result);
+        return results;
     }
     
     /**
@@ -374,7 +383,7 @@ public class SearchTest {
      * @return the query results
      * @throws LuxException
      */
-    protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount) throws LuxException {
+    protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException {
         Evaluator eval = index.getEvaluator();
         SaxonExpr expr = (SaxonExpr) eval.compile(query);
         System.out.println (expr);
@@ -404,7 +413,10 @@ public class SearchTest {
             }
         }
         if (docCount != null) {
-            assertEquals ("incorrect document count", docCount.intValue(), stats.docCount);
+            assertEquals ("incorrect document result count", docCount.intValue(), stats.docCount);
+        }
+        if (cacheMisses != null) {
+            assertEquals ("incorrect cache misses count", cacheMisses.intValue(), stats.cacheMisses);            
         }
         return results;
     }

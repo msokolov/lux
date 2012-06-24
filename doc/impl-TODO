@@ -1,10 +1,10 @@
 * word index followthrough
-** rename query classes
-** search function
+** user search function
+supporting full text queries
 ** query constructors
 ** test multiword queries
 ** test queries in complex path relations
-** recast queries as XdmNodes
+* performance testing
 * new indexes
 ** directory (uri component) index
 also link to collection()?

@@ -85,9 +85,13 @@ public class FunCall extends AbstractExpression {
             if (name.getLocalPart().equals("search"))
                 return true;
         }
-        if (name.getNamespaceURI().equals(FN_NAMESPACE) &&
-                ! name.getLocalPart().equals ("reverse") &&
-                ! name.getLocalPart().equals("unordered")) {
+        if (name.getNamespaceURI().equals(FN_NAMESPACE)) {
+            if (name.getLocalPart().equals ("reverse") || name.getLocalPart().equals("unordered")) {
+                return false;
+            }
+            if (name.getLocalPart().equals("root")) {
+                return false;
+            }
             return super.isDocumentOrdered();
         }
         return false;

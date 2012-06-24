@@ -41,6 +41,7 @@ public class ResultIterator implements SequenceIterator<Item>{
 
     public Item next() throws XPathException {
         long t = System.nanoTime();
+        int startPosition = position;
         try {
             int docID = docIter.nextDoc();
             //System.out.println ("GET " + docID + " " + query.toString());
@@ -72,7 +73,7 @@ public class ResultIterator implements SequenceIterator<Item>{
         } finally {
             if (stats != null) {
                 if (position >= 0) {
-                    stats.docCount = position;
+                    stats.docCount += (position - startPosition);
                 }
                 stats.totalTime += System.nanoTime() - t;
             }

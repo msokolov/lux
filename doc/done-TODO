@@ -1,3 +1,6 @@
+* query API
+lux:search now accepts queries formatted as node trees using the Lucene XML
+query parser scheme.
 * optimizations
 ** basic indexing support: qname retrieval speeds queries when the names are selective
 ** count() is optimized for a special case:
@@ -108,6 +111,9 @@ UpdateProcessor and SearchComponent
 restored to working order
 ** MPL license
 * code cleanup
+** reorganized class/package names
+moved stuff out of lux package into lux.search; created lux.query for
+queries.
 ** shorten xml index field names?
 to make it easier to type queries.  Maybe make the default field name be
 something reasonable, like xml_text?  then use lux_att_name, lux_elt_name,
