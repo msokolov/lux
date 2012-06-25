@@ -1,4 +1,11 @@
 * word index followthrough
+** single fulltext field
+Change to using single fulltext field with terms that incorporate the field
+name so we can do near queries across different element names, and
+implement transparent elements (like ML phrase-through).
+*** create QNameTextTokenStream
+returned by QNameTextField
+each token 
 ** user search function
 supporting full text queries
 ** query constructors
