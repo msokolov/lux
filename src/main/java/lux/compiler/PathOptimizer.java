@@ -551,7 +551,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (last.getType() == Type.PATH_STEP) {
                 NodeTest nodeTest = ((PathStep) last).getNodeTest();
                 QName nodeName = nodeTest.getQName();
-                if ("*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
+                if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
                     return predicate;
                 }
                 TermPQuery termQuery = null;
