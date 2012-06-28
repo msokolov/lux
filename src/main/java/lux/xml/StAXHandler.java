@@ -1,15 +1,20 @@
 package lux.xml;
 
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+/**
+ * A receiver of XMLStreamReader (StAX) push-style events 
+ */
 public interface StAXHandler {
 
     /**
      * This method receives StAX events.  It should never call XMLStreamReader.next() 
-     * since if it does, its caller will miss the event.  A cleaner API would be to
+     * since if it does, its caller will miss the event.  TODO: A cleaner API would be to
      * wrap the reader in a read-only wrapper class.
+     * @throws XMLStreamException 
      */
-    void handleEvent (XMLStreamReader reader, int eventType);
+    void handleEvent (XMLStreamReader reader, int eventType) throws XMLStreamException;
 
     /**
      * reinitialize any internal state and prepare the handler for re-use

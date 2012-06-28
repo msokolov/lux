@@ -7,7 +7,15 @@ implement transparent elements (like ML phrase-through).
 returned by QNameTextField
 each token 
 ** user search function
-supporting full text queries
+Supporting full text queries; we do have lux:search (xs:string); however
+the query syntax is bizarre since you must specify an element name for
+every token using lux_node_ELTNAME: and the syntax for namespaces is long
+(no prefixes).  Conversely we have lux:search (element()), but no xquery
+helper functions for constructing the queries.  However that seems to be
+the way to go.
+** full text search *across the whole document*
+** full text search *spanning all descendants*
+** full text search *excluding some descendants*
 ** query constructors
 ** test multiword queries
 ** test queries in complex path relations

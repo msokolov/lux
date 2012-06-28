@@ -209,6 +209,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         return config;
     }
     
+    // FIXME - merge with lux.xml.SaxonBuilder or rename...
     public class SaxonBuilder extends XmlBuilder {
         private DocumentBuilder documentBuilder;
 

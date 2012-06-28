@@ -81,7 +81,7 @@ public class XmlReader {
         }
     }
 
-    private void sendEvent(XMLStreamReader in, int event) {
+    private void sendEvent(XMLStreamReader in, int event) throws XMLStreamException {
         for (StAXHandler handler : handlers) {
             handler.handleEvent (in, event);
         }

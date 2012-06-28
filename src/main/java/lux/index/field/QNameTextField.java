@@ -41,6 +41,7 @@ public class QNameTextField extends XmlField {
         ArrayList<Fieldable> fields = new ArrayList<Fieldable>(count);
         StringBuilder namebuf = new StringBuilder();
         for (int i = 0; i < count; i++) {
+            // this.fieldName + QName = lucene field name
             namebuf.append(getName()).append(mapper.getNames().get(i));
             fields.add (new Field (namebuf.toString(), 
                         mapper.getValues().get(i),

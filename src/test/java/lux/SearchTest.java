@@ -314,7 +314,8 @@ public class SearchTest {
     
     @Test
     public void testDocumentOrder() throws Exception {
-        /* This test confirms that document ordering is correct since if document order in Saxon
+        /* This test confirms that the document ordering asserted by the Optimizer 
+         * is correct since if document order in Saxon
          * is not the same as document order in Lucene, then the first 31st document will not be
          * what we expect.  31 is a magic number because /PLAY has 20 /PLAY/ACT/SCENE, 
          * /ACT 1 has 5 /ACT/SCENE, then those 5 are repeated as /SCENE. The 31st should be 
@@ -339,6 +340,27 @@ public class SearchTest {
         assertSearch (null, "/PLAY/ACT[4]/*/*/*/*/LINE", null, 1);
     }
     
+    @Test
+    public void testFullText () throws Exception {
+        // FAIL: we don't optimize through contains()
+        assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
+        // FAIL: TermsQueryBuilder generates all SHOULD terms
+        assertSearch ("5", "count(//LINE[.='Holla! Bernardo!'])", null, 5, 5);
+        assertSearch ("0", "count(//LINE[.='Holla!'])", null, 5, 5);
+        assertSearch ("0", "//LINE[.='Holla Bernardo']", null, 5, 5);
+        assertSearch ("5", "count(//LINE[lower-case(.)='holla! bernardo!'])", null, 5, 5);
+               
+        // fail: we don't have this kind of index right now; each qname is a separate field
+        // assertSearch ("Where is your son?", "//*[.='Where is your son?']", null, 5, 5);
+        
+        // This does raise the question too of how we could ever have //a[.=1] NEAR //b[.=1] ?        
+        
+        // fail: we don't generate a phrase query from this.  There is UserInputQueryBuilder
+        // we can override and insert a PhraseQuery parser?
+        // assertSearch ("Where is your son?", "//LINE[.='Where is your son?']", null, 5, 5);
+   
+    }
+
     @Test 
     public void testTrailingStringCall () throws Exception {
         // FIXME - this isn't optimized as well as it could be; it has some Booleans in it?

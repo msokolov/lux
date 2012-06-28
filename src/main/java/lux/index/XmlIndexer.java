@@ -12,6 +12,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.index.field.XmlField;
 import lux.index.field.XmlField.NameKind;
+import lux.saxon.Saxon.SaxonBuilder;
 import lux.xml.JDOMBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
@@ -51,6 +52,7 @@ public class XmlIndexer {
     
     private XmlReader xmlReader;
     private JDOMBuilder jdomBuilder;
+    private SaxonBuilder saxonBuilder;
     private Serializer serializer;
     private XMLOutputter jdomSerializer;
     private XmlPathMapper pathMapper;
