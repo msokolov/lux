@@ -45,6 +45,10 @@ public class QNameTextField extends XmlField {
                         new TokenizedField(getName(), new QNameTextTokenStream (doc), 
                         Store.NO, Index.ANALYZED, TermVector.NO)));
     }
+
+    public ParseableQuery makeTextQuery (String value) {
+        return new QNameTextQuery(new Term(getName(), value));
+    }
     
     public ParseableQuery makeElementValueQuery (QName qname, String value) {
         return new QNameTextQuery(new Term(getName(), value), qname.getEncodedName());

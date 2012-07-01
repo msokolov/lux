@@ -7,9 +7,9 @@ import lux.api.ValueType;
 import lux.index.XmlIndexer;
 import lux.index.field.QNameTextField;
 import lux.index.field.XmlField;
-import lux.query.TermPQuery;
 import lux.query.ParseableQuery;
 import lux.query.SurroundTerm;
+import lux.query.TermPQuery;
 import lux.xpath.AbstractExpression;
 import lux.xpath.AbstractExpression.Type;
 import lux.xpath.BinaryOperation;
@@ -378,7 +378,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     public AbstractExpression optimizeFunCall (FunCall funcall) {
         AbstractExpression[] subs = funcall.getSubs();
-        if (subs.length > 1 || (subs.length == 1 && !subs[0].isAbsolute())) {
+        if (subs.length == 1 && !subs[0].isAbsolute()) {
             return funcall;
         }
         XPathQuery query = pop();
@@ -414,6 +414,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 // TODO: treat argument as lucene filter query?
                 qname = FunCall.LUX_SEARCH;
                 */
+            }
+            else if (funcall.getName().equals(FunCall.FN_CONTAINS)) {
+                if (! subs[0].isAbsolute()) {
+                    // don't query if the sequence arg isn't absolute??
+                    return funcall;
+                }
+                functionFacts = XPathQuery.BOOLEAN_TRUE;
+                returnType = ValueType.BOOLEAN;
+                qname = FunCall.LUX_SEARCH;
             }
             if (qname != null) {
                 long facts;
@@ -551,11 +560,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (last.getType() == Type.PATH_STEP) {
                 NodeTest nodeTest = ((PathStep) last).getNodeTest();
                 QName nodeName = nodeTest.getQName();
-                if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
-                    return predicate;
-                }
                 ParseableQuery termQuery = null;
-                if (nodeTest.getType() == ValueType.ELEMENT) {
+                if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
+                    termQuery = QNameTextField.getInstance().makeTextQuery(value.getValue().toString());
+                }
+                else if (nodeTest.getType() == ValueType.ELEMENT) {
                     termQuery = QNameTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
                 } 
                 else if (nodeTest.getType() == ValueType.ATTRIBUTE) {

@@ -342,7 +342,7 @@ public class SearchTest {
     }
 
     @Test
-    public void testFullTextPhrase () throws Exception {
+    public void testElementFullTextPhrase () throws Exception {
         // test phrase query generation
         // also handling of capitalization and tokenization (w/punctuation)
         assertSearch ("5", "count(//LINE[.='Holla! Bernardo!'])", null, 5, 5);
@@ -353,18 +353,12 @@ public class SearchTest {
         assertSearch ("<LINE>Where is your son?</LINE>", "//LINE[.='Where is your son?']", null, 5, 5);
     }
     
-    @Test public void testAllNodeFullText () throws Exception {
-        // FAIL: we don't optimize through contains()
-        // assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
-        
-        // fail: we don't have this kind of index right now; each qname is a separate field
-        assertSearch ("Where is your son?", "//*[.='Where is your son?']", null, 5, 5);
-        
-        // This does raise the question too of how we could ever have //a[.=1] NEAR //b[.=1] ?        
-        
-        // fail: we don't generate a phrase query from this.  There is UserInputQueryBuilder
-        // we can override and insert a PhraseQuery parser?
-   
+    @Test public void testFullText () throws Exception {
+        assertSearch ("Where is your son?", "//*[.='Where is your son?']/string()", null, 5, 5);
+    }
+    
+    @Test public void testContains () throws Exception {
+        assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
     }
 
     @Test 
