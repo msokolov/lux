@@ -164,7 +164,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     
     protected org.apache.lucene.queryParser.QueryParser getQueryParser () {
         if (queryParser == null) {
-            queryParser = new org.apache.lucene.queryParser.QueryParser (XmlIndexer.LUCENE_VERSION, null, XmlField.FULL_TEXT.getAnalyzer());
+            queryParser = new org.apache.lucene.queryParser.QueryParser (XmlIndexer.LUCENE_VERSION, null, XmlField.QNAME_TEXT.getAnalyzer());
         }
         return queryParser;
     }

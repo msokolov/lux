@@ -90,7 +90,6 @@ public abstract class XmlField {
     public static final XmlField PATH = PathField.getInstance();
     public static final XmlField PATH_VALUE = PathValueField.getInstance();
     public static final XmlField XML_STORE = DocumentField.getInstance();
-    public static final XmlField FULL_TEXT = FullTextField.getInstance();
     public static final XmlField QNAME_VALUE = QNameValueField.getInstance();
     public static final XmlField QNAME_TEXT = QNameTextField.getInstance();
     
