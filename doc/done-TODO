@@ -1,6 +1,13 @@
 * query API
 lux:search now accepts queries formatted as node trees using the Lucene XML
-query parser scheme.
+query parser scheme.  The indexes provided include node (QName) path
+indexes and node word indexes.
+** full text search *across the whole document*
+eg lux:search("phrase to find") will match documents containing the phrase.
+** full text search *spanning all descendants* of a node
+eg //foo["phrase to find"] would match <foo><a>phrase<a> to <b>find</b></foo>
+*** Note: elements introduce token boundaries
+eg //foo["phrase to find"] would match <foo><a>phrase<a>to<b>find</b></foo>
 * optimizations
 ** basic indexing support: qname retrieval speeds queries when the names are selective
 ** count() is optimized for a special case:
@@ -64,8 +71,14 @@ we could have path value indexes too:
 {} <QName> <QName> ... | <first N chars>
 in fact this index can probably just replace the QName or path index
 ** word indexes
-
-*** implemented using surround parser / span queries
+Now works using single fulltext field with terms that incorporate the field
+name so we can do near queries across different element names, and
+implement transparent elements (like ML phrase-through).
+*** QNameAttribute / Impl / Factory / Filter
+We provide a QName-based analysis chain wrapped around StandardTokenizer /
+LowerCaseFilter.
+*** create QNameTextTokenStream
+returned by QNameTextField
 * tests
 ** testing doc() and collection()
 ** search test coverage

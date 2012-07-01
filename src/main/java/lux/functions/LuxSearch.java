@@ -142,7 +142,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             } catch (ParserException e) {
                 throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
-            //System.out.println ("executing xpath query: " + query);
+            System.out.println ("executing xpath query: " + query);
             return iterate (query, saxon, facts);
         }
         
@@ -171,7 +171,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     
     protected CoreParser getXmlQueryParser () {
         if (xmlQueryParser == null) {
-            xmlQueryParser = new XmlQueryParser(XmlField.FULL_TEXT);
+            xmlQueryParser = new XmlQueryParser(XmlField.QNAME_TEXT);
         }
         return xmlQueryParser;
     }

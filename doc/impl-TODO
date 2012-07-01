@@ -1,29 +1,22 @@
 * word index followthrough
-** single fulltext field
-Change to using single fulltext field with terms that incorporate the field
-name so we can do near queries across different element names, and
-implement transparent elements (like ML phrase-through).
-*** QNameAttribute / Impl / Factory
-Also QNameFilter (prepend QNames to tokens).  Must come at tail end of
-analysis chain.  We need this so QNames don't get analyzed!!
-*** provide hooks for custom analyzer
+** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
 Apply custom analysis chain to each text node, and then wrap in
 QNameFilter.
-*** create QNameTextTokenStream
-returned by QNameTextField
-each token 
 ** user search function
 Supporting full text queries; we do have lux:search (xs:string); however
 the query syntax is bizarre since you must specify an element name for
-every token using lux_node_ELTNAME: and the syntax for namespaces is long
-(no prefixes).  Conversely we have lux:search (element()), but no xquery
-helper functions for constructing the queries.  However that seems to be
-the way to go.
-** full text search *across the whole document*
-** full text search *spanning all descendants*
+every token using eltname{namespace}:word.  Conversely we have lux:search
+(element()), but no xquery helper functions for constructing the queries.
+However that seems to be the way to go.
 ** full text search *excluding some descendants*
+excluded some elements from search: for example the default should exclude
+all attributes!!
+** alternate fields
+with different analysis, different element exclusions, different attribute
+inclusion rules.  For example there should be a field that includes only
+attributes.
+** optimize contains()
 ** query constructors
-** test multiword queries
 ** test queries in complex path relations
 * performance testing
 * new indexes

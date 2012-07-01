@@ -342,24 +342,28 @@ public class SearchTest {
     }
 
     @Test
-    public void testFullText () throws Exception {
-        // FAIL: TermsQueryBuilder generates all SHOULD terms
+    public void testFullTextPhrase () throws Exception {
+        // test phrase query generation
+        // also handling of capitalization and tokenization (w/punctuation)
         assertSearch ("5", "count(//LINE[.='Holla! Bernardo!'])", null, 5, 5);
         assertSearch ("0", "count(//LINE[.='Holla!'])", null, 5, 5);
         assertSearch ("0", "count(//LINE[.='Holla Bernardo'])", null, 5, 5);
         assertSearch ("5", "count(//LINE[lower-case(.)='holla! bernardo!'])", null, 5, 5);
-
+        // check stop word handling
+        assertSearch ("<LINE>Where is your son?</LINE>", "//LINE[.='Where is your son?']", null, 5, 5);
+    }
+    
+    @Test public void testAllNodeFullText () throws Exception {
         // FAIL: we don't optimize through contains()
         // assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
         
         // fail: we don't have this kind of index right now; each qname is a separate field
-        // assertSearch ("Where is your son?", "//*[.='Where is your son?']", null, 5, 5);
+        assertSearch ("Where is your son?", "//*[.='Where is your son?']", null, 5, 5);
         
         // This does raise the question too of how we could ever have //a[.=1] NEAR //b[.=1] ?        
         
         // fail: we don't generate a phrase query from this.  There is UserInputQueryBuilder
         // we can override and insert a PhraseQuery parser?
-        // assertSearch ("Where is your son?", "//LINE[.='Where is your son?']", null, 5, 5);
    
     }
 
