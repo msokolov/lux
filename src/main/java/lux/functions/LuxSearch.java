@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lux.index.XmlIndexer;
 import lux.index.field.XmlField;
+import lux.query.parser.XmlQueryParser;
 import lux.saxon.Config;
 import lux.saxon.ResultIterator;
 import lux.saxon.Saxon;
@@ -170,7 +171,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     
     protected CoreParser getXmlQueryParser () {
         if (xmlQueryParser == null) {
-            xmlQueryParser = new CoreParser("", XmlField.FULL_TEXT.getAnalyzer());
+            xmlQueryParser = new XmlQueryParser(XmlField.FULL_TEXT);
         }
         return xmlQueryParser;
     }

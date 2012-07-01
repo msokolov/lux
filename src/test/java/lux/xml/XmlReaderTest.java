@@ -1,6 +1,8 @@
 package lux.xml;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -11,8 +13,8 @@ import javax.xml.stream.XMLStreamException;
 import lux.index.QNameTextMapper;
 import lux.index.XPathValueMapper;
 import lux.index.XmlPathMapper;
-import lux.xml.JDOMBuilder;
-import lux.xml.XmlReader;
+import net.sf.saxon.s9api.Axis;
+import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
 import org.jdom.Document;
@@ -40,6 +42,27 @@ public class XmlReaderTest {
         
         assertEquals ("test", doc.getRootElement().getName());
         assertEquals (CONTENT, normalize(doc.getRootElement().getValue()));
+    }
+
+    
+    @Test
+    public void testSaxonBuilder() throws Exception {
+        SaxonBuilder saxonBuilder = new SaxonBuilder();
+        handleDocument(saxonBuilder, "lux/reader-test.xml");
+        XdmNode doc = saxonBuilder.getDocument();
+
+        assertEquals("test", ((XdmNode) doc.axisIterator(Axis.CHILD).next()).getNodeName().toString());
+        assertEquals(CONTENT, normalize(doc.getStringValue()));
+    }
+
+    @Test
+    public void testSaxonBuilderNS() throws Exception {
+        SaxonBuilder saxonBuilder = new SaxonBuilder();
+        handleDocument(saxonBuilder, "lux/reader-test-ns.xml");
+        XdmNode doc = saxonBuilder.getDocument();
+
+        assertEquals("test", ((XdmNode) doc.axisIterator(Axis.CHILD).next()).getNodeName().toString());
+        assertEquals(CONTENT, normalize(doc.getStringValue()));
     }
 
     @Test 

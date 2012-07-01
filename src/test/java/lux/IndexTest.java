@@ -2,12 +2,14 @@ package lux;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
 import lux.index.XmlIndexer;
 import lux.index.field.XmlField;
+import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 
 import org.apache.lucene.index.IndexReader;
@@ -21,6 +23,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.xmlparser.ParserException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -75,7 +78,15 @@ public class IndexTest {
     public void testIndexPathsOnly () throws Exception {
         IndexTestSupport indexTestSupport = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);        
         assertTotalDocs ();
-        assertPathQuery(indexTestSupport);
+        assertPathQuery (indexTestSupport);
+    }
+    
+    @Test
+    public void testIndexFullText () throws Exception {
+        IndexTestSupport indexTestSupport = buildIndex ("full-text", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);        
+        assertTotalDocs ();
+        //printAllTerms();
+        assertFullTextQuery (indexTestSupport.searcher, "PERSONA", "ROSENCRANTZ", 4);
     }
 
     private void assertPathQuery(IndexTestSupport indexTestSupport) throws ParseException, IOException {
@@ -89,6 +100,32 @@ public class IndexTest {
         assertEquals (5, count);
     }
     
+    private void assertFullTextQuery(LuxSearcher searcher, String qName, String term, int expectedCount) throws ParserException, IOException {
+        Query q = new XmlQueryParser(XmlField.QNAME_TEXT).parse
+                (new ByteArrayInputStream(("<QNameTextQuery fieldName=\"lux_node\" qName=\"" +
+                		qName + "\">" + term +
+                				"</QNameTextQuery>").getBytes()));
+        DocIdSetIterator iter = searcher.search(q);
+        int count = 0;
+        while (iter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+            ++ count;
+        }
+        assertEquals (expectedCount, count);
+    }
+
+    @Test
+    public void testIndexFullTextOneDoc() throws Exception {
+        XmlIndexer indexer = new XmlIndexer (XmlIndexer.INDEX_FULLTEXT);
+        IndexWriter indexWriter = indexer.getIndexWriter(dir);
+        indexer.indexDocument(indexWriter, "/lux/reader-test.xml", 
+                getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
+        indexWriter.close();
+        System.out.println 
+             (String.format("indexed path-values for lux/reader-test.xml in %d bytes", dir.sizeInBytes()));
+        printAllTerms();
+        assertFullTextQuery (new LuxSearcher (dir), "title", "TEST", 1);
+    }
+
     @Test @Ignore
     public void testIndexPathValuesOneDoc() throws Exception {
         XmlIndexer indexer = new XmlIndexer (XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES);
@@ -113,8 +150,7 @@ public class IndexTest {
         IndexTestSupport indexTestSupport = buildIndex ("path-text", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
         assertPathQuery(indexTestSupport);
-    }
-    
+    }    
 
     @Test
     public void testIndexQNameValues() throws Exception {
@@ -132,7 +168,7 @@ public class IndexTest {
     public void testIndexQNameTextOnly() throws Exception {
         buildIndex ("qname-text", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);
         assertTotalDocs ();
-        printAllTerms();
+        //printAllTerms();
     }
 
     @Test

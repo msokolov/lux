@@ -45,6 +45,15 @@ public abstract class XmlField {
         this (name, analyzer, isStored, type, NameKind.STATIC);
     }
     
+    /**
+     * Represents a Solr/Lucene field
+     * @param name the name of the field
+     * @param analyzer the analyzer associated with the field.  This will be used to analyze string field values,
+     * and to analyze queries.  If the field values are not strings (eg if they are a TokenStream), the analyzer is used only for queries. 
+     * @param isStored whether the field values are to be stored
+     * @param type the type of the field values: STRING, TOKENS, INT.
+     * @param nameKind whether the Lucene field name is determined dynamically (FIXME: unused; remove?)
+     */
     public XmlField (String name, Analyzer analyzer, Store isStored, Type type, NameKind nameKind) {
         this.name = name;
         this.analyzer = analyzer;

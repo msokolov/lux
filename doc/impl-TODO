@@ -3,6 +3,12 @@
 Change to using single fulltext field with terms that incorporate the field
 name so we can do near queries across different element names, and
 implement transparent elements (like ML phrase-through).
+*** QNameAttribute / Impl / Factory
+Also QNameFilter (prepend QNames to tokens).  Must come at tail end of
+analysis chain.  We need this so QNames don't get analyzed!!
+*** provide hooks for custom analyzer
+Apply custom analysis chain to each text node, and then wrap in
+QNameFilter.
 *** create QNameTextTokenStream
 returned by QNameTextField
 each token 

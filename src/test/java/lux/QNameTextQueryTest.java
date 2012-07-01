@@ -32,7 +32,7 @@ public class QNameTextQueryTest extends QNameQueryTest {
         switch (q) {
         case ACT_CONTENT:
         case ACT_CONTENT1:
-            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_ACT\">content</TermsQuery></Clause></BooleanQuery>";
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause><Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_node\" qName=\"ACT\">content</QNameTextQuery></Clause></BooleanQuery>";
         case ACT_SCENE_CONTENT:
         case ACT_SCENE_CONTENT1:
             return "<BooleanQuery>" +
@@ -40,7 +40,7 @@ public class QNameTextQueryTest extends QNameQueryTest {
                       "<Clause occurs=\"must\"><TermsQuery>SCENE</TermsQuery></Clause>" + 
             		  "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" +
                       "</BooleanQuery></Clause>" +
-                    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_SCENE\">content</TermsQuery></Clause>" +
+                    "<Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_node\" qName=\"SCENE\">content</QNameTextQuery></Clause>" +
             		"</BooleanQuery>";
     
         case ACT_ID_123:
@@ -49,7 +49,7 @@ public class QNameTextQueryTest extends QNameQueryTest {
             		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" +
             		  "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" +
             		 "</BooleanQuery></Clause>" +
-            		 "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +
+            		 "<Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_node\" qName=\"@id\">123</QNameTextQuery></Clause>" +
             		"</BooleanQuery>";
         case ACT_SCENE_ID_123:
             return "<BooleanQuery>" +
@@ -64,7 +64,7 @@ public class QNameTextQueryTest extends QNameQueryTest {
             		    "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" +
             		   "</BooleanQuery>" +
             		  "</Clause>" +
-            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_node_@id\">123</TermsQuery></Clause>" +
+            		  "<Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_node\" qName=\"@id\">123</QNameTextQuery></Clause>" +
             		"</BooleanQuery>";
 
         default:

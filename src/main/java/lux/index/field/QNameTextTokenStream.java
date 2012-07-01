@@ -1,54 +1,49 @@
 package lux.index.field;
 
 import java.io.IOException;
-import java.util.Iterator;
 
+import lux.index.XmlIndexer;
 import net.sf.saxon.expr.parser.Token;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.NodeKindTest;
-import net.sf.saxon.pattern.NodeTest;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
-import net.sf.saxon.tree.iter.AxisIterator;
 
 import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
-import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
-import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
-import org.apache.lucene.util.Version;
+import org.apache.lucene.util.AttributeImpl;
 
 /**
  * TODO: wrap an entire Analyzer, not just a StandardTokenizer
  */
 final class QNameTextTokenStream extends TokenStream {
     
-    private TypeAttribute typeAtt;
-    private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-    private final PositionIncrementAttribute posAtt = addAttribute(PositionIncrementAttribute.class);
-    private final OffsetAttribute offsetAtt = addAttribute(OffsetAttribute.class);
-    private PositionIncrementAttribute tokenizerPosAtt;
-    private OffsetAttribute tokenizerOffsetAtt;
-    private CharTermAttribute tokenizerTermAtt;
-    private int textNodeOffset;
+    private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
+    private CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
+    
+    //private int textNodeOffset;
     private XdmNode curNode;
     private ContentIterator contentIter;
-    private XdmSequenceIterator nodeAncestors;
-    private StandardTokenizer tokenizer;
+    private Tokenizer tokenizer;
+    private TokenStream tokenStream;
     private static final XdmSequenceIterator EMPTY = new EmptyXdmIterator (null);
     
+    // TODO: change to QNameTextTokenStream(Analyzer)
+    // and provide read (XdmNode)
     QNameTextTokenStream (XdmNode doc) {
+        tokenizer = new StandardTokenizer(XmlIndexer.LUCENE_VERSION, this, new CharSequenceReader(""));
+        tokenStream = new QNameTokenFilter (new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, tokenizer));
         contentIter = new ContentIterator(doc);
-        initTokenizer (new CharSequenceReader (""));
-        nodeAncestors = EMPTY;
     }
 
     private boolean advanceToTokenNode () {
@@ -87,35 +82,34 @@ final class QNameTextTokenStream extends TokenStream {
      */
     @Override
     public boolean incrementToken() throws IOException {
-        if (!nodeAncestors.hasNext()) {             // next ancestor element node
-            if (!incrementTokenizer()) {            // next token in current node
-                if (!advanceToTokenNode()) {        // next node with a token
-                    return false;
-                }
-            }
-            // TODO: we need to know the offset of the start of the current text node.
-            // We'll expect the caller to hand us an array of offsets, 1 for each text node
-            // offsetAtt.setOffset(tokenizerOffsetAtt.startOffset(), tokenizerOffsetAtt.endOffset());
-            posAtt.setPositionIncrement(tokenizerPosAtt.getPositionIncrement());
-            nodeAncestors = new AncestorIterator(curNode);
-        } else {
-            // We
-            posAtt.setPositionIncrement(0);
+        if (!incrementTokenStream()) {            // next token in current node
+            if (!advanceToTokenNode()) {        // next node with a token
+                return false;
+            }            
+            getAncestorQNames();
         }
-        XdmNode e = (XdmNode) nodeAncestors.next();
-        termAtt.setEmpty();
-        if (e.getNodeKind() == XdmNodeKind.ELEMENT || e.getNodeKind() == XdmNodeKind.ATTRIBUTE) {
-            QName qname = e.getNodeName();
-            termAtt.append(qname.getClarkName());
-            termAtt.append(':');
-        }
-        termAtt.append(tokenizerTermAtt);
         return true;
     }
+
+    private void getAncestorQNames() {
+        AncestorIterator nodeAncestors = new AncestorIterator(curNode);
+        qnameAtt.getQNames().clear();
+        while (nodeAncestors.hasNext()) {
+            XdmNode e = (XdmNode) nodeAncestors.next();
+            if (e.getNodeKind() == XdmNodeKind.ELEMENT || e.getNodeKind() == XdmNodeKind.ATTRIBUTE) {
+                QName qname = e.getNodeName();
+                String localName = qname.getLocalName();
+                if (e.getNodeKind() == XdmNodeKind.ATTRIBUTE) {
+                    localName = '@' + localName;
+                }
+                qnameAtt.addQName(new lux.xpath.QName(qname.getNamespaceURI(), localName));
+            }
+        }
+    }
     
-    private boolean incrementTokenizer() throws IOException {
-        while (tokenizer.incrementToken()) {
-            if (tokenizerTermAtt.length() > 0) {
+    private boolean incrementTokenStream() throws IOException {
+        while (tokenStream.incrementToken()) {
+            if (termAtt.length() > 0) {
                 return true;
             }
         }
@@ -129,21 +123,10 @@ final class QNameTextTokenStream extends TokenStream {
             // CharSequenceReader won't throw an IO Exception
         }
         resetCounters ();
-        return incrementTokenizer();        
-    }
-    
-    private void initTokenizer (CharSequenceReader reader) {
-        tokenizer = new StandardTokenizer(Version.LUCENE_34, reader);
-        // share these attributes with the wrapped Tokenizer
-        typeAtt = tokenizer.addAttribute(TypeAttribute.class);
-        tokenizerPosAtt = tokenizer.addAttribute(PositionIncrementAttribute.class);
-        tokenizerOffsetAtt = tokenizer.addAttribute(OffsetAttribute.class);
-        tokenizerTermAtt = tokenizer.addAttribute(CharTermAttribute.class);
-        resetCounters ();
+        return incrementTokenStream();        
     }
     
     private void resetCounters () {
-        nodeAncestors = EMPTY;
         // textNodeCounter = 0;
         // textNodeOffset = offsets[textNodeCounter];        
     }

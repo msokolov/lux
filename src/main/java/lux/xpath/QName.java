@@ -7,6 +7,8 @@ package lux.xpath;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import org.apache.commons.lang.StringUtils;
+
 public class QName extends javax.xml.namespace.QName {
 
     public QName(String localPart) {
@@ -53,11 +55,22 @@ public class QName extends javax.xml.namespace.QName {
      * is URL-encoded, wrapped in {} and appended to the local-name.
      */
     public String getEncodedName() {
-        if (getNamespaceURI().isEmpty())
-            return getLocalPart();
+        return encode (getLocalPart(), getNamespaceURI());
+    }
+
+    /**
+     * @param localPart the local part of the QName to encode
+     * @param namespaceURI the namespace (URI) of the QName to encode (may be null)
+     * @return the QName encoded in a suitable form for indexing.  The namespace uri, if any,
+     * is URL-encoded, wrapped in {} and appended to the local-name.
+     */
+    public static String encode (String localPart, String namespaceURI) {
+        if (StringUtils.isEmpty(namespaceURI)) {
+            return localPart;
+        }
         StringBuilder buf = new StringBuilder ();
         try {
-            buf.append(getLocalPart()).append ('{').append(URLEncoder.encode(getNamespaceURI(), "utf-8")).append("}");
+            buf.append(localPart).append ('{').append(URLEncoder.encode(namespaceURI, "utf-8")).append("}");
         } catch (UnsupportedEncodingException e) { }
         return buf.toString();
     }

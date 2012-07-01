@@ -10,12 +10,16 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import lux.api.LuxException;
 import lux.index.field.XmlField;
 import lux.index.field.XmlField.NameKind;
-import lux.saxon.Saxon.SaxonBuilder;
+import lux.xml.SaxonBuilder;
 import lux.xml.JDOMBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
+
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.CorruptIndexException;
@@ -89,7 +93,7 @@ public class XmlIndexer {
         if (isOption (INDEX_QNAMES) || isOption (INDEX_PATHS)) {
             // accumulate XML paths and QNames for indexing
             if (isOption (INDEX_FULLTEXT)) {
-                pathMapper = new QNameTextMapper();                
+                pathMapper = new XmlPathMapper();
             }
             else if (isOption (INDEX_VALUES)) {
                 pathMapper = new XPathValueMapper();
@@ -102,10 +106,7 @@ public class XmlIndexer {
         if (isOption (INDEX_QNAMES)) {
             addField(XmlField.ELT_QNAME);
             addField(XmlField.ATT_QNAME);
-            if (isOption (INDEX_FULLTEXT)) {
-                addField (XmlField.QNAME_TEXT);
-            }
-            else if (isOption (INDEX_VALUES)) {
+            if (isOption (INDEX_VALUES)) {
                 addField(XmlField.QNAME_VALUE);
             }
         }
@@ -115,11 +116,15 @@ public class XmlIndexer {
                 addField(XmlField.PATH_VALUE);                
             }
         }
-        /*
         if (isOption (INDEX_FULLTEXT)) {
-            addField(XmlField.FULL_TEXT);
+            addField (XmlField.QNAME_TEXT);
+            try {
+                saxonBuilder = new SaxonBuilder();
+                xmlReader.addHandler(saxonBuilder);
+            } catch (SaxonApiException e) {
+                throw new LuxException (e);
+            }
         }
-        */
         if (isOption (STORE_XML)) {
             addField(XmlField.XML_STORE);
             serializer = new Serializer();
@@ -176,6 +181,17 @@ public class XmlIndexer {
         if (jdomBuilder == null)
             return null;
         return jdomBuilder.getDocument();
+    }
+    
+    public XdmNode getXdmNode () {
+        if (saxonBuilder == null) {
+            return null;
+        }
+        try {
+            return saxonBuilder.getDocument();
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
     }
 
     public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {

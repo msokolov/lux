@@ -554,7 +554,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
                     return predicate;
                 }
-                TermPQuery termQuery = null;
+                ParseableQuery termQuery = null;
                 if (nodeTest.getType() == ValueType.ELEMENT) {
                     termQuery = QNameTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
                 } 

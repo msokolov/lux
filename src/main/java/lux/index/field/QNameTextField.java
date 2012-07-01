@@ -1,20 +1,19 @@
 package lux.index.field;
 
-import java.util.ArrayList;
+import java.util.Collections;
 
 import lux.index.QNameTextMapper;
 import lux.index.XmlIndexer;
-import lux.query.TermPQuery;
+import lux.query.ParseableQuery;
+import lux.query.QNameTextQuery;
 import lux.xpath.QName;
+import net.sf.saxon.s9api.XdmNode;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.util.Version;
 
 public class QNameTextField extends XmlField {
     
@@ -31,38 +30,28 @@ public class QNameTextField extends XmlField {
     }
     
     protected QNameTextField () {
-        super ("lux_node_", new StandardAnalyzer(Version.LUCENE_34), Store.NO, Type.STRING, NameKind.PREFIX);
+        // TODO - better default analyzer w/stemming + diacritic normalization
+        // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
+        // element/attribute text tokens are generated)
+        // TODO - provide QName lists as attributes so that analysis doesn't see them embedded in
+        // the token text
+        super ("lux_node", new QNameAnalyzer(), Store.NO, Type.TOKENS, NameKind.STATIC);
     }
     
     @Override
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
-        QNameTextMapper mapper = (QNameTextMapper) indexer.getPathMapper();
-        final int count = mapper.getNames().size();
-        ArrayList<Fieldable> fields = new ArrayList<Fieldable>(count);
-        StringBuilder namebuf = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            // this.fieldName + QName = lucene field name
-            namebuf.append(getName()).append(mapper.getNames().get(i));
-            fields.add (new Field (namebuf.toString(), 
-                        mapper.getValues().get(i),
-                        Store.NO, Index.ANALYZED, TermVector.NO));
-            namebuf.setLength(0);
-        }
-        return fields;
+        XdmNode doc = indexer.getXdmNode();
+        return new FieldValues (this, Collections.singleton(
+                        new TokenizedField(getName(), new QNameTextTokenStream (doc), 
+                        Store.NO, Index.ANALYZED, TermVector.NO)));
     }
     
-    public TermPQuery makeElementValueQuery (QName qname, String value) {
-        String fieldName = getName() + qname.getEncodedName();
-        return makeValueQuery (fieldName, value);
+    public ParseableQuery makeElementValueQuery (QName qname, String value) {
+        return new QNameTextQuery(new Term(getName(), value), qname.getEncodedName());
     }
 
-    public TermPQuery makeAttributeValueQuery (QName qname, String value) {
-        String fieldName = getName() + '@' + qname.getEncodedName();
-        return makeValueQuery (fieldName, value);
-    }
-
-    private TermPQuery makeValueQuery (String fieldName, String value) {
-        return new TermPQuery(new Term(fieldName, value));        
+    public ParseableQuery makeAttributeValueQuery (QName qname, String value) {
+        return new QNameTextQuery(new Term(getName(), value), "@" + qname.getEncodedName());
     }
     
 }

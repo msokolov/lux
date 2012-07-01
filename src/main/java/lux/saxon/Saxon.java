@@ -286,7 +286,6 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
             docReader = null;
         }
     }
-    
 
     @Override 
     public void setIndexer(XmlIndexer indexer) {

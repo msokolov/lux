@@ -7,6 +7,7 @@ import javax.xml.stream.XMLStreamReader;
 import lux.api.LuxException;
 import net.sf.saxon.s9api.BuildingStreamWriterImpl;
 import net.sf.saxon.s9api.DocumentBuilder;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -19,6 +20,18 @@ public class SaxonBuilder implements StAXHandler {
     private DocumentBuilder builder;
     private BuildingStreamWriterImpl writer;
     
+    /**
+     * creates its own Saxon processor and DocumentBuilder
+     * @throws SaxonApiException if there is an error instantiating the Saxon services.
+     */
+    public SaxonBuilder () throws SaxonApiException {
+        this (new Processor (false).newDocumentBuilder());
+    }
+
+    /**
+     * uses a DocumentBuilder supplied from an external Saxon processor.
+     * @throws SaxonApiException if there is an error creating an XMLStreamWriter
+     */
     public SaxonBuilder(DocumentBuilder builder) throws SaxonApiException {
         this.builder = builder;
         writer = builder.newBuildingStreamWriter();

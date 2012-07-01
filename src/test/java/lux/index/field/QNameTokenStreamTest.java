@@ -34,7 +34,11 @@ public class QNameTokenStreamTest {
         assertTrue (tokenStream.incrementToken());
         assertEquals (1, posAtt.getPositionIncrement());
         // TODO: test offsetAtt
-        assertEquals ("id:test", termAtt.toString());
+        assertEquals ("test", termAtt.toString());
+
+        assertTrue (tokenStream.incrementToken());
+        assertEquals (0, posAtt.getPositionIncrement());
+        assertEquals ("@id:test", termAtt.toString());
         
         assertTrue (tokenStream.incrementToken());
         assertEquals (0, posAtt.getPositionIncrement());
@@ -42,14 +46,38 @@ public class QNameTokenStreamTest {
 
         assertTrue (tokenStream.incrementToken());
         assertEquals (1, posAtt.getPositionIncrement());
-        assertEquals ("TEST", termAtt.toString());
+        assertEquals ("test", termAtt.toString());
 
         assertTrue (tokenStream.incrementToken());
         assertEquals (0, posAtt.getPositionIncrement());
-        assertEquals ("title:TEST", termAtt.toString());
+        assertEquals ("title:test", termAtt.toString());
 
         assertTrue (tokenStream.incrementToken());
         assertEquals (0, posAtt.getPositionIncrement());
-        assertEquals ("test:TEST", termAtt.toString());
+        assertEquals ("test:test", termAtt.toString());
+
+        assertTrue (tokenStream.incrementToken());
+        assertEquals (1, posAtt.getPositionIncrement());
+        assertEquals ("0", termAtt.toString());
+
+        assertTrue (tokenStream.incrementToken());
+        assertEquals (0, posAtt.getPositionIncrement());
+        assertEquals ("entities:0", termAtt.toString());
+
+        assertTrue (tokenStream.incrementToken());
+        assertEquals (0, posAtt.getPositionIncrement());
+        assertEquals ("test:0", termAtt.toString());
+        
+        // check position increments for tokens in a phrase
+        for (String token : "this is some markup that is escaped".split(" ")) {
+            assertTrue (tokenStream.incrementToken());
+            assertEquals (1, posAtt.getPositionIncrement());
+            assertEquals (token, termAtt.toString());            
+
+            assertTrue (tokenStream.incrementToken());
+            assertEquals (0, posAtt.getPositionIncrement());
+            assertEquals ("test:" + token, termAtt.toString());            
+        }
+
     }
 }
