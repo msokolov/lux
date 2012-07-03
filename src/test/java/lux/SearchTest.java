@@ -300,17 +300,23 @@ public class SearchTest {
         // Intersect in particular exposes the problem since it's optimized based on
         // correct sorting (tip from Michael Kay).
         // NB - count was 1164; reduced to 1138 by path query (20 scenes + 5 acts + 1 play = 26).
-        assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 1138);
-        assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 1138);
-        assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 1164);
+        // Then reduced to 2! by a full text term query
+        assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
+        // FIXME - why is this 141 and not 28?
+        assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 141);
+        assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7);
         // saxon cleverly optimizes this and gets rid of the intersect
+        // but FIXME our optimizer fails to see the opportunity for a word query
         assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1138);
     }
     
     @Test
     public void testDocumentIdentity() throws Exception {
-        /* This test confirms that document identity is preserved when creating Saxon documents. */
-        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1670, 1164);        
+        /* This test confirms that document identity is preserved when creating Saxon documents. 
+         * document count was 1670 using path indexes; reduced to 88 using full text queries
+         * TODO: Why is this not more optimal?
+         * */
+        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 88, 87);        
     }
     
     @Test

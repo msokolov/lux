@@ -104,7 +104,7 @@ public abstract class BasicQueryTest {
         assertQuery ("//*/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.ATTR);
 
         assertQuery ("//node()/@attr", XPathQuery.MINIMAL, ValueType.ATTRIBUTE, Q.ATTR);
-    }    
+    }
 
     @Test
     public void testConvertRootedPathToPredicate() {

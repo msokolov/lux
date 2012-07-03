@@ -72,8 +72,8 @@ public class PathExpression extends AbstractExpression {
     /**
      * @return the rightmost step of this path expression
      */
-    public AbstractExpression getRightmost() {
-        return subs[1].getRightmost();
+    public AbstractExpression getLastContextStep() {
+        return subs[1].getLastContextStep();
     }
 }
 

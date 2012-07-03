@@ -118,15 +118,16 @@ public class FunCall extends AbstractExpression {
     }
     
     /**
-     * @return for functions that return (one of) their arguments, the argument's rightmost subexpression is returned.
+     * @return for functions that return their argument, like data() and typecasts,
+     * the argument's rightmost subexpression is returned.
      * For other functions, the function expression itself is returned.
      */
     @Override
-    public AbstractExpression getRightmost () {
+    public AbstractExpression getLastContextStep () {
         if (name.getNamespaceURI().equals(XS_NAMESPACE) ||
                 (name.getNamespaceURI().equals(FN_NAMESPACE) && 
                         name.getLocalPart().equals("data"))) {
-            return subs[0].getRightmost();
+            return subs[0].getLastContextStep();
         }
         return this;
     }

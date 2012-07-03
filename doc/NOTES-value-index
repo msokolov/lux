@@ -37,3 +37,47 @@ Query optimization w/text index
 Predicates having one value constant and the other a node sequence (with a
 query); find the trailing QName of the query and generate a
 lux_node_<QName>:value query term.
+
+what about //e[. = 'foo' or . = 'bar'] ?
+what about //e[contains(.,'bar')] ?
+
+We are lacking a formal calculus - it would be nice to be able to prove
+these optimizations correct, and to be able to compute the optimizations
+using some more rigorous formalism.
+
+Define search{expression} to mean collection()[expression-query] where
+expression-query is some filter that selects (at least) all the documents
+satisfying the expression.  In general, 
+
+search{expression}/expression <=> collection()/expression
+
+and search{expression} <= collection()
+
+
+For example we can always rewrite:
+
+    PATH[FILTER]
+
+as
+    search{PATH/FILTER}/PATH[FILTER] 
+
+if FILTER is a path
+
+If a document $d satisfies a[path], ie exists($d/a[path]) is true()
+Then $d[a[path]] is clear, and I think in general that is equivalent to
+$d[a/path]? 
+
+but if FILTER is some other expression, what then?
+
+We can always rewrite a path containing Dot (.) as a query by inserting the
+context expression in place of Dot.  EG:
+
+/path[function(.)] can become
+
+search{function(/path)}/path[function(.)]
+
+Because /path[function(.)] => function(/path)
+
+So this should lead to a practicable path-rewriting method that will enable
+us to optimize predicate expressions containing (.) in a more uniform and
+systematic way, rather than ad hoc optimizations for specific patterns.

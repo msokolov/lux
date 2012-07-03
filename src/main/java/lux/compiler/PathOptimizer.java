@@ -107,7 +107,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @return the optimized expression
      */
     public AbstractExpression optimize(AbstractExpression expr) {
+        // visit the expression tree, optimizing any absolute sub-expressions
         expr = expr.accept (this);
+        // optimize the top level expression
         return optimizeExpression (expr, 0, 0);
     }
     
@@ -220,9 +222,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // This is a counting expr if its base expr is
         query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
         push (query);
-        if (predicate.getFilter().getType() == Type.BINARY_OPERATION && indexer.isOption(XmlIndexer.INDEX_FULLTEXT)) {
-            return optimizeComparison(predicate);
-        }
+        optimizeComparison(predicate);
         return predicate;
     }
     
@@ -418,6 +418,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
             else if (funcall.getName().equals(FunCall.FN_CONTAINS)) {
                 if (! subs[0].isAbsolute()) {
                     // don't query if the sequence arg isn't absolute??
+                    // if the arg is relative, presumably the contains is in a predicate somewhere
+                    // and may have been optimized there?
+                    push (query);
                     return funcall;
                 }
                 functionFacts = XPathQuery.BOOLEAN_TRUE;
@@ -536,49 +539,68 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return op;
     }
 
-    private AbstractExpression optimizeComparison(Predicate predicate) {
+    private void optimizeComparison(Predicate predicate) {
+        if (!indexer.isOption(XmlIndexer.INDEX_FULLTEXT)) {
+            return;
+        }
         LiteralExpression value = null;
         AbstractExpression path = null;
-        BinaryOperation op = (BinaryOperation) predicate.getFilter();
-        if (!(op.getOperator() == Operator.EQUALS || op.getOperator() == Operator.AEQ)) {
-            return predicate;
-        }
-        if (op.getOperand1().getType() == Type.LITERAL) {
-            value = (LiteralExpression) op.getOperand1();
-            path = op.getOperand2();
-        }
-        else if (op.getOperand2().getType() == Type.LITERAL) {
-            value = (LiteralExpression) op.getOperand2();
-            path = op.getOperand1();
-        }
-        if (path != null) {
-            // TODO: add test for minimality of existing query ???
-            AbstractExpression last = path.getRightmost();
-            if (last.getType() != Type.PATH_STEP) {
-                last = predicate.getBase().getRightmost();
-            }            
-            if (last.getType() == Type.PATH_STEP) {
-                NodeTest nodeTest = ((PathStep) last).getNodeTest();
-                QName nodeName = nodeTest.getQName();
-                ParseableQuery termQuery = null;
-                if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
-                    termQuery = QNameTextField.getInstance().makeTextQuery(value.getValue().toString());
-                }
-                else if (nodeTest.getType() == ValueType.ELEMENT) {
-                    termQuery = QNameTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
-                } 
-                else if (nodeTest.getType() == ValueType.ATTRIBUTE) {
-                    termQuery = QNameTextField.getInstance().makeAttributeValueQuery(nodeName, value.getValue().toString());
-                }
-                if (termQuery != null) {
-                    XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexer.getOptions());
-                    XPathQuery baseQuery = pop();
-                    query = combineQueries (query, Occur.MUST, baseQuery, baseQuery.getResultType());
-                    push(query);
-                }
+        AbstractExpression filter = predicate.getFilter();
+        if (filter.getType() == Type.BINARY_OPERATION) {
+            BinaryOperation op = (BinaryOperation) predicate.getFilter();
+            if (!(op.getOperator() == Operator.EQUALS || op.getOperator() == Operator.AEQ)) {
+                return;
+            }
+        } 
+        else if (filter.getType() == Type.FUNCTION_CALL) {
+            if (! ((FunCall)filter).getName().equals(FunCall.FN_CONTAINS)) {
+                return;
             }
         }
-        return predicate;
+        else {
+            return;
+        }
+        if (filter.getSubs()[0].getType() == Type.LITERAL) {
+            value = (LiteralExpression) filter.getSubs()[0];
+            path = filter.getSubs()[1];
+        }
+        else if (filter.getSubs()[1].getType() == Type.LITERAL) {
+            value = (LiteralExpression) filter.getSubs()[1];
+            path = filter.getSubs()[0];
+        }
+        else {
+            return;
+        }
+        AbstractExpression last = path.getLastContextStep();
+        if (last.getType() != Type.PATH_STEP) {
+            // get the context from the base of the predicate if the filter doesn't
+            // contain any path steps
+            last = predicate.getBase().getLastContextStep();
+        }            
+        if (last.getType() == Type.PATH_STEP) {
+            createTermQuery((PathStep) last, path, value);
+        }
+    }
+
+    private void createTermQuery(PathStep context, AbstractExpression path, LiteralExpression value) {
+        NodeTest nodeTest = context.getNodeTest();
+        QName nodeName = nodeTest.getQName();
+        ParseableQuery termQuery = null;
+        if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
+            termQuery = QNameTextField.getInstance().makeTextQuery(value.getValue().toString());
+        }
+        else if (nodeTest.getType() == ValueType.ELEMENT) {
+            termQuery = QNameTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
+        } 
+        else if (nodeTest.getType() == ValueType.ATTRIBUTE) {
+            termQuery = QNameTextField.getInstance().makeAttributeValueQuery(nodeName, value.getValue().toString());
+        }
+        if (termQuery != null) {
+            XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexer.getOptions());
+            XPathQuery baseQuery = pop();
+            query = combineQueries (query, Occur.MUST, baseQuery, baseQuery.getResultType());
+            push(query);
+        }
     }
 
     @Override

@@ -16,7 +16,7 @@ public abstract class AbstractExpression implements Visitable {
     public enum Type {
         PATH_EXPRESSION, PATH_STEP, PREDICATE, BINARY_OPERATION, SET_OPERATION,
         LITERAL, ROOT, DOT, FUNCTION_CALL, SEQUENCE, UNARY_MINUS, SUBSEQUENCE,
-        LET, VARIABLE, ELEMENT, ATTRIBUTE, TEXT, FLWOR, CONDITIONAL, COMMENT,         
+        LET, VARIABLE, ELEMENT, ATTRIBUTE, TEXT, FLWOR, CONDITIONAL, COMMENT,
         DOCUMENT_CONSTRUCTOR, PROCESSING_INSTRUCTION, SATISFIES, INSTANCE_OF
     };
 
@@ -126,16 +126,19 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     /**
-     * @return the tail of this expression - null unless this is a PathExpression {@see PathExpression#getTail}.
+     * @return the tail of this expression; ie everything after the head is removed, which is null 
+     * unless this is a PathExpression {@link PathExpression#getTail}.
      */
     public AbstractExpression getTail() {
         return null;
     }
 
     /**
-     * @return the rightmost sub-expression of this expression - this, unless this is a PathExpression {@see PathExpression#getRightmost}.
+     * This method is called by the optimizer in order to determine an element or attribute QName (or wildcard) against which 
+     * some expression is being compared, in order to generate an appropriate text query.
+     * @return the rightmost path step in the context of this expression.
      */
-    public AbstractExpression getRightmost () {
+    public AbstractExpression getLastContextStep () {
         return this;
     }
 
