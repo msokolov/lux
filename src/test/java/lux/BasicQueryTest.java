@@ -24,23 +24,7 @@ import org.junit.Test;
  * Tests the parsing of XPath expressions and the generation
  * of a supporting Lucene query using node name indexes, and using path indexes.
  */
-public abstract class BasicQueryTest {
-
-    public abstract XmlIndexer getIndexer ();
-
-    /**
-     * each test case uses one or more enums to retrieve the expected generated query
-     * @param q query enum identifying the test case
-     * @return the query expected for this case
-     */
-    public abstract String getQueryString (Q q);
-
-    /**
-     * each test case uses one or more enums to retrieve the expected generated query
-     * @param q query enum identifying the test case
-     * @return the query expected for this case
-     */
-    public abstract String getQueryXml (Q q);
+public class BasicQueryTest {
     
     public enum Q {
         ATTR, SCENE, SCENE_ACT, 
@@ -182,8 +166,13 @@ public abstract class BasicQueryTest {
     
     @Test public void testElementValue () throws Exception {
         assertQuery ("/ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT1);
+        assertQuery ("/*[self::ACT='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT1);
 
         assertQuery ("/ACT[SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
+        assertQuery ("/ACT['content'=SCENE]", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
+        assertQuery ("/ACT/SCENE[.='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
+        assertQuery ("/ACT/SCENE[self::node()='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
+        assertQuery ("/*[self::ACT/SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
 
         assertQuery ("//ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT);
 
@@ -334,6 +323,133 @@ public abstract class BasicQueryTest {
                 assertSame (type, extractor.queries.get(0).getResultType());
             }
         }
+    }
+
+    /**
+     * each test case uses one or more enums to retrieve the expected generated query
+     * @param q query enum identifying the test case
+     * @return the query expected for this case
+     */
+    public String getQueryString(Q q) {
+        switch (q) {
+        case ATTR: return "lux_att_name:\"attr\"";
+        case SCENE: return "lux_elt_name:\"SCENE\"";
+        case ACT_SCENE: 
+        case ACT_SCENE1:
+        case ACT_SCENE2:
+        case ACT_SCENE3:
+        case ACT_SCENE_CONTENT:
+        case ACT_SCENE_CONTENT1:
+            return "+lux_elt_name:\"SCENE\" +lux_elt_name:\"ACT\"";
+        case SCENE_ACT: return "+lux_elt_name:\"ACT\" +lux_elt_name:\"SCENE\"";
+        case ACT_OR_SCENE: return "lux_elt_name:\"SCENE\" lux_elt_name:\"ACT\"";
+        case ACT_AND_SCENE: return "+lux_elt_name:\"SCENE\" +lux_elt_name:\"ACT\"";
+        case ACT_SCENE_SPEECH: return
+            "(+lux_elt_name:\"TITLE\" +lux_elt_name:\"SPEECH\")" +
+            " ((+lux_elt_name:\"TITLE\" +lux_elt_name:\"SCENE\")" +
+            " (+lux_elt_name:\"TITLE\" +lux_elt_name:\"ACT\"))";
+        case ACT:
+        case ACT1:
+        case ACT2:
+        case ACT_CONTENT:
+        case ACT_CONTENT1:
+            return "lux_elt_name:\"ACT\"";
+        case ACT_ID_123:
+        case ACT_ID: 
+            return "+lux_att_name:\"id\" +lux_elt_name:\"ACT\"";
+        case ACT_SCENE_ID_123:
+            return "+(+lux_att_name:\"id\" +lux_elt_name:\"SCENE\") +lux_elt_name:\"ACT\"";
+        case PLAY_ACT_OR_PERSONAE_TITLE: return "+lux_elt_name:\"TITLE\" +(+(lux_elt_name:\"PERSONAE\" lux_elt_name:\"ACT\") +lux_elt_name:\"PLAY\")";
+        case MATCH_ALL: return "*:*";
+        case AND: return "lux_elt_name:\"AND\"";
+        case LUX_FOO: return "lux_elt_name:\"foo{lux}\"";
+        default: throw new UnsupportedOperationException("unregistered query enum: " + q);
+        }
+    }
+
+    /**
+     * each test case uses one or more enums to retrieve the expected generated query
+     * @param q query enum identifying the test case
+     * @return the query expected for this case
+     */
+    public String getQueryXml(Q q) {
+        switch (q) {
+        case ATTR: return "<TermsQuery fieldName=\"lux_att_name\">attr</TermsQuery>";
+        case SCENE: return "<TermsQuery>SCENE</TermsQuery>";
+        case ACT_SCENE: 
+        case ACT_SCENE1:
+        case ACT_SCENE2:
+        case ACT_SCENE3:
+        case ACT_SCENE_CONTENT:
+        case ACT_SCENE_CONTENT1:
+        case ACT_AND_SCENE: 
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery>SCENE</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause></BooleanQuery>";
+        case SCENE_ACT: 
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery>SCENE</TermsQuery></Clause></BooleanQuery>";
+        case ACT_OR_SCENE: 
+            return "<BooleanQuery><Clause occurs=\"should\"><TermsQuery>SCENE</TermsQuery></Clause>" + 
+                "<Clause occurs=\"should\"><TermsQuery>ACT</TermsQuery></Clause></BooleanQuery>";
+        case ACT_SCENE_SPEECH:
+            return 
+                "<BooleanQuery><Clause occurs=\"should\">" +
+                  "<BooleanQuery>" +
+                    "<Clause occurs=\"must\"><TermsQuery>TITLE</TermsQuery></Clause>" + 
+                    "<Clause occurs=\"must\"><TermsQuery>SPEECH</TermsQuery></Clause>" +
+                   "</BooleanQuery>" +
+                "</Clause><Clause occurs=\"should\">" +
+                  "<BooleanQuery><Clause occurs=\"should\">" +
+                    "<BooleanQuery>" +
+                      "<Clause occurs=\"must\"><TermsQuery>TITLE</TermsQuery></Clause>" + 
+                      "<Clause occurs=\"must\"><TermsQuery>SCENE</TermsQuery></Clause>" +
+                    "</BooleanQuery>" +
+                  "</Clause><Clause occurs=\"should\">" +
+                  "<BooleanQuery>" +
+                    "<Clause occurs=\"must\"><TermsQuery>TITLE</TermsQuery></Clause>" + 
+                    "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" +
+                  "</BooleanQuery>" +
+                  "</Clause></BooleanQuery>" +
+                "</Clause></BooleanQuery>";
+        case ACT:
+        case ACT1:
+        case ACT2:
+        case ACT_CONTENT:
+        case ACT_CONTENT1:
+            return "<TermsQuery>ACT</TermsQuery>";
+        case ACT_ID_123:
+        case ACT_ID: 
+            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause></BooleanQuery>";
+        case ACT_SCENE_ID_123:
+            return 
+                "<BooleanQuery><Clause occurs=\"must\">" +
+                "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermsQuery>SCENE</TermsQuery></Clause></BooleanQuery>" +
+                "</Clause>" +
+                "<Clause occurs=\"must\"><TermsQuery>ACT</TermsQuery></Clause>" + 
+                "</BooleanQuery>";
+        case PLAY_ACT_OR_PERSONAE_TITLE: 
+            return 
+                "<BooleanQuery>" +
+                "<Clause occurs=\"must\"><TermsQuery>TITLE</TermsQuery></Clause>" + 
+                "<Clause occurs=\"must\"><BooleanQuery>" +
+                  "<Clause occurs=\"must\"><BooleanQuery>" +
+                    "<Clause occurs=\"should\"><TermsQuery>PERSONAE</TermsQuery></Clause>" + 
+                    "<Clause occurs=\"should\"><TermsQuery>ACT</TermsQuery></Clause>" + 
+                  "</BooleanQuery></Clause>" +
+                  "<Clause occurs=\"must\"><TermsQuery>PLAY</TermsQuery></Clause>" + 
+                "</BooleanQuery></Clause>" +
+                "</BooleanQuery>";
+        case MATCH_ALL: return "<MatchAllDocsQuery />";
+        case AND: return "<TermsQuery>AND</TermsQuery>";
+        case LUX_FOO: return "<TermsQuery>foo&#x7B;lux&#x7D;</TermsQuery>";
+        default: throw new UnsupportedOperationException("unregistered query enum: " + q);
+        }
+    }
+
+    public XmlIndexer getIndexer() {
+        return new XmlIndexer(XmlIndexer.INDEX_QNAMES);
     }
 
     static class MockQuery extends XPathQuery {

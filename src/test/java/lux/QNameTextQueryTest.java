@@ -2,7 +2,7 @@ package lux;
 
 import lux.index.XmlIndexer;
 
-public class QNameTextQueryTest extends QNameQueryTest {
+public class QNameTextQueryTest extends BasicQueryTest {
 
     @Override
     public XmlIndexer getIndexer() {
