@@ -136,7 +136,7 @@ public class XmlReaderTest {
 
         String xml = serializer.getDocument();
         InputStream in = getClass().getClassLoader().getResourceAsStream ("lux/reader-test-normal.xml");
-        String original = IOUtils.toString(in);
+        String original = IOUtils.toString(in, "UTF-8");
         assertEquals (original, xml);
     }
 
@@ -147,7 +147,7 @@ public class XmlReaderTest {
 
         String xml = serializer.getDocument();
         InputStream in = getClass().getClassLoader().getResourceAsStream ("lux/reader-test-ns-normal.xml");
-        String original = IOUtils.toString(in);
+        String original = IOUtils.toString(in, "UTF-8");
         assertEquals (original, xml);
     }
     
