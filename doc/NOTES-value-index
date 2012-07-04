@@ -81,3 +81,11 @@ Because /path[function(.)] => function(/path)
 So this should lead to a practicable path-rewriting method that will enable
 us to optimize predicate expressions containing (.) in a more uniform and
 systematic way, rather than ad hoc optimizations for specific patterns.
+
+So now the question is: in our expression tree, how do you get hold of the
+context expression for a given expression?  Also: can we get a query for
+the context expression without performing teh rewrite explicitly?
+
+Basically, from any Dot, walking back up the tree until an absolute
+expression: doc(), collection(), root(), Slash, accumulating paths, yields
+the context expression

@@ -58,6 +58,10 @@ public class NodeTest {
     public QName getQName() {
         return name;
     }
+    
+    public boolean isWild () {
+        return name == null || name.getLocalPart().equals("*"); // namespace wildcard?
+    }
 
     public String toString () {
         StringBuilder buf = new StringBuilder ();

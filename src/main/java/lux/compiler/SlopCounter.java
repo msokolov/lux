@@ -9,7 +9,6 @@ import lux.xpath.NodeTest;
 import lux.xpath.PathStep;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
-import lux.xpath.PathStep.Axis;
 
 /**
  * adds up the number of wildcard ("*" or node()) path steps on the left or
@@ -48,23 +47,31 @@ public class SlopCounter extends ExpressionVisitorBase {
             return step;
         }
         NodeTest nodeTest = step.getNodeTest();
-        Axis axis = step.getAxis();
-        if (axis == Axis.Child) {
-            if ((nodeTest.getType ().equals (ValueType.NODE)
-                 || nodeTest.getType().equals (ValueType.ELEMENT))
-                 )
-            {
+        switch (step.getAxis()) {
+        case Child:
+            if ((nodeTest.getType().equals(ValueType.NODE) || nodeTest.getType().equals(ValueType.ELEMENT))) {
                 foundNode();
-                if (nodeTest.getQName() == null) {
-                    ++ slop;
+                if (nodeTest.isWild()) {
+                    ++slop;
                 } else {
                     done = true;
                 }
-            }
-        } else if (axis == Axis.Descendant || axis == Axis.DescendantSelf) {
+            } // else? done?
+            break;
+        case Self:
+            if ((nodeTest.getType().equals(ValueType.NODE) || nodeTest.getType().equals(ValueType.ELEMENT))) {
+                foundNode();
+                if (!isReverse()) {
+                    --slop; // self:: matches an adjacent wildcard *on the left* and closes up a gap
+                }
+                // however - multiple self:: in sequence ??
+            } // else? done?
+            break;
+        case Descendant:
+        case DescendantSelf:
             if (isReverse()) {
                 // we're going right-to-left
-                if (slop == null  && nodeTest.getQName() != null) {
+                if (slop == null && !nodeTest.isWild()) {
                     // we see our first thing and it's a named node
                     slop = 0;
                     done = true;
@@ -77,13 +84,15 @@ public class SlopCounter extends ExpressionVisitorBase {
                 // problems.  Surround Query Parser can only parse 2-digit distances
                 slop = 98;
             }
-        } else if (axis == Axis.Attribute) { 
+            break;
+        case Attribute:
             if (nodeTest.getQName() != null) {
                 foundNode();
             }
-        }
-        else {
+            break;
+        default:
             done = true;
+            break;
         }
         return step;
     }

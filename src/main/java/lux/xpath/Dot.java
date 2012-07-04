@@ -3,9 +3,15 @@ package lux.xpath;
 import lux.compiler.ExpressionVisitor;
 
 public class Dot extends AbstractExpression {
+    
+    private static final Dot instance = new Dot();
 
-    public Dot () {
+    protected Dot () {
         super (Type.DOT);
+    }
+    
+    public static Dot getInstance() {
+        return instance;
     }
     
     @Override

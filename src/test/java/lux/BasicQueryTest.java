@@ -60,7 +60,6 @@ public class BasicQueryTest {
         //assertQuery ("node()", Q.MATCH_ALL, true, ValueType.NODE);
         assertQuery ("/*", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.MATCH_ALL);
         assertQuery ("/node()", XPathQuery.MINIMAL, ValueType.NODE, Q.MATCH_ALL);
-        assertQuery ("/self::node()", XPathQuery.MINIMAL|XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
         //assertQuery ("self::node()", Q.MATCH_ALL, XPathQuery.MINIMAL);
     }
     
@@ -166,17 +165,21 @@ public class BasicQueryTest {
     
     @Test public void testElementValue () throws Exception {
         assertQuery ("/ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT1);
-        assertQuery ("/*[self::ACT='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT1);
 
         assertQuery ("/ACT[SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
         assertQuery ("/ACT['content'=SCENE]", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
         assertQuery ("/ACT/SCENE[.='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
-        assertQuery ("/ACT/SCENE[self::node()='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
-        assertQuery ("/*[self::ACT/SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
 
         assertQuery ("//ACT[.='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT);
 
         assertQuery ("//ACT[SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT);
+    }
+    
+    @Test public void testElementValueSelf() throws Exception {
+        //assertQuery ("/ACT/SCENE[self::node()='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);        
+        //assertQuery ("/*[self::ACT='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT1);
+        assertQuery ("/*[self::ACT/SCENE='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
+        assertQuery ("/*[self::ACT/SCENE/self::*='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
     }
     
     @Test public void testAttributeValue () throws Exception {

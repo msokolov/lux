@@ -105,7 +105,7 @@ public class TestSerialization {
     }
     
     @Test public void testDotToString () {
-        assertEquals (".", new Dot().toString());
+        assertEquals (".", Dot.getInstance().toString());
     }
     
     @Test public void testFunctionCallToString() {
@@ -125,13 +125,13 @@ public class TestSerialization {
     }
     
     @Test public void testSubsequenceToString () {
-        Subsequence subseq = new Subsequence(new Dot(), LiteralExpression.ONE);
+        Subsequence subseq = new Subsequence(Dot.getInstance(), LiteralExpression.ONE);
         assertEquals ("subsequence(.,1)", subseq.toString());
-        subseq = new Subsequence(new Dot(), LiteralExpression.ONE, new LiteralExpression(10));
+        subseq = new Subsequence(Dot.getInstance(), LiteralExpression.ONE, new LiteralExpression(10));
         assertEquals ("subsequence(.,1,10)", subseq.toString());
-        subseq = new Subsequence(new Dot(), FunCall.LastExpression, LiteralExpression.ONE);
+        subseq = new Subsequence(Dot.getInstance(), FunCall.LastExpression, LiteralExpression.ONE);
         assertEquals (".[fn:last()]", subseq.toString());
-        subseq = new Subsequence(new Dot(), LiteralExpression.ONE, LiteralExpression.ONE);
+        subseq = new Subsequence(Dot.getInstance(), LiteralExpression.ONE, LiteralExpression.ONE);
         assertEquals (".[1]", subseq.toString());
     }
     

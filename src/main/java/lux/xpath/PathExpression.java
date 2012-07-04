@@ -73,7 +73,11 @@ public class PathExpression extends AbstractExpression {
      * @return the rightmost step of this path expression
      */
     public AbstractExpression getLastContextStep() {
-        return subs[1].getLastContextStep();
+        AbstractExpression expr = subs[1].getLastContextStep();
+        if (expr.getType() == Type.PATH_STEP) {
+            return expr;
+        }
+        return subs[0].getLastContextStep();
     }
 }
 

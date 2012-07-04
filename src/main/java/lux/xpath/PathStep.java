@@ -63,8 +63,19 @@ public class PathStep extends AbstractExpression {
     public boolean isDocumentOrdered () {
         return axis.isForward;
     }
+    
+    @Override
+    public AbstractExpression getLastContextStep () {
+        // If self::* or self::node(), return Dot instead
+        if (axis == Axis.Self && nodeTest.isWild()) {
+            return Dot.getInstance();
+        }
+        return this;
+    }
 
 
-}/* This Source Code Form is subject to the terms of the Mozilla Public
+}
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */

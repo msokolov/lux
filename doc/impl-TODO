@@ -1,71 +1,98 @@
 * word index followthrough
-** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
-Apply custom analysis chain to each text node, and then wrap in
-QNameFilter.
 ** user search function
 Supporting full text queries; we do have lux:search (xs:string); however
 the query syntax is bizarre since you must specify an element name for
 every token using eltname{namespace}:word.  Conversely we have lux:search
 (element()), but no xquery helper functions for constructing the queries.
 However that seems to be the way to go.
+*** query syntax
+**** lux:query("element", "value")
+***** shorthand: :element:value
+**** lux:query("prefix:element", "value")
+uses namespace bindings declared in the query
+***** shorthand: prefix:element:value
+**** lux:query("@attribute", "value")
+***** shorthand: :@attribute:value
+**** lux:query("element@attribute", "value")
+just a simple and-query of "element/@attribute" and "@attribute=value"
+***** shorthand: :element@attribute:value
+**** lux:and(), lux:or(), lux:not()
+*** modified string query parser
+standard lucene query parser syntax where field names may contain "@" and
+namespace *prefixes*.  Post-process to prefix terms with element/attribute
+names.
+** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
+Apply custom analysis chain to each text node, and then wrap in
+QNameFilter.
 ** full text search *excluding some descendants*
 excluded some elements from search: for example the default should exclude
-all attributes!!
+all attributes!!  Currently phrases span attributes!  But wait: "full text"
+ie *no qname prefix* does *not* include attributes.  I don't think we need
+to change anything here?  Deprioritizing...
 ** alternate fields
 with different analysis, different element exclusions, different attribute
 inclusion rules.  For example there should be a field that includes only
 attributes.
-** optimize contains()
-** query constructors
+* testing for correctness
 ** test queries in complex path relations
-* performance testing
-* new indexes
-** directory (uri component) index
-also link to collection()?
-** sorting
-** fragmentation 
-use Lucene's block join indexing
-* bugs
-** visit(Dot) has possibly incorrect resultType (DOCUMENT)
-** standard function library untested
-A bunch of functions are untested.  We don't know if we're doing the right
-thing in terms of query generation based on their args.  See
-PathOptimizer.fnArgParity
-** failure to optimize deep path query properly
-see the expression in SearchTest.testTrailingStringCall - it ends up
-including some booleans instead of all paths
-** don't use schema.xml and solrconfig.xml as test data !
-When we change them our tests break!
-* missing features
-** raise exception when query parse fails
-this is currently getting swallowed internally and only printed to stderr
-** support for full set of atomic types
-The main thing missing is marshalling results from Solr
 ** namespace support (in indexes)
 This might be working, but we need to test
 ** attribute index support
 This might be working, but we need to test
-* api design / cleanup
-** parseable query
-rename and consolidate naming of subclasses
-** remove these notes from the release
-** make clean package dependencies 
-*** fill out the generic API
-*** put all the Saxon-specific code in a package
-* better tests generally
-**  Object lifecycle
-Saxon currently holds the DocIdAllocator and CachingDocReader, but these
-should really be an object with query life-span.  Make sure that long-lived
-objects stay in Evaluator (Saxon) and short-lived ones in Context
-(SaxonContext).
+** develop an XQTS database query test
+Ignore queries that use the emptydocument as input Run the other queries
+against the entire test set as context: ie against the sequence of
+documents that is collection(xqts) and then run using Lux.  Make sure the
+results are consistent; compare timing.
+
+I've done this, but it's hard to prove that we're getting the same results
+back since the order in which documents are returned from collection()
+seems to be a bit unpredictable in Saxon?
+** standard function library untested
+A bunch of functions are untested.  We don't know if we're doing the right
+thing in terms of query generation based on their args.  See
+PathOptimizer.fnArgParity
 ** search test2
 refactor and merge w/search test - check opto facts against actual behavior
 ** search test all index types
 include name-index only test
 ** solr search handler coverage
 test all atomic result types
+* performance testing
+** Test performance on XQTS with Saxon alone, and with Lux/Saxon
+show impact of Lux on compilation speed
+* bugs
+** raise exception when query parse fails
+this is currently getting swallowed internally and only printed to stderr
+* features
+** directory (uri component) index
+also link to collection()?
+** optimized sorting
+** fragmentation 
+use Lucene's block join indexing
+** support for full set of atomic types
+The main thing missing is marshalling results from Solr
+* api design / cleanup / documentation
+** parseable query
+rename and consolidate naming of subclasses
+** delete dead code
+*** get rid of lux:search facts argument
+The facts are not serving any purpose now that we are using lazy
+evaluation, and we have separate lux:count and lux:exists methods.
+** remove these notes from the release
+** make clean package dependencies 
+*** fill out the generic API
+*** put all the Saxon-specific code in a package
+**  Object lifecycle
+Saxon currently holds the DocIdAllocator and CachingDocReader, but these
+should really be an object with query life-span.  Make sure that long-lived
+objects stay in Evaluator (Saxon) and short-lived ones in Context
+(SaxonContext).
 * optimization ideas
 There are a few more things we can optimize using the "basic" indexing setup
+** failure to optimize deep path query properly
+see the expression in SearchTest.testTrailingStringCall - it ends up
+including some booleans instead of all paths
 ** count(collection())
 ** optimize not(empty(X)) -> exists(X), and not(exists(X)) -> empty(X)
 ** simplify some path queries
@@ -79,6 +106,8 @@ It currently generates an entire translated expression tree for every
 subtree it attempts to optimize so that we can figure out if that subtree
 is ordered or not.  We could possibly cache a translated tree and walk it
 in parallel?  Or link subexpressions to it with some kind of map?
+*** cache compiled (optimized) expressions
+Where does such a cache belong?
 ** Path indexes random idea
 What if instead of collapsing all the paths down so we only store unique
 paths, we retained the document structure in some way by listing *all*
@@ -114,27 +143,3 @@ somewhat limited in our ability to do this right now since we rely on Saxon
 to make judgements about sorting, and it doesn't always optimize as
 agressively as we would like, at least not in the saxon-HE version.  It
 works in some simple cases, though.
-* cleanup
-** delete dead code
-*** get rid of lux:search facts argument
-The facts are not serving any purpose now that we are using lazy
-evaluation, and we have separate lux:count and lux:exists methods.
-** add pagination args to lux:search
-This should help work around some of the shortcomings of Saxon's HE
-optimizer (re: documentSort) and let us skip document retrieval for docs
-prior to the starting doc.
-* testing
-** Test performance on XQTS with Saxon alone, and with Lux/Saxon
-show impact of Lux on compilation speed
-** develop an XQTS database query test
-Ignore queries that use the emptydocument as input Run the other queries
-against the entire test set as context: ie against the sequence of
-documents that is collection(xqts) and then run using Lux.  Make sure the
-results are consistent; compare timing.
-
-I've done this, but it's hard to prove that we're getting the same results back since the order in 
-which documents are returned from collection() seems to be a bit unpredictable in Saxon?
-
-** test namespaces and attributes
-queries w/namespaces and attributes have not been tested.
-Try indexing and retrieving the reader-test documents

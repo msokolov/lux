@@ -1,0 +1,124 @@
+Lux Release 0.3 
+
+This release is the first documented release.  It will be released to a
+small group of testers.
+
+Architecture
+
+Lux has two main components: an indexing document store, implemented on top
+of Lucene, and a query evaluator, which is basically a wrapper around
+Saxon. We think of it as the Saxon/Lucene bridge.  Its goal is to provide a
+seamless integration of these two excellent packages.  When using Lux, you
+load documents into Lucene/Solr in very much the same way you usually
+would.  You just need to make sure to store xml you want indexed by lux
+into lux's xml field. You can then run XQuery via Solr's REST API, or using
+Lux's java API, and you automatically get the benefit of index-optimized
+evaluation.  
+
+Lux's optimizer is fairly simple, and although its path and text indexes
+can significantly speed up query evaluation in many cases, Lux's main
+benefit is in providing easy access to Lucene's search capabilities in an
+XQuery evaluation environment.  Using the lux xquery function library, you
+can execute arbitrary Lucene queries at any point in an XQuery expression,
+and use the full power of XQuery to process the resulting document
+sequences.
+
+The indexer provides two main kinds of indexes: path indexes, and text
+indexes. Path indexes represent the relationship of element and attribute
+nodes in the XML documents.  Text indexes represent the string values of
+the elements and attributes, tokenized into words.  Lux stores XML
+documents in the Lucene index.
+
+The evaluator evaluates queries.  It provides four main components: translator,
+optimizer, Lucene query support, and expression serialization methods.
+The translator translates expressions from Saxon's internal representation
+to a Lux internal representation.  The optimizer manipulates the
+expressions, with the goal of accelerating query evaluation over large sets
+of documents through the use of Lucene indexes. Finally Lux evaluates the
+query by serializing the rewritten XQuery expression, recompiling and
+evaluating using Saxon.
+
+Optimized expressions include:
+
+Many element and attribute (QName) path expressions are indexed.
+
+Text comparisons using =, eq and contains() are indexed.
+
+count(), exists(), and empty() are evaluated entirely as lucene queries in
+many cases.
+
+collection() represents the entire collection of documents in Lucene.  Lux
+provides collection() as an implicit context expression (when no explicit
+expression is provided) of every expression it evaluates.
+
+Lux ensures that Saxon is able to use its own optimizations, like lazy
+evaluation, to avoid iterating entire sequences whenever possible. To do
+this, Lux guarantees stable ordering of search results for the duration of
+a single query, and preserves the identity of documents in Saxon's object
+pool by caching them for the duration of a query.
+
+Work in progress:
+
+1. Lux Java API design
+
+At the moment Lux is designed for the XQuery user, rather than the Java
+user. The Java API will almost certainly change in future releases.
+
+Lux's Java API was originally designed to enable Lux to swap in
+different XPath or XQuery processors.  However it has turned out that it
+really only acts as a thin (not particularly well-designed) wrapper around
+Saxon's API that hides much of Saxon's usefulness from the Java user, and
+no command-line execution is available.  It would probably be better to
+present Lux as a kind of preprocessor, and then let people evaluate
+directly using Saxon's s9 API.
+
+2. Expose indexing configuration
+
+Lux is designed to allow user-pluggable analysis components, of which
+Lucene provides a rich library.  However at the moment it's not possible to
+plug in a custom analyzer due to some hard-wiring in the indexer.
+
+It should also be possible to select which kinds of indexes Lux builds.
+
+3. Enhanced XQuery API
+
+We want to provide access to other Lucene features aside from basic
+querying, like: faceting (term enumeration), highlighting, and grouping.
+
+4. Additional query optimizations.
+
+We should be able to optimize some queries using "order by" clauses when
+the order criterion is indexed.  We should be able to optimize deep
+pagination in some cases.
+
+5. Hierarchical joins (ie shredding or fragmentation)
+
+We should be able to make use of Lucene's BlockJoinQuery to enable
+efficient joins among documents and sub-documents.
+
+6. More efficient document storage
+
+We should enable the use of Saxon's PTree format, which is compact and
+saves time by avoiding some parsing.  This requires the non-open-source
+HE/EE packages, but would be welcome for users who have that.
+
+Separately, we should investigate storing documents outside of Lucene in
+order to improve merge performance.
+
+Test coverage:
+
+XQTS (XQuery Test Suite) evaluation.  We are committed to ensuring that Lux
+adheres to the XQuery 1.0 standard. Lux uses Saxon to compile and evaluate
+XQuery, so our goal is basically to ensure that its conformance to the
+standard is the same as Saxon's.  
+
+So far, we've tested Lux with optimization disabled, and in this mode, Lux
+passes almost all of XQTS 1.0.3.  Evaluating both the MinimalConformance
+and FunctX test suites, Lux passes (/) test cases.
+
+Our goal is to get 100% of the tests passing with optimization enabled.
+Unfortunately the XQTS doesn't really exercise the query capabilities of
+lux since its tests are generally designed to run on single document input
+sets, so its unclear what it would actually prove to go through that
+exercise.  At the moment we're still trying to figure out how to leverage
+XQTS to generate a meaningful query-oriented test.

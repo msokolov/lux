@@ -47,6 +47,8 @@ parameterize existing indexing classes
 optimizations will be possible (like indexed //foo without the need for any
 post-evaluation, joins, etc).
 * Saxon integration
+** compatible API
+Expose some kind of API like Saxon's?
 ** PTree binary storage
 Use tinytree for storage; evaluate the perf improvement from this.  Could
 use Ptree if you have saxon-PE+.  Or could build a replacement (maybe for

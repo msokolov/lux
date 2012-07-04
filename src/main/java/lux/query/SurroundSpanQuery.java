@@ -1,5 +1,7 @@
 package lux.query;
 
+import java.util.ArrayList;
+
 import lux.index.field.XmlField;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
@@ -21,12 +23,38 @@ public class SurroundSpanQuery extends ParseableQuery {
     private boolean inOrder;
 
     public SurroundSpanQuery(int slop, boolean inOrder, ParseableQuery ... clauses) {
-        this.clauses = clauses;
+        if (slop == 0 && inOrder) {
+            this.clauses = mergeSubClauses(clauses);
+        } else {
+            this.clauses = clauses;
+        }
         this.slop= slop;
         this.inOrder= inOrder;
     }
-    
+
+    // optimize? by simplifying nested queries
+    private ParseableQuery[] mergeSubClauses(ParseableQuery [] clauses) {
+        ArrayList<ParseableQuery> subclauses = new ArrayList<ParseableQuery>();
+        for (ParseableQuery clause : clauses) {
+            if (clause instanceof SurroundSpanQuery) {
+                SurroundSpanQuery subquery = (SurroundSpanQuery) clause;
+                if (subquery.slop == 0 && subquery.inOrder) {
+                    for (ParseableQuery subclause : subquery.clauses) {
+                        subclauses.add(subclause);
+                    }
+                    continue;
+                }
+            }
+            subclauses.add(clause);
+
+        }
+        return subclauses.toArray(new ParseableQuery[0]);
+    }
+
     public String toXmlString (String field) {
+        if (field == null) {
+            field = XmlField.PATH.getName();
+        }
         StringBuilder buf = new StringBuilder("<SpanNear");
         if (inOrder) {
             buf.append (" inOrder=\"true\"");
@@ -40,16 +68,14 @@ public class SurroundSpanQuery extends ParseableQuery {
         return buf.toString();
     }
     
-    @Override
-    public String toString () {
-        return toString (XmlField.PATH.getName());
-    }
-
     /**
      * Render the query in the Lucene surround query parser dialect with the given default field.
      * @param field the default field for the query
      */
     public String toString(String field) {
+        if (field == null) {
+            field = XmlField.PATH.getName();
+        }
         boolean showField = !(field.isEmpty() || field.equals(XmlField.PATH.getName()));
         StringBuilder buf = new StringBuilder();
         if (showField) {

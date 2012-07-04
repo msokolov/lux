@@ -60,6 +60,9 @@ This can occur due to doc() and root().  Maybe other functions?  A sequence
 like //foo/root() returns documents, but the evaluator iterates over nodes
 (//foo) in each document, and returns each document once for each
 occurrence of foo in its document.
+** optimize contains()
+** predicates with atomic/node comparisons 
+like [foo = "foo"]
 * indexes
 XmlIndexer manages multiple index options, and we pass it around so consumers
 of the index know what is available there.
