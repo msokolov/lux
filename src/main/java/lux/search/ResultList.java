@@ -33,7 +33,6 @@ public class ResultList<T> extends ArrayList<T> implements ResultSet<T> {
         }
 
         public S next() {
-            System.out.println ("next()");
             return wrapped.next();
         }
 

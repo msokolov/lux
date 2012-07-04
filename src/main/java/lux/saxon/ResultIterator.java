@@ -14,6 +14,7 @@ import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
 public class ResultIterator implements SequenceIterator<Item>{
@@ -44,7 +45,7 @@ public class ResultIterator implements SequenceIterator<Item>{
         int startPosition = position;
         try {
             int docID = docIter.nextDoc();
-            //System.out.println ("GET " + docID + " " + query.toString());
+            // LoggerFactory.getLogger(ResultIterator.class).trace("GET {} {}", docID, query);
             if (docID == Scorer.NO_MORE_DOCS) {
                 position = -1;
                 current = null;

@@ -30,6 +30,7 @@ import org.apache.lucene.queryParser.surround.query.SrndQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.xmlparser.CoreParser;
 import org.apache.lucene.xmlparser.ParserException;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
 /**
@@ -142,7 +143,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             } catch (ParserException e) {
                 throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
-            System.out.println ("executing xpath query: " + query);
+            LoggerFactory.getLogger(LuxSearch.class).debug("executing xpath query: {}", query);
             return iterate (query, saxon, facts);
         }
         
