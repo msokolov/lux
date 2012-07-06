@@ -540,7 +540,7 @@ public class SaxonTranslator {
             throw new LuxException ("Choose must have the same number of actions as conditions");            
         }
         if (l < 2) {
-            return new Conditional (exprFor (conds[0]), exprFor(actions[0]), new LiteralExpression());
+            return new Conditional (exprFor (conds[0]), exprFor(actions[0]), LiteralExpression.EMPTY);
         }
         l -= 2;
         AbstractExpression tail = new Conditional(exprFor (conds[l]), exprFor (actions[l]), exprFor(actions[l+1]));
@@ -787,7 +787,7 @@ public class SaxonTranslator {
         try {
             int len = value.getLength();
             if (len == 0) {
-                return new LiteralExpression();
+                return LiteralExpression.EMPTY;
             }
             SequenceIterator<?> iter = value.iterate();
             if (len > 1) {

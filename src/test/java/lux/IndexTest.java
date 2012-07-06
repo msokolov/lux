@@ -51,6 +51,9 @@ import org.junit.Test;
  * qname-values (hashed into single tokens): 2542592 - 2274304 = 11.8%
  * qname-words w/o terminal tokens: 2683904 - 2274304 = 18%
  * qname-words + terminal tokens: 2786304 - 2274304 = 22%
+ * full-text (with all nodes transparent) 3899392 - 2274304 = 1625088 = 71% (1940480 full text alone)
+ * full-text (text only) 2673664 - 2274304 = 18%
+ * full-text (text plus all nodes opaque) 3068928 - 2274304 = 35%
  */
 public class IndexTest {
     
@@ -83,7 +86,15 @@ public class IndexTest {
     
     @Test
     public void testIndexFullText () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);        
+        IndexTestSupport indexTestSupport = buildIndex ("full-text", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML |XmlIndexer.BUILD_JDOM);        
+        assertTotalDocs ();
+        //printAllTerms();
+        assertFullTextQuery (indexTestSupport.searcher, "PERSONA", "ROSENCRANTZ", 4);
+    }
+
+    @Test
+    public void testIndexFullTextOnly () throws Exception {
+        IndexTestSupport indexTestSupport = buildIndex ("full-text-only", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);        
         assertTotalDocs ();
         //printAllTerms();
         assertFullTextQuery (indexTestSupport.searcher, "PERSONA", "ROSENCRANTZ", 4);

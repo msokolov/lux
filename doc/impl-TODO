@@ -1,3 +1,20 @@
+* walk through installation
+Make sure it's easy to configure.  Check compatibility with pub factory usage
+** download jar
+from luxproject.net?  I guess we need a web site or something...
+** place jar in solr/lib folder
+make this a standard part of ifactory's installations
+** configure solr plugins
+add lux config block to solrconfig.xml; we should provide a little sample
+config file.
+** configure fields
+Configure lux update processor to use "uri" and "xml_text" as its uri and
+xml fields.  Test by adding to ifpress-solr/solr, config and run
+ifpress-solr tests.
+** test usage in ifpress context
+How can we perform searches via ifpress Search API via lux fields?  This
+could help us avoid all the re-indexing we currently need...  For text
+queries we need query parser help.
 * word index followthrough
 ** user search function
 Supporting full text queries; we do have lux:search (xs:string); however

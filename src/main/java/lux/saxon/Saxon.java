@@ -123,9 +123,9 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
      * For now, all collections retrieve all documents.  TODO: implement directory-based collections.
      */
     public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
-        if (href.startsWith("lux:")) {
-            String path = href.substring(5);
-            path = path.replace('\\', '/');
+        if (href == null || href.startsWith("lux:")) {
+            //String path = href.substring(5);
+            //path = path.replace('\\', '/');
             return new LuxSearch().iterate(new MatchAllDocsQuery(), this, 0);
         }
         return defaultCollectionURIResolver.resolve(href, base, context);

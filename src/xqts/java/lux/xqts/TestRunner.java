@@ -8,6 +8,7 @@ import java.util.Map;
 import lux.api.QueryContext;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
+import lux.index.XmlIndexer;
 import lux.saxon.SaxonExpr;
 import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
@@ -24,7 +25,7 @@ public class TestRunner extends RunnerBase {
     @BeforeClass
     public static void setup() throws Exception {
         // By default, no indexes are created, and no Lux query optimizations are performed.
-        setup(0, "TestSources");
+        setup(XmlIndexer.STORE_XML, "TestSources");
     }
 
     private boolean runTest (String caseName) throws Exception {
@@ -83,10 +84,12 @@ public class TestRunner extends RunnerBase {
                 if (printDetailedDiagnostics ) {
                     XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
                     XQueryEvaluator xqeval = xq.load();
-                    for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
-                        net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
-                        xqeval.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
-                    }                    
+                    if (context.getVariableBindings() != null) {
+                        for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
+                            net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
+                            xqeval.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
+                        }
+                    }
                     XdmItem item = xqeval.evaluateSingle();
                     System.err.println (test1.getQueryText() + " returns " + item);
                 }
@@ -134,13 +137,14 @@ public class TestRunner extends RunnerBase {
         //        declare namespace zz="http://saxon.sf.net/";
         //        (<e >{() }</e>)/(let $zz:zz_typeswitchVar := self::node() return if ($zz:zz_typeswitchVar instance of node()) then (.) else (1))
         //assertTrue (runTest ("K2-sequenceExprTypeswitch-14"));
-        assertTrue (runTest ("fn-id-dtd-5"));
+        // assertTrue (runTest ("fn-id-dtd-5"));
+        assertTrue (runTest ("fn-collection-10d"));
     }
     
     @Test public void testGroup () throws Exception {
         terminateOnException = false;
         runTestGroup ("MinimalConformance");
-        runTestGroup ("FunctX");
+        //runTestGroup ("FunctX");
         //runTestGroup ("Basics");
         //runTestGroup ("Expressions");
     }

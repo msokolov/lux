@@ -102,6 +102,8 @@ final class QNameTextTokenStream extends TokenStream {
                     localName = '@' + localName;
                 }
                 qnameAtt.addQName(new lux.xpath.QName(qname.getNamespaceURI(), localName));
+                // if (! isTransparent (e))
+                // return;
             }
         }
     }

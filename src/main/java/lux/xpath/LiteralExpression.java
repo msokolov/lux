@@ -16,10 +16,6 @@ public class LiteralExpression extends AbstractExpression {
     private final ValueType valueType;
     private final String xqTypeName; // a built-in xquery type name, like xs:integer
     
-    public LiteralExpression () {
-        this (null);
-    }
-    
     public LiteralExpression (Object value, ValueType valueType, String xqTypeName) {
         super(Type.LITERAL);
         this.value = value;
@@ -45,6 +41,7 @@ public class LiteralExpression extends AbstractExpression {
         this.xqTypeName = valueType.name;
     }
 
+    public static final LiteralExpression EMPTY = new LiteralExpression ("()", ValueType.EMPTY);
     public static final LiteralExpression ONE = new LiteralExpression (1);
     
     private static ValueType computeType (Object value) {

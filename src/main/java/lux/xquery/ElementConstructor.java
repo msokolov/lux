@@ -71,28 +71,31 @@ public class ElementConstructor extends AbstractExpression {
                 }
             }
         }
-        if (getContent() == null) {
+        AbstractExpression content = getContent();
+        if (content == null) {
             buf.append (" />");
         } else {
             buf.append ('>');
-            switch (getContent().getType()) {
+            switch (content.getType()) {
             case ELEMENT: 
-                getContent().toString(buf);
+                content.toString(buf);
                 break;
             case LITERAL:
-                LiteralExpression.escapeText(((LiteralExpression)getContent()).getValue().toString(), buf);
+                if (content != LiteralExpression.EMPTY) {
+                    LiteralExpression.escapeText(((LiteralExpression)content).getValue().toString(), buf);
+                }
                 break;
             case SEQUENCE:
             {
                 boolean allElements = true;
-                for (AbstractExpression kid : getContent().getSubs()) {
+                for (AbstractExpression kid : content.getSubs()) {
                     if (kid.getType() != Type.ELEMENT) {
                         allElements = false;
                         break;
                     }
                 }
                 if (allElements) {
-                    for (AbstractExpression kid : getContent().getSubs()) {
+                    for (AbstractExpression kid : content.getSubs()) {
                         kid.toString(buf);
                     }
                     break;
@@ -100,7 +103,7 @@ public class ElementConstructor extends AbstractExpression {
             }
             default:
                 buf.append ('{');
-                getContent().toString(buf);
+                content.toString(buf);
                 buf.append ('}');
             }
             buf.append("</");

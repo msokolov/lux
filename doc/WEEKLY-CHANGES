@@ -20,9 +20,9 @@ using a function.
 6/3; XQuery 1.0; XQTS 99% passing; API cleanup; Solr field autoconfig;
 PubFactory sandbox testing
 
-UPCOMING
+7/5: value and word indexes
 
-****** value and word indexes
+UPCOMING
 
 ****** bug fixes, testing (namespaces / attributes)
 

@@ -113,8 +113,11 @@ XQuery, so our goal is basically to ensure that its conformance to the
 standard is the same as Saxon's.  
 
 So far, we've tested Lux with optimization disabled, and in this mode, Lux
-passes almost all of XQTS 1.0.3.  Evaluating both the MinimalConformance
-and FunctX test suites, Lux passes (/) test cases.
+passes almost all of XQTS 1.0.3.  In the MinimalConformance test suite, Lux
+passes (17470/17496) test cases.  Of the 26 failures, most seem to be
+related to the test harness and don't reflect real bugs.  We do have a
+couple of problems around surrogate characters, and lack of support for
+type casts including both element and atomic types.
 
 Our goal is to get 100% of the tests passing with optimization enabled.
 Unfortunately the XQTS doesn't really exercise the query capabilities of
