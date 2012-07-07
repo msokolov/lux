@@ -7,6 +7,10 @@ import lux.index.XmlIndexer;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Fieldable;
 
+/**
+ * A stored field that is used to store the entire XML document.
+ *
+ */
 public class DocumentField extends XmlField {
     
     private static final DocumentField instance = new DocumentField();
@@ -21,20 +25,12 @@ public class DocumentField extends XmlField {
     
     @Override
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
-        String doc = indexer.getDocumentText();
-        if (doc == null) {
-            return new FieldValues (this, Collections.emptySet());
-        }
-        return new FieldValues (this, Collections.singleton(doc));
+        return new FieldValues (this, Collections.singleton(indexer.getDocumentText()));
     }
     
     @Override
     public Iterable<?> getValues(XmlIndexer indexer) {
-        String doc = indexer.getDocumentText();
-        if (doc == null) {
-            return Collections.emptySet();
-        }
-        return Collections.singleton(doc);
+        return Collections.singleton(indexer.getDocumentText());
     }
 
 }
