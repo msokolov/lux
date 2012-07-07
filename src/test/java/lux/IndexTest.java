@@ -112,7 +112,7 @@ public class IndexTest {
     }
     
     private void assertFullTextQuery(LuxSearcher searcher, String qName, String term, int expectedCount) throws ParserException, IOException {
-        Query q = new XmlQueryParser(XmlField.QNAME_TEXT).parse
+        Query q = new XmlQueryParser(XmlField.NODE_TEXT).parse
                 (new ByteArrayInputStream(("<QNameTextQuery fieldName=\"lux_node\" qName=\"" +
                 		qName + "\">" + term +
                 				"</QNameTextQuery>").getBytes()));

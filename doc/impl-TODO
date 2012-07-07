@@ -12,9 +12,6 @@ Configure lux update processor to use "uri" and "xml_text" as its uri and
 xml fields.  Test by adding to ifpress-solr/solr, config and run
 ifpress-solr tests.
 ** test usage in ifpress context
-How can we perform searches via ifpress Search API via lux fields?  This
-could help us avoid all the re-indexing we currently need...  For text
-queries we need query parser help.
 * word index followthrough
 ** user search function
 Supporting full text queries; we do have lux:search (xs:string); however
@@ -30,9 +27,9 @@ uses namespace bindings declared in the query
 ***** shorthand: prefix:element:value
 **** lux:query("@attribute", "value")
 ***** shorthand: :@attribute:value
-**** lux:query("element@attribute", "value")
+**** lux:query("element/@attribute", "value")
 just a simple and-query of "element/@attribute" and "@attribute=value"
-***** shorthand: :element@attribute:value
+***** shorthand: :element/@attribute:value
 **** lux:and(), lux:or(), lux:not()
 *** modified string query parser
 standard lucene query parser syntax where field names may contain "@" and

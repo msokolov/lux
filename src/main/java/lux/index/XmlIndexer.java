@@ -117,7 +117,8 @@ public class XmlIndexer {
             }
         }
         if (isOption (INDEX_FULLTEXT)) {
-            addField (XmlField.QNAME_TEXT);
+            addField (XmlField.XML_TEXT);
+            addField (XmlField.NODE_TEXT);
             try {
                 saxonBuilder = new SaxonBuilder();
                 xmlReader.addHandler(saxonBuilder);

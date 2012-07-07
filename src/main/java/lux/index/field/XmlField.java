@@ -91,7 +91,8 @@ public abstract class XmlField {
     public static final XmlField PATH_VALUE = PathValueField.getInstance();
     public static final XmlField XML_STORE = DocumentField.getInstance();
     public static final XmlField QNAME_VALUE = QNameValueField.getInstance();
-    public static final XmlField QNAME_TEXT = QNameTextField.getInstance();
+    public static final XmlField NODE_TEXT = NodeTextField.getInstance();
+    public static final XmlField XML_TEXT = XmlTextField.getInstance();
     
     /** Note that field name uniqueness is not enforced by the API, but if two fields with different 
      * options share the same name, unpredictable behavior will ensue!  This is an historical quirk 

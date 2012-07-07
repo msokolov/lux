@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lux.index.XmlIndexer;
 import lux.index.field.XmlField;
+import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
 import lux.saxon.Config;
 import lux.saxon.ResultIterator;
@@ -24,9 +25,7 @@ import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.queryParser.surround.parser.ParseException;
-import org.apache.lucene.queryParser.surround.parser.QueryParser;
 import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
-import org.apache.lucene.queryParser.surround.query.SrndQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.xmlparser.CoreParser;
 import org.apache.lucene.xmlparser.ParserException;
@@ -40,7 +39,7 @@ import org.w3c.dom.Element;
 public class LuxSearch extends ExtensionFunctionDefinition {
     
     private BasicQueryFactory queryFactory;
-    private QueryParser surroundQueryParser;
+    private LuxQueryParser luxQueryParser;
     private org.apache.lucene.queryParser.QueryParser queryParser;
     private CoreParser xmlQueryParser;
     
@@ -59,8 +58,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         }
         if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
             // parse the string value using the surround query parser?
-            SrndQuery q = getSurroundQueryParser().parse2(queryArg.getStringValue());
-            return q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(), getQueryFactory());
+            return getLuxQueryParser().parse(queryArg.getStringValue());
         } else {
             return getQueryParser().parse(queryArg.getStringValue());
         }
@@ -156,23 +154,23 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         return queryFactory;
     }
     
-    protected QueryParser getSurroundQueryParser () {
-        if (surroundQueryParser == null) {
-            surroundQueryParser = new QueryParser ();//Version.LUCENE_34, null, new WhitespaceAnalyzer(Version.LUCENE_34));
+    protected LuxQueryParser getLuxQueryParser () {
+        if (luxQueryParser == null) {
+            luxQueryParser = new LuxQueryParser (XmlIndexer.LUCENE_VERSION, "", XmlField.NODE_TEXT.getAnalyzer());
         }
-        return surroundQueryParser;
+        return luxQueryParser;
     }
     
     protected org.apache.lucene.queryParser.QueryParser getQueryParser () {
         if (queryParser == null) {
-            queryParser = new org.apache.lucene.queryParser.QueryParser (XmlIndexer.LUCENE_VERSION, null, XmlField.QNAME_TEXT.getAnalyzer());
+            queryParser = new org.apache.lucene.queryParser.QueryParser (XmlIndexer.LUCENE_VERSION, null, XmlField.NODE_TEXT.getAnalyzer());
         }
         return queryParser;
     }
     
     protected CoreParser getXmlQueryParser () {
         if (xmlQueryParser == null) {
-            xmlQueryParser = new XmlQueryParser(XmlField.QNAME_TEXT);
+            xmlQueryParser = new XmlQueryParser(XmlField.NODE_TEXT);
         }
         return xmlQueryParser;
     }

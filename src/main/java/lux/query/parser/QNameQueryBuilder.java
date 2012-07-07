@@ -3,6 +3,7 @@ package lux.query.parser;
 import java.io.IOException;
 import java.io.StringReader;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -26,14 +27,19 @@ public class QNameQueryBuilder implements QueryBuilder {
     public Query getQuery(Element e) throws ParserException {
         String fieldName=DOMUtils.getAttributeWithInheritanceOrFail(e,"fieldName");
         String qName=DOMUtils.getAttributeWithInheritance(e,"qName");
+        String text=DOMUtils.getNonBlankTextOrFail(e);
+        float boost = DOMUtils.getAttribute (e, "boost", 1.0f);
+        return parseQueryTerm(fieldName, qName, text, boost);
+    }
+
+    public Query parseQueryTerm(String fieldName, String qName, String text, float boost) {
         StringBuilder termText = new StringBuilder();
-        if (qName != null) {
+        if (StringUtils.isNotEmpty(qName)) {
             termText.append(qName).append(':');
         }
         int prefixLength = termText.length();
         // TODO: see if we are embedded in a SpanQuery of any sort.  If so,
         // generate a SpanNearQuery here, not a PhraseQuery
-        String text=DOMUtils.getNonBlankTextOrFail(e);        
         PhraseQuery pq=new PhraseQuery();
         Term term = null;
         try {
@@ -62,7 +68,7 @@ public class QNameQueryBuilder implements QueryBuilder {
         } else {
             q = new TermQuery (term);
         }
-        q.setBoost(DOMUtils.getAttribute (e, "boost", 1.0f));
+        q.setBoost(boost);
         return q;
     }
 

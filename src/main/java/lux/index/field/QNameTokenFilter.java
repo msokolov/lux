@@ -10,6 +10,10 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.util.CharsRef;
 
+/**
+ * Expand the input term by adding additional terms at the same position, prefixed by the node names (QNames)
+ * found in the QNameAttribute.
+ */
 final public class QNameTokenFilter extends TokenFilter {
 
     private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
@@ -25,6 +29,7 @@ final public class QNameTokenFilter extends TokenFilter {
 
     @Override
     public boolean incrementToken() throws IOException {
+        // TODO: don't emit unprefixed text term here - we'll store that in a separate field
         if (qnameIndex >= qnameAtt.getQNames().size()) {
             if (!input.incrementToken()) {
                 return false;

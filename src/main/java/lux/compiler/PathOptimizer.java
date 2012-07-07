@@ -5,8 +5,9 @@ import java.util.HashMap;
 
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
-import lux.index.field.QNameTextField;
+import lux.index.field.NodeTextField;
 import lux.index.field.XmlField;
+import lux.index.field.XmlTextField;
 import lux.query.ParseableQuery;
 import lux.query.SurroundTerm;
 import lux.query.TermPQuery;
@@ -587,13 +588,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
         QName nodeName = nodeTest.getQName();
         ParseableQuery termQuery = null;
         if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
-            termQuery = QNameTextField.getInstance().makeTextQuery(value.getValue().toString());
+            termQuery = XmlTextField.getInstance().makeTextQuery(value.getValue().toString());
         }
         else if (nodeTest.getType() == ValueType.ELEMENT) {
-            termQuery = QNameTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
+            termQuery = NodeTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
         } 
         else if (nodeTest.getType() == ValueType.ATTRIBUTE) {
-            termQuery = QNameTextField.getInstance().makeAttributeValueQuery(nodeName, value.getValue().toString());
+            termQuery = NodeTextField.getInstance().makeAttributeValueQuery(nodeName, value.getValue().toString());
         }
         if (termQuery != null) {
             XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexer.getOptions());

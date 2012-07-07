@@ -2,7 +2,6 @@ package lux.index.field;
 
 import java.util.Collections;
 
-import lux.index.QNameTextMapper;
 import lux.index.XmlIndexer;
 import lux.query.ParseableQuery;
 import lux.query.QNameTextQuery;
@@ -15,21 +14,15 @@ import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.Term;
 
-public class QNameTextField extends XmlField {
+public class NodeTextField extends XmlField {
     
-    private static final QNameTextField instance = new QNameTextField();
-    
-    /**
-     * @see QNameTextMapper
-     */
-    //public static final String RECORD_END = " luxeor";
-    //public static final String RECORD_START = "luxsor ";
-    
-    public static QNameTextField getInstance() {
+    private static final NodeTextField instance = new NodeTextField();
+        
+    public static NodeTextField getInstance() {
         return instance;
     }
     
-    protected QNameTextField () {
+    protected NodeTextField () {
         // TODO - better default analyzer w/stemming + diacritic normalization
         // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
         // element/attribute text tokens are generated)
@@ -44,10 +37,6 @@ public class QNameTextField extends XmlField {
         return new FieldValues (this, Collections.singleton(
                         new TokenizedField(getName(), new QNameTextTokenStream (doc), 
                         Store.NO, Index.ANALYZED, TermVector.NO)));
-    }
-
-    public ParseableQuery makeTextQuery (String value) {
-        return new QNameTextQuery(new Term(getName(), value));
     }
     
     public ParseableQuery makeElementValueQuery (QName qname, String value) {

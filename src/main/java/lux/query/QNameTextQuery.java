@@ -69,36 +69,31 @@ public class QNameTextQuery extends ParseableQuery {
     }
     
     /**
-     * This generates a string representation of the query that can be parsed by the standard
-     * Lucene query parser. But in this case the parser doesn't provide support for prefixing 
-     * every term, which is what we need.  To produce an accurate
-     * representation of the query, we would have want to tokenize the term and apply prefixes.
-     * But this method is only used for testing - possibly we should just get rid of it to 
-     * avoid potential confusion/deception.  For now we produce a string which actually will 
-     * fail to parse.
+     * This generates a string representation of the query that can be parsed by the 
+     * {@link LuxQueryParser}, an extended version of the standard Lucene query parser, that includes
+     * support for field prefixes including node names (QNames). 
      * 
-     * Example; we get:
-     * 
-     * lux_qname:nm:"a b c"
-     * 
-     * but we actually want:
-     * 
-     * lux_qname:"nm:a nm:b nm:c"
-     * 
-     * @param field
-     * @param term
-     * @param boost
-     * @return
+     * @param field the default (<i>ie</i> in-scope) Lucene field name: ignored; for these queries, the field
+     * name is determined by qName: {@link XmlTextField#getName} if qName is empty and {@link NodeTextField#getName} otherwise,
+     * and this determination is made by the query parser, so we don't embed the field name here.
+     * @param qName the name of the node (element or attribute) to search, or empty to search all text
+     * @param term the term to search for
+     * @param boost the relative weight of this query, used in relevance scoring
+     * @return a parseable string representation of the query
      */
     public static String toString (String field, String qName, Term term, float boost) {
 
         StringBuilder buffer = new StringBuilder();
+        /*
         if (!term.field().equals(field) && !term.field().isEmpty()) {
           buffer.append(term.field());
           buffer.append(":");
         }
+        */
         if (qName != null) {
-            buffer.append(qName).append(':');
+            buffer.append("node<").append(qName).append(':');
+        } else {
+            buffer.append("node<").append(':');            
         }
         // quote the term text
         buffer.append ('"');

@@ -14,7 +14,6 @@ import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
 public class ResultIterator implements SequenceIterator<Item>{
