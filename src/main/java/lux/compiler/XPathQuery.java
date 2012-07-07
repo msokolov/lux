@@ -134,10 +134,6 @@ public class XPathQuery {
         return new XPathQuery (null, query, resultFacts, valueType);
     }
     
-    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, long options) {
-        return getQuery (query, resultFacts, typeFromFacts(resultFacts), options);
-    }
-    
     public static XPathQuery getMatchAllQuery (long options) {
         if ((options & XmlIndexer.INDEX_PATHS) != 0) {
             return PATH_MATCH_ALL;
@@ -167,10 +163,6 @@ public class XPathQuery {
     public ParseableQuery getParseableQuery() {
         return query;
     }
-    
-    public Expression getExpression() {
-        return expr;
-    }
 
     /**
      * @return whether it is known that the query will return the minimal set of
@@ -181,36 +173,9 @@ public class XPathQuery {
     public boolean isMinimal() {
         return (facts & MINIMAL) != 0;
     }
-    
-    /**
-     * @return whether the query is minimal and the xpath expression is single-valued.
-     */
-    public boolean isExact() {
-        return (facts & EXACT) != 0;
-    }
 
     public ValueType getResultType() {
         return valueType;
-    }
-
-    /**
-     * Combines this query with another according to the logic of occur. The
-     * valueType of the resulting query will be the same as that of this query
-     * if occur is AND (or NOT). If occur is OR, the valueType is the most
-     * specific type that includes the types of each query. The combined query
-     * is minimal iff both queries are.
-     * 
-     * @param precursor
-     *            the query to combine with this; precursor since it corresponds
-     *            to the preceding expr's query.
-     * @param occur
-     *            whether the two queries MUST occur (this AND precursor) or MAY
-     *            occur (this OR precursor).
-     * @return the combined query
-     */
-    public XPathQuery combine(XPathQuery precursor, Occur occur) {
-        ValueType combinedType = occur == Occur.SHOULD ? valueType.promote(precursor.valueType) : this.valueType;
-        return combineBooleanQueries(occur, precursor, occur, combinedType);
     }
 
     /**
@@ -344,11 +309,6 @@ public class XPathQuery {
           facts |= DOCUMENT_RESULTS;
       }
       // no other type info is stored in facts since it's not needed by search()
-  }
-  
-  public void setExpression (Expression expr) {
-      if (immutable) throw new LuxException ("attempt to modify immutable query");
-      this.expr = expr;
   }
 
   public boolean isImmutable() {
