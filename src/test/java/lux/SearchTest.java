@@ -18,6 +18,7 @@ import lux.xquery.XQuery;
 
 import net.sf.saxon.s9api.XdmNode;
 
+import org.apache.lucene.queryParser.ParseException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -96,7 +97,7 @@ public class SearchTest {
     }
     
     @Test
-    public void testPathOrder () {
+    public void testPathOrder () throws Exception {
         // Make sure that the Optimizer doesn't incorrectly assert 
         // order is *not* significant in the generated query; 
         // it should be (SCENE AND ACT):
@@ -278,7 +279,7 @@ public class SearchTest {
     }
     
     @Test
-    public void testRoot () {
+    public void testRoot () throws Exception {
         assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4]//SPEECH[1]/SPEAKER/string()", null, 4);
         assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);        
     }
@@ -365,6 +366,25 @@ public class SearchTest {
     
     @Test public void testContains () throws Exception {
         assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
+        assertSearch ("true", "contains(/PLAY,'Holla')", null, 1, 1);
+    }
+    
+    @Test public void testLuxSearch () throws Exception {
+        assertSearch ("5", "count(lux:search('\"holla bernardo\"'))", null, 5, 5);
+        assertSearch ("5", "count(lux:search('<LINE:\"holla bernardo\"'))", null, 5, 5);
+        try {
+            assertSearch (null, "lux:search(1,2,3)", null, null, null);
+            assertTrue ("expected exception", false);
+        } catch (LuxException e) { }
+        try {
+            assertSearch (null, "lux:search(1,'xx')", null, null, null);
+            assertTrue ("expected exception", false);
+        } catch (LuxException e) { }
+        try {
+            assertSearch (null, "lux:search(':::')", null, null, null);
+            assertTrue ("expected exception", false);
+        } catch (ParseException e) { }
+        assertSearch ("65", "lux:count(text{'bernardo'})", null, null, null);
     }
 
     @Test 
@@ -385,12 +405,15 @@ public class SearchTest {
         return assertSearch (query, props, docCount, null);
     }
     
-    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer facts, Integer docCount) throws LuxException {
+    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer facts, Integer docCount) throws Exception {
         return assertSearch (expectedResult, query, facts, docCount, null);
     }
     
-    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException {
+    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer props, Integer docCount, Integer cacheMisses) throws Exception {
         ResultSet<?> results = assertSearch (query, props, docCount, cacheMisses);
+        if (results.getException() != null) {
+            throw results.getException();
+        }
         boolean hasResults = results.iterator().hasNext();
         String result = hasResults ? results.iterator().next().toString() : null;
         if (expectedResult == null) {            
