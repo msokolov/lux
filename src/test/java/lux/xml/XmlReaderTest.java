@@ -47,7 +47,7 @@ public class XmlReaderTest {
     
     @Test
     public void testSaxonBuilder() throws Exception {
-        SaxonBuilder saxonBuilder = new SaxonBuilder();
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
         handleDocument(saxonBuilder, "lux/reader-test.xml");
         XdmNode doc = saxonBuilder.getDocument();
 
@@ -57,7 +57,7 @@ public class XmlReaderTest {
 
     @Test
     public void testSaxonBuilderNS() throws Exception {
-        SaxonBuilder saxonBuilder = new SaxonBuilder();
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
         handleDocument(saxonBuilder, "lux/reader-test-ns.xml");
         XdmNode doc = saxonBuilder.getDocument();
 

@@ -13,7 +13,7 @@ import javax.xml.stream.XMLStreamException;
 import lux.api.LuxException;
 import lux.index.field.XmlField;
 import lux.xml.JDOMBuilder;
-import lux.xml.SaxonBuilder;
+import lux.xml.SaxonDocBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -53,7 +53,7 @@ public class XmlIndexer {
     
     private XmlReader xmlReader;
     private JDOMBuilder jdomBuilder;
-    private SaxonBuilder saxonBuilder;
+    private SaxonDocBuilder saxonBuilder;
     private Serializer serializer;
     private XmlPathMapper pathMapper;
     private List<XmlField> fields = new ArrayList<XmlField>();
@@ -116,7 +116,7 @@ public class XmlIndexer {
             addField (XmlField.XML_TEXT);
             addField (XmlField.NODE_TEXT);
             try {
-                saxonBuilder = new SaxonBuilder();
+                saxonBuilder = new SaxonDocBuilder();
                 xmlReader.addHandler(saxonBuilder);
             } catch (SaxonApiException e) {
                 throw new LuxException (e);
@@ -185,6 +185,13 @@ public class XmlIndexer {
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
+    }
+    
+    public int[] getTextOffsets () {
+        if (saxonBuilder == null) {
+            return null;
+        }
+        return saxonBuilder.getTextOffsets();
     }
 
     public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {

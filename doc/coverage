@@ -1,0 +1,35 @@
+total 63
+lux.api 72
+lux.compiler 92
+lux.functions 70
+
+total 72
+lux.api 72
+lux.compiler 94
+lux.functions 77
+lux.index 88
+lux.index.field 90
+
+total 73
+lux.functions 86
+lux.index 91
+lux.index.field 91
+lux.query 43
+
+total 75
+lux.query 76
+lux.saxon 63 (XPath support)
+lux.search 26 
+lux.solr 83
+lux.xml 89
+lux.xpath 77 (obscure XPath expressions)
+lux.xquery 50 (obscure XQuery expressions)
+
+total 77
+lux.query 87
+lux.saxon 64 (XPath support)
+lux.search 79
+lux.solr 83
+lux.xml 89
+lux.xpath 77 (obscure XPath expressions)
+lux.xquery 50 (obscure XQuery expressions)

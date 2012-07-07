@@ -38,7 +38,8 @@ public class XmlTextField extends XmlField {
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
         return new FieldValues (this, Collections.singleton(
-                        new TokenizedField(getName(), new XmlTextTokenStream (doc), 
+                        new TokenizedField(getName(), 
+                                new XmlTextTokenStream (doc, indexer.getTextOffsets()), 
                         Store.NO, Index.ANALYZED, TermVector.NO)));
     }
 

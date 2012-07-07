@@ -1,78 +1,33 @@
 package lux.index.field;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import lux.index.XmlIndexer;
 import net.sf.saxon.expr.parser.Token;
-import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.QName;
-import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
-import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
- * A TokenStream that extracts text from an Saxon Document model (XdmNode) and generates
- * a token for every "word" for every element (or attribute) that contains it.
- * TODO: wrap an entire Analyzer, not just a StandardTokenizer
+ * A TokenStream that extracts text from a Saxon Document model (XdmNode) and generates
+ * a token for every "word" for every element that contains it.
  * TODO: control over element transparency
  */
-final class QNameTextTokenStream extends TokenStream {
+final class QNameTextTokenStream extends TextTokenStreamBase {
     
     private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
-    private CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-    
-    //private int textNodeOffset;
-    private XdmNode curNode;
-    private ContentIterator contentIter;
-    private Tokenizer tokenizer;
-    private TokenStream tokenStream;
-    private static final XdmSequenceIterator EMPTY = new EmptyXdmIterator (null);
-    
-    // TODO: change to QNameTextTokenStream(Analyzer)
-    // and provide read (XdmNode)
-    QNameTextTokenStream (XdmNode doc) {
-        tokenizer = new StandardTokenizer(XmlIndexer.LUCENE_VERSION, this, new CharSequenceReader(""));
-        tokenStream = new QNameTokenFilter (new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, tokenizer));
-        contentIter = new ContentIterator(doc);
-    }
 
-    private boolean advanceToTokenNode () {
-        while (contentIter.hasNext()) {
-            curNode = (XdmNode) contentIter.next();
-            if (curNode == null) {
-                // ContentIterator reports hasNext() == true but returns null when there are descendant nodes,
-                // but no content
-                return false;
-            }
-            // wrap the content in a reader and hand it to the tokenizer
-            NodeInfo nodeInfo = curNode.getUnderlyingNode();
-            if (resetTokenizer(nodeInfo.getStringValueCS())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private boolean resetTokenizer (CharSequence cs) {
-        CharSequenceReader reader = new CharSequenceReader(cs);
-        try {
-            return resetTokenizer(reader);
-        } catch (IOException e) {
-            // don't expect this from a CharSequenceReader
-        }
-        return false;
+    QNameTextTokenStream (XdmNode doc, int[] textOffsets) {
+      super (doc, textOffsets);
+      tokenStream = new QNameTokenFilter (new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, tokenizer));
+      contentIter = new ContentIterator(doc);      
     }
     
     /*
@@ -92,7 +47,7 @@ final class QNameTextTokenStream extends TokenStream {
         }
         return true;
     }
-
+    
     private void getAncestorQNames() {
         AncestorIterator nodeAncestors = new AncestorIterator(curNode);
         qnameAtt.getQNames().clear();
@@ -109,46 +64,6 @@ final class QNameTextTokenStream extends TokenStream {
                 // return;
             }
         }
-    }
-    
-    private boolean incrementTokenStream() throws IOException {
-        while (tokenStream.incrementToken()) {
-            if (termAtt.length() > 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private boolean resetTokenizer (CharSequenceReader reader) throws IOException {
-        try {
-            tokenizer.reset(reader);
-        } catch (IOException e) {
-            // CharSequenceReader won't throw an IO Exception
-        }
-        resetCounters ();
-        return incrementTokenStream();        
-    }
-    
-    private void resetCounters () {
-        // textNodeCounter = 0;
-        // textNodeOffset = offsets[textNodeCounter];        
-    }
-    
-    private static class EmptyXdmIterator extends XdmSequenceIterator {
-
-        protected EmptyXdmIterator(SequenceIterator<?> base) {
-            super(base);
-        }
-        
-        public boolean hasNext () {
-            return false;
-        }
-        
-        public XdmItem next () {
-            return null;
-        }
-        
     }
     
     /**
@@ -173,7 +88,7 @@ final class QNameTextTokenStream extends TokenStream {
      * If the node has no text and no attribute descendants, but has other 
      *  descendant nodes, we report hasNext() = true, yet return null from next().
      */
-    private static class ContentIterator {
+    private static class ContentIterator implements Iterator<XdmNode> {
         
         private XdmSequenceIterator descendants;
         private XdmSequenceIterator attributes;
@@ -210,6 +125,9 @@ final class QNameTextTokenStream extends TokenStream {
                 }
                 return null;
             }
+        }
+
+        public void remove() {
         }
         
     }

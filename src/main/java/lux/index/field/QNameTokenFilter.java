@@ -19,12 +19,19 @@ final public class QNameTokenFilter extends TokenFilter {
     private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
     private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
     private final PositionIncrementAttribute posAtt = addAttribute(PositionIncrementAttribute.class);
+    private final boolean emitTextNodeTerm;
+    
     private int qnameIndex = 0;
     private CharsRef term;
 
-    protected QNameTokenFilter(TokenStream input) {
+    protected QNameTokenFilter(TokenStream input, boolean emitTextNodeTerm) {
         super(input);
         term = new CharsRef();
+        this.emitTextNodeTerm = emitTextNodeTerm;        
+    }
+
+    protected QNameTokenFilter(TokenStream input) {
+        this (input, true);
     }
 
     @Override
@@ -34,19 +41,24 @@ final public class QNameTokenFilter extends TokenFilter {
             if (!input.incrementToken()) {
                 return false;
             }
-            // emit the input token
             qnameIndex = 0;
             term.copy(termAtt.buffer(), 0, termAtt.length());
+            // emit the input token
+            if (emitTextNodeTerm == true) {
+                return true;
+            }
+            // otherwise fall through below and emit the first qname:term token
         }
-        else if (qnameIndex < qnameAtt.getQNames().size()) {
-            // emit <qname>:<term>
+        else {
+            // set posIncr = 0 if this is not the first token emitted for this term
             posAtt.setPositionIncrement(0);
-            QName qname = qnameAtt.getQNames().get(qnameIndex++);
-            termAtt.setEmpty();
-            termAtt.append(qname.getEncodedName());
-            termAtt.append(':');
-            termAtt.append(term);            
         }
+        // emit <qname>:<term>
+        QName qname = qnameAtt.getQNames().get(qnameIndex++);
+        termAtt.setEmpty();
+        termAtt.append(qname.getEncodedName());
+        termAtt.append(':');
+        termAtt.append(term);            
         return true;
     }
 

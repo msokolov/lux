@@ -1,5 +1,7 @@
 package lux.xml;
 
+import java.util.Arrays;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -13,18 +15,21 @@ import net.sf.saxon.s9api.XdmNode;
 
 /*
  * TODO: merge w/Saxon$SaxonBuilder
- * TODO: accumulate array of text node character offsets for use by QNameTextTokenStream
  */
-public class SaxonBuilder implements StAXHandler {
+public class SaxonDocBuilder implements StAXHandler {
     
     private DocumentBuilder builder;
     private BuildingStreamWriterImpl writer;
+    
+    // store the offsets of all of the text nodes in the document
+    private int ioff;
+    private int[] offsets;
     
     /**
      * creates its own Saxon processor and DocumentBuilder
      * @throws SaxonApiException if there is an error instantiating the Saxon services.
      */
-    public SaxonBuilder () throws SaxonApiException {
+    public SaxonDocBuilder () throws SaxonApiException {
         this (new Processor (false).newDocumentBuilder());
     }
 
@@ -32,9 +37,10 @@ public class SaxonBuilder implements StAXHandler {
      * uses a DocumentBuilder supplied from an external Saxon processor.
      * @throws SaxonApiException if there is an error creating an XMLStreamWriter
      */
-    public SaxonBuilder(DocumentBuilder builder) throws SaxonApiException {
+    public SaxonDocBuilder(DocumentBuilder builder) throws SaxonApiException {
         this.builder = builder;
         writer = builder.newBuildingStreamWriter();
+        offsets = new int[1024];
     }
     
     public XdmNode getDocument() throws SaxonApiException {
@@ -45,6 +51,7 @@ public class SaxonBuilder implements StAXHandler {
         switch (eventType) {
 
         case XMLStreamConstants.START_DOCUMENT:
+            ioff = 0;
             writer.writeStartDocument(reader.getEncoding(), reader.getVersion());
             break;
 
@@ -88,8 +95,7 @@ public class SaxonBuilder implements StAXHandler {
             // fall through
 
         case XMLStreamConstants.CHARACTERS:
-            // TODO: preserve character offsets somehow????
-            // reader.getLocation().getCharacterOffset();
+            storeOffset (reader.getLocation().getCharacterOffset());
             writer.writeCharacters(reader.getTextCharacters(), reader.getTextStart(), reader.getTextLength());
             break;
 
@@ -115,6 +121,21 @@ public class SaxonBuilder implements StAXHandler {
         default:
             throw new RuntimeException("Unrecognized XMLStream event type: " + reader.getEventType());
         }
+    }
+
+    private void storeOffset(int characterOffset) {
+        if (ioff >= offsets.length) {
+            offsets = Arrays.copyOf(offsets, offsets.length + 1024);
+        }
+        offsets[ioff++] = characterOffset;
+    }
+    
+    /** Note: unsafe.  If we ever ran a multithreaded indexer we would need to keep a lock on this builder
+     * until the downstream processing is done, or else make a copy here.
+     * @return an array storing character positions of every text node in the input character stream.
+     */
+    public int[] getTextOffsets () {
+        return offsets;
     }
 
     public void reset() {

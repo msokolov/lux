@@ -34,8 +34,9 @@ public class NodeTextField extends XmlField {
     @Override
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
+        int [] textOffsets = indexer.getTextOffsets();
         return new FieldValues (this, Collections.singleton(
-                        new TokenizedField(getName(), new QNameTextTokenStream (doc), 
+                        new TokenizedField(getName(), new QNameTextTokenStream (doc, textOffsets), 
                         Store.NO, Index.ANALYZED, TermVector.NO)));
     }
     
