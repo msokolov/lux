@@ -19,32 +19,6 @@ public class SurroundBoolean extends BooleanPQuery {
         super (occur, queries);
     }
     
-    public String toString(String field) {
-        StringBuilder buf = new StringBuilder();
-        Clause [] clauses = getClauses();
-        if (clauses.length > 0) {
-            buf.append(clauses[0].getQuery().toString(field));
-        }
-        String operator = getOccur() == Occur.MUST ? " AND " : " OR ";
-        for (int i = 1; i < clauses.length; i++) {
-            buf.append (operator);
-            buf.append (clauses[i].getQuery().toString(field));
-        }
-        return buf.toString();
-    }
-    
-    public String toXmlString (String field) {
-        if (getOccur().equals(Occur.MUST)) {
-            return super.toXmlString(field);
-        }        
-        StringBuilder buf = new StringBuilder ("<SpanOr>");
-        for (Clause clause : getClauses()) {
-            buf.append (clause.getQuery().toXmlString(field));
-        }
-        buf.append ("</SpanOr>");
-        return buf.toString();
-    }
-    
     public ElementConstructor toXmlNode(String field) {
         if (getOccur().equals(Occur.MUST)) {
             return super.toXmlNode(field);

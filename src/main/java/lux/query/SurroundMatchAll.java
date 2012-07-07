@@ -24,18 +24,7 @@ public class SurroundMatchAll extends ParseableQuery {
     
     public static final SurroundMatchAll getInstance () {
         return INSTANCE;
-    }
-    
-    public String toXmlString(String field) {
-        if (field.equals(XmlField.PATH.getName())) {
-            return "<SpanTerm>{}</SpanTerm>";
-        }
-        return "<SpanTerm fieldName=\"" + XmlField.PATH.getName() + "\">{}</SpanTerm>";
-    }
-    
-    public String toString(String field) {
-        return "{}";
-    }
+    }    
 
     @Override
     public ElementConstructor toXmlNode(String field) {

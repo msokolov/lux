@@ -6,7 +6,6 @@ import lux.xquery.AttributeConstructor;
 import lux.xquery.ElementConstructor;
 
 import org.apache.lucene.index.Term;
-import org.apache.lucene.util.ToStringUtils;
 
 /**
  * An analogue of TermQuery whose toString method produces an expression that can be parsed by
@@ -32,50 +31,6 @@ public class TermPQuery extends ParseableQuery {
     
     public TermPQuery(Term t) {
         this (t, 1.0f);
-    }
-    
-    public String toXmlString (String field) {
-        StringBuilder buffer = new StringBuilder("<TermsQuery");
-        appendContents(field, buffer);
-        buffer.append("</TermsQuery>");
-        return buffer.toString();
-    }
-
-    protected void appendContents(String field, StringBuilder buffer) {
-        if (term.field() != null && !term.field().equals(field)) {
-            buffer.append (" fieldName=\"").append (term.field()).append ("\"");
-        }
-        if (boost != 1) {
-            buffer.append (" boost=\"").append(boost).append("\"");
-        }
-        buffer.append(">").append(term.text());
-    }
-    
-    public String toString (String field) {
-        return TermPQuery.toString (field, term, boost);
-    }
-    
-    public static String toString (String field, Term term, float boost) {
-
-        StringBuilder buffer = new StringBuilder();
-        if (!term.field().equals(field) && !term.field().isEmpty()) {
-          buffer.append(term.field());
-          buffer.append(":");
-        }
-        // quote the term text in case it is an operator
-        buffer.append ('"');
-        String value = term.text();
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            switch (c) {
-                case '"': buffer.append("\\\""); break;
-                case '\\': buffer.append("\\\\"); break;
-                default: buffer.append(c); break;
-            }
-        }
-        buffer.append ('"');
-        buffer.append(ToStringUtils.boost(boost));
-        return buffer.toString();
     }
 
     public Term getTerm() {

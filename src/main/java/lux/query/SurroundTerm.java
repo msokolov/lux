@@ -18,18 +18,6 @@ public class SurroundTerm extends TermPQuery {
     public SurroundTerm(Term t) {
         super(t);
     }
-
-    @Override
-    public String toString (String field) {
-        return TermPQuery.toString(field, getTerm(), getBoost());
-    }
-
-    public String toXmlString (String field) {
-        StringBuilder buffer = new StringBuilder("<SpanTerm");
-        appendContents("", buffer);
-        buffer.append("</SpanTerm>");
-        return buffer.toString();
-    }
     
     public ElementConstructor toXmlNode (String field) {
         return toXmlNode("", SPAN_TERM_QNAME);

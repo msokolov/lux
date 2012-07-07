@@ -28,18 +28,7 @@ public class BooleanPQuery extends ParseableQuery {
         for (ParseableQuery query : queries) {
             clauses[i++] = new Clause(query, occur);
         }
-    }
-
-    public String toXmlString (String field) {
-        StringBuilder buf = new StringBuilder("<BooleanQuery>");
-        for (Clause clause : clauses) {
-            buf.append ("<Clause occurs=\"").append (clause.getOccurAttribute()).append("\">");
-            buf.append (clause.getQuery().toXmlString(field));
-            buf.append("</Clause>");
-        }
-        buf.append ("</BooleanQuery>");
-        return buf.toString();
-    }
+    }    
     
     public Occur getOccur () {
         return clauses[0].occur;
@@ -47,31 +36,6 @@ public class BooleanPQuery extends ParseableQuery {
     
     public Clause[] getClauses() {
         return clauses;
-    }
-    
-    public String toString(String field) {
-        StringBuilder buf = new StringBuilder();
-        for (Clause clause : clauses) {
-            if (buf.length() > 0) {
-                buf.append (' ');
-            }
-            Occur occur = clause.getOccur();
-            if (occur == Occur.MUST_NOT) {
-                buf.append ('-');
-            } 
-            else if (occur == Occur.MUST) {
-                buf.append ('+');
-            }
-            boolean isTerm = clause.getQuery() instanceof TermPQuery;
-            if (!isTerm) {
-                buf.append ('(');
-            }
-            buf.append (clause.getQuery().toString(field));
-            if (!isTerm) {
-                buf.append (')');
-            }
-        }
-        return buf.toString();
     }
     
     public String toSurround(String field) {

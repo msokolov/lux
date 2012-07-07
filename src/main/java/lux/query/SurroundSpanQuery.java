@@ -2,7 +2,6 @@ package lux.query;
 
 import java.util.ArrayList;
 
-import lux.index.field.XmlField;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
 import lux.xpath.QName;
@@ -49,59 +48,6 @@ public class SurroundSpanQuery extends ParseableQuery {
 
         }
         return subclauses.toArray(new ParseableQuery[0]);
-    }
-
-    public String toXmlString (String field) {
-        if (field == null) {
-            field = XmlField.PATH.getName();
-        }
-        StringBuilder buf = new StringBuilder("<SpanNear");
-        if (inOrder) {
-            buf.append (" inOrder=\"true\"");
-        }
-        buf.append (" slop=\"").append(slop).append('"');
-        buf.append ('>');
-        for (ParseableQuery q : clauses) {
-            buf.append(q.toXmlString(field));
-        }
-        buf.append ("</SpanNear>");
-        return buf.toString();
-    }
-    
-    /**
-     * Render the query in the Lucene surround query parser dialect with the given default field.
-     * @param field the default field for the query
-     */
-    public String toString(String field) {
-        if (field == null) {
-            field = XmlField.PATH.getName();
-        }
-        boolean showField = !(field.isEmpty() || field.equals(XmlField.PATH.getName()));
-        StringBuilder buf = new StringBuilder();
-        if (showField) {
-            buf.append(field).append(":(");
-        }
-        if (slop > 0) {
-            buf.append(slop+1);
-        }
-        if (inOrder) {
-            buf.append ('w');
-        } else {
-            buf.append ('n');
-        }
-        buf.append ('(');
-        if (clauses.length > 0) {
-            buf.append (clauses[0].toString(field));
-        }
-        for (int i = 1; i < clauses.length; i++) {
-            buf.append (",");
-            buf.append (clauses[i].toString(field));
-        }
-        buf.append (')');
-        if (showField) {
-            buf.append (')');
-        }
-        return buf.toString();
     }
 
     @Override

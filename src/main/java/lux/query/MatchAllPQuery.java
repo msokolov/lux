@@ -11,14 +11,6 @@ public final class MatchAllPQuery extends ParseableQuery {
     public static MatchAllPQuery getInstance() {
         return INSTANCE;
     }
-    
-    public String toXmlString(String field) {
-        return "<MatchAllDocsQuery />";
-    }
-    
-    public String toString(String field) {
-        return "*:*";
-    }
 
     @Override
     public ElementConstructor toXmlNode(String field) {
