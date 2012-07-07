@@ -27,7 +27,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Version;
 import org.jdom.Document;
-import org.jdom.output.XMLOutputter;
 
 /**
  * Indexes XML documents.  The constructor accepts a set of flags that define a set of fields 
@@ -56,7 +55,6 @@ public class XmlIndexer {
     private JDOMBuilder jdomBuilder;
     private SaxonBuilder saxonBuilder;
     private Serializer serializer;
-    private XMLOutputter jdomSerializer;
     private XmlPathMapper pathMapper;
     private List<XmlField> fields = new ArrayList<XmlField>();
     private MultiFieldAnalyzer fieldAnalyzers;
@@ -70,15 +68,15 @@ public class XmlIndexer {
         this (DEFAULT_OPTIONS);
     }
     
-    public final static int BUILD_JDOM=     0x00000001;
-    public final static int SERIALIZE_XML=  0x00000002;
-    public final static int NAMESPACE_AWARE=0x00000004;
-    public final static int STORE_XML=      0x00000008;
-    public final static int STORE_PTREE=    0x00000010;
-    public final static int INDEX_QNAMES=   0x00000020;
-    public final static int INDEX_PATHS=    0x00000040;
-    public final static int INDEX_FULLTEXT= 0x00000080;
-    public final static int INDEX_VALUES=   0x00000100;
+    public final static int BUILD_JDOM=         0x00000001;
+    public final static int SERIALIZE_XML=      0x00000002;
+    public final static int NAMESPACE_UNAWARE=  0x00000004;
+    public final static int STORE_XML=          0x00000008;
+    public final static int STORE_PTREE=        0x00000010;
+    public final static int INDEX_QNAMES=       0x00000020;
+    public final static int INDEX_PATHS=        0x00000040;
+    public final static int INDEX_FULLTEXT=     0x00000080;
+    public final static int INDEX_VALUES=       0x00000100;
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
     public final static int DEFAULT_OPTIONS = BUILD_JDOM | STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
 
@@ -98,7 +96,7 @@ public class XmlIndexer {
             } else {
                 pathMapper = new XmlPathMapper();
             }
-            pathMapper.setNamespaceAware((options & NAMESPACE_AWARE) != 0);        
+            pathMapper.setNamespaceAware((options & NAMESPACE_UNAWARE) == 0);        
             xmlReader.addHandler (pathMapper);
         }
         if (isOption (INDEX_QNAMES)) {
@@ -237,9 +235,6 @@ public class XmlIndexer {
     public String getDocumentText() {
         if (serializer != null) {
             return serializer.getDocument();
-        }
-        if (jdomSerializer != null) {
-            return jdomSerializer.outputString(getJDOM());
         }
         return null;        
     }
