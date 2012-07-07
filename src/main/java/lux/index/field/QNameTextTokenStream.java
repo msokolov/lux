@@ -23,7 +23,10 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
+ * A TokenStream that extracts text from an Saxon Document model (XdmNode) and generates
+ * a token for every "word" for every element (or attribute) that contains it.
  * TODO: wrap an entire Analyzer, not just a StandardTokenizer
+ * TODO: control over element transparency
  */
 final class QNameTextTokenStream extends TokenStream {
     

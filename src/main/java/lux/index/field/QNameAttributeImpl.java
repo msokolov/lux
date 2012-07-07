@@ -41,8 +41,4 @@ public class QNameAttributeImpl extends AttributeImpl implements QNameAttribute 
         qnames.add(qname);
     }
 
-    public void setQNames(List<QName> qnames) {
-        this.qnames = qnames;
-    }
-
 }

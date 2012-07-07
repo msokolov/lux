@@ -11,7 +11,7 @@ import org.apache.lucene.util.Attribute;
  */
 public interface QNameAttribute extends Attribute {
     /**
-     * @return the list of QNames associated with the token
+     * @return the *modifiable* list of QNames associated with the token
      */
     List<QName> getQNames();
     
@@ -20,8 +20,4 @@ public interface QNameAttribute extends Attribute {
      */
     void addQName (QName qname);
 
-    /**
-     * @param qnames the list of QNames associated with this token
-     */
-    void setQNames(List<QName> qnames);
 }
