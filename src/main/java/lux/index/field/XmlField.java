@@ -28,22 +28,12 @@ public abstract class XmlField {
         TOKENS, STRING, INT
     };
     
-    public enum NameKind {
-        STATIC, PREFIX
-    }
-    
     private final Type type;    
     
     // an Analyzer for text fields; if null, the field is not indexed
     private final Analyzer analyzer;
 
     private final Store isStored;
-    
-    private final NameKind nameKind;
-    
-    public XmlField (String name, Analyzer analyzer, Store isStored, Type type) {
-        this (name, analyzer, isStored, type, NameKind.STATIC);
-    }
     
     /**
      * Represents a Solr/Lucene field
@@ -52,14 +42,12 @@ public abstract class XmlField {
      * and to analyze queries.  If the field values are not strings (eg if they are a TokenStream), the analyzer is used only for queries. 
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
-     * @param nameKind whether the Lucene field name is determined dynamically (FIXME: unused; remove?)
      */
-    public XmlField (String name, Analyzer analyzer, Store isStored, Type type, NameKind nameKind) {
+    public XmlField (String name, Analyzer analyzer, Store isStored, Type type) {
         this.name = name;
         this.analyzer = analyzer;
         this.isStored = isStored;
         this.type = type;
-        this.nameKind = nameKind;
     }
 
     /** Wraps the values as Fieldable, which include the values and the Lucene indexing options.
@@ -133,10 +121,6 @@ public abstract class XmlField {
         return isStored;
     }
     
-    public NameKind getNameKind () {
-        return nameKind;
-    }
-    
     /**
      * Attempts to guess the Solr field properties (see {@link FieldProperties}) based on the available
      * information. Subclasses may need to override to get the correct behavior.  Norms are omitted from
@@ -161,8 +145,9 @@ public abstract class XmlField {
         if (this != URI) {
             options |= 0x200; // MULTIVALUED
         }
-        // TODO: when we have some text fields we will want to retain norms for them
-        options |= 0x10; // OMIT_NORMS
+        if (type != Type.TOKENS) {
+            options |= 0x10; // OMIT_NORMS
+        }
         return options;
     }
     

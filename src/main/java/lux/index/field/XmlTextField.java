@@ -27,7 +27,7 @@ public class XmlTextField extends XmlField {
         // element/attribute text tokens are generated)
         // TODO - provide QName lists as attributes so that analysis doesn't see them embedded in
         // the token text
-        super ("lux_text", new QNameAnalyzer(), Store.NO, Type.TOKENS, NameKind.STATIC);
+        super ("lux_text", new QNameAnalyzer(), Store.NO, Type.TOKENS);
     }
 
     public ParseableQuery makeTextQuery (String value) {

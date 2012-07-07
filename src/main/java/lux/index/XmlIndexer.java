@@ -12,12 +12,10 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.api.LuxException;
 import lux.index.field.XmlField;
-import lux.index.field.XmlField.NameKind;
-import lux.xml.SaxonBuilder;
 import lux.xml.JDOMBuilder;
+import lux.xml.SaxonBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
-
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -142,11 +140,7 @@ public class XmlIndexer {
     
     public void addField (XmlField field) {
         fields.add(field);
-        if (field.getNameKind() == NameKind.PREFIX) {
-            fieldAnalyzers.putPrefix(field.getName(), field.getAnalyzer());            
-        } else {
-            fieldAnalyzers.put(field.getName(), field.getAnalyzer());
-        }
+        fieldAnalyzers.put(field.getName(), field.getAnalyzer());
     }
     
     public void read (InputStream xml, String uri) throws XMLStreamException {

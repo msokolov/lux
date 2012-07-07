@@ -28,7 +28,7 @@ public class NodeTextField extends XmlField {
         // element/attribute text tokens are generated)
         // TODO - provide QName lists as attributes so that analysis doesn't see them embedded in
         // the token text
-        super ("lux_node", new QNameAnalyzer(), Store.NO, Type.TOKENS, NameKind.STATIC);
+        super ("lux_node", new QNameAnalyzer(), Store.NO, Type.TOKENS);
     }
     
     @Override
