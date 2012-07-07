@@ -44,6 +44,9 @@ public class SlopCounter extends ExpressionVisitorBase {
     @Override
     public AbstractExpression visit(PathStep step) {
         if (done) {
+            // FIXME: tests never hit this?  There might be some confused logic
+            // The idea was that once you hit a named (non-wild) node, you can terminate the visit
+            // since you've counted the width of the gap.
             return step;
         }
         NodeTest nodeTest = step.getNodeTest();
