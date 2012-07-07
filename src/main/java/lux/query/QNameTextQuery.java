@@ -40,20 +40,6 @@ public class QNameTextQuery extends ParseableQuery {
         this (t, null, 1.0f);
     }
 
-    protected void appendContents(String field, StringBuilder buffer) {
-        if (term.field() != null && !term.field().equals(field)) {
-            buffer.append (" fieldName=");
-            LiteralExpression.quoteString(term.field(), buffer);
-        }
-        if (boost != 1) {
-            buffer.append (" boost=\"").append(boost).append("\"");
-        }
-        if (qName != null) {
-            buffer.append (" qName=");
-            LiteralExpression.quoteString(qName, buffer);
-        }
-        buffer.append(">").append(term.text());
-    }
     @Override
     public ElementConstructor toXmlNode(String field) {
         return toXmlNode(field, QUERY_QNAME);
@@ -74,14 +60,6 @@ public class QNameTextQuery extends ParseableQuery {
         }
         return new ElementConstructor
                 (elementName, new LiteralExpression(term.text()), fieldAtt, qNameAtt, boostAtt);
-    }
-
-    public Term getTerm() {
-        return term;
-    }
-
-    public float getBoost() {
-        return boost;
     }
 
 }

@@ -37,20 +37,6 @@ public class BooleanPQuery extends ParseableQuery {
     public Clause[] getClauses() {
         return clauses;
     }
-    
-    public String toSurround(String field) {
-        StringBuilder buf = new StringBuilder();
-        Clause [] clauses = getClauses();
-        if (clauses.length > 0) {
-            buf.append(clauses[0].getQuery().toString());
-        }
-        String operator = getOccur() == Occur.MUST ? " AND " : " OR ";
-        for (int i = 1; i < clauses.length; i++) {
-            buf.append (operator);
-            buf.append (clauses[i].getQuery().toString());
-        }
-        return buf.toString();
-    }
 
     @Override
     public ElementConstructor toXmlNode(String field) {
