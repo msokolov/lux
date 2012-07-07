@@ -24,8 +24,6 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
-import org.apache.lucene.queryParser.surround.parser.ParseException;
-import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.xmlparser.CoreParser;
 import org.apache.lucene.xmlparser.ParserException;
@@ -38,16 +36,13 @@ import org.w3c.dom.Element;
  */
 public class LuxSearch extends ExtensionFunctionDefinition {
     
-    private BasicQueryFactory queryFactory;
     private LuxQueryParser luxQueryParser;
-    private org.apache.lucene.queryParser.QueryParser queryParser;
     private CoreParser xmlQueryParser;
     
     public LuxSearch () {
     }
     
-    private Query parseQuery(Item<?> queryArg, long facts, Saxon saxon) throws ParseException, org.apache.lucene.queryParser.ParseException, ParserException {
-        XmlIndexer indexer = saxon.getIndexer();
+    private Query parseQuery(Item<?> queryArg, Saxon saxon) throws org.apache.lucene.queryParser.ParseException, ParserException {
         if (queryArg instanceof NodeInfo) {
             NodeInfo queryNodeInfo = (NodeInfo) queryArg;
             NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
@@ -56,12 +51,8 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             }
             // maybe it was a text node?
         }
-        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
-            // parse the string value using the surround query parser?
-            return getLuxQueryParser().parse(queryArg.getStringValue());
-        } else {
-            return getQueryParser().parse(queryArg.getStringValue());
-        }
+        // parse the string value using the Lux query parser
+        return getLuxQueryParser().parse(queryArg.getStringValue());
     }
     
     @Override
@@ -133,9 +124,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             Saxon saxon = ((Config)context.getConfiguration()).getSaxon();
             Query query;
             try {
-                query = parseQuery(queryArg, facts, saxon);
-            } catch (ParseException e) {
-                throw new XPathException ("Failed to parse surround query " + queryArg.getStringValue(), e);
+                query = parseQuery(queryArg, saxon);
             } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException ("Failed to parse lucene query " + queryArg.getStringValue(), e);
             } catch (ParserException e) {
@@ -147,25 +136,11 @@ public class LuxSearch extends ExtensionFunctionDefinition {
         
     }
     
-    protected BasicQueryFactory getQueryFactory () {
-        if (queryFactory == null) {
-            queryFactory = new BasicQueryFactory();
-        }
-        return queryFactory;
-    }
-    
     protected LuxQueryParser getLuxQueryParser () {
         if (luxQueryParser == null) {
-            luxQueryParser = new LuxQueryParser (XmlIndexer.LUCENE_VERSION, "", XmlField.NODE_TEXT.getAnalyzer());
+            luxQueryParser = new LuxQueryParser (XmlIndexer.LUCENE_VERSION, XmlField.NODE_TEXT.getName(), XmlField.NODE_TEXT.getAnalyzer());
         }
         return luxQueryParser;
-    }
-    
-    protected org.apache.lucene.queryParser.QueryParser getQueryParser () {
-        if (queryParser == null) {
-            queryParser = new org.apache.lucene.queryParser.QueryParser (XmlIndexer.LUCENE_VERSION, null, XmlField.NODE_TEXT.getAnalyzer());
-        }
-        return queryParser;
     }
     
     protected CoreParser getXmlQueryParser () {
