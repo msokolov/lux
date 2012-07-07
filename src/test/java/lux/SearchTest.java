@@ -6,7 +6,6 @@ import static lux.IndexTestSupport.*;
 
 import java.util.Iterator;
 
-import lux.api.Evaluator;
 import lux.api.LuxException;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
@@ -435,14 +434,15 @@ public class SearchTest {
      * @throws LuxException
      */
     protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException {
-        Evaluator eval = index.getEvaluator();
+        Saxon eval = index.getEvaluator();
         SaxonExpr expr = (SaxonExpr) eval.compile(query);
         System.out.println (expr);
         ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr);
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));
-        System.out.println (String.format("cache hits=%d, misses=%d", stats.cacheHits, stats.cacheMisses));
+        System.out.println (String.format("cache hits=%d, misses=%d", 
+                eval.getDocReader().getCacheHits(), eval.getDocReader().getCacheMisses()));
         if (props != null) {
             if ((props & QUERY_EXACT) != 0) {
                 assertEquals ("query is not exact", results.size(), stats.docCount);
@@ -467,7 +467,7 @@ public class SearchTest {
             assertEquals ("incorrect document result count", docCount.intValue(), stats.docCount);
         }
         if (cacheMisses != null) {
-            assertEquals ("incorrect cache misses count", cacheMisses.intValue(), stats.cacheMisses);            
+            assertEquals ("incorrect cache misses count", cacheMisses.intValue(), eval.getDocReader().getCacheMisses());            
         }
         return results;
     }

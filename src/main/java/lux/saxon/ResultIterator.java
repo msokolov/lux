@@ -2,7 +2,6 @@ package lux.saxon;
 
 import java.io.IOException;
 
-import lux.api.LuxException;
 import lux.api.QueryStats;
 import lux.search.LuxSearcher;
 import net.sf.saxon.om.Item;
@@ -49,19 +48,10 @@ public class ResultIterator implements SequenceIterator<Item>{
                 position = -1;
                 current = null;
             } else {
-                if (stats != null) {
-                    if (docCache.isCached(docID)) {
-                        stats.cacheHits ++;
-                    } else {
-                        stats.cacheMisses ++;
-                    }
-                }
                 XdmItem doc = docCache.get(docID);
                 Item item = (Item) doc.getUnderlyingValue();
-                // assertion for safety
-                if (current != null && ((TinyDocumentImpl)item).getDocumentNumber() <= ((TinyDocumentImpl)current).getDocumentNumber()) {
-                    throw new LuxException ("out of order");
-                }
+                // assert documents in order 
+                assert (current == null || ((TinyDocumentImpl)item).getDocumentNumber() > ((TinyDocumentImpl)current).getDocumentNumber());
                 current = item;
                 ++position;
                 if (stats != null) {
