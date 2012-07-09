@@ -159,7 +159,8 @@ public class JDOMBuilder implements StAXHandler {
             break;
 
         case XMLStreamConstants.ENTITY_REFERENCE:
-            child = new EntityRef(r.getLocalName());
+            child = new Text(r.getText());
+            //child = new EntityRef(r.getLocalName());
             break;
 
         case XMLStreamConstants.PROCESSING_INSTRUCTION:

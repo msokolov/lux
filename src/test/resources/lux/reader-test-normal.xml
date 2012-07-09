@@ -4,7 +4,7 @@
   <entities>&amp;>0</entities>
   This is some markup &lt;that> is escaped
   <?process this ?>
-  <entities id="2">ģ</entities>
+  <entities id="2">ģé</entities>
   <token>        12345678</token>
   The end.
 </test>

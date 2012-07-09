@@ -13,6 +13,9 @@ xml fields.  Test by adding to ifpress-solr/solr, config and run
 ifpress-solr tests.
 ** test usage in ifpress context
 * word index followthrough
+** offset calculations
+for compatibility w/existing ifpress setup
+compare parsing/indexing speed with and without offsets.  tests seemed much slower, but that may just be due to printing massive debug outputs
 ** user search function
 Supporting full text queries; we do have lux:search (xs:string); however
 the query syntax is bizarre since you must specify an element name for

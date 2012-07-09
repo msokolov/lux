@@ -6,7 +6,7 @@
   <entities>&amp;&gt;&#48;</entities>
   <![CDATA[This is some markup <that> is escaped]]>
   <?process this ?>
-  <entities xmlns="#2" xmlns:y="#y" y:y="y" id="2">&#x123;</entities>
+  <entities xmlns="#2" xmlns:y="#y" y:y="y" id="2">&#x123;é</entities>
   <y:y xmlns:y="#z" />
   <token>        12345678</token>
   The end.

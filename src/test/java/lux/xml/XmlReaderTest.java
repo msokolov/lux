@@ -22,7 +22,7 @@ import org.junit.Test;
 
 public class XmlReaderTest {
 
-    private static final String CONTENT = "TEST &>0 This is some markup <that> is escaped ģ 12345678 The end.";
+    private static final String CONTENT = "TEST &>0 This is some markup <that> is escaped ģé 12345678 The end.";
         
     @Test 
     public void testJDOMBuilder() throws Exception {

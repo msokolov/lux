@@ -2,6 +2,7 @@ package lux.xml;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLResolver;
 
 import org.codehaus.stax2.XMLInputFactory2;
 
@@ -55,7 +57,17 @@ public class XmlReader {
             inputFactory.setProperty (XMLInputFactory.IS_COALESCING, false);
             inputFactory.setProperty (XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, true);
             inputFactory.setProperty (XMLInputFactory2.P_REPORT_PROLOG_WHITESPACE, false);
-            // inputFactory.setProperty (XMLInputFactory2.RESOLVER, new Resolver());
+            inputFactory.setProperty 
+                (XMLInputFactory2.RESOLVER, 
+                 new XMLResolver() {
+                     public Object resolveEntity
+                         (String publicID,
+                          String systemID,
+                          String baseURI,
+                          String namespace) throws XMLStreamException {
+                         return new ByteArrayInputStream (new byte[0]);
+                     }
+                 });
             // this doesn't seem to do anything?
             // inputFactory.setProperty (WstxInputProperties.P_NORMALIZE_LFS, false);
             inputFactory.setProperty (WstxInputProperties.P_TREAT_CHAR_REFS_AS_ENTS, true);

@@ -50,7 +50,7 @@ public class SaxonDocBuilder implements StAXHandler {
 
     public void handleEvent(XMLStreamReader reader, int eventType) throws XMLStreamException {
         
-        System.out.println ("offset=" + reader.getLocation().getCharacterOffset() + " for event " + eventType + " at line " + reader.getLocation().getLineNumber() + ", column " + reader.getLocation().getColumnNumber());
+        // System.out.println ("offset=" + reader.getLocation().getCharacterOffset() + " for event " + eventType + " at line " + reader.getLocation().getLineNumber() + ", column " + reader.getLocation().getColumnNumber());
         
         switch (eventType) {
 
