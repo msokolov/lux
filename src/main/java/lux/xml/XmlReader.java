@@ -15,7 +15,7 @@ import org.codehaus.stax2.XMLInputFactory2;
 import com.ctc.wstx.api.WstxInputProperties;
 
 /**
- * Reads XML and passes events to a brigade of StAXHandlers Essentially
+ * Reads XML and passes events to a brigade of StAXHandlers. Essentially
  * turns StAX into push model parser a'la SAX.
  * 
  * @author sokolov
