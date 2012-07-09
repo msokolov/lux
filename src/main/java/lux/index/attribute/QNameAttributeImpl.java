@@ -1,4 +1,4 @@
-package lux.index.field;
+package lux.index.attribute;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +13,7 @@ import org.apache.lucene.util.AttributeImpl;
  */
 public class QNameAttributeImpl extends AttributeImpl implements QNameAttribute {
 
+    private int iQName;
     private List<QName> qnames;
     
     public QNameAttributeImpl () {
@@ -25,6 +26,7 @@ public class QNameAttributeImpl extends AttributeImpl implements QNameAttribute 
      */
     @Override
     public void clear() {
+        iQName = 0;
     }
 
     @Override
@@ -33,12 +35,24 @@ public class QNameAttributeImpl extends AttributeImpl implements QNameAttribute 
         ((QNameAttributeImpl) target).qnames.addAll (qnames);
     }
 
-    public List<QName> getQNames() {
-        return qnames;
+    public boolean hasNext() {
+        return iQName >= 0 && iQName < qnames.size();
+    }
+    
+    public QName next() {
+        return qnames.get(iQName++);
     }
 
     public void addQName(QName qname) {
         qnames.add(qname);
+    }
+    
+    public void clearQNames () {
+        qnames.clear();
+    }
+
+    public boolean onFirst() {
+        return iQName == 0;
     }
 
 }

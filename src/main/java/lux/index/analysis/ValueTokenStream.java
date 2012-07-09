@@ -1,4 +1,4 @@
-package lux.index.field;
+package lux.index.analysis;
 
 import java.util.Iterator;
 

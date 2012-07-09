@@ -3,6 +3,7 @@ package lux.index.field;
 import java.io.IOException;
 
 import lux.index.XPathValueMapper;
+import lux.index.analysis.ValueTokenStream;
 
 final class QNameValueTokenStream extends ValueTokenStream {
     

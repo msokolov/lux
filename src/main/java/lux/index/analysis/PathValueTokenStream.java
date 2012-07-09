@@ -1,13 +1,12 @@
-package lux.index.field;
+package lux.index.analysis;
 
 import java.io.IOException;
 
 import lux.index.XPathValueMapper;
 
+public final class PathValueTokenStream extends ValueTokenStream {
 
-final class PathValueTokenStream extends ValueTokenStream {
-
-    PathValueTokenStream (Iterable<char[]> values) {
+    public PathValueTokenStream (Iterable<char[]> values) {
         super (values);
     }
     

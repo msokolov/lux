@@ -1,12 +1,11 @@
 package lux.xml;
 
-import java.util.Arrays;
-
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import lux.api.LuxException;
+import lux.index.analysis.Offsets;
 import net.sf.saxon.s9api.BuildingStreamWriterImpl;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
@@ -20,10 +19,12 @@ public class SaxonDocBuilder implements StAXHandler {
     
     private DocumentBuilder builder;
     private BuildingStreamWriterImpl writer;
-    
-    // store the offsets of all of the text nodes in the document
-    private int ioff;
-    private int[] offsets;
+
+    private Offsets offsets;
+
+    private int lastTextLocation;
+
+    private boolean fixupCRLF = false;
     
     /**
      * creates its own Saxon processor and DocumentBuilder
@@ -40,7 +41,7 @@ public class SaxonDocBuilder implements StAXHandler {
     public SaxonDocBuilder(DocumentBuilder builder) throws SaxonApiException {
         this.builder = builder;
         writer = builder.newBuildingStreamWriter();
-        offsets = new int[1024];
+        offsets = new Offsets();
     }
     
     public XdmNode getDocument() throws SaxonApiException {
@@ -48,10 +49,13 @@ public class SaxonDocBuilder implements StAXHandler {
     }
 
     public void handleEvent(XMLStreamReader reader, int eventType) throws XMLStreamException {
+        
+        System.out.println ("offset=" + reader.getLocation().getCharacterOffset() + " for event " + eventType + " at line " + reader.getLocation().getLineNumber() + ", column " + reader.getLocation().getColumnNumber());
+        
         switch (eventType) {
 
         case XMLStreamConstants.START_DOCUMENT:
-            ioff = 0;
+            lastTextLocation = -1;
             writer.writeStartDocument(reader.getEncoding(), reader.getVersion());
             break;
 
@@ -84,23 +88,17 @@ public class SaxonDocBuilder implements StAXHandler {
                     }                    
                 }
             }
+            recordOffsets(reader);
             break;
 
         case XMLStreamConstants.END_ELEMENT:
             writer.writeEndElement();
-            break;
-
-        case XMLStreamConstants.CDATA:
-        case XMLStreamConstants.SPACE:
-            // fall through
-
-        case XMLStreamConstants.CHARACTERS:
-            storeOffset (reader.getLocation().getCharacterOffset());
-            writer.writeCharacters(reader.getTextCharacters(), reader.getTextStart(), reader.getTextLength());
+            recordOffsets(reader);
             break;
 
         case XMLStreamConstants.COMMENT:
             writer.writeComment(reader.getText());
+            recordOffsets(reader);
             break;
 
         case XMLStreamConstants.PROCESSING_INSTRUCTION:
@@ -109,35 +107,92 @@ public class SaxonDocBuilder implements StAXHandler {
             } else {
                 writer.writeProcessingInstruction(reader.getPITarget(), reader.getPIData());
             }
+            recordOffsets(reader);
             break;
 
         case XMLStreamConstants.DTD:
             writer.writeDTD(reader.getText());
             break;
             
+        case XMLStreamConstants.CDATA:
+            writer.writeCharacters(reader.getTextCharacters(), reader.getTextStart(), reader.getTextLength());
+            recordOffsets(reader, 
+                    reader.getLocation().getCharacterOffset() + "<!CDATA[[".length(), 
+                    reader.getTextLength()
+                    );
+            recordOffsets(reader, lastTextLocation, "]]>".length());
+            break;
+        
+        case XMLStreamConstants.SPACE:
+        case XMLStreamConstants.CHARACTERS:
+            int textLength = reader.getTextLength();
+            writer.writeCharacters(reader.getTextCharacters(), reader.getTextStart(), textLength);
+            if (fixupCRLF) {
+                if (reader.getTextCharacters()[reader.getTextStart()] == '\n') {
+                    recordOffsets(reader, reader.getLocation().getCharacterOffset() + 1, textLength);
+                } else {
+                    recordOffsets(reader, reader.getLocation().getCharacterOffset(), textLength);                    
+                }
+                offsetCRLF(reader.getLocation().getCharacterOffset(), reader.getTextCharacters(), reader.getTextStart(), textLength);
+            } else {
+                recordOffsets(reader, reader.getLocation().getCharacterOffset(), textLength);
+            }
+            break;
+
+        case XMLStreamConstants.ENTITY_REFERENCE:
+            String text = reader.getText();
+            writer.writeCharacters(text);
+            recordOffsets(reader, reader.getLocation().getCharacterOffset(), text.length());
+            break;
+            
         case XMLStreamConstants.ENTITY_DECLARATION:
         case XMLStreamConstants.NOTATION_DECLARATION:
-        case XMLStreamConstants.ENTITY_REFERENCE:
         default:
             throw new RuntimeException("Unrecognized XMLStream event type: " + reader.getEventType());
         }
-    }
 
-    private void storeOffset(int characterOffset) {
-        if (ioff >= offsets.length) {
-            offsets = Arrays.copyOf(offsets, offsets.length + 1024);
-        }
-        offsets[ioff++] = characterOffset;
     }
     
-    /** Note: unsafe.  If we ever ran a multithreaded indexer we would need to keep a lock on this builder
-     * until the downstream processing is done, or else make a copy here.
-     * @return an array storing character positions of every text node in the input character stream.
-     */
-    public int[] getTextOffsets () {
-        return offsets;
+    // generate character offsets wherever there is a line feed (\n == 10)
+    // since we're told it was a CRLF (\r\n = 13, 10) in the original text
+    // XML parser are *required* to perform this "normalization"
+    private void offsetCRLF(int location, char[] cbuf, int off, int size) {
+        for (int i = off + 1; i < off + size; i++) {
+            if (cbuf[i] == '\n') {
+                offsets.addDelta(location + off - i, (short) 1);
+            }
+        }
     }
 
+    // Keep track of the location at the end of the last text event, and use that to infer the presence of
+    // a length-changing entity reference.  The lastTextLocation is reset to -1 in start
+    // element events so that the first text event in an element will have its position
+    // stored absolutely.  For each subsequent text-like event within the same text node
+    // (which will occur because entity references are reported as separate events),
+    // compute a delta based on the difference of the end offset of the last text event
+    // and the start offset of this text event.  Store the delta for use by an offset-correcting
+    // CharStream.    
+    private void recordOffsets(XMLStreamReader reader, int location, int textLength) throws XMLStreamException {    
+        if (lastTextLocation < 0) {
+            offsets.addOffset (location);
+        } else {
+            offsets.addDelta (location, (short) (location - lastTextLocation));      
+        }
+        lastTextLocation = location + textLength;
+    }
+    
+    private void recordOffsets(XMLStreamReader reader) throws XMLStreamException {
+        int location = reader.getLocation().getCharacterOffset();
+        if (lastTextLocation >= 0 && location > lastTextLocation) {
+            offsets.addDelta (location, (short) (location - lastTextLocation)); 
+        }
+        lastTextLocation = -1;
+    }
+
+    public Offsets getOffsets() {
+        return offsets;
+    }
+    
     public void reset() {
         try {
             writer = builder.newBuildingStreamWriter();
@@ -145,6 +200,14 @@ public class SaxonDocBuilder implements StAXHandler {
             // unlikely to happen since this already succeeded once, and we can't throw a checked exception here
             throw new LuxException(e);
         }
+    }
+
+    public boolean isFixupCRLF() {
+        return fixupCRLF;
+    }
+
+    public void setFixupCRLF(boolean fixupCRLF) {
+        this.fixupCRLF = fixupCRLF;
     }
 
 }

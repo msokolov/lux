@@ -2,7 +2,6 @@ package lux.xml;
 
 import java.io.InputStream;
 import java.io.Reader;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +10,9 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.codehaus.stax2.XMLInputFactory2;
+
+import com.ctc.wstx.api.WstxInputProperties;
 
 /**
  * Reads XML and passes events to a brigade of StAXHandlers Essentially
@@ -36,21 +38,29 @@ public class XmlReader {
     }
     
     /**
-     * Consume the character stream, generating events for the handlers.
+     * Consume the byte stream, generating events for the handlers.
      *
      * @param reader source of xml StAX events
      * @throws XMLStreamException if the reader does
      */
-    public void read (InputStream in) throws XMLStreamException {        
+    public void read (InputStream in) throws XMLStreamException {  
         read (getXMLInputFactory().createXMLStreamReader(in));
     }
     
     private XMLInputFactory getXMLInputFactory () {
         if (inputFactory == null) {
-            inputFactory = XMLInputFactory.newInstance();
+            // We require Woodstox for its superior character-offset reporting, which
+            // is broken and incomplete in the default (sun) StAX parser in the Oracle JVM.
+            inputFactory = XMLInputFactory2.newInstance();
             inputFactory.setProperty (XMLInputFactory.IS_COALESCING, false);
             inputFactory.setProperty (XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, true);
-            //inputFactory.setProperty (XMLInputFactory2.P_REPORT_PROLOG_WHITESPACE, false);            
+            inputFactory.setProperty (XMLInputFactory2.P_REPORT_PROLOG_WHITESPACE, false);
+            // inputFactory.setProperty (XMLInputFactory2.RESOLVER, new Resolver());
+            // this doesn't seem to do anything?
+            // inputFactory.setProperty (WstxInputProperties.P_NORMALIZE_LFS, false);
+            inputFactory.setProperty (WstxInputProperties.P_TREAT_CHAR_REFS_AS_ENTS, true);
+            // must set this to 1 in order to get TREAT_CHAR_REFS_AS_ENTS to report entities?
+            inputFactory.setProperty (WstxInputProperties.P_MIN_TEXT_SEGMENT, Integer.valueOf(1));
         }
         return inputFactory;
     }

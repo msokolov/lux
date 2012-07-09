@@ -3,8 +3,11 @@ package lux.index.field;
 import java.util.Collections;
 
 import lux.index.XmlIndexer;
+import lux.index.analysis.ElementTokenStream;
+import lux.index.analysis.QNameAnalyzer;
 import lux.query.ParseableQuery;
 import lux.query.QNameTextQuery;
+import lux.xml.SaxonDocBuilder;
 import lux.xpath.QName;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -34,9 +37,10 @@ public class NodeTextField extends XmlField {
     @Override
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
-        int [] textOffsets = indexer.getTextOffsets();
+        SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
+        ElementTokenStream tokens = new ElementTokenStream (doc, builder.getOffsets());
         return new FieldValues (this, Collections.singleton(
-                        new TokenizedField(getName(), new QNameTextTokenStream (doc, textOffsets), 
+                        new TokenizedField(getName(), tokens, 
                         Store.NO, Index.ANALYZED, TermVector.NO)));
     }
     

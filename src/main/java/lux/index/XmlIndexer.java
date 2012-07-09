@@ -187,12 +187,9 @@ public class XmlIndexer {
         }
     }
     
-    public int[] getTextOffsets () {
-        if (saxonBuilder == null) {
-            return null;
-        }
-        return saxonBuilder.getTextOffsets();
-    }
+    public SaxonDocBuilder getSaxonDocBuilder () {
+        return saxonBuilder;
+    }    
 
     public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
         reset();

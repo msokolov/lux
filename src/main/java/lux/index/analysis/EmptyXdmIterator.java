@@ -1,4 +1,4 @@
-package lux.index.field;
+package lux.index.analysis;
 
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmItem;

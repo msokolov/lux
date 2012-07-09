@@ -4,6 +4,7 @@ import java.util.Collections;
 
 import lux.index.XPathValueMapper;
 import lux.index.XmlIndexer;
+import lux.index.analysis.PathValueTokenStream;
 
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.document.Field.Index;
