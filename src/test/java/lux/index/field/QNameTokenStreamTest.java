@@ -5,17 +5,17 @@ import static org.junit.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import javax.xml.stream.XMLStreamException;
-
+import lux.index.analysis.AttributeTokenStream;
 import lux.index.analysis.ElementTokenStream;
-import lux.index.analysis.TextOffsetTokenStream;
+import lux.index.analysis.Offsets;
+import lux.index.analysis.XmlTextTokenStream;
 import lux.xml.SaxonDocBuilder;
 import lux.xml.XmlReader;
 import net.sf.saxon.s9api.Processor;
-import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
@@ -23,30 +23,18 @@ import org.junit.Test;
 
 public class QNameTokenStreamTest {
     
-    TextOffsetTokenStream tokenStream;
+    TokenStream tokenStream;
     CharTermAttribute termAtt;
     PositionIncrementAttribute posAtt;
     OffsetAttribute offsetAtt;
     String inputString;
 
-    // TODO: add some entities in attributes
-    // test with newline line termination
+    // TODO: add some entities in attributes    
     // test attribute space normalization?
     @Test
-    public void testElementTokenStream() throws SaxonApiException, XMLStreamException, IOException {
-        byte[] input = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
-        inputString = new String (input, "utf-8");
-        Processor proc = new Processor(false);
-        SaxonDocBuilder builder = new SaxonDocBuilder(proc.newDocumentBuilder());
-        builder.setFixupCRLF(true); // TODO: should be autodetected
-        XmlReader reader = new XmlReader();
-        reader.addHandler(builder);
-        reader.read(new ByteArrayInputStream(input));
-        XdmNode doc = builder.getDocument();
-        tokenStream = new ElementTokenStream(doc, builder.getOffsets());
-        termAtt = tokenStream.addAttribute(CharTermAttribute.class);
-        offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
-        posAtt = tokenStream.addAttribute(PositionIncrementAttribute.class);
+    public void testElementTokenStream() throws Exception {
+
+        setup(ElementTokenStream.class);
         
         assertToken("title:test", 1);
         assertToken("test:test", 0);
@@ -67,12 +55,59 @@ public class QNameTokenStreamTest {
 
         assertToken ("test:the", 1);
         assertToken ("test:end", 1);
+        assertFalse (tokenStream.incrementToken());
+    }
+    
+    @Test
+    public void testTextTokenStream() throws Exception {
+        setup(XmlTextTokenStream.class);
+        
+        assertToken("test", 1);
+        assertToken("0", 1);
+        // check position increments for tokens in a phrase
+        // also test correct offset calculation for CDATA
+        for (String token : "this is some markup that is escaped".split(" ")) {
+            assertToken(token, 1);
+        }
+        assertToken ("ģé", 1);
+        assertToken ("12345678", 1);
+        assertToken ("the", 1);
+        assertToken ("end", 1);
+        assertFalse (tokenStream.incrementToken());
+    }
+    
+    @Test
+    public void testAttributeTokenStream() throws Exception {
+        setup(AttributeTokenStream.class);        
+        assertTokenNoOffsets("id:test", 1);
+        assertTokenNoOffsets("id:2", 1);
+        assertFalse (tokenStream.incrementToken());
+    }
+    
+    private void setup(Class<?> tokenStreamClass) throws Exception {
+        byte[] input = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
+        inputString = new String (input, "utf-8");
+        Processor proc = new Processor(false);
+        SaxonDocBuilder builder = new SaxonDocBuilder(proc.newDocumentBuilder());
+        builder.setFixupCRLF(true); // TODO: should be autodetected
+        XmlReader reader = new XmlReader();
+        reader.addHandler(builder);
+        reader.read(new ByteArrayInputStream(input));
+        XdmNode doc = builder.getDocument();
+        tokenStream = (TokenStream) tokenStreamClass.getConstructor(XdmNode.class, Offsets.class).newInstance(doc, builder.getOffsets());
+        termAtt = tokenStream.addAttribute(CharTermAttribute.class);
+        offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
+        posAtt = tokenStream.addAttribute(PositionIncrementAttribute.class);
     }
 
-    private void assertToken(String token, int posIncr) throws IOException {
+    private void assertTokenNoOffsets(String token, int posIncr) throws IOException {
         assertTrue (tokenStream.incrementToken());
         assertEquals (token, termAtt.toString());
         assertEquals (posIncr, posAtt.getPositionIncrement());
+    }
+    
+    private void assertToken(String token, int posIncr) throws IOException {
+        assertTokenNoOffsets(token, posIncr);
         String t = inputString.substring(offsetAtt.startOffset(), offsetAtt.endOffset());
         String term = token.substring(token.indexOf(':') + 1);
         assertEquals ("incorrect character offset", term, normalize(t));

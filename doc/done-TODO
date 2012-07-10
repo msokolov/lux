@@ -82,6 +82,9 @@ We provide a QName-based analysis chain wrapped around StandardTokenizer /
 LowerCaseFilter.
 *** create QNameTextTokenStream
 returned by QNameTextField
+*** Adding character offsets
+so we can support highlighting.  We also need this for compatibility
+w/ifpress - so we don't need two separate xml_text fields
 * tests
 ** testing doc() and collection()
 ** search test coverage

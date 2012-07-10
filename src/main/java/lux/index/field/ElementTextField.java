@@ -4,7 +4,7 @@ import java.util.Collections;
 
 import lux.index.XmlIndexer;
 import lux.index.analysis.ElementTokenStream;
-import lux.index.analysis.QNameAnalyzer;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.query.ParseableQuery;
 import lux.query.QNameTextQuery;
 import lux.xml.SaxonDocBuilder;
@@ -17,21 +17,22 @@ import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.Term;
 
-public class NodeTextField extends XmlField {
+/**
+ * Indexes the text in each element of a document
+ */
+public class ElementTextField extends XmlField {
     
-    private static final NodeTextField instance = new NodeTextField();
+    private static final ElementTextField instance = new ElementTextField();
         
-    public static NodeTextField getInstance() {
+    public static ElementTextField getInstance() {
         return instance;
     }
     
-    protected NodeTextField () {
+    protected ElementTextField () {
         // TODO - better default analyzer w/stemming + diacritic normalization
         // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
         // element/attribute text tokens are generated)
-        // TODO - provide QName lists as attributes so that analysis doesn't see them embedded in
-        // the token text
-        super ("lux_node", new QNameAnalyzer(), Store.NO, Type.TOKENS);
+        super ("lux_elt_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS);
     }
     
     @Override

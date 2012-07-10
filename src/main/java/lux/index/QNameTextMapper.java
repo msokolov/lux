@@ -81,6 +81,10 @@ public class QNameTextMapper extends XmlPathMapper {
             super.handleEvent(reader, eventType);
             break;
             
+        case ENTITY_REFERENCE:
+            stack[depth].append(reader.getText());
+            break;
+            
         default:
             super.handleEvent(reader, eventType);
             break;

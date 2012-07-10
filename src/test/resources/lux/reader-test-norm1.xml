@@ -1,0 +1,11 @@
+<!DOCTYPE test PUBLIC "test" "no.dtd">
+<test id="test">
+  <!-- this is a comment -->
+  <title>TEST</title>
+  <entities>&amp;&gt;&#48;</entities>
+  <![CDATA[This is some markup <that> is escaped]]>
+  <?process this ?>
+  <entities id="2">&#x123;é</entities>
+  <token>        12345678</token>
+  The end.
+</test>

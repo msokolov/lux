@@ -3,7 +3,7 @@ package lux.index.field;
 import java.util.Collections;
 
 import lux.index.XmlIndexer;
-import lux.index.analysis.QNameAnalyzer;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.XmlTextTokenStream;
 import lux.query.ParseableQuery;
 import lux.query.QNameTextQuery;
@@ -25,12 +25,7 @@ public class XmlTextField extends XmlField {
     }
     
     protected XmlTextField () {
-        // TODO - better default analyzer w/stemming + diacritic normalization
-        // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
-        // element/attribute text tokens are generated)
-        // TODO - provide QName lists as attributes so that analysis doesn't see them embedded in
-        // the token text
-        super ("lux_text", new QNameAnalyzer(), Store.NO, Type.TOKENS);
+        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS);
     }
 
     public ParseableQuery makeTextQuery (String value) {

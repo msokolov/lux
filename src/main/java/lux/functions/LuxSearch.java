@@ -138,14 +138,14 @@ public class LuxSearch extends ExtensionFunctionDefinition {
     
     protected LuxQueryParser getLuxQueryParser () {
         if (luxQueryParser == null) {
-            luxQueryParser = new LuxQueryParser (XmlIndexer.LUCENE_VERSION, XmlField.NODE_TEXT.getName(), XmlField.NODE_TEXT.getAnalyzer());
+            luxQueryParser = new LuxQueryParser (XmlIndexer.LUCENE_VERSION, XmlField.XML_TEXT.getName(), XmlField.ELEMENT_TEXT.getAnalyzer());
         }
         return luxQueryParser;
     }
     
     protected CoreParser getXmlQueryParser () {
         if (xmlQueryParser == null) {
-            xmlQueryParser = new XmlQueryParser(XmlField.NODE_TEXT);
+            xmlQueryParser = new XmlQueryParser(XmlField.ELEMENT_TEXT);
         }
         return xmlQueryParser;
     }

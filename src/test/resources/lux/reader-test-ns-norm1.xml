@@ -1,0 +1,12 @@
+<!DOCTYPE test PUBLIC "test" "no.dtd">
+<test xmlns="http://lux.net/#test" id="test">
+  <!-- this is a comment -->
+  <x:title xmlns:x="http://lux.net{test}">TEST</x:title>
+  <entities>&amp;&gt;&#48;</entities>
+  <![CDATA[This is some markup <that> is escaped]]>
+  <?process this ?>
+  <entities xmlns="#2" xmlns:y="#y" y:y="y" id="2">&#x123;é</entities>
+  <y:y xmlns:y="#z"></y:y>
+  <token>        12345678</token>
+  The end.
+</test>

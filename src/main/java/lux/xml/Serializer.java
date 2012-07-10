@@ -8,10 +8,18 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import lux.api.LuxException;
+
+import org.codehaus.stax2.DTDInfo;
+import org.codehaus.stax2.XMLStreamReader2;
+
 /**
- * Accumulates a serialized XML document from StAX events.  Line endings are normalized; CDATA
- * blocks are coalesced; entities and numeric references are expanded into character data; redundant namespace 
- * declarations are dropped.  Empty elements are represented with both open and close tags.
+ * Accumulates a serialized XML document from StAX events according to a prescribed set of conventions,
+ * as follows:
+ * Line endings are normalized; CDATA blocks are preserved; entities and numeric references are preserved; redundant namespace 
+ * declarations are dropped.  Comments and processing instructions are preserved.
+ * No XML declaration is emitted. DOCTYPE declarations are preserved, but not the DTD internal subset.
+ * Empty elements are represented with both open and close tags.
  */
 public class Serializer implements StAXHandler {
 
@@ -45,7 +53,7 @@ public class Serializer implements StAXHandler {
 
         case XMLStreamConstants.CDATA:
             doc.append("<![CDATA[");
-            appendText(r);
+            doc.append(r.getTextCharacters(), r.getTextStart(), r.getTextLength());
             doc.append("]]>");
             break;
 
@@ -63,6 +71,7 @@ public class Serializer implements StAXHandler {
             break;
 
         case XMLStreamConstants.END_DOCUMENT:
+            doc.append('\n');
             break;
 
         case XMLStreamConstants.END_ELEMENT:
@@ -110,11 +119,33 @@ public class Serializer implements StAXHandler {
             break;
 
         case XMLStreamConstants.DTD:
-            // Lose the DTD, sorry
+            DTDInfo dtd;
+            try {
+                dtd = ((XMLStreamReader2)r).getDTDInfo();
+            } catch (XMLStreamException e) {
+                break;
+            }
+            doc.append("<!DOCTYPE ");
+            doc.append (dtd.getDTDRootName());
+            if (dtd.getDTDPublicId() != null) {
+                doc.append(" PUBLIC \"");
+                doc.append (dtd.getDTDPublicId());
+                doc.append('"');
+            }
+            if (dtd.getDTDSystemId() != null) {
+                if (dtd.getDTDPublicId() == null) {
+                    doc.append(" SYSTEM");
+                }
+                doc.append(" \"");
+                doc.append (dtd.getDTDSystemId());
+                doc.append('"');
+            }
+            doc.append (">\n");
+            // Lose the DTD internal subset, sorry
             break;
 
         default:
-            throw new RuntimeException("Unexpected StAX event: " + r.getEventType());
+            throw new LuxException("Unexpected StAX event: " + r.getEventType());
         }
     }
 

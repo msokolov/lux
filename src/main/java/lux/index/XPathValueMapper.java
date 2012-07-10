@@ -82,6 +82,9 @@ public class XPathValueMapper extends XmlPathMapper {
             hashText (reader.getTextCharacters(), reader.getTextStart(), reader.getTextLength());
             super.handleEvent(reader, eventType);
             break;
+
+        case ENTITY_REFERENCE:
+            hashText (reader.getText());
             
         default:
             super.handleEvent(reader, eventType);
@@ -119,6 +122,10 @@ public class XPathValueMapper extends XmlPathMapper {
             }
             valueOffsets[j] = k;
         }
+    }
+    
+    private void hashText(final String text) {
+        hashText (text.toCharArray(), 0, text.length());
     }
 
     private void growValues () {

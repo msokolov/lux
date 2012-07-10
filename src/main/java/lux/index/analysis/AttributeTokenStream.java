@@ -12,15 +12,13 @@ import net.sf.saxon.s9api.XdmSequenceIterator;
 import org.apache.lucene.analysis.LowerCaseFilter;
 
 /**
- * A TokenStream that extracts text from a Saxon Document model (XdmNode) and
- * generates a token for every "word" for every element that contains it. TODO:
- * control over element transparency
+ * A TokenStream that extracts words from attributes in a Saxon Document model (XdmNode)
  */
-final class AttributeTokenStream extends TextOffsetTokenStream {
+public final class AttributeTokenStream extends TextOffsetTokenStream {
 
     private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
 
-    AttributeTokenStream(XdmNode doc, Offsets offsets) {
+    public AttributeTokenStream(XdmNode doc, Offsets offsets) {
         super(doc, offsets);
         wrapped = new QNameTokenFilter(new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, tokenizer));
         contentIter = new ContentIterator(doc);
@@ -65,6 +63,7 @@ final class AttributeTokenStream extends TextOffsetTokenStream {
             for (;;) {
                 if (attributes.hasNext()) {
                     next = (XdmNode) attributes.next();
+                    return next;
                 } else if (descendants.hasNext()) {
                     XdmNode node = (XdmNode) descendants.next();
                     attributes = node.axisIterator(Axis.ATTRIBUTE);
@@ -87,7 +86,6 @@ final class AttributeTokenStream extends TextOffsetTokenStream {
         }
 
     }
-
 
 }
 

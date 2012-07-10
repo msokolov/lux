@@ -45,24 +45,43 @@ public final class Offsets {
         textOffsets[iOffset++] = characterOffset;
     }
     
-    /** Note: unsafe.  If we ever ran a multithreaded indexer we would need to keep a lock on this builder
-     * until the downstream processing is done, or else make a copy here.
-     * @return an array storing character positions of every text node in the input character stream.
+    /**
+     * @param i the index of the text node
+     * @return the character location in the input character stream of i'th text node.
      */
     public int getTextLocation (int i) {
         return textOffsets[i];
     }
     
+    /** 
+     * A delta is stored whenever the number of characters in the output token is not the same
+     * as the number in the input character stream.
+     * @param i the index of the delta
+     * @return the character location in the input character stream of the i'th delta.
+     */
     public int getDeltaLocation (int i) {
         return deltaLocations[i];
     }
 
+    /**
+     * @return the number of deltas found in the input stream
+     */
     public int getDeltaCount() {
         return iDelta;
     }
 
+    /**
+     * @param i the index of the delta
+     * @return the value of the i'th delta
+     */
     public int getDelta(int i) {
         return deltas[i];
     }
     
 }
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/.
+ */

@@ -114,7 +114,7 @@ public class XmlIndexer {
         }
         if (isOption (INDEX_FULLTEXT)) {
             addField (XmlField.XML_TEXT);
-            addField (XmlField.NODE_TEXT);
+            addField (XmlField.ELEMENT_TEXT);
             try {
                 saxonBuilder = new SaxonDocBuilder();
                 xmlReader.addHandler(saxonBuilder);
