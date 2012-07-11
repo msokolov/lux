@@ -11,6 +11,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import lux.api.LuxException;
+import lux.index.analysis.Offsets;
 import lux.index.field.XmlField;
 import lux.xml.JDOMBuilder;
 import lux.xml.SaxonDocBuilder;
@@ -77,9 +78,9 @@ public class XmlIndexer {
     public final static int INDEX_PATHS=        0x00000040;
     public final static int INDEX_FULLTEXT=     0x00000080;
     public final static int INDEX_VALUES=       0x00000100;
+    public final static int COMPUTE_OFFSETS=    0x00000200;
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
     public final static int DEFAULT_OPTIONS = BUILD_JDOM | STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
-
     
     public XmlIndexer (int options) {
         this.options = options;
@@ -115,8 +116,19 @@ public class XmlIndexer {
         if (isOption (INDEX_FULLTEXT)) {
             addField (XmlField.XML_TEXT);
             addField (XmlField.ELEMENT_TEXT);
+            addField (XmlField.ATTRIBUTE_TEXT);
+            if (XmlField.XML_TEXT.getTermVector().withOffsets() || 
+                    XmlField.ELEMENT_TEXT.getTermVector().withOffsets() ||
+                    XmlField.ATTRIBUTE_TEXT.getTermVector().withOffsets()) {
+                // We may not need to bother computing offsets at all
+                options |= COMPUTE_OFFSETS;
+            }
             try {
-                saxonBuilder = new SaxonDocBuilder();
+                if (isOption (COMPUTE_OFFSETS)) {
+                    saxonBuilder = new SaxonDocBuilder(new Offsets());                    
+                } else {
+                    saxonBuilder = new SaxonDocBuilder();
+                }
                 xmlReader.addHandler(saxonBuilder);
             } catch (SaxonApiException e) {
                 throw new LuxException (e);

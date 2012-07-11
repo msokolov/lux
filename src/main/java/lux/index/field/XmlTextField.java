@@ -25,7 +25,7 @@ public class XmlTextField extends XmlField {
     }
     
     protected XmlTextField () {
-        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS);
+        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO);
     }
 
     public ParseableQuery makeTextQuery (String value) {
@@ -37,7 +37,7 @@ public class XmlTextField extends XmlField {
         XdmNode doc = indexer.getXdmNode();
         SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
         XmlTextTokenStream tokens = new XmlTextTokenStream (doc, builder.getOffsets());
-        return new FieldValues (this, Collections.singleton(new TokenizedField(getName(), tokens, Store.NO, Index.ANALYZED, TermVector.NO)));
+        return new FieldValues (this, Collections.singleton(new TokenizedField(getName(), tokens, Store.NO, Index.ANALYZED, getTermVector())));
     }
 
 }

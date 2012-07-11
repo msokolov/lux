@@ -17,10 +17,9 @@ import net.sf.saxon.s9api.XdmNode;
  */
 public class SaxonDocBuilder implements StAXHandler {
     
-    private DocumentBuilder builder;
+    private final Offsets offsets;
+    private final DocumentBuilder builder;
     private BuildingStreamWriterImpl writer;
-
-    private Offsets offsets;
 
     private int lastTextLocation;
 
@@ -33,15 +32,28 @@ public class SaxonDocBuilder implements StAXHandler {
     public SaxonDocBuilder () throws SaxonApiException {
         this (new Processor (false).newDocumentBuilder());
     }
+    
+    public SaxonDocBuilder(Offsets offsets) throws SaxonApiException {
+        this (new Processor (false).newDocumentBuilder(), offsets);
+    }
+
+    public SaxonDocBuilder(DocumentBuilder builder) throws SaxonApiException {
+        this (builder, null);
+    }
 
     /**
-     * uses a DocumentBuilder supplied from an external Saxon processor.
+     * @param builder a DocumentBuilder supplied from an external Saxon processor.
+     * @param offsets an Offsets object that will accumulate offset information about a 
+     * document as it is parsed.  Note that the Offsets is reused for subsequent parses.
+     * Its contents will be overwritten when a document is read.  Passing null (the default)
+     * disables the accumulation of offset information, which will save a small amount of time 
+     * and space.
      * @throws SaxonApiException if there is an error creating an XMLStreamWriter
      */
-    public SaxonDocBuilder(DocumentBuilder builder) throws SaxonApiException {
+    public SaxonDocBuilder(DocumentBuilder builder, Offsets offsets) throws SaxonApiException {
         this.builder = builder;
         writer = builder.newBuildingStreamWriter();
-        offsets = new Offsets();
+        this.offsets = offsets;
     }
     
     public XdmNode getDocument() throws SaxonApiException {
@@ -88,17 +100,23 @@ public class SaxonDocBuilder implements StAXHandler {
                     }                    
                 }
             }
-            recordOffsets(reader);
+            if (offsets != null) {
+                recordOffsets(reader);
+            }
             break;
 
         case XMLStreamConstants.END_ELEMENT:
             writer.writeEndElement();
-            recordOffsets(reader);
+            if (offsets != null) {
+                recordOffsets(reader);
+            }
             break;
 
         case XMLStreamConstants.COMMENT:
             writer.writeComment(reader.getText());
-            recordOffsets(reader);
+            if (offsets != null) {
+                recordOffsets(reader);
+            }
             break;
 
         case XMLStreamConstants.PROCESSING_INSTRUCTION:
@@ -107,7 +125,9 @@ public class SaxonDocBuilder implements StAXHandler {
             } else {
                 writer.writeProcessingInstruction(reader.getPITarget(), reader.getPIData());
             }
-            recordOffsets(reader);
+            if (offsets != null) {
+                recordOffsets(reader);
+            }
             break;
 
         case XMLStreamConstants.DTD:
@@ -116,11 +136,13 @@ public class SaxonDocBuilder implements StAXHandler {
             
         case XMLStreamConstants.CDATA:
             writer.writeCharacters(reader.getTextCharacters(), reader.getTextStart(), reader.getTextLength());
-            recordOffsets(reader, 
-                    reader.getLocation().getCharacterOffset() + "<!CDATA[[".length(), 
-                    reader.getTextLength()
-                    );
-            recordOffsets(reader, lastTextLocation, "]]>".length());
+            if (offsets != null) {
+                recordOffsets(reader, 
+                        reader.getLocation().getCharacterOffset() + "<!CDATA[[".length(), 
+                        reader.getTextLength()
+                        );
+                recordOffsets(reader, lastTextLocation, "]]>".length());
+            }
             break;
         
         case XMLStreamConstants.SPACE:
@@ -135,14 +157,18 @@ public class SaxonDocBuilder implements StAXHandler {
                 }
                 offsetCRLF(reader.getLocation().getCharacterOffset(), reader.getTextCharacters(), reader.getTextStart(), textLength);
             } else {
-                recordOffsets(reader, reader.getLocation().getCharacterOffset(), textLength);
+                if (offsets != null) {
+                    recordOffsets(reader, reader.getLocation().getCharacterOffset(), textLength);                    
+                }
             }
             break;
 
         case XMLStreamConstants.ENTITY_REFERENCE:
             String text = reader.getText();
             writer.writeCharacters(text);
-            recordOffsets(reader, reader.getLocation().getCharacterOffset(), text.length());
+            if (offsets != null) {
+                recordOffsets(reader, reader.getLocation().getCharacterOffset(), text.length());
+            }
             break;
             
         case XMLStreamConstants.ENTITY_DECLARATION:
@@ -188,7 +214,12 @@ public class SaxonDocBuilder implements StAXHandler {
         }
         lastTextLocation = -1;
     }
-
+    
+    /**
+     * @return the offsets accumulated for the parsed document.  This object is only valid
+     * after a document has been parsed, and in any case may be null if it setOffsets(null) was
+     * called.
+     */
     public Offsets getOffsets() {
         return offsets;
     }
@@ -199,6 +230,9 @@ public class SaxonDocBuilder implements StAXHandler {
         } catch (SaxonApiException e) {
             // unlikely to happen since this already succeeded once, and we can't throw a checked exception here
             throw new LuxException(e);
+        }
+        if (offsets != null) {
+            offsets.reset();
         }
     }
 

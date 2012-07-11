@@ -14,7 +14,7 @@ import org.junit.Test;
 
 public class LuxParserTest {
     
-    private static final String LUX_ATT_TEXT = XmlField.ATT_TEXT.getName();
+    private static final String LUX_ATT_TEXT = XmlField.ATTRIBUTE_TEXT.getName();
 
     private static final String LUX_ELT_TEXT = XmlField.ELEMENT_TEXT.getName();
 

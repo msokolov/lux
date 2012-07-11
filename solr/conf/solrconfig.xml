@@ -763,7 +763,7 @@
   <requestHandler name="/update" 
                   class="solr.XmlUpdateRequestHandler">
     <lst name="defaults">
-      <str name="update.chain">lux-basic</str>
+      <str name="update.chain">lux-update-chain</str>
     </lst>                  
     </requestHandler>
   <!-- Binary Update Request Handler
@@ -772,7 +772,7 @@
   <requestHandler name="/update/javabin" 
                   class="solr.BinaryUpdateRequestHandler">
     <lst name="defaults">
-      <str name="update.chain">lux-basic</str>
+      <str name="update.chain">lux-update-chain</str>
     </lst>                  
   </requestHandler>
 
@@ -1216,7 +1216,7 @@
     <!--  Lux update processor
         Indexes the given named field as an XML document. Enables index-assisted XQuery/XPath evaluation using Lux.
      --> 
-    <updateRequestProcessorChain name="lux-basic">
+    <updateRequestProcessorChain name="lux-update-chain">
        <processor class="lux.solr.XmlUpdateProcessor">
 <!--          <str name="xmlFieldName">lux_xml</str> -->
        </processor>
@@ -1299,7 +1299,7 @@
     -->
     
   <searchComponent name="saxon" class="lux.saxon.SaxonSearchComponent">
-<!--     <str name="xmlFieldName">lux_xml_text</str> -->
+    <!--   <str name="xmlFieldName">lux_xml</str> -->
   </searchComponent>
   
   <requestHandler name="/xquery" class="solr.SearchHandler">

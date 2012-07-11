@@ -14,8 +14,11 @@ public final class Offsets {
         textOffsets = new int[1024];
         deltas = new short[1024];
         deltaLocations = new int[1024];
-        iOffset = 0;
-        iDelta = 0;
+        reset ();
+    }
+    
+    public void reset () {
+        iOffset = iDelta = 0;
     }
     
     // store the character offsets of every character reference or entity in the document text,

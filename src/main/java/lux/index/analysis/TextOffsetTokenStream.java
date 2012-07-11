@@ -29,12 +29,17 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
     protected boolean resetTokenizer(CharSequence text) {
         //charSequenceStream.reset(text);  can't reset a BaseCharFilter :(
         charSequenceStream = new CharSequenceStream(text);
-        charStream = new OffsetCharFilter(charSequenceStream);
+        OffsetCharFilter offsetCharFilter = null;
+        if (offsets != null) {
+            charStream = offsetCharFilter = new OffsetCharFilter(charSequenceStream);
+        } else {
+            charStream = charSequenceStream;
+        }
         try {
             tokenizer.reset(charStream);
-            if (curNode.getNodeKind() == XdmNodeKind.TEXT) {
+            if (curNode.getNodeKind() == XdmNodeKind.TEXT && offsets != null) {
                 int delta = offsets.getTextLocation(iText++);
-                charStream.addOffset(0, delta);
+                offsetCharFilter.addOffset(0, delta);
                 // skip over any deltas preceding this text
                 while (iDelta < offsets.getDeltaCount() && offsets.getDeltaLocation(iDelta) < delta) {
                     ++iDelta;
@@ -49,7 +54,7 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
                         break;
                     }
                     // the offset at dOff is the difference between the original position and dOff
-                    charStream.addOffset(dOff, offsets.getDeltaLocation(iDelta) - dOff);
+                    offsetCharFilter.addOffset(dOff, offsets.getDeltaLocation(iDelta) - dOff);
                     ++iDelta;
                 }
             }

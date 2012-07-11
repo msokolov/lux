@@ -22,7 +22,7 @@ public class PathValueField extends XmlField {
     }
     
     protected PathValueField () {
-        super ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_34), Store.NO, Type.TOKENS);
+        super ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_34), Store.NO, Type.TOKENS, TermVector.NO);
     }
     
     @Override
@@ -32,7 +32,7 @@ public class PathValueField extends XmlField {
         return new FieldValues (this, Collections.singleton
                 (new TokenizedField(getName(), 
                         new PathValueTokenStream
-                        (mapper.getPathValues()), Store.NO, Index.ANALYZED, TermVector.NO)));
+                        (mapper.getPathValues()), Store.NO, Index.ANALYZED, getTermVector())));
     }
 
 }

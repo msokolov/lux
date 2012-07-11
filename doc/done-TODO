@@ -85,6 +85,12 @@ returned by QNameTextField
 *** Adding character offsets
 so we can support highlighting.  We also need this for compatibility
 w/ifpress - so we don't need two separate xml_text fields
+**** Measured indexing speed
+IndexTest.testIndexFullTest 
+Without offsets: 4481 4690 4677 4637 4576
+With offsets: 4752 4244 4740 4891 4873
+throwing out the min and max, averaging, the difference is about 150 ms, or
+about 3% difference.
 * tests
 ** testing doc() and collection()
 ** search test coverage

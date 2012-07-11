@@ -9,6 +9,7 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.lucene.analysis.CharStream;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
@@ -29,7 +30,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
 
     protected CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
 
-    protected OffsetCharFilter charStream = new OffsetCharFilter(null);
+    protected CharStream charStream = new OffsetCharFilter(null);
 
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 

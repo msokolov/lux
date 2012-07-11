@@ -4,9 +4,21 @@ criteria for release
 Rigorous testing; no known severe bugs.
 *** check performance
 Make sure our search tests really test what they are supposed to?
+**** check indexing speed having added offsets
+**** check search speed- it seems a bit slow
+break down by document creation / parsing, lucene query, saxon query, result construction, assertions?
 *** Pagination
+We have lazy eval working
 *** path and element name indexes
+ok
+*** text indexes
+ok
+*** check integration w/ifpress-solr
+ifpress-solr tests pass with lux installed and configured to use xml_text as
+its xml field.
+**** 
 *** clean API
+good enough for an ifactory-internal release
 *** use of namespaces tested
 * second release 
 ** criteria for release 1.0

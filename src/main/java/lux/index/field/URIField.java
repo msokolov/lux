@@ -7,6 +7,7 @@ import lux.index.XmlIndexer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
 
 public class URIField extends XmlField {
@@ -18,7 +19,7 @@ public class URIField extends XmlField {
     }
     
     protected URIField () {
-        super ("lux_uri", new KeywordAnalyzer(), Store.YES, Type.STRING);
+        super ("lux_uri", new KeywordAnalyzer(), Store.YES, Type.STRING, TermVector.NO);
     }
     
     @Override

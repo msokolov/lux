@@ -219,8 +219,9 @@ public class IndexTest {
     }
     
     private IndexTestSupport buildIndex (String desc, int options) throws XMLStreamException, IOException {
+        XmlIndexer indexer = new XmlIndexer (options);
         long t0 = System.currentTimeMillis();
-        IndexTestSupport indexTestSupport = new IndexTestSupport (options, dir);
+        IndexTestSupport indexTestSupport = new IndexTestSupport (indexer, dir);
         System.out.println 
              (String.format("indexed %s in %d ms %d bytes", desc, 
                      (System.currentTimeMillis()-t0), dir.sizeInBytes()));

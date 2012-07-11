@@ -1,0 +1,61 @@
+Installing for use with Solr 
+
+1. Download the install bundle and unzip into your solr/lib folder; this
+includes jars for lux, saxon, woodstox, lucene-queryparser,
+lucene-xml-query-parser.
+
+2. Edit solrconfig.xml
+
+a) Add the update handler by configuring the lux update chain as follows:
+
+  <requestHandler name="/update" 
+                  class="solr.XmlUpdateRequestHandler">
+    <!-- begin lux configuration -->                  
+    <lst name="defaults">
+      <str name="update.chain">lux-update-chain</str>
+    </lst>
+    <!-- end lux configuration -->                  
+  </requestHandler>
+
+Add the section wrapped in comments above into the update request handler
+configuration(s) that you use.
+
+b) Add the update processor configuration, at the top level in the config file:
+
+    <!-- Lux update processor Indexes the given named field as an XML
+         document. Enables index-assisted XQuery/XPath evaluation using
+         Lux.
+     --> 
+    <updateRequestProcessorChain name="lux-update-chain">
+       <processor class="lux.solr.XmlUpdateProcessor">
+         <!--   <str name="xmlFieldName">lux_xml</str> -->
+         <!--   <str name="uriFieldName">lux_uri</str> -->
+       </processor>
+       <processor class="solr.LogUpdateProcessorFactory" />
+       <processor class="solr.RunUpdateProcessorFactory" />
+     </updateRequestProcessorChain>
+
+Note: for ifpress-solr installs, change the xmlFieldName to "xml_text" and
+the uriFieldName to "uri"
+
+c) Add the Lux Saxon search component and XQuery request handler
+configuration, at the top level in the config:
+
+  <searchComponent name="saxon" class="lux.saxon.SaxonSearchComponent">
+    <!--   <str name="xmlFieldName">lux_xml</str> -->
+    <!--   <str name="uriFieldName">lux_uri</str> -->
+  </searchComponent>
+
+  <requestHandler name="/xquery" class="solr.SearchHandler">
+    <arr name="components">
+      <str>saxon</str>
+      <str>stats</str>
+      <str>debug</str>
+      <!-- highlight? facet? -->
+    </arr>
+  </requestHandler>
+
+Note: for ifpress-solr installs, change the xmlFieldName to "xml_text" and
+the uriFieldName to "uri"
+
+  

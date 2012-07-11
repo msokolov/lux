@@ -21,7 +21,7 @@ public class QNameValueField extends XmlField {
     }
     
     protected QNameValueField () {
-        super ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_34), Store.NO, Type.TOKENS);
+        super ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_34), Store.NO, Type.TOKENS, TermVector.NO);
     }
     
     @Override

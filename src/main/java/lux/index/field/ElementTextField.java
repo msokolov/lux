@@ -32,7 +32,7 @@ public class ElementTextField extends XmlField {
         // TODO - better default analyzer w/stemming + diacritic normalization
         // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
         // element/attribute text tokens are generated)
-        super ("lux_elt_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS);
+        super ("lux_elt_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO);
     }
     
     @Override
@@ -42,7 +42,7 @@ public class ElementTextField extends XmlField {
         ElementTokenStream tokens = new ElementTokenStream (doc, builder.getOffsets());
         return new FieldValues (this, Collections.singleton(
                         new TokenizedField(getName(), tokens, 
-                        Store.NO, Index.ANALYZED, TermVector.NO)));
+                        Store.NO, Index.ANALYZED, getTermVector())));
     }
     
     public ParseableQuery makeElementValueQuery (QName qname, String value) {

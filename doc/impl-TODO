@@ -10,7 +10,14 @@ config file.
 ** configure fields
 Configure lux update processor to use "uri" and "xml_text" as its uri and
 xml fields.  Test by adding to ifpress-solr/solr, config and run
-ifpress-solr tests.
+ifpress-solr tests.  And then perform some searches!
+*** field sharing
+We are sharing XML storage - great!  We could share full text index as
+well, and ultimately we should only need to store one of these fields.  For
+the moment we store both because: (1) when highlighting for snippets we
+don't want XML tags, and (2) we only want the body in fulltext_t.  Once we
+adopt lux, we can search the body in an easier way, fix the highlighting
+problem, and do away with fulltext_t I think.
 ** test usage in ifpress context
 * word index followthrough
 ** offset calculations

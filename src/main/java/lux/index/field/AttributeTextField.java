@@ -29,7 +29,7 @@ public class AttributeTextField extends XmlField {
     }
     
     protected AttributeTextField () {
-        super ("lux_att_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS);
+        super ("lux_att_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO);
     }
     
     @Override
@@ -39,7 +39,7 @@ public class AttributeTextField extends XmlField {
         AttributeTokenStream tokens = new AttributeTokenStream(doc, builder.getOffsets());
         return new FieldValues (this, Collections.singleton(
                         new TokenizedField(getName(), tokens, 
-                        Store.NO, Index.ANALYZED, TermVector.NO)));
+                        Store.NO, Index.ANALYZED, getTermVector())));
     }
     
     public ParseableQuery makeAttributeValueQuery (QName qname, String value) {

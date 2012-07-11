@@ -5,6 +5,7 @@ import java.util.Collections;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
 
 /**
@@ -20,7 +21,7 @@ public class DocumentField extends XmlField {
     }
     
     protected DocumentField () {
-        super ("lux_xml", null, Store.YES, Type.STRING);
+        super ("lux_xml", null, Store.YES, Type.STRING, TermVector.NO);
     }
     
     @Override

@@ -38,15 +38,14 @@ public class IndexTestSupport {
     public final static int QUERY_CONSTANT = 0x00000008;
 
     public IndexTestSupport() throws XMLStreamException, IOException {
-        this (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM|
+        this (new XmlIndexer (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM|
                 //0,
-                 XmlIndexer.INDEX_FULLTEXT,
-              new RAMDirectory());
+                XmlIndexer.INDEX_FULLTEXT), new RAMDirectory());
     }
     
-    public IndexTestSupport(int options, Directory dir) throws XMLStreamException, IOException {
+    public IndexTestSupport(XmlIndexer indexer, Directory dir) throws XMLStreamException, IOException {
         // create an in-memory Lucene index, index some content
-        indexer = new XmlIndexer (options);
+        this.indexer = indexer;
         this.dir = dir;
         indexAllElements (indexer, dir, "lux/hamlet.xml");
         searcher = new LuxSearcher(dir);

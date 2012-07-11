@@ -62,7 +62,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
             if (StringUtils.isEmpty(field)) {
                 return queryBuilder.parseQueryTerm(XmlField.XML_TEXT.getName(), field, term, 1.0f);
             } else if (field.charAt(0) == '@') {
-                return queryBuilder.parseQueryTerm(XmlField.ATT_TEXT.getName(), field.substring(1), term, 1.0f);
+                return queryBuilder.parseQueryTerm(XmlField.ATTRIBUTE_TEXT.getName(), field.substring(1), term, 1.0f);
             } else {
                 return queryBuilder.parseQueryTerm(XmlField.ELEMENT_TEXT.getName(), field, term, 1.0f);
             }

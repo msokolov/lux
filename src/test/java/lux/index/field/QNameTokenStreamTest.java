@@ -88,7 +88,7 @@ public class QNameTokenStreamTest {
         byte[] input = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
         inputString = new String (input, "utf-8");
         Processor proc = new Processor(false);
-        SaxonDocBuilder builder = new SaxonDocBuilder(proc.newDocumentBuilder());
+        SaxonDocBuilder builder = new SaxonDocBuilder(proc.newDocumentBuilder(), new Offsets());
         builder.setFixupCRLF(true); // TODO: should be autodetected
         XmlReader reader = new XmlReader();
         reader.addHandler(builder);

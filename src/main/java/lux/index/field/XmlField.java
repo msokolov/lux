@@ -7,6 +7,7 @@ import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
 import org.apache.solr.schema.FieldProperties;
 
@@ -35,6 +36,8 @@ public abstract class XmlField {
 
     private final Store isStored;
     
+    private final TermVector termVector;
+    
     /**
      * Represents a Solr/Lucene field
      * @param name the name of the field
@@ -43,11 +46,12 @@ public abstract class XmlField {
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
      */
-    public XmlField (String name, Analyzer analyzer, Store isStored, Type type) {
+    public XmlField (String name, Analyzer analyzer, Store isStored, Type type, TermVector termVector) {
         this.name = name;
         this.analyzer = analyzer;
         this.isStored = isStored;
         this.type = type;
+        this.termVector = termVector;
     }
 
     /** Wraps the values as Fieldable, which include the values and the Lucene indexing options.
@@ -80,7 +84,7 @@ public abstract class XmlField {
     public static final XmlField XML_STORE = DocumentField.getInstance();
     public static final XmlField QNAME_VALUE = QNameValueField.getInstance();
     public static final XmlField ELEMENT_TEXT = ElementTextField.getInstance();
-    public static final XmlField ATT_TEXT = AttributeTextField.getInstance();
+    public static final XmlField ATTRIBUTE_TEXT = AttributeTextField.getInstance();
     public static final XmlField XML_TEXT = XmlTextField.getInstance();
     
     /** Note that field name uniqueness is not enforced by the API, but if two fields with different 
@@ -120,6 +124,10 @@ public abstract class XmlField {
 
     public Store isStored() {
         return isStored;
+    }
+    
+    public TermVector getTermVector () {
+        return termVector;
     }
     
     /**
