@@ -4,9 +4,9 @@ import java.util.Collections;
 
 import lux.index.XmlIndexer;
 
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.document.Fieldable;
 
 /**
  * A stored field that is used to store the entire XML document.
@@ -25,7 +25,7 @@ public class DocumentField extends XmlField {
     }
     
     @Override
-    public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
+    public Iterable<Field> getFieldValues(XmlIndexer indexer) {
         return new FieldValues (this, Collections.singleton(indexer.getDocumentText()));
     }
     

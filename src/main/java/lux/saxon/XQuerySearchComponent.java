@@ -5,7 +5,7 @@ import java.math.BigInteger;
 
 import lux.api.Evaluator;
 import lux.saxon.Saxon.Dialect;
-import lux.solr.XmlSearchComponent;
+import lux.solr.LuxSearchComponent;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
@@ -17,7 +17,7 @@ import net.sf.saxon.value.QNameValue;
 
 import org.apache.solr.common.util.NamedList;
 
-public class SaxonSearchComponent extends XmlSearchComponent {
+public class XQuerySearchComponent extends LuxSearchComponent {
 
     @Override
     public Evaluator createEvaluator() {
@@ -36,7 +36,7 @@ public class SaxonSearchComponent extends XmlSearchComponent {
             if (value instanceof String) {
                 xpathResults.add ("xs:string", xdmValue.toString());
             } else if (value instanceof BigInteger) {
-                xpathResults.add ("xs:int", xdmValue.toString());
+                xpathResults.add ("xs:int", xdmValue.getValue());
             } else if (value instanceof DoubleValue) {
                 xpathResults.add ("xs:double", xdmValue.toString());
             } else if (value instanceof FloatValue) {

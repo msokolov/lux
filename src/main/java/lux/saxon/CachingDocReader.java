@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lux.index.XmlIndexer;
+import lux.index.field.XmlField;
 import lux.saxon.Saxon.SaxonBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -37,8 +38,8 @@ public class CachingDocReader {
     public CachingDocReader (IndexReader reader, SaxonBuilder builder, XmlIndexer indexer) {
         this.reader = reader;
         this.builder = builder;
-        this.xmlFieldName = indexer.getXmlFieldName();
-        this.uriFieldName = indexer.getUriFieldName();
+        this.xmlFieldName = XmlField.XML_STORE.getName();
+        this.uriFieldName = XmlField.URI.getName();
         HashSet<String> fieldNames = new HashSet<String>();
         fieldNames.add(xmlFieldName);
         fieldNames.add(uriFieldName);

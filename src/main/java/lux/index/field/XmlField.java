@@ -8,7 +8,6 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.document.Fieldable;
 import org.apache.solr.schema.FieldProperties;
 
 /**
@@ -54,12 +53,11 @@ public abstract class XmlField {
         this.termVector = termVector;
     }
 
-    /** Wraps the values as Fieldable, which include the values and the Lucene indexing options.
-     * XmlIndexer.indexDocument calls this.
+    /** Wraps the values as Field, which includes the values and the Lucene indexing options.
      * @param indexer the indexer that holds the field values
      * @return the accumulated values of the field, as Fieldables
      */
-    public abstract Iterable<Fieldable> getFieldValues (XmlIndexer indexer);
+    public abstract Iterable<Field> getFieldValues (XmlIndexer indexer);
 
     /** The Solr XmlUpdateProcessor calls this.  If it returns null, the caller should use the values
      * from getFieldValues() instead.

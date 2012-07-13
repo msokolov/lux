@@ -2,11 +2,9 @@ package lux.index.field;
 
 import java.util.Iterator;
 
-
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Fieldable;
 
-public class FieldValues implements Iterable<Fieldable> {
+public class FieldValues implements Iterable<Field> {
     
     private XmlField field;
     private Iterable<?> values;
@@ -16,14 +14,14 @@ public class FieldValues implements Iterable<Fieldable> {
         this.values = values;
     }
 
-    public Iterator<Fieldable> iterator() {
-        return new FieldableIterator(values.iterator());
+    public Iterator<Field> iterator() {
+        return new FieldIterator(values.iterator());
     }
     
-    class FieldableIterator implements Iterator<Fieldable> {
+    class FieldIterator implements Iterator<Field> {
         private Iterator<?> iter;
 
-        FieldableIterator (Iterator<?> iter) {
+        FieldIterator (Iterator<?> iter) {
             this.iter = iter;
         }
         
@@ -31,7 +29,7 @@ public class FieldValues implements Iterable<Fieldable> {
             return iter.hasNext();
         }
 
-        public Fieldable next() {
+        public Field next() {
             Object value = iter.next();
             switch (field.getType()) {
             case STRING:
@@ -39,7 +37,7 @@ public class FieldValues implements Iterable<Fieldable> {
             case INT:
                 throw new IllegalStateException("unimplemented field type: INT");
             case TOKENS:
-                return (Fieldable) value;
+                return (Field) value;
             default:
                     throw new IllegalStateException("unimplemented field type: " + field.getType());                    
             }

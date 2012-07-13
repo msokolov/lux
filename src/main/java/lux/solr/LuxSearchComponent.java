@@ -9,6 +9,7 @@ import lux.api.Expression;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
 import lux.index.XmlIndexer;
+import lux.saxon.Saxon;
 import lux.search.LuxSearcher;
 
 import org.apache.solr.common.params.CommonParams;
@@ -21,19 +22,23 @@ import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
+import org.slf4j.LoggerFactory;
 
 /** This component executes searches expressed as XPath or XQuery.  
  *  Its queries will match documents that have been indexed using XmlIndexer 
  *  with the INDEX_PATHS option.
  */
-public abstract class XmlSearchComponent extends QueryComponent {
+public abstract class LuxSearchComponent extends QueryComponent {
     
     protected IndexSchema schema;
     protected Set<String> fields = new HashSet<String>();
     protected Evaluator evaluator;
+    protected XmlIndexer indexer;
     
-    public XmlSearchComponent() {
+    public LuxSearchComponent() {
+        indexer = new XmlIndexer ();  // FIXME: share with LuxUpdateProcessor?? at least have common config
         evaluator = createEvaluator();
+        evaluator.setIndexer(indexer);
     }
    
     public abstract Evaluator createEvaluator ();
@@ -63,8 +68,6 @@ public abstract class XmlSearchComponent extends QueryComponent {
         long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
         // multiple shards not implemented
-        XmlIndexer indexer = new XmlIndexer(XmlIndexer.INDEX_PATHS);
-        evaluator.setIndexer(indexer);
         evaluator.setSearcher(new LuxSearcher(searcher));
         evaluator.setQueryStats(new QueryStats());
         // TODO: catch compilation errors and report using the error reporting
@@ -84,7 +87,7 @@ public abstract class XmlSearchComponent extends QueryComponent {
                     (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
                 break;
             }
-        }        
+        }
         rsp.add("xpath-results", xpathResults);
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
         Exception ex = queryResults.getException();
@@ -93,6 +96,9 @@ public abstract class XmlSearchComponent extends QueryComponent {
         }
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);
+        LoggerFactory.getLogger(LuxSearchComponent.class).debug
+            ("retrieved: " + ((Saxon)evaluator).getDocReader().getCacheMisses() + " docs, " +
+                    xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
     }
 
     public static final String COMPONENT_NAME = "xpath";

@@ -130,7 +130,7 @@ public class LuxSearch extends ExtensionFunctionDefinition {
             } catch (ParserException e) {
                 throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
-            LoggerFactory.getLogger(LuxSearch.class).debug("executing xpath query: {}", query);
+            LoggerFactory.getLogger(LuxSearch.class).debug("executing query: {}", query);
             return iterate (query, saxon, facts);
         }
         

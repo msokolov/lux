@@ -1217,7 +1217,7 @@
         Indexes the given named field as an XML document. Enables index-assisted XQuery/XPath evaluation using Lux.
      --> 
     <updateRequestProcessorChain name="lux-update-chain">
-       <processor class="lux.solr.XmlUpdateProcessor">
+       <processor class="lux.solr.LuxUpdateProcessor">
 <!--          <str name="xmlFieldName">lux_xml</str> -->
        </processor>
        <processor class="solr.LogUpdateProcessorFactory" />
@@ -1298,13 +1298,13 @@
        by SearchHandler) or in LocalParams
     -->
     
-  <searchComponent name="saxon" class="lux.saxon.SaxonSearchComponent">
+  <searchComponent name="xquery" class="lux.saxon.XQuerySearchComponent">
     <!--   <str name="xmlFieldName">lux_xml</str> -->
   </searchComponent>
   
   <requestHandler name="/xquery" class="solr.SearchHandler">
     <arr name="components">
-      <str>saxon</str>
+      <str>xquery</str>
       <str>stats</str>
       <str>debug</str>
       <!-- highlight? facet? -->

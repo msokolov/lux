@@ -10,10 +10,9 @@ import lux.query.QNameTextQuery;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
-import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.Term;
 
 public class XmlTextField extends XmlField {
@@ -33,11 +32,11 @@ public class XmlTextField extends XmlField {
     }
     
     @Override
-    public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
+    public Iterable<Field> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
         SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
         XmlTextTokenStream tokens = new XmlTextTokenStream (doc, builder.getOffsets());
-        return new FieldValues (this, Collections.singleton(new TokenizedField(getName(), tokens, Store.NO, Index.ANALYZED, getTermVector())));
+        return new FieldValues (this, Collections.singleton(new Field(getName(), tokens, getTermVector())));
     }
 
 }

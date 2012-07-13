@@ -53,12 +53,18 @@ public abstract class LuxSolrTest {
     @Test public void testIndex() throws Exception {
         // make sure the documents have the values we expect
         assertQueryCount (102, "*:*");
-        assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":config");
-        assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":schema");
+        // QNAME index is no longer part of the default setup created by LuxUpdateProcessor
+        // TODO: expose index config in solrconfig.xml
+        //assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":config");
+        //assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":schema");
         assertQueryCount (1, XmlField.PATH.getName() + ":\"{} schema types fieldType\"");
         assertQueryCount (1, XmlField.PATH.getName() + ":schema");
         assertQueryCount (102, XmlField.PATH.getName() + ":\"{}\"");
         assertQueryCount (1, XmlField.PATH.getName() + ":\"{} config luceneMatchVersion\"");
+        assertQueryCount (2, XmlField.XML_TEXT + ":true");
+        assertQueryCount (2, XmlField.ELEMENT_TEXT + ":enableLazyFieldLoading\\:true");
+        assertQueryCount (1, XmlField.ATTRIBUTE_TEXT + ":id\\:1");
+        assertQueryCount (1, XmlField.ATTRIBUTE_TEXT + ":type\\:random");
     }
     
     @Test public void testXPathSearch() throws Exception {

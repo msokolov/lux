@@ -80,7 +80,7 @@ public class XmlIndexer {
     public final static int INDEX_VALUES=       0x00000100;
     public final static int COMPUTE_OFFSETS=    0x00000200;
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
-    public final static int DEFAULT_OPTIONS = BUILD_JDOM | STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
+    public final static int DEFAULT_OPTIONS = STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
     
     public XmlIndexer (int options) {
         this.options = options;
@@ -140,9 +140,6 @@ public class XmlIndexer {
             xmlReader.addHandler(serializer);
         }
         if (isOption (BUILD_JDOM)) {
-            // TODO: replace w/XdmNode - is there a Saxon builder we can feed StAX events to?  Probably
-            // need to convert to SAX
-            // build a JDOM in case we want to index XPaths
             jdomBuilder = new JDOMBuilder();
             xmlReader.addHandler (jdomBuilder);
         }
@@ -236,14 +233,6 @@ public class XmlIndexer {
         return options;
     }
 
-    public String getXmlFieldName() {
-        return XmlField.XML_STORE.getName();
-    }
-
-    public String getUriFieldName() {
-        return XmlField.URI.getName();
-    }
-    
     public XmlPathMapper getPathMapper() {
         return pathMapper;
     }

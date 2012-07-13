@@ -166,7 +166,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         try {
             xquery = getXQueryCompiler().compile(exprString);
         } catch (SaxonApiException e) {
-            throw new LuxException ("Syntax error compiling: " + exprString, e);
+            throw new LuxException (e);
         }
         XQuery abstractQuery = translator.queryFor (xquery);
         PathOptimizer optimizer = new PathOptimizer(getIndexer());
@@ -174,7 +174,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         try {
             xquery = getXQueryCompiler().compile(optimizedQuery.toString());
         } catch (SaxonApiException e) {
-            throw new LuxException ("Syntax error compiling: " + optimizedQuery.toString(), e);
+            throw new LuxException (e);
         }
         return new SaxonExpr(xquery, optimizedQuery);
     }

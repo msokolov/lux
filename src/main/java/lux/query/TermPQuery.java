@@ -48,9 +48,9 @@ public class TermPQuery extends ParseableQuery {
     
     protected ElementConstructor toXmlNode (String field, QName elementName) {
         AttributeConstructor fieldAtt=null;
-        if (!term.field().equals(field) && !term.field().isEmpty()) {
+        //if (!term.field().equals(field) && !term.field().isEmpty()) {
             fieldAtt = new AttributeConstructor(FIELD_ATTR_NAME, new LiteralExpression (term.field()));
-        }
+        //}
         AttributeConstructor boostAtt=null;
         if (boost != 1.0f) {
             boostAtt = new AttributeConstructor(BOOST_ATTR_NAME, new LiteralExpression (boost));

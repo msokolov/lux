@@ -23,6 +23,7 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
+import org.apache.solr.schema.BinaryField;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
@@ -33,8 +34,10 @@ import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.processor.UpdateRequestProcessor;
 import org.apache.solr.update.processor.UpdateRequestProcessorFactory;
 import org.apache.solr.util.plugin.SolrCoreAware;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements SolrCoreAware {
+public class LuxUpdateProcessor extends UpdateRequestProcessorFactory implements SolrCoreAware {
 
     private XmlIndexer xmlIndexer;
     
@@ -43,15 +46,23 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
         // TODO: check if we are unnecessarily serializing the document
         // We don't need XmlIndexer.STORE_XML to do that since the client passes us the xml_text field
         // but we declare the field to the indexer so that it gets defined in the schema
-        xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS);
+        xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_FULLTEXT | XmlIndexer.INDEX_PATHS);
         if (args != null) {
             SolrParams params = SolrParams.toSolrParams(args);
             // accept override from configuration so we can piggyback on existing 
             // document storage
-            String xmlFieldName = params.get("xmlFieldName", xmlIndexer.getXmlFieldName());
-            XmlField.XML_STORE.setName (xmlFieldName);
-            String uriFieldName = params.get("uriFieldName", xmlIndexer.getUriFieldName());
-            XmlField.URI.setName (uriFieldName);
+            String xmlFieldName = params.get("xmlFieldName", null);
+            if (xmlFieldName != null) {
+                XmlField.XML_STORE.setName (xmlFieldName);
+            }
+            String uriFieldName = params.get("uriFieldName", null);
+            if (uriFieldName != null) {
+                XmlField.URI.setName (uriFieldName);
+            }
+            String textFieldName = params.get("textFieldName", null);
+            if (textFieldName != null) {
+                XmlField.XML_TEXT.setName (textFieldName);
+            }
             // add fields to config??
             // TODO: namespace-awareness?; namespace mapping
             // TODO: read xpath index config
@@ -75,20 +86,24 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
     private void informField (XmlField xmlField, IndexSchema schema) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
+        Logger logger = LoggerFactory.getLogger(LuxUpdateProcessor.class);
         if (fields.containsKey(xmlField.getName())) {
             // The Solr schema defines this field
+            logger.info("Field already defined: " + xmlField.getName());
             return;
         }
         // look up the type of this field using the mapping in this class
         FieldType fieldType = getFieldType(xmlField, schema);
         if (! fieldTypes.containsKey(fieldType.getTypeName())) {
             // The Solr schema does not define this field type, so add it
+            logger.info("Defining fieldType: " + fieldType.getTypeName());
             fieldTypes.put(fieldType.getTypeName(), fieldType);
         } else {
             fieldType = fieldTypes.get(fieldType.getTypeName());
         }
         // Add the field to the schema
-        fields.put(xmlField.getName(), new SchemaField (xmlField.getName(), fieldType, xmlField.getSolrFieldProperties(), ""));        
+        logger.info("Defining field: " + xmlField.getName() + " of type " + fieldType.getTypeName());
+        fields.put(xmlField.getName(), new SchemaField (xmlField.getName(), fieldType, xmlField.getSolrFieldProperties(), ""));
     }
     
     private FieldType getFieldType(XmlField xmlField, IndexSchema schema) {
@@ -142,13 +157,13 @@ public class XmlUpdateProcessor extends UpdateRequestProcessorFactory implements
     /**
      * enable pass-through of a Fieldable to Solr; this enables analysis to be performed outside of Solr
      */
-    class FieldableField extends StrField {
+    class FieldableField extends BinaryField {
         FieldableField () {
             typeName = "fieldable";
         }
 
-        Fieldable createField(SchemaField field, Object val, float boost) {
-            return (Fieldable) val;
+        public Field createField(SchemaField field, Object val, float boost) {
+            return (Field) val;
         }
     }
 

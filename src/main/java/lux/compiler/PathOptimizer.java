@@ -419,6 +419,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
             else if (funcall.getName().equals(FunCall.FN_CONTAINS)) {
                 if (! subs[0].isAbsolute()) {
+                    // FIXME - this is overly aggressive.  contains() doesn't have the same semantics
+                    // as full-text search; eg it does no analysis so it
+                    // matches more restrictively than our search function does
                     // don't query if the sequence arg isn't absolute??
                     // if the arg is relative, presumably the contains is in a predicate somewhere
                     // and may have been optimized there?

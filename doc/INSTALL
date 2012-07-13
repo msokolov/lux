@@ -6,7 +6,8 @@ lucene-xml-query-parser.
 
 2. Edit solrconfig.xml
 
-a) Add the update handler by configuring the lux update chain as follows:
+a) Add the Lux update processor chain to each of the update request handlers
+   by inserting the name of the chain into the "defaults" parameter list:
 
   <requestHandler name="/update" 
                   class="solr.XmlUpdateRequestHandler">
@@ -18,7 +19,8 @@ a) Add the update handler by configuring the lux update chain as follows:
   </requestHandler>
 
 Add the section wrapped in comments above into the update request handler
-configuration(s) that you use.
+configuration(s) that you use: ifpress-solr uses /update for its tests and /update/javabin in production.
+It wouldn't hurt to configure the json and xsv handlers, too.
 
 b) Add the update processor configuration, at the top level in the config file:
 
