@@ -5,14 +5,19 @@ import static org.junit.Assert.assertEquals;
 import java.util.Iterator;
 
 import lux.api.LuxException;
+import lux.api.QueryStats;
 import lux.api.ResultSet;
 import lux.api.ValueType;
 import lux.index.XmlIndexer;
+import lux.saxon.Expandifier;
 import lux.saxon.Saxon;
 import lux.saxon.SaxonExpr;
-import lux.saxon.UnOptimizer;
-import lux.xpath.AbstractExpression;
+import lux.xquery.XQuery;
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XQueryEvaluator;
+import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
+import net.sf.saxon.s9api.XdmValue;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -24,6 +29,8 @@ import org.junit.BeforeClass;
  */
 public class SearchQueryTest extends BasicQueryTest {
     private static IndexTestSupport index;
+    private static long elapsed=0;
+    private static long elapsedBaseline=0;
     
     @BeforeClass
     public static void setup () throws Exception {
@@ -44,7 +51,6 @@ public class SearchQueryTest extends BasicQueryTest {
         }
     }
 
-    
     @Override
     public String getQueryXml (Q q) {
         switch (q) {
@@ -70,30 +76,47 @@ public class SearchQueryTest extends BasicQueryTest {
      */
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
         Saxon saxon = index.getEvaluator();
+        saxon.invalidateCache();
+        long t0 = System.nanoTime();
         SaxonExpr saxonExpr = saxon.compile(xpath);
-        optimized = saxonExpr.toString();
-        long t = System.currentTimeMillis();
         ResultSet<?> results = saxon.evaluate(saxonExpr);
         if (results.getException() != null) {
             throw new LuxException(results.getException());
         }
-        System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results from " +
-        saxon.getQueryStats().docCount + " documents");
-        AbstractExpression aex = saxonExpr.getXPath();
-        aex = new UnOptimizer(getIndexer().getOptions()).unoptimize(aex);
-        // TODO: don't re-optimize here !!
-        SaxonExpr baseline = saxon.compile(aex.toString());
-        ResultSet<?> baseResult = saxon.evaluate(baseline);
-        assertEquals ("result count mismatch for: " + optimized, baseResult.size(), results.size());        
-        Iterator<?> baseIter = baseResult.iterator();
-        Iterator<?> resultIter = results.iterator();
-        for (int i = 0 ; i < results.size(); i++) {
-            XdmItem base = (XdmItem) baseIter.next();
-            XdmItem r = (XdmItem) resultIter.next();
-            assertEquals (base.isAtomicValue(), r.isAtomicValue());
-            assertEquals (base.getStringValue(), r.getStringValue());
+        long t = System.nanoTime() - t0;
+        elapsed += t;
+        System.out.println ("query evaluated in " + (t/1000000) + " msec,  retrieved " + results.size() + " results from " +
+                saxon.getQueryStats().docCount + " documents");
+        saxon.invalidateCache();
+        saxon.setQueryStats(new QueryStats());
+        t0 = System.nanoTime();
+        XQuery xq = null;
+        try {
+            xq = saxon.getTranslator().queryFor(saxon.getXQueryCompiler().compile(xpath));
+            xq = new Expandifier().expandify(xq);
+            String expanded = xq.toString();
+            XQueryExecutable baseline;
+            baseline = saxon.getXQueryCompiler().compile(expanded);
+            XQueryEvaluator baselineEval = baseline.load();
+            XdmValue baseResult = baselineEval.evaluate();
+            assertEquals ("result count mismatch for: " + optimized, baseResult.size(), results.size());        
+            Iterator<?> baseIter = baseResult.iterator();
+            Iterator<?> resultIter = results.iterator();
+            for (int i = 0 ; i < results.size(); i++) {
+                XdmItem base = (XdmItem) baseIter.next();
+                XdmItem r = (XdmItem) resultIter.next();
+                assertEquals (base.isAtomicValue(), r.isAtomicValue());
+                assertEquals (base.getStringValue(), r.getStringValue());
+            }
+        } catch (SaxonApiException e) {
+            throw new LuxException ("error evaluting query " + xq, e);
         }
+        t = System.nanoTime() - t0;
+        System.out.println ("baseline query took " + (t/1000000) + " msec,  retrieved " + results.size() + " results from " +
+                saxon.getQueryStats().docCount + " documents");
+        elapsedBaseline += t;
         // TODO: also assert facts about query optimizations
+        System.out.println (String.format("%dms using lux; %dms w/o lux", elapsed/1000000, elapsedBaseline/1000000));
     }
 
 }
