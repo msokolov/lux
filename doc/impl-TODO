@@ -1,4 +1,4 @@
-* walk through installation
+* walk through installation in ifpress
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar
 from luxproject.net?  I guess we need a web site or something...
@@ -20,31 +20,6 @@ adopt lux, we can search the body in an easier way, fix the highlighting
 problem, and do away with fulltext_t I think.
 ** test usage in ifpress context
 * word index followthrough
-** offset calculations
-for compatibility w/existing ifpress setup
-compare parsing/indexing speed with and without offsets.  tests seemed much slower, but that may just be due to printing massive debug outputs
-** user search function
-Supporting full text queries; we do have lux:search (xs:string); however
-the query syntax is bizarre since you must specify an element name for
-every token using eltname{namespace}:word.  Conversely we have lux:search
-(element()), but no xquery helper functions for constructing the queries.
-However that seems to be the way to go.
-*** query syntax
-**** lux:query("element", "value")
-***** shorthand: :element:value
-**** lux:query("prefix:element", "value")
-uses namespace bindings declared in the query
-***** shorthand: prefix:element:value
-**** lux:query("@attribute", "value")
-***** shorthand: :@attribute:value
-**** lux:query("element/@attribute", "value")
-just a simple and-query of "element/@attribute" and "@attribute=value"
-***** shorthand: :element/@attribute:value
-**** lux:and(), lux:or(), lux:not()
-*** modified string query parser
-standard lucene query parser syntax where field names may contain "@" and
-namespace *prefixes*.  Post-process to prefix terms with element/attribute
-names.
 ** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
 Apply custom analysis chain to each text node, and then wrap in
 QNameFilter.
@@ -83,14 +58,29 @@ include name-index only test
 ** solr search handler coverage
 test all atomic result types
 * performance testing
+benchmark against MarkLogic, eXist
+** Compare indexing speed
+** Compare query/eval speed
+show impact of parsing, document retrieval?
 ** Test performance on XQTS with Saxon alone, and with Lux/Saxon
-show impact of Lux on compilation speed
-* bugs
+show impact of Lux on compilation speed We did this.  The overall slowdown
+on XQTS is a bit depressing: running the entire test suite with Lux enabled
+takes about 50% longer than without it.  However this seems largely to be
+due to the effect of some tests which, when compiled, lead to expression
+trees that are much larger than the original xquery form.  The rule of
+thumb seems to be that you can expect compilation time to double.  In XQTS,
+compilation time dominates the test (after simply loading test data).
+
+* Bugs
+** contain() is over-optimized
+We replace it with a search call, but search is *analyzed* (so case is
+ignored, etc).
 ** raise exception when query parse fails
 this is currently getting swallowed internally and only printed to stderr
 * features
 ** directory (uri component) index
 also link to collection()?
+** highlighting
 ** optimized sorting
 ** fragmentation 
 use Lucene's block join indexing
@@ -101,8 +91,7 @@ The main thing missing is marshalling results from Solr
 rename and consolidate naming of subclasses
 ** delete dead code
 *** get rid of lux:search facts argument
-The facts are not serving any purpose now that we are using lazy
-evaluation, and we have separate lux:count and lux:exists methods.
+Note: this is still used to convey boolean-falsehood.
 ** remove these notes from the release
 ** make clean package dependencies 
 *** fill out the generic API
@@ -167,3 +156,4 @@ somewhat limited in our ability to do this right now since we rely on Saxon
 to make judgements about sorting, and it doesn't always optimize as
 agressively as we would like, at least not in the saxon-HE version.  It
 works in some simple cases, though.
+

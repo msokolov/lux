@@ -84,13 +84,37 @@ LowerCaseFilter.
 returned by QNameTextField
 *** Adding character offsets
 so we can support highlighting.  We also need this for compatibility
-w/ifpress - so we don't need two separate xml_text fields
+w/ifpress - so we don't need two separate xml_text fields Compared
+parsing/indexing speed with and without offsets: there was a 3% slowdown in
+the overall time to index when offsets were added (see IndexTest below).
 **** Measured indexing speed
 IndexTest.testIndexFullTest 
 Without offsets: 4481 4690 4677 4637 4576
 With offsets: 4752 4244 4740 4891 4873
 throwing out the min and max, averaging, the difference is about 150 ms, or
 about 3% difference.
+** user search function
+Supporting full text queries; we do have lux:search (xs:string); however
+the query syntax is bizarre since you must specify an element name for
+every token using eltname{namespace}:word.  Conversely we have lux:search
+(element()), but no xquery helper functions for constructing the queries.
+However that seems to be the way to go.
+*** query syntax
+**** lux:query("element", "value")
+***** shorthand: :element:value
+**** lux:query("prefix:element", "value")
+uses namespace bindings declared in the query
+***** shorthand: prefix:element:value
+**** lux:query("@attribute", "value")
+***** shorthand: :@attribute:value
+**** lux:query("element/@attribute", "value")
+just a simple and-query of "element/@attribute" and "@attribute=value"
+***** shorthand: :element/@attribute:value
+**** lux:and(), lux:or(), lux:not()
+*** modified string query parser
+standard lucene query parser syntax where field names may contain "@" and
+namespace *prefixes*.  Post-process to prefix terms with element/attribute
+names.
 * tests
 ** testing doc() and collection()
 ** search test coverage

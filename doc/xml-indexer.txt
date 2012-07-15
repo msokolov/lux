@@ -1,0 +1,118 @@
+Goal is to accelerate evaluation of xml-aware queries against solr.
+
+Start by optimizing XPath across large numbers of documents.  We currently
+index specific XPaths configured by the user, and we index element names
+and paths, so in theory we could optimize expressions relying on those
+things.  To really get this working though, we need to do much more:
+
+1) A 2-pass framework for XPath query evaluation:
+  a) convert XPath into Lucene/Solr query (may overgenerate)
+  b) retrieve documents (possibly with some pagination)
+  c) evaluate XPath on each document
+
+2) A set of indexes that enables 1.a above to get the correct matching
+documents often - like a MarkLogic-style "universal index".
+
+ a) Index values of all elements and attributes as multi-valued strings.
+ b) Index all element and attributes (and PIs?) as full-text 
+ c) TBD: "structural" index using a hierarchical key like eXist's, 
+    or using Lucene BlockJoinQuery w/document-per-node?
+ 
+ d) Configurable analysis - stemming, character-folding, tokenizer?
+ e) Configurable element boundary handling - transparent (like ML phrase-through)
+
+3) XML-aware Highlighter - at a minimum this can surround words and phrases
+matching the query in a tag while preserving XML well-formedness.  Possibly
+also provide some callback mechanism for document transformation?
+
+----------------------
+
+Service Architecture:
+  Embed in Solr/Lucene as a combination query parser plugin and update plugin
+  This provides maximum opportunity for optimization, a convenient package for dissemination,
+  including configurability using Solr's config file system with support for clustering, etc.
+
+Index Architexture:
+
+  Compare a few approaches:
+
+1) Lucene document <=> XML document; 
+
+  A) element/attribute value/word indexes <=> fields
+
+  B) element/attribute names indexed as a special value in a single
+     universal word index; another in a value index. 
+
+     In these two - for attribute name =
+     (element/attribute pair or just attribute name alone? special case for
+     id?)
+
+2) Lucene document <=> XML node; indexed in blocks with parent field, and document field?
+   -> index elements and attributes in reverse tree order as separate documents
+  
+  Use Grouping, Joins, BlockJoin queries to roll up nodes into document-level queries
+
+  OPTIONS for field structure: 
+   1) lucene field name = based on node name
+   2) one field w/value including node name
+  
+  Can we integrate user-defined xpath with this?  Every xpath does have a
+  well-defined parent node.  But this could also obviate the need for that
+  somewhat?
+
+3) Simple indexer that just indexes the entire document and the names of
+its elements.
+
+----------------
+
+Plan:
+
+1. Test Setup
+
+   We want to represent text data such as books, journals and reference
+   works since they have a lot of structure and use highly structured
+   queries.  Wikipedia is a possibility too.
+
+   For queries, well, we can make some up, but can we do better?  Is there
+   data?  Most of what we have is really xquery.
+
+  A. Select a test dataset
+  B. Find or create some test queries
+  C. Build a test harness (indexing and querying)
+
+2. Build the three flavors identified, or whichever we end up with we
+should compare a few approaches
+
+  A. XPath Indexer (a Solr UpdateRequestProcessor ?)
+
+     Look for the xml_text field in the input document, which is the raw
+     text of the XML document.  When found, generate all the node documents in inverted-tree order
+     (depth first crawl, output children first in document order).
+
+     You config these and then apply them using a query param like update.chain=xpath-chain
+
+     Client submits entire XML document; use existing ifpress
+     infrastructure or just use curl or something to post docs. 
+
+  B. XPath Query Parser
+     
+     We need an XPath parser - I guess use Jaxen since it's the defacto
+     standard?  Then we need to analyze and rewrite the query where
+     possible.  Where not possible (eg functions, weird path steps), evaluate using Jaxen?
+
+     i. integrate and understand XPath parser and its syntax model.  Maybe steal a parser?
+     ii. work out some clever optimizations and write queries
+     iii. satisfy the XPath letter of the law
+
+3. Evaluate
+  Run tests, measure and go back to 2 !
+
+4. Writeup
+
+5. Missing features / next steps
+ - integrate fixup parser for HTML
+
+6. Integrate with ifpress system. We'd need to decide if this would
+  replace, or work alongside our existing system.  Maybe just change the
+  type of teh fulltext_t or xml_text field?
+

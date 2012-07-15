@@ -40,7 +40,10 @@ public class RunnerBase {
     private static int numignored;
     protected boolean terminateOnException = true;
     protected boolean printDetailedDiagnostics = false;
-    
+    // ignore test results - just time the running 
+    protected boolean benchmark = false;
+    // use Saxon without any Lux optimization
+    protected boolean benchmarkSaxon = false;
     protected static void setup(int indexOptions, String sourceDirectory) throws Exception {
         eval = new Saxon(Dialect.XQUERY_1);
         eval.getConfig().getParseOptions().setEntityResolver(null);

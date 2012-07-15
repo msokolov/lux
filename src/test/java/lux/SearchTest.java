@@ -25,7 +25,7 @@ import org.junit.Test;
 
 /**
  * Check a variety of XPath queries, ensuring that results when executed using the default indexing
- * settings, as provided by IndexTestSupport, are consistent with an unindexed baseline,
+ * settings, as provided by IndexTestSupport, are correct, 
  * and test that expected optimizations are in fact being applied. 
  */
 public class SearchTest {

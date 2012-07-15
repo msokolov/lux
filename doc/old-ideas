@@ -1,0 +1,22 @@
+** xquery abstraction
+We dumped Jaxen - it's just too old to be of interest.  So the only impl we
+have right now is based on Saxon.  We should maintain an abstraction layer
+though.  ADVANTAGES of a built-in xquery parser: decouple from Saxon API -
+this is actually a big deal.  SUPPORT for xpath 1.0 in JDK: this way we can
+run out of the box in Lucene with no additional jars.
+** indexer/query generator plugin
+To make it easier to choose which indexes to use, this should be pluggable.
+Indexers can either be event-driven or xpath-based (post processed).
+[ we made it somewhat modular, at least ]
+** SOLR Pagination
+when start > 1, change doc-start = 1 and scan forward
+*** opto when query minimal
+then set doc-start = start
+**** minimal document results, or minimal counts only
+can skip XPath step entirely
+*** cache result navigation info in Solr
+if we've computed which document contains xpath X position A, and a request
+comes in for xpath X position B, and B > A, we can start at A and scan
+forward.  This can be a very small cache.  The idea is that one consumer is
+skipping around in a result set.  The main case is to optimize is scanning
+through an entire large result set.

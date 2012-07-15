@@ -1,0 +1,57 @@
+XQTS BENCHMARK RESULTS
+
+
+Run test cases through Saxon only so we can compare runtime with and without Lux optimization
+
+runtime with Saxon alone: 34102
+
+runtime including Lux optimizing compilation: 53170
+
+ a 55% increase.  
+
+Looking more closely we can see that the compile time increases about 4.5x.
+
+We know it has to be at least 2x (since we are parsing/compiling 2 expressions instead of 1)
+
+(no lux) total time=33783ms, compile=5447ms, eval=8479ms
+(w/lux)  total time=53976ms, compile=23633ms, eval=8878ms
+ 
+(no lux) total time=35121ms, bind=16971ms, compile=5558ms, eval=9014ms
+(w/ lux) total time=56452ms, bind=18191ms, compile=24933ms, eval=9669ms
+ 
+slight improvement after avoiding reallocation of PathOptimizer for each
+compilation:
+
+(w/lux) total time=52842ms, bind=17653ms, compile=23066ms, eval=8351ms
+ 
+ now separating optimize and translate from compile:
+
+(w/lux) total time=55229ms, bind=18341ms, compile=19504ms, translate=4975ms, optimize=11ms, eval=8813ms
+
+counting serialization of the optimized form as part of "optimize":
+total time=54283ms, bind=18094ms, compile=17286ms, translate=4847ms, optimize=1387ms, eval=9233ms
+total time=52901ms, bind=17480ms, compile=16312ms, translate=4563ms, optimize=2090ms, eval=9004ms
+
+compile0=4977, compile1=11334
+
+The increase in compilation time varies hugely depending on the expressions
+involved.  For the "Basics" suite, we see a *drop* in time to compile the
+second time, because the expressions have been simplified a great deal.
+compile0 here means the initial compilation, compile1 is the recompilation
+after lux optimization
+
+(w/o lux) total time=1155ms, bind=641ms, compile=372ms, translate=0ms, optimize=0ms, eval=82ms, compile0=372, compile1=0
+
+(w/ lux) total time=1390ms, bind=623ms, compile=487ms, translate=118ms, optimize=22ms, eval=82ms, compile0=324, compile1=163
+
+For the PathExpr test group:
+
+(w/lux) total time=4792ms, bind=1961ms, compile=1603ms, translate=256ms,
+optimize=105ms, eval=449ms compile0=921, compile1=682
+
+for other groups, the time goes way up because Saxon expands the
+expressions when it compiles the first time for example [1-1000] becomes a
+list of literals that all have to be parsed...  But these would seem to be
+unusual.
+
+

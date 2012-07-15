@@ -5,13 +5,17 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
+import lux.api.LuxException;
 import lux.api.QueryContext;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
+import lux.compiler.PathOptimizer;
 import lux.index.XmlIndexer;
 import lux.saxon.SaxonExpr;
 import lux.xpath.QName;
 import lux.xqts.TestCase.ComparisonMode;
+import lux.xquery.XQuery;
+import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
@@ -22,6 +26,15 @@ import org.junit.Test;
 
 public class TestRunner extends RunnerBase {
 
+    private static final int MIL = 1000000;
+    private long compile0;
+    private long compile1;
+    private long compileTime;
+    private long translateTime;
+    private long optimizeTime;
+    private long evalTime;
+    private long bindTime;
+    
     @BeforeClass
     public static void setup() throws Exception {
         // By default, no indexes are created, and no Lux query optimizations are performed.
@@ -36,19 +49,26 @@ public class TestRunner extends RunnerBase {
     
     private boolean runTest (TestCase test1) throws Exception {
         ++numtests;
-        if (printDetailedDiagnostics) {
-            ErrorIgnorer ignorer = (ErrorIgnorer) eval.getConfig().getErrorListener();
-            ignorer.setShowErrors(true);
-        }
         QueryContext context = new QueryContext();
         try {
+            long t00 = System.nanoTime();
             bindExternalVariables(test1, context);
-            SaxonExpr expr = (SaxonExpr) eval.compile(test1.getQueryText());
+            long t0 = System.nanoTime();
+            SaxonExpr expr = compileXQuery(test1.getQueryText());
             context.setContextItem(test1.getContextItem());
-            //System.out.println (expr);
-            QueryStats stats = new QueryStats();
-            eval.setQueryStats(stats);
+            if (printDetailedDiagnostics) {
+                eval.setQueryStats(new QueryStats());
+            }
+            long t1 = System.nanoTime();
             ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, context);
+            long t2 = System.nanoTime();
+            bindTime += (t0 - t00);
+            // accumulated inside compileXQuery
+            // compileTime += (t1 - t0);
+            evalTime += (t2 - t1);
+            if (benchmark) {
+                return true;
+            }
             if (results.getException() != null) {
                 throw results.getException();
             }
@@ -103,8 +123,52 @@ public class TestRunner extends RunnerBase {
             return true;
         }
     }
+    
+    private SaxonExpr compileXQuery(String exprString) throws LuxException {
+        XQueryExecutable xquery;
+        long t0 = System.nanoTime();
+        try {
+            xquery = eval.getXQueryCompiler().compile(exprString);
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
+        long t1 = System.nanoTime();
+        compile0 += (t1 - t0);
+        compileTime += (t1 - t0);
+        if (! eval.isEnableLuxOptimization()) {
+            return new SaxonExpr (xquery, null);
+        }
+        XQuery abstractQuery = eval.getTranslator().queryFor (xquery);
+        long t2 = System.nanoTime();
+        translateTime += (t2 - t1);
+        PathOptimizer optimizer = eval.getOptimizer();
+        XQuery optimizedQuery = optimizer.optimize(abstractQuery);
+        String queryString = optimizedQuery.toString();
+        long t3 = System.nanoTime();
+        optimizeTime += (t3 - t2);
+        try {
+            xquery = eval.getXQueryCompiler().compile(queryString);
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
+        float compileTimeRatio = (t3 - t2) / (float) (t1 - t0);
+        if (t3 - t2 > 2 * (t1 - t0)) {
+            System.out.println ("Query got " + compileTimeRatio + " times harder to compile after optimization");
+        }
+        long t4 = System.nanoTime();
+        compileTime += (t4 - t3);
+        compile1 += (t4 - t3);
+        return new SaxonExpr(xquery, optimizedQuery);
+    }
+
 
     private void runTestGroup (String groupName) throws Exception {
+        ErrorIgnorer ignorer = (ErrorIgnorer) eval.getConfig().getErrorListener();
+        if (printDetailedDiagnostics) {
+            ignorer.setShowErrors(true);
+        } else {
+            ignorer.setShowErrors(false);
+        }
         TestGroup group = catalog.getTestGroupByName(groupName);
         assertNotNull (groupName, group);
         testOneGroup (group);
@@ -150,7 +214,48 @@ public class TestRunner extends RunnerBase {
     }
     
     /*
-     * Run test cases, replacing the context item with collection().
+     * Run test cases through Saxon only so we can compare runtime with and without Lux optimization
+     * runtime with Saxon alone: 34102
+     * runtime including Lux optimizing compilation: 53170
+     */
+    @Test public void testBenchmarkCompiler () throws Exception {
+        benchmarkComparison(5, "MinimalConformance");
+    }
+    
+    private void benchmarkComparison (int runs, String testGroup) throws Exception {
+        terminateOnException = false;
+        benchmark = true;
+        eval.setEnableLuxOptimization(true);
+        runTestGroup (testGroup);
+        eval.setEnableLuxOptimization(false);
+        runTestGroup (testGroup);
+        System.out.println ("Benchmark Saxon alone");
+        benchmark(runs, testGroup);
+        System.out.println ("Benchmark including Lux optimize");
+        eval.setEnableLuxOptimization(true);
+        benchmark(runs, testGroup);
+    }
+
+    private void benchmark(int runs, String testGroup) throws Exception {
+        evalTime = 0;
+        compileTime = 0;
+        compile0 = 0;
+        compile1 = 0;
+        bindTime = 0;
+        optimizeTime = 0;
+        translateTime = 0;
+        long t0 = System.currentTimeMillis();
+        for (int i = 0; i < runs; i++) {
+            runTestGroup (testGroup);
+        }
+        long t1 = System.currentTimeMillis();
+        System.out.println (String.format("total time=%dms, bind=%dms, compile=%dms, translate=%dms, optimize=%dms, eval=%dms\n", 
+                (t1-t0), bindTime/MIL, compileTime/MIL, translateTime/MIL, optimizeTime/MIL, evalTime/MIL));
+        System.out.println (String.format("compile0=%d, compile1=%d\n", compile0/MIL, compile1/MIL));
+    }
+    
+    /*
+     * TODO: Run test cases, replacing the context item with collection().
      * Compare results and timing using Lux with results and timing using Saxon
      * alone fetching files from the file system.
      * 
@@ -163,7 +268,11 @@ public class TestRunner extends RunnerBase {
      * We also need to update Lux so that it optimizes (specifically) the use of collection() via a variable.
      */
     @Test public void testBenchmark () throws Exception {
-        
+        terminateOnException = false;
+        benchmark = true;
+        eval.setEnableLuxOptimization(true);
+        //benchmarkComparison (100, "Basics");
+        benchmarkComparison (50, "PathExpr");
     }
     
 }

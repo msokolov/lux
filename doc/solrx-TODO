@@ -1,0 +1,64 @@
+* implement solrx queries using Jaxen
+consider saxon which provides XPath 2.0? Maybe for version 2...
+** extend BaseXPath and wrap another XPath implementation (eg JDOM, dom4j, etc)
+*** getContext()
+Allow the use of a database collection as a context (all docs for now, but
+allow for extending to a restriction by document query)
+*** selectNodesForContext()
+When passed a database context, do our stuff, otherwise delegate
+** extend DefaultXPathFactory
+We want to: (1) generate a lucene query, and (2) know whether it is exact.
+Wrap all of the exprs, providing an asLuceneQuery(Query) method.  It needs
+to be able to contribute to a query, or not, and also indicate whether it
+is fully evaluated by its contribution; say it returns a boolean. Sibling
+axes could contribute, but only partially, if say we didn't really
+accurately index that info, but we would find docs that have both nodes a
+and b in a::following-sibling:b.  For example, we might only be able to do
+b[../a] without the order constraint, or maybe only /[.//b][.//a].
+*** have to use visitor
+I was intending to wrap the Expr classes as described above, providing my
+own XPathHandler wrapping jaxen's JaxenHandler, but unfortunately BaseXPath
+doesn't provide a constructor that would allow you to do that.
+
+So instead we can just crawl over the parse tree, converting it.
+** execute the query
+If it's exact, simply return the results.  Otherwise, the results must be
+from the same space as the provided context for the query.  In all but one
+of the schemes, we always return whole documents from the Lucene query.  In
+the other case, we may return documents, elements or attributes, and if
+these *are* the results, we're done.
+** process the results if needed
+Then pass each result in succession as a Context to the wrapped XPath
+implementation, and return the combined result set, possibly paginated.
+* PLAN
+Make small steps so we can progress without being overwhelmed, measure each
+step carefully before moving on.
+** ideas
+this doc and xml-indexer.txt
+** infrastructure, tools
+jaxen, solr
+** structure, naming, project shell
+we have a project shell and some preliminary names
+*** package name solrx, org.solrx, (org.) lux, lucx, lucex, lucenex?
+Keep in mind the idea of providing implementations as raw classes w/o solr
+dependencies.
+*** class names falling into place
+** the bare minimum
+*** query translator 
+**** unit tests
+**** as a QueryParserPlugin
+*** indexer 
+**** unit tests
+**** as an UpdateProcessor
+** basic implementation complete 
+*** integration test framework
+loads documents, evaluates query, timings
+** a complete working implementation
+* desiderata
+** XML namespaces
+Don't pollute queries with horrible namespace declarations.  Allow
+namespaces to be declared in configuration only.  Also allow namespace
+support to be disabled, in which case index QNames directly.
+** sorting
+only document order for now; XPath doesn't allow for any other sort order,
+but of course we would like to sort the documents too...

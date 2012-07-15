@@ -68,11 +68,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public PathOptimizer(XmlIndexer indexer) {
         queryStack = new ArrayList<XPathQuery>();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexer.getOptions());
-        push(MATCH_ALL);
         UNINDEXED = XPathQuery.getUnindexedQuery(indexer.getOptions());
         this.indexer = indexer;
-    }
-    
+    }    
 
     /**
      * Prepares an XQuery module for indexed execution against a
@@ -82,6 +80,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @return the optimized query
      */
     public XQuery optimize(XQuery query) {
+        queryStack.clear();
+        push (MATCH_ALL);
         AbstractExpression main = query.getBody();
         // Don't attempt to optimize if no indexes are available, or if the query has no body
         if (main != null && (indexer.getOptions() & XmlIndexer.INDEXES) != 0) {

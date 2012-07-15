@@ -58,6 +58,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     private XPathCompiler xpathCompiler;
     private SaxonBuilder saxonBuilder;
     private SaxonTranslator translator;
+    private PathOptimizer optimizer;
     
     private CachingDocReader docReader;
     
@@ -66,6 +67,8 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     private final Dialect dialect;
     
     private CollectionURIResolver defaultCollectionURIResolver;
+    
+    private boolean enableLuxOptimization = true;
     
     public Saxon(LuxSearcher searcher, XmlIndexer indexer, Dialect dialect) {
         super (searcher, indexer);
@@ -80,7 +83,10 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         processor.registerExtensionFunction(new LuxExists());
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
-        reinitDocReader();
+        if (indexer != null) {
+            optimizer = new PathOptimizer(getIndexer());
+        }
+        invalidateCache();
         this.dialect = dialect;
     }
     
@@ -150,8 +156,10 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + exprString, e);
         }
+        if (! isEnableLuxOptimization()) {
+            return new SaxonExpr (xpath, null);
+        }        
         AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
-        PathOptimizer optimizer = new PathOptimizer(getIndexer());
         AbstractExpression optimizedExpr = optimizer.optimize(expr);
         try {
              xpath = getXPathCompiler().compile(optimizedExpr.toString());
@@ -168,8 +176,10 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
+        if (! isEnableLuxOptimization()) {
+            return new SaxonExpr (xquery, null);
+        }
         XQuery abstractQuery = translator.queryFor (xquery);
-        PathOptimizer optimizer = new PathOptimizer(getIndexer());
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         try {
             xquery = getXQueryCompiler().compile(optimizedQuery.toString());
@@ -255,7 +265,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         }
     }
     
-    private XQueryCompiler getXQueryCompiler () {
+    public XQueryCompiler getXQueryCompiler () {
         if (xqueryCompiler == null) {
             xqueryCompiler = processor.newXQueryCompiler();
             xqueryCompiler.declareNamespace("lux", "lux");
@@ -264,7 +274,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         return xqueryCompiler;
     }
         
-    private XPathCompiler getXPathCompiler () {
+    public XPathCompiler getXPathCompiler () {
         if (xpathCompiler == null) {
             xpathCompiler = processor.newXPathCompiler();
             xpathCompiler.declareNamespace("lux", "lux");
@@ -276,10 +286,10 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     @Override 
     public void setSearcher (LuxSearcher searcher) {
         super.setSearcher(searcher);
-        reinitDocReader();
+        invalidateCache();
     }
 
-    private void reinitDocReader() {
+    public void invalidateCache() {
         if (getSearcher() != null && getIndexer() != null) {
             docReader = new CachingDocReader(getSearcher().getIndexReader(), getBuilder(), getIndexer());
         } else {
@@ -290,7 +300,20 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     @Override 
     public void setIndexer(XmlIndexer indexer) {
         super.setIndexer(indexer);
-        reinitDocReader();
+        invalidateCache();
+        optimizer = new PathOptimizer(getIndexer());
+    }
+
+    public boolean isEnableLuxOptimization() {
+        return enableLuxOptimization;
+    }
+
+    public void setEnableLuxOptimization(boolean enableLuxOptimization) {
+        this.enableLuxOptimization = enableLuxOptimization;
+    }
+
+    public PathOptimizer getOptimizer() {
+        return optimizer;
     }
 
 }

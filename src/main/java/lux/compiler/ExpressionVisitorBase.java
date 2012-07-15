@@ -39,6 +39,16 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     protected AbstractExpression visitDefault (AbstractExpression expr) {
         return expr;
     }
+    
+    protected AbstractExpression visitSubs (AbstractExpression expr) {
+        for (int i = 0; i < expr.getSubs().length; i++) {
+            AbstractExpression sub = expr.getSubs()[i].accept(this);
+            if (sub != expr.getSubs()[i]) {
+                expr.getSubs()[i] = sub;
+            }
+        }
+        return expr;
+    }
 
     @Override
     public AbstractExpression visit(AttributeConstructor attributeConstructor) {
