@@ -48,6 +48,7 @@ public class ResultIterator implements SequenceIterator<Item>{
                 position = -1;
                 current = null;
             } else {
+                long t1 = System.nanoTime();
                 XdmItem doc = docCache.get(docID);
                 Item item = (Item) doc.getUnderlyingValue();
                 // assert documents in order 
@@ -55,7 +56,7 @@ public class ResultIterator implements SequenceIterator<Item>{
                 current = item;
                 ++position;
                 if (stats != null) {
-                    stats.retrievalTime += System.nanoTime() - t;
+                    stats.retrievalTime += System.nanoTime() - t1;
                 }
             }
         } catch (IOException e) {

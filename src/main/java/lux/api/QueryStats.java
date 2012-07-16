@@ -37,6 +37,13 @@ public class QueryStats {
      * time spent retrieving and parsing documents
      */
     public long retrievalTime;
+    
+    public String toString () {
+        return String.format("%s: %dms %d docs, %dms docread", 
+                query == null ? "" : query.substring(0, Math.min(20,query.length())),
+                totalTime/1000000, docCount, retrievalTime/1000000
+                );
+    }
 
 }
 

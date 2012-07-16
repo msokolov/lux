@@ -31,7 +31,7 @@ public class BasicQueryTest {
             ACT, ACT1, ACT2, ACT_CONTENT, ACT_CONTENT1, ACT_SCENE, ACT_SCENE1, ACT_SCENE_CONTENT, ACT_SCENE_CONTENT1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
             ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
             MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
-            LUX_FOO, 
+            LUX_FOO, LINE, 
     };
     
     @Test public void testNoQuery () throws Exception {
@@ -156,6 +156,10 @@ public class BasicQueryTest {
         // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
         // together into a single query
         assertQuery ("/PLAY/(ACT|PERSONAE)/TITLE", 0, ValueType.ELEMENT, Q.PLAY_ACT_OR_PERSONAE_TITLE);
+    }
+    
+    @Test public void testManySmallDocs () throws Exception {
+        assertQuery ("/LINE", 0, ValueType.ELEMENT, Q.LINE);        
     }
 
     @Test @Ignore public void testElementValueNoPath () throws Exception {
@@ -351,6 +355,8 @@ public class BasicQueryTest {
             "(+lux_elt_name:\"TITLE\" +lux_elt_name:\"SPEECH\")" +
             " ((+lux_elt_name:\"TITLE\" +lux_elt_name:\"SCENE\")" +
             " (+lux_elt_name:\"TITLE\" +lux_elt_name:\"ACT\"))";
+        case LINE:
+            return "lux:elt_name:\"LINE\"";
         case ACT:
         case ACT1:
         case ACT2:
@@ -414,6 +420,8 @@ public class BasicQueryTest {
                   "</BooleanQuery>" +
                   "</Clause></BooleanQuery>" +
                 "</Clause></BooleanQuery>";
+        case LINE:
+            return "<TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery>";
         case ACT:
         case ACT1:
         case ACT2:
