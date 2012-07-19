@@ -113,11 +113,16 @@ public class SearchQueryTest extends BasicQueryTest {
         
         results = evalQuery(query, saxon);
         System.out.println ("lux retrieved " + results.size() + " results from " + saxon.getQueryStats());
-        System.out.println (String.format(" %d/%d cache hits/misses", saxon.getDocReader().getCacheHits(), saxon.getDocReader().getCacheMisses()));
+        printDocReaderStats(saxon);
         baselineResult = evalBaseline(query, saxon);
         System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + saxon.getQueryStats());
-        System.out.println (String.format(" %d/%d cache hits/misses", saxon.getDocReader().getCacheHits(), saxon.getDocReader().getCacheMisses()));
+        printDocReaderStats(saxon);
+    }
 
+    private void printDocReaderStats(Saxon saxon) {
+        System.out.println (String.format(" %d/%d cache hits/misses, %dms building docs", 
+                saxon.getDocReader().getCacheHits(), saxon.getDocReader().getCacheMisses(),
+                saxon.getDocReader().getBuildTime()/1000000));
     }
 
     private XdmValue evalBaseline(String xpath, Saxon saxon) {
