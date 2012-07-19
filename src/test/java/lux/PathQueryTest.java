@@ -10,6 +10,10 @@ public class PathQueryTest extends BasicQueryTest {
         case ATTR: return "<SpanTerm fieldName=\"lux_path\">@attr</SpanTerm>";
         case SCENE: return "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>";
         case ACT: return "<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>";
+        case LINE: return "<SpanNear inOrder=\"true\" slop=\"0\">" +
+                "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+                "<SpanTerm fieldName=\"lux_path\">LINE</SpanTerm>" +
+                "</SpanNear>";
         case ACT_CONTENT:
             return "<BooleanQuery><Clause occurs=\"must\">" +
             		"<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +

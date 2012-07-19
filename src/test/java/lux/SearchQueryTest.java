@@ -31,7 +31,7 @@ public class SearchQueryTest extends BasicQueryTest {
     private static IndexTestSupport index;
     private static long elapsed=0;
     private static long elapsedBaseline=0;
-    private static int repeatCount=10;
+    private static int repeatCount=1;
     
     @BeforeClass
     public static void setup () throws Exception {

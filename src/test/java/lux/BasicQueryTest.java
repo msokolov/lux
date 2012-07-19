@@ -421,7 +421,7 @@ public class BasicQueryTest {
                   "</Clause></BooleanQuery>" +
                 "</Clause></BooleanQuery>";
         case LINE:
-            return "<TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery>";
+            return "<TermsQuery fieldName=\"lux_elt_name\">LINE</TermsQuery>";
         case ACT:
         case ACT1:
         case ACT2:
