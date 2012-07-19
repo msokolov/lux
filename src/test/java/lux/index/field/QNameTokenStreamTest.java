@@ -34,7 +34,7 @@ public class QNameTokenStreamTest {
     @Test
     public void testElementTokenStream() throws Exception {
 
-        setup(ElementTokenStream.class);
+        setup("lux/reader-test.xml", ElementTokenStream.class);
         
         assertToken("title:test", 1);
         assertToken("test:test", 0);
@@ -60,7 +60,7 @@ public class QNameTokenStreamTest {
     
     @Test
     public void testTextTokenStream() throws Exception {
-        setup(XmlTextTokenStream.class);
+        setup("lux/reader-test.xml", XmlTextTokenStream.class);
         
         assertToken("test", 1);
         assertToken("0", 1);
@@ -78,14 +78,28 @@ public class QNameTokenStreamTest {
     
     @Test
     public void testAttributeTokenStream() throws Exception {
-        setup(AttributeTokenStream.class);        
+        setup("lux/reader-test.xml", AttributeTokenStream.class);
         assertTokenNoOffsets("id:test", 1);
         assertTokenNoOffsets("id:2", 1);
         assertFalse (tokenStream.incrementToken());
     }
+
+    @Test
+    public void testNoTextDocument () throws Exception {
+        setup("lux/no-text.xml", AttributeTokenStream.class);
+        assertTokenNoOffsets("id:1", 1);
+        assertTokenNoOffsets("id:2", 1);
+        assertFalse (tokenStream.incrementToken());
+
+        setup("lux/no-text.xml", ElementTokenStream.class);
+        assertFalse (tokenStream.incrementToken());
+
+        setup("lux/no-text.xml", XmlTextTokenStream.class);
+        assertFalse (tokenStream.incrementToken());
+    }
     
-    private void setup(Class<?> tokenStreamClass) throws Exception {
-        byte[] input = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
+    private void setup(String filename, Class<?> tokenStreamClass) throws Exception {
+        byte[] input = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream(filename));
         inputString = new String (input, "utf-8");
         Processor proc = new Processor(false);
         SaxonDocBuilder builder = new SaxonDocBuilder(proc.newDocumentBuilder(), new Offsets());

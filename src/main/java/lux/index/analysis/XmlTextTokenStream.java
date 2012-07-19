@@ -17,41 +17,12 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
 
     public XmlTextTokenStream(XdmNode doc, Offsets offsets) {
         super(doc, offsets);
-        contentIter = new TextIterator(doc);
+        contentIter = new ContentIterator(doc);
         wrapped = new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, tokenizer);
     }
 
     @Override
     void updateNodeAtts() {
-    }
-
-    /**
-     * Iterates over //text(); all descendant text nodes
-     */
-    private static class TextIterator implements Iterator<XdmNode> {
-
-        private XdmSequenceIterator descendants;
-
-        protected TextIterator(XdmNode node) {
-            descendants = node.axisIterator(Axis.DESCENDANT);
-        }
-
-        public boolean hasNext() {
-            return descendants.hasNext();
-        }
-
-        public XdmNode next() {
-            while (descendants.hasNext()) {
-                XdmNode node = (XdmNode) descendants.next();
-                if (node.getNodeKind() == XdmNodeKind.TEXT) {
-                    return node;
-                }
-            }
-            return null;
-        }
-
-        public void remove() {
-        }
     }
 
 }

@@ -29,7 +29,7 @@ b) Add the update processor configuration, at the top level in the config file:
          Lux.
      --> 
     <updateRequestProcessorChain name="lux-update-chain">
-       <processor class="lux.solr.XmlUpdateProcessor">
+       <processor class="lux.solr.LuxUpdateProcessor">
          <!--   <str name="xmlFieldName">lux_xml</str> -->
          <!--   <str name="uriFieldName">lux_uri</str> -->
        </processor>
@@ -43,7 +43,7 @@ the uriFieldName to "uri"
 c) Add the Lux Saxon search component and XQuery request handler
 configuration, at the top level in the config:
 
-  <searchComponent name="saxon" class="lux.saxon.SaxonSearchComponent">
+  <searchComponent name="saxon" class="lux.saxon.XQuerySearchComponent">
     <!--   <str name="xmlFieldName">lux_xml</str> -->
     <!--   <str name="uriFieldName">lux_uri</str> -->
   </searchComponent>

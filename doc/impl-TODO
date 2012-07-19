@@ -14,8 +14,10 @@ Saxonica to make our extensions compatible with Saxon-PE/EE so we can use
 Ptree.
 * walk through installation in ifpress
 Make sure it's easy to configure.  Check compatibility with pub factory usage
-** download jar
-from luxproject.net?  I guess we need a web site or something...
+** download jar and dependencies
+from luxproject.net?  I guess we need a web site or something...  We need
+to create an install bundle that includes woodstox/stax2, saxon-he,
+lucene-queryparser, lucene-xml-query-parser.
 ** place jar in solr/lib folder
 make this a standard part of ifactory's installations
 ** configure solr plugins
