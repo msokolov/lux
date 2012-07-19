@@ -46,8 +46,4 @@ in house use, but don't release).  Actually this proves to be difficult
 without totally taking over Saxon.
 ** TinyTree in ifpress
 ** check whether our code works w/9.1 (Saxon B) ?
-** saxon-PE/HE
-evaluate perf improvements
-*** better optimization?
-especially collapsing document-sorting expressions
 * Highlighting
