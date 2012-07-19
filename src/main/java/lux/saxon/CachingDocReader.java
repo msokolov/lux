@@ -34,6 +34,7 @@ public class CachingDocReader {
     private final SaxonBuilder builder;
     private int cacheHits=0;
     private int cacheMisses=0;
+    private long buildTime=0;
     
     public CachingDocReader (IndexReader reader, SaxonBuilder builder, XmlIndexer indexer) {
         this.reader = reader;
@@ -56,7 +57,9 @@ public class CachingDocReader {
         document = reader.document(docID, fieldSelector);
         String xml = document.get(xmlFieldName);
         String uri = document.get(uriFieldName);
+        long t0 = System.nanoTime();
         XdmNode node = (XdmNode) builder.build(new StringReader (xml), uri, docID);
+        buildTime += (System.nanoTime() - t0);
         if (node != null) {
             cache.put(docID, node);
         }
@@ -68,12 +71,25 @@ public class CachingDocReader {
         return cache.containsKey(docID);
     }
 
+    /**
+     * @return the number of items retrieved from the cache
+     */
     public int getCacheHits() {
         return cacheHits;
     }
-
+    /**
+     * @return the number of items retrieved and added to the cache
+     */
     public int getCacheMisses() {
         return cacheMisses;
+    }
+    
+    /**
+     * @return the total time spent building documents (in nanoseconds).  This includes time spent
+     * parsing and constructing a Saxon NodeInfo/XdmNode.
+     */
+    public long getBuildTime() {
+        return buildTime;
     }
 
     public void clear() {
