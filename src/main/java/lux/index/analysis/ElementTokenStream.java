@@ -1,7 +1,5 @@
 package lux.index.analysis;
 
-import java.util.Iterator;
-
 import lux.index.XmlIndexer;
 import lux.index.attribute.QNameAttribute;
 import net.sf.saxon.expr.parser.Token;

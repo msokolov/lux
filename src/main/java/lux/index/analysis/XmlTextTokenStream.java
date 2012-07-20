@@ -1,12 +1,7 @@
 package lux.index.analysis;
 
-import java.util.Iterator;
-
 import lux.index.XmlIndexer;
-import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.XdmNode;
-import net.sf.saxon.s9api.XdmNodeKind;
-import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.lucene.analysis.LowerCaseFilter;
 

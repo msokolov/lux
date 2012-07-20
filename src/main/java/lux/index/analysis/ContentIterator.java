@@ -2,9 +2,7 @@ package lux.index.analysis;
 
 import java.util.Iterator;
 
-import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.s9api.Axis;
-import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
