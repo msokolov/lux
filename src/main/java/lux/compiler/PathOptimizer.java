@@ -330,7 +330,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // see if the function args can be converted to searches.
         optimizeSubExpressions(funcall, 0);
         Occur occur;
-        if (! (name.getNamespaceURI().equals (FunCall.FN_NAMESPACE) || name.getNamespaceURI().equals(FunCall.XS_NAMESPACE))) {
+        if (! (name.getNamespaceURI().equals (FunCall.FN_NAMESPACE) ||
+                name.getNamespaceURI().equals(FunCall.XS_NAMESPACE) ||
+                name.getNamespaceURI().equals(FunCall.LUX_NAMESPACE))) {
             // We know nothing about this function; it's best 
             // not to attempt any optimization, so we will throw away any filters coming from the
             // function arguments
@@ -383,6 +385,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (subs.length == 1 && !subs[0].isAbsolute()) {
             return funcall;
         }
+        
+        QName fname = funcall.getName();
+        
+        // If this function's single argument is a call to lux:search, get its query.  We may remove the call
+        // to lux:search if this function can perform the search itself without retrieving documents
+        AbstractExpression searchArg = null;
+        if (subs.length == 1 && subs[0].getType() == Type.FUNCTION_CALL && ((FunCall)subs[0]).getName().equals(FunCall.LUX_SEARCH)) {
+            if (fname.equals(FunCall.FN_COUNT) || fname.equals(FunCall.FN_EXISTS) || fname.equals(FunCall.FN_EMPTY)) {
+                searchArg = subs[0].getSubs()[0];
+            }
+        }
+
         XPathQuery query = pop();
         // can only use these function optimizations when we are sure that its argument expression
         // is properly indexed - MINIMAL here guarantees that every document matching the query will 
@@ -391,22 +405,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
-            if (funcall.getName().equals(FunCall.FN_COUNT) && query.getResultType().is(ValueType.DOCUMENT)) {
+            if (fname.equals(FunCall.FN_COUNT) && query.getResultType().is(ValueType.DOCUMENT)) {
                 functionFacts = XPathQuery.COUNTING;
                 returnType = ValueType.INT;
                 qname = FunCall.LUX_COUNT;
             } 
-            else if (funcall.getName().equals(FunCall.FN_EXISTS)) {
+            else if (fname.equals(FunCall.FN_EXISTS)) {
                 functionFacts = XPathQuery.BOOLEAN_TRUE;
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_EXISTS;
             }
-            else if (funcall.getName().equals(FunCall.FN_EMPTY)) {
+            else if (fname.equals(FunCall.FN_EMPTY)) {
                 functionFacts = XPathQuery.BOOLEAN_FALSE;
                 returnType = ValueType.BOOLEAN_FALSE;
                 qname = FunCall.LUX_EXISTS;
             }
-            else if (funcall.getName().equals(FunCall.FN_COLLECTION)) {
+            else if (fname.equals(FunCall.FN_COLLECTION)) {
                 // We ignore any arguments to collection()
                 push (MATCH_ALL);
                 return new Root();
@@ -417,11 +431,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 qname = FunCall.LUX_SEARCH;
                 */
             }
-            else if (funcall.getName().equals(FunCall.FN_CONTAINS)) {
+            else if (fname.equals(FunCall.FN_CONTAINS)) {
+                // FIXME - this is overly aggressive.  contains() doesn't have the same semantics
+                // as full-text search; eg it does no analysis so it
+                // matches more restrictively than our search function does
                 if (! subs[0].isAbsolute()) {
-                    // FIXME - this is overly aggressive.  contains() doesn't have the same semantics
-                    // as full-text search; eg it does no analysis so it
-                    // matches more restrictively than our search function does
                     // don't query if the sequence arg isn't absolute??
                     // if the arg is relative, presumably the contains is in a predicate somewhere
                     // and may have been optimized there?
@@ -433,6 +447,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 qname = FunCall.LUX_SEARCH;
             }
             if (qname != null) {
+                // We will insert a searching function. apply no restrictions to the enclosing scope:
+                push (MATCH_ALL);
+                if (searchArg != null) {
+                    // create a searching function call using the argument to the enclosed lux:search call
+                    return new FunCall (qname, returnType, searchArg, new LiteralExpression (XPathQuery.MINIMAL));
+                }
                 long facts;
                 if (query.isImmutable()) {
                     facts = functionFacts | XPathQuery.MINIMAL;
@@ -441,19 +461,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     query.setFact(functionFacts, true);
                     facts = query.getFacts();
                 }
-                // apply no restrictions to the enclosing scope:
-                push (MATCH_ALL);
                 return createSearchCall(qname, query, facts);
             }
-        }
-        // No optimization, but indicate that this function returns an int?
-        // FIXME: this is just wrong? It must have come from some random test case, 
-        // but isn't generally true.  If we really need it, move this logic up to the caller - it has nothing
-        // to do with optimizing this funcall.
-        if (query.isImmutable()) {
-            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), ValueType.INT, indexer.getOptions());
-        } else {
-            query.setType(ValueType.INT);
         }
         push (query);
         return funcall;

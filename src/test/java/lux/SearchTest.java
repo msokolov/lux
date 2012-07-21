@@ -56,6 +56,12 @@ public class SearchTest {
     public void testCountAllDocs () throws Exception {
         ResultSet<?> results = assertSearch ("count(/)", QUERY_NO_DOCS, totalDocs);
         assertEquals (String.valueOf(totalDocs), results.iterator().next().toString());
+
+        results = assertSearch ("count(collection())", QUERY_NO_DOCS, totalDocs);
+        assertEquals (String.valueOf(totalDocs), results.iterator().next().toString());
+
+        results = assertSearch ("count(lux:search('*:*'))", QUERY_NO_DOCS, totalDocs);
+        assertEquals (String.valueOf(totalDocs), results.iterator().next().toString());
     }
     
     @Test
@@ -369,8 +375,8 @@ public class SearchTest {
     }
     
     @Test public void testLuxSearch () throws Exception {
-        assertSearch ("5", "count(lux:search('\"holla bernardo\"'))", null, 5, 5);
-        assertSearch ("5", "count(lux:search('<LINE:\"holla bernardo\"'))", null, 5, 5);
+        assertSearch ("5", "count(lux:search('\"holla bernardo\"'))", null, 5, 0);
+        assertSearch ("5", "count(lux:search('<LINE:\"holla bernardo\"'))", null, 5, 0);
         try {
             assertSearch (null, "lux:search(1,2,3)", null, null, null);
             assertTrue ("expected exception", false);
@@ -383,7 +389,7 @@ public class SearchTest {
             assertSearch (null, "lux:search(':::')", null, null, null);
             assertTrue ("expected exception", false);
         } catch (ParseException e) { }
-        assertSearch ("65", "lux:count(text{'bernardo'})", null, null, null);
+        assertSearch ("65", "lux:count(text{'bernardo'})", null, 65, 0);
     }
 
     @Test 

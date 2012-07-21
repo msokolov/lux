@@ -104,7 +104,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         XPATH_2,
         XQUERY_1
     }
-
+    
     /**
      * implements URIResolver so as to resolve uris in service of fn:doc()
      */

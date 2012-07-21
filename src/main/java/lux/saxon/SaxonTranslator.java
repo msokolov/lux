@@ -658,7 +658,8 @@ public class SaxonTranslator {
         }
         Entry entry = StandardFunction.getFunction(funcall.getFunctionName().getDisplayName(), aargs.length);
         ValueType returnType = entry != null ? valueTypeForItemType (entry.itemType) : ValueType.VALUE;
-        if (functionEqualsBuiltin(funcall, "root")) 
+        QName fnQName = qnameFor (funcall.getFunctionName());
+        if (functionEqualsBuiltin(funcall, "root") || fnQName.equals(FunCall.LUX_SEARCH)) 
         {
             // root() may return an element when executed in the context of a fragment
             // However for the purposes of our optimizer, we want to know if it is returning

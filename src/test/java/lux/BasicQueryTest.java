@@ -210,7 +210,8 @@ public class BasicQueryTest {
         assertQuery ("count(//ACT)", XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
         assertQuery ("count(//ACT/root())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
         assertQuery ("count(//ACT/ancestor::document-node())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
-        assertQuery ("count(//ACT/SCENE/ancestor::document-node())", 0, ValueType.ATOMIC, Q.ACT_SCENE);
+        // FIXME: the optimizer should mark this as minimal/counting too now that we have path queries
+        assertQuery ("count(//ACT/SCENE/ancestor::document-node())", XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }
     
     @Test public void testExistence() throws Exception {
