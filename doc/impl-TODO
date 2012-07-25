@@ -1,3 +1,10 @@
+* diagnostics
+** error reporting
+when there's a syntax or runtime error, you get a useless stack trace on
+the client side.
+* optimizations
+count (//pageNum[.="835"]/root()) retrieves a bunch of docs?? - not
+count-optimized?
 * document storage optimization
 We considered a lazy-parsed document model where we store the serialized
 string, and only parse and construct a Saxon TinyTree as needed.  This
@@ -27,6 +34,8 @@ config file.
 Configure lux update processor to use "uri" and "xml_text" as its uri and
 xml fields.  Test by adding to ifpress-solr/solr, config and run
 ifpress-solr tests.  And then perform some searches!
+** enable query stats logging
+log4j config recommendation
 *** field sharing
 We are sharing XML storage - great!  We could share full text index as
 well, and ultimately we should only need to store one of these fields.  For
@@ -88,6 +97,13 @@ thumb seems to be that you can expect compilation time to double.  In XQTS,
 compilation time dominates the test (after simply loading test data).
 
 * Bugs
+** from orr-dev:
+(07/25/2012 03:28:36 PM) Ryan Pollock: for $doc in /ifp:doc[@id='oxfordhb-9780195390032-e-031']/ifp;body
+return $doc
+(07/25/2012 03:28:37 PM) Ryan Pollock: bug!
+(07/25/2012 03:30:46 PM) Ryan Pollock: for $doc in /ifp:doc[@id='oxfordhb-9780195390032-e-031']
+return $doc/ifp:body
+(07/25/2012 03:39:13 PM) Ryan Pollock: lux:search("*:*")[1]
 ** contain() is over-optimized
 We replace it with a search call, but search is *analyzed* (so case is
 ignored, etc).
