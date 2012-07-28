@@ -5,11 +5,12 @@
   <version>0.3</version>
   <dependencies>
     <dependency>
-        <groupId>net.sf.saxon</groupId>
+        <groupId>saxon</groupId>
         <artifactId>saxon</artifactId>
-        <version>9.4.0</version>
-        <scope>system</scope>
+        <version>9.4.0.3.L</version>
+        <!-- 
         <systemPath>${project.basedir}/lib/saxon9he.jar</systemPath>
+        -->
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
