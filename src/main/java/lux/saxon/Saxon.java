@@ -42,6 +42,8 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TermQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of a lux query/expression evaluator using Saxon
@@ -70,6 +72,8 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     
     private boolean enableLuxOptimization = true;
     
+    private Logger logger;
+    
     public Saxon(LuxSearcher searcher, XmlIndexer indexer, Dialect dialect) {
         super (searcher, indexer);
         config = new Config(this);
@@ -88,6 +92,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         }
         invalidateCache();
         this.dialect = dialect;
+        logger = LoggerFactory.getLogger(getClass());
     }
     
     /**
@@ -166,6 +171,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + optimizedExpr.toString(), e);
         }
+        logger.debug("optimized xpath: " + optimizedExpr.toString());
         return new SaxonExpr(xpath, optimizedExpr);
     }
     
@@ -186,6 +192,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
+        logger.debug("optimized xquery: " + optimizedQuery.toString());
         return new SaxonExpr(xquery, optimizedQuery);
     }
 
@@ -227,10 +234,22 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
             documentBuilder = processor.newDocumentBuilder();
             documentBuilder.setDTDValidation(false);
         }
+        
         // TODO: change to setNextDocID() followed by call to standard build()
         public XdmNode build (Reader reader, String uri, int docID) {
             config.getDocumentNumberAllocator().setNextDocID(docID);
             XdmNode xdmNode = (XdmNode) build(reader, uri);
+            return xdmNode;
+        }
+
+        public XdmNode build (TinyBinarySource source, int docID) {
+            config.getDocumentNumberAllocator().setNextDocID(docID);
+            XdmNode xdmNode;
+            try {
+                xdmNode = (XdmNode) documentBuilder.build(source);
+            } catch (SaxonApiException e) {
+                throw new LuxException(e);
+            }
             return xdmNode;
         }
 
