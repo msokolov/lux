@@ -12,6 +12,14 @@ public class LetClause extends FLWORClause {
         this.var = var;
         this.seq = seq;
     }
+    
+    public AbstractExpression getSequence() {
+        return seq;
+    }
+    
+    public void setSequence (AbstractExpression seq) {
+        this.seq = seq;
+    }
 
     @Override
     public void toString(StringBuilder buf) {

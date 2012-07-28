@@ -8,6 +8,10 @@ eg lux:search("phrase to find") will match documents containing the phrase.
 eg //foo["phrase to find"] would match <foo><a>phrase<a> to <b>find</b></foo>
 *** Note: elements introduce token boundaries
 eg //foo["phrase to find"] would match <foo><a>phrase<a>to<b>find</b></foo>
+* storage
+TinyBinary yields 5-20x speedup in document read time.  Documents
+are *larger* though - about twice as big, even using utf-8 encoding for the
+text.  Apparently 19 bytes per node is expensive.
 * optimizations
 ** basic indexing support: qname retrieval speeds queries when the names are selective
 ** count() is optimized for a special case:

@@ -391,6 +391,16 @@ public class SearchTest {
         } catch (ParseException e) { }
         assertSearch ("65", "lux:count(text{'bernardo'})", null, 65, 0);
     }
+    
+    @Test
+    public void testBugFix0018() throws Exception {
+        assertSearch ("MARCELLUS", "for $doc in /SPEECH[LINE='Holla! Bernardo!'] return $doc/SPEAKER/string()", null, 1, 1);
+    }
+    
+    @Test 
+    public void testBugFix0018b() throws Exception {
+        assertSearch ("<TITLE>The Tragedy of Hamlet, Prince of Denmark</TITLE>\n", "lux:search(\"*:*\")[2]", null, 2, 2);
+    }
 
     @Test 
     public void testTrailingStringCall () throws Exception {

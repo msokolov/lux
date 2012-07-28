@@ -1,9 +1,14 @@
 package lux.xquery;
 
+import lux.xpath.AbstractExpression;
 import lux.xpath.Visitable;
 
 
 public abstract class FLWORClause implements Visitable {
+    
+    public abstract AbstractExpression getSequence ();
+    
+    public abstract void setSequence (AbstractExpression seq);
     
     public abstract void toString (StringBuilder buf);
 

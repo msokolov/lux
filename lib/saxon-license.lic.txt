@@ -1,0 +1,18 @@
+﻿Licensor=Saxonica
+Licensee=Michael Sokolov
+Company=self-employed
+Email=sokolov@falutin.net
+Edition=EE
+SAT=yes
+SAQ=yes
+SAV=yes
+Issued=2012-04-29
+Series=M
+Serial=M009017
+User=P0001
+Evaluation=yes
+Expiration=2012-05-29
+UpgradeDays=30
+MaintenanceDays=30
+
+Signature=302C02140F097BF2B81976709F01D3650B7CECEE1C512AA802140B768B332E8A70A52E1ED9180FB04051E2EDE515

@@ -15,10 +15,10 @@ actually need to execute any xquery at all, there'd be no benefit.
 We also considered creating our own document model and wrapping it as a
 NodeInfo for integration w/Saxon.  But this is a huge duplicative effort.
 
-In the end, the best solution seems to be: (1) copy and extend TinyTree
-with our own binary storage scheme, while at the same time working with
-Saxonica to make our extensions compatible with Saxon-PE/EE so we can use
-Ptree.
+In the end, the best solution might be: (1) copy and extend TinyTree with
+our own binary storage scheme, while at the same time working with Saxonica
+to make our extensions compatible with Saxon-PE/EE so we can use Ptree.
+
 * walk through installation in ifpress
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar and dependencies

@@ -10,6 +10,14 @@ public class WhereClause extends FLWORClause {
     public WhereClause(AbstractExpression predicate) {
         this.predicate = predicate;
     }
+    
+    public AbstractExpression getSequence() {
+        return predicate;
+    }
+    
+    public void setSequence (AbstractExpression seq) {
+        this.predicate = seq;
+    }
 
     @Override
     public void toString(StringBuilder buf) {

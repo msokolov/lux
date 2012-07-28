@@ -29,6 +29,7 @@ import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
 import lux.xquery.FLWOR;
+import lux.xquery.FLWORClause;
 import lux.xquery.Variable;
 import lux.xquery.XQuery;
 
@@ -144,7 +145,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * 
      * @param expr an expression
      * @param facts assertions about the search to be injected, if any.  These are or-ed with 
-     * facts found in the search query.
+     * facts found in the search query. In fact we always pass 0 here?  So TODO: nuke facts.
      */
     protected void optimizeSubExpressions(AbstractExpression expr, int facts) {
         AbstractExpression[] subs = expr.getSubs();
@@ -698,10 +699,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(FLWOR flwor) {
-        for (int i = 0; i < flwor.getClauses().length; i++) {
-            pop();
+        flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0, 0);
+        // combine any constraint from the return clause with the constraint from the last
+        // for, let, or where clause
+        int length = flwor.getClauses().length;
+        for (int i = 0; i < length; i++) {
+            // queries are pushed in order, so the first is deepest
+            combineTopQueries(2, Occur.MUST);
+            FLWORClause clause = flwor.getClauses()[length - i - 1];
+            AbstractExpression seq = clause.getSequence();
+            clause.setSequence(optimizeExpression(seq, 0, 0));
         }
-        return visitDefault (flwor);
+        return flwor;
     }
 
 }

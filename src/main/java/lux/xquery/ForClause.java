@@ -20,6 +20,14 @@ public class ForClause extends FLWORClause {
         this.pos = pos;
         this.seq = seq;
     }
+    
+    public AbstractExpression getSequence() {
+        return seq;
+    }
+    
+    public void setSequence (AbstractExpression seq) {
+        this.seq = seq;
+    }
 
     @Override
     public void toString(StringBuilder buf) {

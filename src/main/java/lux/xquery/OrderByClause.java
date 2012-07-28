@@ -2,6 +2,7 @@ package lux.xquery;
 
 import lux.compiler.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
+import lux.xpath.LiteralExpression;
 
 public class OrderByClause extends FLWORClause {
 
@@ -9,6 +10,13 @@ public class OrderByClause extends FLWORClause {
     
     public OrderByClause(SortKey[] sortKeys) {
         this.sortKeys = sortKeys;
+    }
+    
+    public AbstractExpression getSequence() {
+        return LiteralExpression.EMPTY;
+    }
+    
+    public void setSequence (AbstractExpression seq) {
     }
 
     @Override
