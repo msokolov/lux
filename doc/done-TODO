@@ -12,6 +12,59 @@ eg //foo["phrase to find"] would match <foo><a>phrase<a>to<b>find</b></foo>
 TinyBinary yields 5-20x speedup in document read time.  Documents
 are *larger* though - about twice as big, even using utf-8 encoding for the
 text.  Apparently 19 bytes per node is expensive.
+** test run
+Original size=361 bytes, 'tiny' binary size=833 bytes
+DocBuilder: 907ms; TinyBinary: 116ms
+Original size=361 bytes, 'tiny' binary size=731 bytes
+DocBuilder: 663ms; TinyBinary: 55ms
+Original size=361 bytes, 'tiny' binary size=833 bytes
+DocBuilder: 597ms; TinyBinary: 18ms
+Original size=361 bytes, 'tiny' binary size=731 bytes
+DocBuilder: 530ms; TinyBinary: 21ms
+Original size=288815 bytes, 'tiny' binary size=730310 bytes
+DocBuilder: 6987ms; TinyBinary: 1852ms
+Original size=288815 bytes, 'tiny' binary size=559768 bytes
+DocBuilder: 6643ms; TinyBinary: 1205ms
+** test w/VInt encoding
+Original size=361 bytes, 'tiny' binary size=674 bytes
+DocBuilder: 746ms; TinyBinary: 103ms
+Original size=361 bytes, 'tiny' binary size=572 bytes
+DocBuilder: 600ms; TinyBinary: 60ms
+Original size=361 bytes, 'tiny' binary size=674 bytes
+DocBuilder: 393ms; TinyBinary: 17ms
+Original size=361 bytes, 'tiny' binary size=572 bytes
+DocBuilder: 332ms; TinyBinary: 20ms
+Original size=288815 bytes, 'tiny' binary size=645259 bytes
+DocBuilder: 6520ms; TinyBinary: 2291ms
+Original size=288815 bytes, 'tiny' binary size=474717 bytes
+DocBuilder: 6349ms; TinyBinary: 1873ms
+** test w/VInt and alpha-delta encoding
+Original size=361 bytes, 'tiny' binary size=662 bytes
+DocBuilder: 729ms; TinyBinary: 94ms
+Original size=361 bytes, 'tiny' binary size=560 bytes
+DocBuilder: 572ms; TinyBinary: 58ms
+Original size=361 bytes, 'tiny' binary size=662 bytes
+DocBuilder: 376ms; TinyBinary: 17ms
+Original size=361 bytes, 'tiny' binary size=560 bytes
+DocBuilder: 318ms; TinyBinary: 20ms
+Original size=288815 bytes, 'tiny' binary size=608309 bytes
+DocBuilder: 6454ms; TinyBinary: 2172ms
+Original size=288815 bytes, 'tiny' binary size=437767 bytes
+DocBuilder: 6239ms; TinyBinary: 1658ms
+** test w/beta, namespace coding, utf-8 for strings
+Original size=361 bytes, 'tiny' binary size=567 bytes
+DocBuilder: 943ms; TinyBinary: 121ms
+Original size=361 bytes, 'tiny' binary size=390 bytes
+DocBuilder: 637ms; TinyBinary: 127ms
+Original size=361 bytes, 'tiny' binary size=567 bytes
+DocBuilder: 488ms; TinyBinary: 20ms
+Original size=361 bytes, 'tiny' binary size=390 bytes
+DocBuilder: 437ms; TinyBinary: 25ms
+Original size=288815 bytes, 'tiny' binary size=512618 bytes
+DocBuilder: 8215ms; TinyBinary: 2512ms
+Original size=288815 bytes, 'tiny' binary size=341947 bytes
+DocBuilder: 8074ms; TinyBinary: 1677ms
+
 * optimizations
 ** basic indexing support: qname retrieval speeds queries when the names are selective
 ** count() is optimized for a special case:

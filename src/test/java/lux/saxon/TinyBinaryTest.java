@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import net.sf.saxon.Configuration;
@@ -49,7 +50,15 @@ public class TinyBinaryTest {
         assertRoundTrip("lux/hamlet.xml", "utf-8");
     }
     
-    @Test 
+    @Test
+    public void testOnce() throws SaxonApiException, XPathException, IOException {
+        processor = new Processor(false);
+        builder = processor.newDocumentBuilder();
+        // try building a TinyBinary and recreating a tree from that
+        assertRoundTrip("lux/reader-test.xml", "utf-8");
+    }
+    
+    @Test @Ignore
     public void testBenchmark () throws IOException, SaxonApiException {
         processor = new Processor(false);
         builder = processor.newDocumentBuilder();
@@ -59,8 +68,7 @@ public class TinyBinaryTest {
         doBenchmark("lux/reader-test.xml", "utf-8", 1000);
         doBenchmark("lux/hamlet.xml", null, 1000);
         doBenchmark("lux/hamlet.xml", "utf-8", 1000);
-    }
-    
+    }    
     
     private void doBenchmark (String docpath, String charsetName, int iterations) throws IOException, SaxonApiException {
         InputStream in = SearchTest.class.getClassLoader().getResourceAsStream(docpath);
