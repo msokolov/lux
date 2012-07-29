@@ -550,7 +550,8 @@ public class TinyBinary {
     /**
      * FIXME: lurking bug here for Chinese text, say, since we allocate a buffer 
      * based on an assumption that 
-     * chars will be 2 bytes on average, and this could be badly wrong.
+     * chars will be 2 bytes on average, and this could be badly wrong.  We should allocate 
+     * smaller (assume 1 byte per char) and grow as needed.
      * @param tree a Saxon TinyTree 
      * @return an estimate of the size required to store the tree in TinyBinary format
      */
