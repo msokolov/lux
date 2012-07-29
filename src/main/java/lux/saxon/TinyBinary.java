@@ -3,7 +3,6 @@ package lux.saxon;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -27,34 +26,6 @@ import org.apache.lucene.store.ByteArrayDataOutput;
 // TODO: baseURI
 public class TinyBinary {
 
-    /* TinyDocumentImpl:
-     * 
-    private String baseURI;
-    
-    TinyBinary layout:
-    4 bytes int charBufferSize; // size, in chars, of char buffer
-    4 bytes int commentBufferSize; // size, in chars, of comment buffer
-    4 bytes int numberOfNodes;
-    4 bytes int numberOfAttributes;
-    4 bytes int numberOfNamespaceDecls;
-    4 bytes int numberOfNames;
-    4 bytes int numberOfNamespaces;
-    4 bytes int numberOfAttValues;
-    1 * numberOfNodes bytes byte[] nodeKind;
-    2 * numberOfNodes bytes short[] depth;
-    4 * numberOfNodes bytes int[] next;
-    4 * numberOfNodes bytes int[] alpha;
-    4 * numberOfNodes bytes int[] beta;
-    4 * numberOfNodes bytes int[] nameCode;
-    4 * numberOfAttributes bytes int[] attParent;
-    4 * numberOfAttributes bytes int[] attNameCode;
-    4 * numberOfNamespaces bytes int[] namespaceParent;
-    4 * numberOfNamespaces bytes int[] namespaces;
-    names - numberOfNames strings (16 bit count followed by count 16-bit chars)
-    namespaces - number of namespaces strings
-    attValues - number of (distinct) attValues strings
-     */
-    
     private ByteBuffer bytes;
     private int charBufferLength;
     private int commentBufferLength;
@@ -120,75 +91,22 @@ public class TinyBinary {
         
         bytes.get(nodeKind);
 
-        int pos = bytes.position();
-        // fill the buffers
-        // IntBuffer ints = bytes.asIntBuffer();
-        // ints.get(next);
         readVInts(bytes, next, nodeCount);
-        // System.out.println ("next[]: " + (bytes.position() - pos));
-        pos = bytes.position();
-        // ints.get(alpha);
-        // readVInts(bytes, alpha, nodeCount);
         readAlpha (bytes, alpha, nodeKind, nodeCount);
-        // System.out.println ("alpha[]: " + (bytes.position() - pos));
-        pos = bytes.position();
-        
-        // ints.get(beta);
-        // readVInts (bytes, beta, nodeCount);
         readBeta (bytes, beta, nodeKind, nodeCount);
-        // System.out.println ("beta[]: " + (bytes.position() - pos));
-        pos = bytes.position();
-        // System.out.println ("pos=" + pos);
-        
         readMappedNameCodes(nameCode, nodeCount, bytes);
-//        IntBuffer ints = bytes.asIntBuffer();
-//        ints.get(nameCode);
-//        bytes.position(bytes.position() + ints.position() * 4);
-        // System.out.println ("nameCode[]: " + (bytes.position() - pos));
-        pos = bytes.position();
-
-        // ints.get(attParent);
-        readDeltas (bytes, attParent, attCount);
-        
+        readDeltas (bytes, attParent, attCount);        
         readMappedNameCodes(attNameCode, attCount, bytes);
-//        ints = bytes.asIntBuffer();
-//        ints.get(attNameCode);
-//        // ints.get(nsParent);
-//        bytes.position(bytes.position() + ints.position() * 4);
-        
         readDeltas (bytes, nsParent, nsCount);
         readMappedNameCodes(nsNameCode, nsCount, bytes);
-//        ints = bytes.asIntBuffer();
-//        ints.get(nsNameCode, 0, nsCount);
-//        bytes.position(bytes.position() + ints.position() * 4);
-        
-        pos = bytes.position();
-        
-        // System.out.println ("position after reading all int buffers: " + bytes.position());
-        // ShortBuffer shorts = bytes.asShortBuffer();
-        // shorts.get(depth);
-        // bytes.position(bytes.position() + shorts.position() * 2);
         readShortDeltas (bytes, depth, nodeCount);
-        
-        // System.out.println ("depth[]: " + (bytes.position() - pos));
-        pos = bytes.position();
-
-        getChars(charBuffer, charBufferLength);
+        readChars(charBuffer, charBufferLength);
         if (commentBufferLength > 0) {
-            getChars(commentBuffer, commentBufferLength);
+            readChars(commentBuffer, commentBufferLength);
         }
-        // System.out.println ("char(and comment)Buffer[]: " + (bytes.position() - pos));
-        pos = bytes.position();
-        
-        // System.out.println ("position after reading char buffers: " + bytes.position());
-        
         String [] nameTable = readStrings (nameCount, charsetDecoder);
-        //System.out.println ("position after reading names: " + bytes.position());
         String [] nsTable = readStrings (nsNameCount, charsetDecoder);
-        //System.out.println ("position after reading namespaces: " + bytes.position());
         CharSequence[] attValue = readCharSequences (attValueCount, charsetDecoder);
-        //System.out.println ("position after reading attribute values:" + bytes.position());
-
         NamePool namePool = config.getNamePool();
         // TODO: Would it be faster to save the list of distinct nameCodes 
         // for efficiently recreating the pool rather than attempting to allocate every node's name?
@@ -201,9 +119,6 @@ public class TinyBinary {
             int uriCode = (nsCode & 0xffff) - 1;
             binding[i] = new NamespaceBinding(prefix, nsTable[uriCode]);
         }
-        // System.out.println ("names[]: " + (bytes.position() - pos));
-        // System.out.println ("total: " + bytes.position());
-
         TinyTree tree = new TinyTree (config, 
                 nodeCount, nodeKind, depth, next, alpha, beta, nameCode, 
                 attCount, attParent, attNameCode, attValue,
@@ -217,7 +132,7 @@ public class TinyBinary {
      * @param charBuffer the character storage
      * @param len the number of characters to decode
      */
-    private void getChars(AppendableCharSequence charBuffer, int len) {
+    private void readChars(AppendableCharSequence charBuffer, int len) {
         if (charsetDecoder == null) {
             CharBuffer chars = bytes.asCharBuffer();
             chars.limit(len);
@@ -314,10 +229,8 @@ public class TinyBinary {
             charsetEncoder = charset.newEncoder();
         }
         int totalSize = calculateTotalSize (tree);
-        //System.out.println ("computed total size: " + totalSize + ", nodeCount=" + nodeCount);
         bytes = ByteBuffer.allocate(totalSize);
         
-        // 8 * 4 = 32
         bytes.putInt(tree.getCharacterBuffer().length());
         if (tree.getCommentBuffer() == null)
             bytes.putInt(0);
@@ -330,58 +243,16 @@ public class TinyBinary {
         bytes.putInt(namespaces.size());
         bytes.putInt(attValues.size());
         
-        //System.out.println ("position after writing counts: " + bytes.position());
-
-        // 1 * nodeCount
         bytes.put(tree.nodeKind, 0, nodeCount);
-
-        // 4 * 4 * nodeCount
-        IntBuffer ints = bytes.asIntBuffer();
-        // put next[]
-        // ints.put(tree.getNextPointerArray(), 0, nodeCount);
-        // Could have a large positive jump if this element contains a lot of descendants
-        // Could also have a large negative jump (last sibling in a large element?)
-        // but should tend to be increasing
         writeVInts (bytes, tree.getNextPointerArray(), nodeCount);
-        //System.out.println ("position after writing next[]: " + bytes.position());
-
-        // put alpha[]
-        // ints.put(tree.getAlphaArray(), 0, nodeCount);
-        // these are increasing sequences for each of elements, text, and comments/pis
-        // writeVInts (bytes, tree.getAlphaArray(), nodeCount);
         writeAlpha (bytes, tree.getAlphaArray(), tree.nodeKind, nodeCount);
-        //System.out.println ("position after writing alpha[]: " + bytes.position());
-        
-        // put beta[]
-        // ints.put(tree.getBetaArray(), 0, nodeCount);
-        // these are lengths, except for elements they are namespace indexes
-        // writeVInts (bytes, tree.getBetaArray(), nodeCount);
         writeBeta(bytes, tree.getBetaArray(), tree.nodeKind, nodeCount);
-        // System.out.println ("position after writing beta[]: " + bytes.position());
-
-        // put name codes, translating via the map
-        // name codes are essentially random largish integers, although docs w/no namespaces
-        // always have namecodes that fit in 16 bits
         writeMappedNameCodes(tree.getNameCodeArray(), nodeCount, bytes);
-        
-        // 2 * 4 * attCount
-        // put att parents
-        // ints.put(tree.getAttributeParentArray(), 0, attCount);
-        // this should be an nondecreasing sequence?
         writeDeltas (bytes, tree.getAttributeParentArray(), attCount);
-
-        // put mapped att name codes
-        // ints = bytes.asIntBuffer();
-        // bytes.position(bytes.position() + ints.position() * 4);
         writeMappedNameCodes(tree.getAttributeNameCodeArray(), attCount, bytes);
-        
-        // 2 * 4 * nsCount
-        // put ns decl parents - TODO encode as byte/short for smaller documents
-        // ints.put(tree.getNamespaceParentArray(), 0, nsCount);
         writeDeltas (bytes, tree.getNamespaceParentArray(), nsCount);
 
         // put ns decl string references
-        // ints = bytes.asIntBuffer();
         ByteArrayDataOutput out = new ByteArrayDataOutput(bytes.array(), bytes.arrayOffset() + bytes.position(), bytes.remaining());
         NamespaceBinding [] bindings = tree.getNamespaceCodeArray();
         try {
@@ -389,38 +260,21 @@ public class TinyBinary {
                 NamespaceBinding binding = bindings[i];
                 int a = binding.getPrefix().length() == 0 ? 0 : namespaces.get(binding.getPrefix());
                 int b = namespaces.get(binding.getURI());
-                // ints.put((a << 16) | b);
                 out.writeVInt((a << 16) | b);
             }
         } catch (IOException e) {}
         bytes.position(out.getPosition() - bytes.arrayOffset());
         
-        // bytes.position(bytes.position() + ints.position() * 4);
-        // System.out.println ("position after writing all int buffers: " + bytes.position());
-        
-        // ShortBuffer shorts = bytes.asShortBuffer();
-        
-        // 2 * nodeCount
-        // put depth[]
-        // shorts.put(tree.getNodeDepthArray(), 0, nodeCount);
         writeShortDeltas (bytes, tree.getNodeDepthArray(), nodeCount);
-
-        // put character buffer
-        // bytes.position(bytes.position() + shorts.position() * 2);
 
         putCharacterBuffer(tree.getCharacterBuffer(), charsetEncoder);
         if (tree.getCommentBuffer() != null) {
             putCharacterBuffer(tree.getCommentBuffer(), charsetEncoder);        
         }
-        // System.out.println ("position after writing char buffers: " + bytes.position());
         
         writeStrings(names, charsetEncoder);
-        //System.out.println ("position after writing names: " + bytes.position());
         writeStrings(namespaces, charsetEncoder);
-        //System.out.println ("position after writing namespaces: " + bytes.position());
         writeStrings(attValues, charsetEncoder);
-        //System.out.println ("position after writing attribute values:" + bytes.position());
-
     }
     
     private void writeAlpha (ByteBuffer bytes, int[] alpha, byte[] nodeKind, int count)
@@ -693,6 +547,13 @@ public class TinyBinary {
         }
     }
 
+    /**
+     * FIXME: lurking bug here for Chinese text, say, since we allocate a buffer 
+     * based on an assumption that 
+     * chars will be 2 bytes on average, and this could be badly wrong.
+     * @param tree a Saxon TinyTree 
+     * @return an estimate of the size required to store the tree in TinyBinary format
+     */
     private int calculateTotalSize(TinyTree tree) {
         nodeCount = tree.getNumberOfNodes();
         attCount = tree.getNumberOfAttributes();
@@ -711,23 +572,10 @@ public class TinyBinary {
             stringLen += s.length() * 2;
             stringLen += 2;
         }
-        // FIXME: fudge factor - we were 4 bytes short, but why?
-        int alignmentPadding = 4;
-        /*
-        if (nodeCount % 4 != 0) {
-            // padding for the nodeKind byte array
-            alignmentPadding += (4 - (nodeCount % 4));
-            if (nodeCount % 2 == 1) {
-                // padding for the depth short array
-                alignmentPadding += 2;
-            }
-        }
-        */
         return 32 + nodeCount * 19 + attCount * 8 + nsCount * 8 +
             tree.getCharacterBuffer().length() * 2 +
             (tree.getCommentBuffer() == null ? 0 : tree.getCommentBuffer().length() * 2) +
-            stringLen + 
-            alignmentPadding;
+            stringLen;
     }
 
     private void getStrings(TinyTree tree) {
@@ -743,20 +591,20 @@ public class TinyBinary {
         }
         NamespaceBinding[] bindings = tree.getNamespaceCodeArray();
         for (int i = 0; i < nsCount; i++) {
-            putString (namespaces, bindings[i].getPrefix());
-            putString (namespaces, bindings[i].getURI());
+            internString (namespaces, bindings[i].getPrefix());
+            internString (namespaces, bindings[i].getURI());
         }
         CharSequence [] attValueArray = tree.getAttributeValueArray();
         for (int i = 0; i < attCount; i++) {
-            putString (attValues, attValueArray[i]);
+            internString (attValues, attValueArray[i]);
         }
     }
 
     private void internNameCodeStrings (int nameCode, NamePool namePool) {
         if (nameCode >= 0 && ! nameCodeMap.containsKey (nameCode)) {
-            int a = putString (names, namePool.getLocalName(nameCode));
-            int b = putString (namespaces, namePool.getPrefix(nameCode));
-            int c = putString (namespaces, namePool.getURI(nameCode));
+            int a = internString (names, namePool.getLocalName(nameCode));
+            int b = internString (namespaces, namePool.getPrefix(nameCode));
+            int c = internString (namespaces, namePool.getURI(nameCode));
             nameCodeMap.put (nameCode, a | (b << 24) | (c << 16));
         }
     }
@@ -765,7 +613,7 @@ public class TinyBinary {
      * Intern char sequence values in a symbol table.  The symbols are indexed, starting at 1.  The index
      * value of 0 indicates a null value.
      */
-    private int putString (HashMap<CharSequence,Integer> symbolTable, CharSequence s) {
+    private int internString (HashMap<CharSequence,Integer> symbolTable, CharSequence s) {
         if (s == null || s.length() == 0) {
             return 0;
         }
