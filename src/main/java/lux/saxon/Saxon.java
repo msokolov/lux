@@ -242,17 +242,6 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
             return xdmNode;
         }
 
-        public XdmNode build (TinyBinarySource source, int docID) {
-            config.getDocumentNumberAllocator().setNextDocID(docID);
-            XdmNode xdmNode;
-            try {
-                xdmNode = (XdmNode) documentBuilder.build(source);
-            } catch (SaxonApiException e) {
-                throw new LuxException(e);
-            }
-            return xdmNode;
-        }
-
         @Override
         public Object build(Reader reader, String uri) {
             try {

@@ -1,3 +1,16 @@
+* compatibility w/vanilla Saxon
+We'd like to be able to use Saxon PE/EE, but we can't because we extend
+Configuration.
+** Don't extend Configuration
+We currently do this so we can use a custom Optimizer and FunctionLibrary
+to ensure that search results are regarded as properly in document order.
+We could avoid the need for this if we implement a CollectionURIResolver
+that handles a few special schemes (like lux:) since results from
+collection() are considered to be in document order.
+* improve compilation speed
+XQTS tests run substantially slower with Lux "optimization" since
+compilation speed is at least 2x for every expression.
+** Use Saxon CodeInjector to manipulate the expression tree
 * diagnostics
 ** error reporting
 when there's a syntax or runtime error, you get a useless stack trace on
@@ -6,19 +19,7 @@ the client side.
 count (//pageNum[.="835"]/root()) retrieves a bunch of docs?? - not
 count-optimized?
 * document storage optimization
-We considered a lazy-parsed document model where we store the serialized
-string, and only parse and construct a Saxon TinyTree as needed.  This
-would allow us to optimize the case where we return unprocessed document
-nodes from solr.  It's easy, but doesn't optimize very many cases: if you
-actually need to execute any xquery at all, there'd be no benefit.
-
-We also considered creating our own document model and wrapping it as a
-NodeInfo for integration w/Saxon.  But this is a huge duplicative effort.
-
-In the end, the best solution might be: (1) copy and extend TinyTree with
-our own binary storage scheme, while at the same time working with Saxonica
-to make our extensions compatible with Saxon-PE/EE so we can use Ptree.
-
+** integrate w/PTree
 * walk through installation in ifpress
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar and dependencies
