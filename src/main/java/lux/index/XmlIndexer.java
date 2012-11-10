@@ -13,7 +13,6 @@ import javax.xml.stream.XMLStreamException;
 import lux.api.LuxException;
 import lux.index.analysis.Offsets;
 import lux.index.field.XmlField;
-import lux.xml.JDOMBuilder;
 import lux.xml.SaxonDocBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
@@ -27,7 +26,6 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Version;
-import org.jdom.Document;
 
 /**
  * Indexes XML documents.  The constructor accepts a set of flags that define a set of fields 
@@ -53,7 +51,6 @@ import org.jdom.Document;
 public class XmlIndexer {
     
     private XmlReader xmlReader;
-    private JDOMBuilder jdomBuilder;
     private SaxonDocBuilder saxonBuilder;
     private Serializer serializer;
     private XmlPathMapper pathMapper;
@@ -69,7 +66,7 @@ public class XmlIndexer {
         this (DEFAULT_OPTIONS);
     }
     
-    public final static int BUILD_JDOM=         0x00000001;
+    public final static int BUILD_DOCUMENT=     0x00000001;
     public final static int SERIALIZE_XML=      0x00000002;
     public final static int NAMESPACE_UNAWARE=  0x00000004;
     public final static int STORE_XML=          0x00000008;
@@ -139,9 +136,13 @@ public class XmlIndexer {
             serializer = new Serializer();
             xmlReader.addHandler(serializer);
         }
-        if (isOption (BUILD_JDOM)) {
-            jdomBuilder = new JDOMBuilder();
-            xmlReader.addHandler (jdomBuilder);
+        if (isOption (BUILD_DOCUMENT) && saxonBuilder == null) {
+            try {
+                saxonBuilder = new SaxonDocBuilder();
+            } catch (SaxonApiException e) {
+                throw new LuxException (e);
+            }
+            xmlReader.addHandler(saxonBuilder);
         }
     }
     
@@ -177,12 +178,6 @@ public class XmlIndexer {
     
     public Collection<XmlField> getFields () {
         return fields;
-    }
-    
-    public Document getJDOM() {
-        if (jdomBuilder == null)
-            return null;
-        return jdomBuilder.getDocument();
     }
     
     public XdmNode getXdmNode () {

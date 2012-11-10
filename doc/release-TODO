@@ -1,5 +1,25 @@
+* second release 
+** manifesto
+Explain what it is, is not, what it's for, why you might want to use it, etc.
+** open source 
+*** bug tracker
+*** source control system
+*** mailing list
+*** some method to accept contributions
+** criteria for release 1.0
+*** Highest Quality
+Rigorous testing; no known major bugs.
+*** XQuery search API
+enable explicit access to indexes
+**** search, count, exists
+**** terms (lexicon functions)
+*** word and value and xpath indexes
+*** XQuery 1.0
+optimized sorting using indexes
+*** Add relevant copyright notices
+
 * first release
-criteria for release
+DONE
 ** Very Good Quality
 Rigorous testing; no known severe bugs.
 *** check performance
@@ -20,15 +40,3 @@ its xml field.
 *** clean API
 good enough for an ifactory-internal release
 *** use of namespaces tested
-* second release 
-** criteria for release 1.0
-*** Highest Quality
-Rigorous testing; no known major bugs.
-*** XQuery search API
-enable explicit access to indexes
-**** search, count, exists
-**** terms (lexicon functions)
-*** word and value and xpath indexes
-*** XQuery 1.0
-optimized sorting using indexes
-*** Add relevant copyright notices

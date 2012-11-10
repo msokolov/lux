@@ -12,6 +12,8 @@ import lux.index.field.XmlField;
 import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 
+import net.sf.saxon.s9api.SaxonApiException;
+
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.TermEnum;
@@ -61,32 +63,32 @@ public class IndexTest {
 
     @Test
     public void testIndexQNames() throws Exception {
-        buildIndex ("qnames and xml", XmlIndexer.INDEX_QNAMES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qnames and xml", XmlIndexer.INDEX_QNAMES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
     @Test
     public void testIndexQNamesOnly () throws Exception {
-        buildIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexPaths() throws Exception {
-        buildIndex ("paths and xml", XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        buildIndex ("paths and xml", XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
     @Test
     public void testIndexPathsOnly () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);        
+        IndexTestSupport indexTestSupport = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_DOCUMENT);        
         assertTotalDocs ();
         assertPathQuery (indexTestSupport);
     }
     
     @Test
     public void testIndexFullText () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML |XmlIndexer.BUILD_JDOM);        
+        IndexTestSupport indexTestSupport = buildIndex ("full-text", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML |XmlIndexer.BUILD_DOCUMENT);        
         assertTotalDocs ();
         //printAllTerms();
         assertFullTextQuery (indexTestSupport.searcher, "PERSONA", "ROSENCRANTZ", 4);
@@ -94,7 +96,7 @@ public class IndexTest {
 
     @Test
     public void testIndexFullTextOnly () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text-only", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);        
+        IndexTestSupport indexTestSupport = buildIndex ("full-text-only", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_DOCUMENT);        
         assertTotalDocs ();
         //printAllTerms();
         assertFullTextQuery (indexTestSupport.searcher, "PERSONA", "ROSENCRANTZ", 4);
@@ -152,59 +154,59 @@ public class IndexTest {
 
     @Test
     public void testIndexPathValuesOnly() throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("path-values", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.BUILD_JDOM);
+        IndexTestSupport indexTestSupport = buildIndex ("path-values", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
         assertPathQuery(indexTestSupport);
     }
     
     @Test
     public void testIndexPathText () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("path-text", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);
+        IndexTestSupport indexTestSupport = buildIndex ("path-text", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
         assertPathQuery(indexTestSupport);
     }    
 
     @Test
     public void testIndexQNameValues() throws Exception {
-        buildIndex ("qname-values and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_VALUES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qname-values and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_VALUES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexQNameText() throws Exception {
-        buildIndex ("qname-text and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qname-text and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
     @Test
     public void testIndexQNameTextOnly() throws Exception {
-        buildIndex ("qname-text", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qname-text", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
         //printAllTerms();
     }
 
     @Test
     public void testIndexPathValues() throws Exception {
-        buildIndex ("path-values and docs", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        buildIndex ("path-values and docs", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexQNamesAndPaths() throws Exception {
-        buildIndex ("qnames and paths and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qnames and paths and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
-        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_DOCUMENT);
     }
 
     @Test
     public void testIndexQNamesAndPathsOnly() throws Exception {
-        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_JDOM);
+        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testStoreDocuments() throws Exception {
-        buildIndex ("xml storage", XmlIndexer.STORE_XML| XmlIndexer.BUILD_JDOM);
+        buildIndex ("xml storage", XmlIndexer.STORE_XML| XmlIndexer.BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
@@ -218,7 +220,7 @@ public class IndexTest {
         dir.close();
     }
     
-    private IndexTestSupport buildIndex (String desc, int options) throws XMLStreamException, IOException {
+    private IndexTestSupport buildIndex (String desc, int options) throws XMLStreamException, IOException, SaxonApiException {
         XmlIndexer indexer = new XmlIndexer (options);
         long t0 = System.currentTimeMillis();
         IndexTestSupport indexTestSupport = new IndexTestSupport (indexer, dir);

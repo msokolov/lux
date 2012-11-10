@@ -7,20 +7,11 @@ to ensure that search results are regarded as properly in document order.
 We could avoid the need for this if we implement a CollectionURIResolver
 that handles a few special schemes (like lux:) since results from
 collection() are considered to be in document order.
-* improve compilation speed
-XQTS tests run substantially slower with Lux "optimization" since
-compilation speed is at least 2x for every expression.
-** Use Saxon CodeInjector to manipulate the expression tree
-* diagnostics
-** error reporting
-when there's a syntax or runtime error, you get a useless stack trace on
-the client side.
-* optimizations
-count (//pageNum[.="835"]/root()) retrieves a bunch of docs?? - not
-count-optimized?
-* document storage optimization
-** integrate w/PTree
-* walk through installation in ifpress
+** Separate TinyBinary from Lux before distributing?
+This is our own binary storage format that reconstructs TinyTrees.  If we
+change to a Saxon-compatible Configuration, then we could support the use
+of PTree storage.
+* ifpress integration
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar and dependencies
 from luxproject.net?  I guess we need a web site or something...  We need
@@ -45,6 +36,20 @@ don't want XML tags, and (2) we only want the body in fulltext_t.  Once we
 adopt lux, we can search the body in an easier way, fix the highlighting
 problem, and do away with fulltext_t I think.
 ** test usage in ifpress context
+* diagnostics
+** error reporting
+when there's a syntax or runtime error, you get a useless stack trace on
+the client side.
+* optimizations
+count (//pageNum[.="835"]/root()) retrieves a bunch of docs?? - not
+count-optimized?
+* improve compilation speed
+XQTS tests run substantially slower with Lux "optimization" since
+compilation speed is at least 2x for every expression, and this seems to
+dominate the test speed.
+** Use Saxon CodeInjector to manipulate the expression tree
+Unfortunately this isn't quite feasible because CodeInjector doesn't get
+called at enough entry points.  It seemed close?
 * word index followthrough
 ** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
 Apply custom analysis chain to each text node, and then wrap in
@@ -189,4 +194,3 @@ somewhat limited in our ability to do this right now since we rely on Saxon
 to make judgements about sorting, and it doesn't always optimize as
 agressively as we would like, at least not in the saxon-HE version.  It
 works in some simple cases, though.
-

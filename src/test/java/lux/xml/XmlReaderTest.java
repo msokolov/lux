@@ -17,33 +17,11 @@ import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
-import org.jdom.Document;
 import org.junit.Test;
 
 public class XmlReaderTest {
 
     private static final String CONTENT = "TEST &>0 This is some markup <that> is escaped ģé 12345678 The end.";
-        
-    @Test 
-    public void testJDOMBuilder() throws Exception {
-        JDOMBuilder jdomBuilder = new JDOMBuilder();
-        handleDocument(jdomBuilder, "lux/reader-test.xml");
-        Document doc = jdomBuilder.getDocument();
-        
-        assertEquals ("test", doc.getRootElement().getName());
-        assertEquals (CONTENT, normalize(doc.getRootElement().getValue()));
-    }
-
-    @Test 
-    public void testJDOMBuilderNS() throws Exception {
-        JDOMBuilder jdomBuilder = new JDOMBuilder();
-        handleDocument(jdomBuilder, "lux/reader-test-ns.xml");
-        Document doc = jdomBuilder.getDocument();
-        
-        assertEquals ("test", doc.getRootElement().getName());
-        assertEquals (CONTENT, normalize(doc.getRootElement().getValue()));
-    }
-
     
     @Test
     public void testSaxonBuilder() throws Exception {
