@@ -1,3 +1,11 @@
+* app server
+** Need to create a mini-app
+map /*.xqy to XQueryServlet -- can we do this in jetty webdefault
+** solr QueryResponseWriter
+that serializes the output of XQuery evaluation as HTML (and/or XML or
+text).  Can configure a path should map to either a folder on the
+filesystem, or in lux storage. Use this to deploy a mini-appserver at
+/lux/index.xqy that demonstrates lux.
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE, but we can't because we extend
 Configuration.

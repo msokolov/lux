@@ -1,6 +1,9 @@
 * second release 
 ** manifesto
 Explain what it is, is not, what it's for, why you might want to use it, etc.
+** sample webapp
+based on Solr; reads from files and/or the database
+some easy way to load files
 ** open source 
 *** bug tracker
 *** source control system

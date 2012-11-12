@@ -1310,6 +1310,21 @@
       <!-- highlight? facet? -->
     </arr>
   </requestHandler>
+
+  <queryResponseWriter name="lux" class="lux.solr.LuxResponseWriter"/>
+
+  <requestHandler name="/lux" class="solr.SearchHandler">
+    <lst name="defaults">
+      <str name="lux.contentType">text/html;charset=UTF-8</str>
+      <str name="wt">lux</str>
+    </lst>
+    <arr name="components">
+      <str>xquery</str>
+      <str>stats</str>
+      <str>debug</str>
+      <!-- highlight? facet? -->
+    </arr>
+  </requestHandler>
     
   <!-- Function Parsers
 

@@ -25,14 +25,11 @@ import org.apache.solr.core.CoreContainer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public abstract class LuxSolrTest {
+public class LuxSolrTest {
     
     private static SolrServer solr;
     
-    // allow for different xquery engines
-    public abstract String getXPathEngine ();
-    
-    public abstract String getSolrSearchPath ();
+    private final String SOLR_QUERY_TYPE = "/xquery";
     
     @BeforeClass public static void setup () throws Exception {
         System.setProperty("solr.solr.home", "solr");
@@ -110,7 +107,7 @@ public abstract class LuxSolrTest {
     
     @Test public void testQueryError () throws Exception {
         SolrQuery q = new SolrQuery("lux_elt_name_ms:config");
-        q.setParam("qt", getSolrSearchPath());
+        q.setParam("qt", SOLR_QUERY_TYPE);
         q.setParam("defType", "lucene");
         // TODO: return compile errors in the response; don't throw an exception
         // send an ordinary Lucene query to the XPathSearchComponent
@@ -143,7 +140,7 @@ public abstract class LuxSolrTest {
     
     protected void assertXPathSearchCount (int count, int docCount, int maxResults, String type, String value, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setQueryType(getSolrSearchPath());
+        q.setQueryType(SOLR_QUERY_TYPE);
         q.setRows(maxResults);
         q.setStart(0);
         QueryResponse rsp = solr.query (q, METHOD.POST);
