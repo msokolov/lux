@@ -2,6 +2,7 @@ package lux.solr;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
@@ -17,8 +18,6 @@ import lux.index.XmlIndexer;
 import lux.saxon.Saxon;
 import lux.search.LuxSearcher;
 import lux.xpath.QName;
-
-import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
@@ -44,7 +43,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class LuxSearchComponent extends QueryComponent {
     
-    private static final QName LUX_HTTP_PARAMETERS = new QName ("http://luxproject.net", "http-parameters");
+    private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
 	protected URL baseUri;
     protected IndexSchema schema;
     protected Set<String> fields = new HashSet<String>();
@@ -90,7 +89,7 @@ public abstract class LuxSearchComponent extends QueryComponent {
             rb.setQueryString( params.get( CommonParams.Q ) );
         }
         if (rb.getQueryString() == null) {
-            String path = (String) params.get("xquery");
+            String path = (String) params.get(LuxServlet.LUX_XQUERY);
             if (! StringUtils.isBlank(path)) {
                 URL absolutePath = new URL (baseUri, path);
                 String scheme = absolutePath.getProtocol();
@@ -147,9 +146,16 @@ public abstract class LuxSearchComponent extends QueryComponent {
         NamedList<Object> xpathResults = new NamedList<Object>();
         long tstart = System.currentTimeMillis();
         int count = 0;
-        QueryContext context = new QueryContext();
-        context.bindVariable(LUX_HTTP_PARAMETERS, buildHttpParams());
-        ResultSet<?> queryResults = evaluator.iterate(expr, null);
+        QueryContext context = null;
+        String xqueryPath = rb.req.getParams().get(LuxServlet.LUX_XQUERY);
+        if (xqueryPath != null) {
+            context = new QueryContext();
+            context.bindVariable(LUX_HTTP, buildHttpParams(
+                    rb.req.getParams().get(LuxServlet.LUX_HTTPINFO), 
+                    xqueryPath
+                    ));
+        }
+        ResultSet<?> queryResults = evaluator.iterate(expr, context);
         for (Object xpathResult : queryResults) {
             if (++ count < start) {
                 continue;
@@ -172,9 +178,8 @@ public abstract class LuxSearchComponent extends QueryComponent {
                     xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
     }
 
-    private XdmNode buildHttpParams() {
-	    // TODO Auto-generated method stub
-	    return null;
+    private XdmNode buildHttpParams(String http, String path) {
+        return (XdmNode) evaluator.getBuilder().build(new StringReader(http), path);
     }
 
 	public static final String COMPONENT_NAME = "xpath";

@@ -39,10 +39,11 @@ public class AppServerIT {
     public void testParameterMap () throws Exception {
         String path = (APP_SERVER_PATH + "/src/test/resources/lux/test-params.xqy?p1=A&p2=B&p2=C");
         String response = httpclient.getResponse(path).getText();
-        assertEquals ("<http-parameter-map>" +
-        		"<param name=\"p1\"><value>A</value></param>" +
+        // This test depends on the order in which keys are retrieved from a java.util.HashMap
+        assertEquals ("<http method=\"GET\"><parameters>" +
         		"<param name=\"p2\"><value>B</value><value>C</value></param>" +
-        		"</http-parameter-map>", response);
+                "<param name=\"p1\"><value>A</value></param>" +
+        		"</parameters></http>", response.replaceAll("\n\\s*",""));
     }
     
     @BeforeClass
