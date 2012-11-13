@@ -9,11 +9,17 @@ import java.util.Set;
 
 import lux.api.Evaluator;
 import lux.api.Expression;
+import lux.api.LuxException;
+import lux.api.QueryContext;
 import lux.api.QueryStats;
 import lux.api.ResultSet;
 import lux.index.XmlIndexer;
 import lux.saxon.Saxon;
 import lux.search.LuxSearcher;
+import lux.xpath.QName;
+
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -38,7 +44,8 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class LuxSearchComponent extends QueryComponent {
     
-    protected URL baseUri;
+    private static final QName LUX_HTTP_PARAMETERS = new QName ("http://luxproject.net", "http-parameters");
+	protected URL baseUri;
     protected IndexSchema schema;
     protected Set<String> fields = new HashSet<String>();
     protected Evaluator evaluator;
@@ -128,11 +135,20 @@ public abstract class LuxSearchComponent extends QueryComponent {
 
     private void evaluateQuery(ResponseBuilder rb, SolrQueryResponse rsp, SolrIndexSearcher.QueryResult result, int start,
             long timeAllowed, int len, String query) {
-        Expression expr = evaluator.compile(query);
+        Expression expr;
+        try {
+        	expr = evaluator.compile(query);
+        } catch (LuxException ex) {
+        	ex.printStackTrace();
+        	rsp.add("xpath-error", ex.getCause().getMessage());
+        	return;
+        }
         //SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         NamedList<Object> xpathResults = new NamedList<Object>();
         long tstart = System.currentTimeMillis();
         int count = 0;
+        QueryContext context = new QueryContext();
+        context.bindVariable(LUX_HTTP_PARAMETERS, buildHttpParams());
         ResultSet<?> queryResults = evaluator.iterate(expr, null);
         for (Object xpathResult : queryResults) {
             if (++ count < start) {
@@ -156,7 +172,12 @@ public abstract class LuxSearchComponent extends QueryComponent {
                     xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
     }
 
-    public static final String COMPONENT_NAME = "xpath";
+    private XdmNode buildHttpParams() {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	public static final String COMPONENT_NAME = "xpath";
 
     @Override
     public String getDescription() {
