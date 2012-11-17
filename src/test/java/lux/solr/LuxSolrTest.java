@@ -1,8 +1,6 @@
 package lux.solr;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -106,26 +104,12 @@ public class LuxSolrTest {
     }
     
     @Test public void testQueryError () throws Exception {
-        SolrQuery q = new SolrQuery("lux_elt_name_ms:config");
-        q.setParam("qt", SOLR_QUERY_TYPE);
-        q.setParam("defType", "lucene");
-        // TODO: return compile errors in the response; don't throw an exception
-        // send an ordinary Lucene query to the XPathSearchComponent
-        // throws a prefix undefined error
-        try {
-            solr.query (q);
-            assertFalse (true);
-        } catch (SolrServerException e) {
-        }
+        assertXPathSearchError("Prefix lux_elt_name_ms has not been declared", "lux_elt_name_ms:config");
     }
     
     @Test
     public void testSyntaxError () throws Exception {
-        try {
-            assertXPathSearchCount(0, 0, "", "", "hey bad boy");
-            assertTrue ("expected ParseException to be thrown for syntax error", false);
-        } catch (SolrServerException e) {
-        }
+        assertXPathSearchError("Unexpected token name \"bad\" beyond end of query", "hey bad boy");
     }
     
     protected void assertQueryCount (int count, String query) throws SolrServerException {
@@ -136,6 +120,13 @@ public class LuxSolrTest {
     
     protected void assertXPathSearchCount (int count, int docCount, String type, String value, String query) throws SolrServerException {
         assertXPathSearchCount(count, docCount, 10, type, value, query);
+    }
+    
+    protected void assertXPathSearchError (String error, String query) throws SolrServerException {
+        SolrQuery q = new SolrQuery(query);
+        q.setQueryType(SOLR_QUERY_TYPE);
+        QueryResponse rsp = solr.query (q, METHOD.POST);
+        assertEquals (error, rsp.getResponse().get("xpath-error"));
     }
     
     protected void assertXPathSearchCount (int count, int docCount, int maxResults, String type, String value, String query) throws SolrServerException {

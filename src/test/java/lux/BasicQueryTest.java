@@ -296,7 +296,7 @@ public class BasicQueryTest {
 
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
         Saxon saxon = new Saxon(null, getIndexer(), Dialect.XQUERY_1);
-        saxon.declareNamespace("lux", "lux");
+        saxon.declareNamespace("lux", FunCall.LUX_NAMESPACE);
         saxon.declareNamespace("ns", "http://namespace.org/#ns");
         assertQuery(xpath, optimized, facts, type, saxon, queries);
     }
@@ -372,7 +372,7 @@ public class BasicQueryTest {
         case PLAY_ACT_OR_PERSONAE_TITLE: return "+lux_elt_name:\"TITLE\" +(+(lux_elt_name:\"PERSONAE\" lux_elt_name:\"ACT\") +lux_elt_name:\"PLAY\")";
         case MATCH_ALL: return "*:*";
         case AND: return "lux_elt_name:\"AND\"";
-        case LUX_FOO: return "lux_elt_name:\"foo{lux}\"";
+        case LUX_FOO: return "lux_elt_name:\"foo{" + FunCall.LUX_NAMESPACE + "}\"";
         default: throw new UnsupportedOperationException("unregistered query enum: " + q);
         }
     }
@@ -455,7 +455,7 @@ public class BasicQueryTest {
                 "</BooleanQuery>";
         case MATCH_ALL: return "<MatchAllDocsQuery />";
         case AND: return "<TermsQuery fieldName=\"lux_elt_name\">AND</TermsQuery>";
-        case LUX_FOO: return "<TermsQuery fieldName=\"lux_elt_name\">foo&#x7B;lux&#x7D;</TermsQuery>";
+        case LUX_FOO: return "<TermsQuery fieldName=\"lux_elt_name\">foo&#x7B;http%3A%2F%2Fluxproject.net&#x7D;</TermsQuery>";
         default: throw new UnsupportedOperationException("unregistered query enum: " + q);
         }
     }

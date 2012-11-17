@@ -11,7 +11,7 @@ import lux.xquery.XQuery;
 
 public class UnOptimizer extends ExpressionVisitorBase {
 
-    private static final QName luxSearchQName = new QName ("lux", "search", "lux");
+    private static final QName luxSearchQName = new QName (FunCall.LUX_NAMESPACE, "search", "lux");
     private long indexOptions;
     
     public UnOptimizer (long indexOptions) {
