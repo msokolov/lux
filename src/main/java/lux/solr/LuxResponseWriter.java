@@ -3,6 +3,8 @@ package lux.solr;
 import java.io.IOException;
 import java.io.Writer;
 
+import lux.api.LuxException;
+
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XdmNode;
@@ -27,8 +29,8 @@ public class LuxResponseWriter implements QueryResponseWriter {
     public void write(Writer writer, SolrQueryRequest request, SolrQueryResponse response) throws IOException {
         String error = (String) response.getValues().get("xpath-error");
         if (error != null) {
-            // FIXME: HTTP 500
-            writeError(writer, error);
+            throw new LuxException(error);
+            //writeError(writer, error);
         } else {
             NamedList<?> values = (NamedList<?>) response.getValues().get("xpath-results");
             for (int i = 0; i < values.size(); i++) {
