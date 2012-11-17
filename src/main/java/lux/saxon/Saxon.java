@@ -278,7 +278,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     public XQueryCompiler getXQueryCompiler () {
         if (xqueryCompiler == null) {
             xqueryCompiler = processor.newXQueryCompiler();
-            xqueryCompiler.declareNamespace("lux", "lux");
+            xqueryCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
             xqueryCompiler.setErrorListener(config.getErrorListener());
         }
         return xqueryCompiler;
@@ -287,7 +287,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     public XPathCompiler getXPathCompiler () {
         if (xpathCompiler == null) {
             xpathCompiler = processor.newXPathCompiler();
-            xpathCompiler.declareNamespace("lux", "lux");
+            xpathCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
             xpathCompiler.declareNamespace("fn", FunCall.FN_NAMESPACE);
         }
         return xpathCompiler;
