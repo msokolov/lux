@@ -5,12 +5,9 @@ import lux.xpath.AbstractExpression;
 
 public class CommentConstructor extends AbstractExpression {
 
-    private final AbstractExpression content;
-    
     public CommentConstructor (AbstractExpression abstractExpression) {
         super (Type.COMMENT);
-        this.content = abstractExpression;
-        this.subs = new AbstractExpression[0];
+        this.subs = new AbstractExpression[] { abstractExpression };
     }
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
@@ -20,7 +17,7 @@ public class CommentConstructor extends AbstractExpression {
     @Override
     public void toString(StringBuilder buf) {
         buf.append("comment { ");
-        content.toString(buf);
+        subs[0].toString(buf);
         buf.append(" }");
     }
 
