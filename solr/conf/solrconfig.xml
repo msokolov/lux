@@ -1298,7 +1298,12 @@
        by SearchHandler) or in LocalParams
     -->
     
-  <searchComponent name="xquery" class="lux.saxon.XQuerySearchComponent">
+  <!-- This component and handler provide a search-enabled xquery
+       evaluation service.  Its query is taken from request parameter 'q',
+       like other Solr search handlers, and results are returned using
+       the usual Solr marshalling options (XML, javabin, json, etc)
+  -->
+  <searchComponent name="xquery" class="lux.solr.XQueryComponent">
     <!--   <str name="xmlFieldName">lux_xml</str> -->
   </searchComponent>
   
@@ -1311,6 +1316,17 @@
     </arr>
   </requestHandler>
 
+  <!-- This component, handler and response writer together provide an
+       app-server service.  When configured with the LuxServlet, its query
+       is taken by reading the contents of URL given by the path of the
+       request, and the result is streamed directly as the HTTP response
+       body.
+  -->
+
+  <searchComponent name="lux-app-server" class="lux.solr.AppServer">
+    <!--   <str name="xmlFieldName">lux_xml</str> -->
+  </searchComponent>
+
   <queryResponseWriter name="lux" class="lux.solr.LuxResponseWriter"/>
 
   <requestHandler name="/lux" class="solr.SearchHandler">
@@ -1319,7 +1335,7 @@
       <str name="wt">lux</str>
     </lst>
     <arr name="components">
-      <str>xquery</str>
+      <str>lux-app-server</str>
       <str>stats</str>
       <str>debug</str>
       <!-- highlight? facet? -->

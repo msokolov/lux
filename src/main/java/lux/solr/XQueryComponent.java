@@ -3,12 +3,13 @@ package lux.solr;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import lux.api.Evaluator;
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.QueryContext;
@@ -16,11 +17,18 @@ import lux.api.QueryStats;
 import lux.api.ResultSet;
 import lux.index.XmlIndexer;
 import lux.saxon.Saxon;
+import lux.saxon.Saxon.Dialect;
 import lux.search.LuxSearcher;
 import lux.xpath.QName;
+import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmNodeKind;
+import net.sf.saxon.value.BooleanValue;
+import net.sf.saxon.value.DoubleValue;
+import net.sf.saxon.value.FloatValue;
+import net.sf.saxon.value.QNameValue;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
@@ -41,21 +49,21 @@ import org.slf4j.LoggerFactory;
  *  Its queries will match documents that have been indexed using XmlIndexer 
  *  with the INDEX_PATHS option.
  */
-public abstract class LuxSearchComponent extends QueryComponent {
+public class XQueryComponent extends QueryComponent {
     
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
-	protected URL baseUri;
+    protected URL baseUri;
     protected IndexSchema schema;
     protected Set<String> fields = new HashSet<String>();
-    protected Evaluator evaluator;
+    protected Saxon evaluator;
     protected XmlIndexer indexer;
     private Logger logger;
     
-    public LuxSearchComponent() {
+    public XQueryComponent() {
         indexer = new XmlIndexer ();  // FIXME: share with LuxUpdateProcessor?? at least have common config
         evaluator = createEvaluator();
         evaluator.setIndexer(indexer);
-        logger = LoggerFactory.getLogger(LuxSearchComponent.class);
+        logger = LoggerFactory.getLogger(XQueryComponent.class);
     }
     
     public void init(@SuppressWarnings("rawtypes") NamedList args) {
@@ -77,30 +85,13 @@ public abstract class LuxSearchComponent extends QueryComponent {
             }
         }
     }
-    
-    public abstract Evaluator createEvaluator ();
-        
-    public abstract void addResult(NamedList<Object> xpathResults, Object result);
 
+    @Override
     public void prepare(ResponseBuilder rb) throws IOException {
         SolrQueryRequest req = rb.req;
         SolrParams params = req.getParams();            
         if (rb.getQueryString() == null) {
             rb.setQueryString( params.get( CommonParams.Q ) );
-        }
-        if (rb.getQueryString() == null) {
-            String path = (String) params.get(LuxServlet.LUX_XQUERY);
-            if (! StringUtils.isBlank(path)) {
-                URL absolutePath = new URL (baseUri, path);
-                String scheme = absolutePath.getProtocol();
-                String contents = null;
-                if (scheme.equals("lux")) {
-                    // TODO
-                } else {
-                    contents = IOUtils.toString(absolutePath.openStream());   
-                }
-                rb.setQueryString(contents);
-            }
         }
     }
     
@@ -160,7 +151,7 @@ public abstract class LuxSearchComponent extends QueryComponent {
             if (++ count < start) {
                 continue;
             }
-            addResult (xpathResults, xpathResult);
+            addResult (xpathResults, (XdmItem) xpathResult);
             if ((len > 0 && xpathResults.size() >= len) || 
                     (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
                 break;
@@ -182,6 +173,38 @@ public abstract class LuxSearchComponent extends QueryComponent {
         return (XdmNode) evaluator.getBuilder().build(new StringReader(http), path);
     }
 
+    private Saxon createEvaluator() {
+        return new Saxon(null, null, Dialect.XQUERY_1);
+    }
+    
+    protected void addResult(NamedList<Object> xpathResults, XdmItem item) {
+        if (item.isAtomicValue()) {
+            XdmAtomicValue xdmValue = (XdmAtomicValue) item;
+            Object value = xdmValue.getUnderlyingValue();
+            if (value instanceof String) {
+                xpathResults.add ("xs:string", xdmValue.toString());
+            } else if (value instanceof BigInteger) {
+                xpathResults.add ("xs:int", xdmValue.getValue());
+            } else if (value instanceof DoubleValue) {
+                xpathResults.add ("xs:double", xdmValue.toString());
+            } else if (value instanceof FloatValue) {
+                xpathResults.add ("xs:float", xdmValue.toString());
+            } else if (value instanceof BooleanValue) {
+                xpathResults.add ("xs:boolean", xdmValue.toString());
+            } else if (value instanceof BigDecimal) {
+                xpathResults.add ("xs:decimal", xdmValue.toString());
+            } else if (value instanceof QNameValue) {
+                xpathResults.add ("xs:QName", xdmValue.toString());
+            } else  {
+                // no way to distinguish xs:anyURI, xs:untypedAtomic or um something else
+                xpathResults.add ("xs:string", xdmValue.toString());
+            } 
+        } else {
+            XdmNode node = (XdmNode) item;
+            XdmNodeKind nodeKind = node.getNodeKind();
+            xpathResults.add(nodeKind.toString().toLowerCase(), node.toString());
+        }
+    }
 	public static final String COMPONENT_NAME = "xpath";
 
     @Override

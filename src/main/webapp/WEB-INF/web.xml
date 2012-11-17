@@ -102,10 +102,15 @@
     <servlet-name>lux</servlet-name>
     <servlet-class>lux.solr.LuxServlet</servlet-class>
     <load-on-startup>1</load-on-startup>
+    <init-param>
+        <param-name>webappPath</param-name>
+        <param-value>src/main/webapp</param-value>
+    </init-param>
   </servlet>
   
   <servlet-mapping> 
     <servlet-name>lux</servlet-name>
+    <url-pattern>/lux/*</url-pattern>
     <url-pattern>*.xqy</url-pattern>
     <url-pattern>*.xhtml</url-pattern>
     <url-pattern>*.xml</url-pattern>

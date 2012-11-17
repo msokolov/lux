@@ -1,15 +1,20 @@
 package lux.solr;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
 
 /**
  * This servlet simply forwards all requests to /lux, with the path provided as the value of the "path" attribute.
@@ -19,11 +24,56 @@ import javax.servlet.http.HttpServletResponse;
 public class LuxServlet extends HttpServlet {
     public static final String LUX_HTTPINFO = "lux.httpinfo";
     public static final String LUX_XQUERY = "lux.xquery";
+    
+    private String webappPath = "src/main/webapp/";
+    private HashMap<String,String> mimeTypeMap;
+    
+    @Override
+    public void init (ServletConfig config) {
+        String configPath = config.getInitParameter("webappPath");
+        if (configPath != null) {
+            webappPath = configPath;
+            if (! configPath.endsWith("/")) {
+                webappPath += "/";
+            }
+        }
+        mimeTypeMap = new HashMap<String, String>();
+        mimeTypeMap.put ("jpg", "image/jpeg");
+        mimeTypeMap.put ("gif", "image/gif");
+        mimeTypeMap.put ("png", "image/png");
+        mimeTypeMap.put ("css", "text/css");
+        mimeTypeMap.put ("js", "text/javascript");
+        mimeTypeMap.put ("html", "text/html");
+        mimeTypeMap.put ("txt", "text/plain");
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {
-        forwardRequest(req, resp);
+        /*
+        if (! req.getRequestURI().matches(".*\\.(jpg|gif|js|css|html|txt|xqy)$")) {
+            resp.sendError (HttpServletResponse.SC_NOT_FOUND);
+        }
+        */
+        String path = translatePath(req);
+        String ext = path.substring(path.lastIndexOf('.') + 1);
+        if (ext.equals ("xqy")) {
+            forwardRequest(req, resp);
+            return;
+        }
+        String mimeType = mimeTypeMap.get(ext);
+        if (mimeType == null) {
+            //resp.sendError (HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            mimeType = "application/octet-stream";
+        }
+        File f = new File(path);
+        if (! f.exists()) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
+        resp.setContentLength((int) f.length());
+        resp.setContentType(mimeType);
+        FileInputStream in = new FileInputStream(f);
+        IOUtils.copy(in, resp.getOutputStream());
     }
     
     @Override
@@ -33,7 +83,7 @@ public class LuxServlet extends HttpServlet {
     }
 
     private void forwardRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String path = req.getRequestURI().substring("/lux/".length());
+        String path = translatePath(req);
         /*
         This obvious approach:
         */
@@ -42,6 +92,10 @@ public class LuxServlet extends HttpServlet {
         requires specifying that the SolrDispatchFilter is to filter FORWARD,
         even though the Solr doc says not to...
         */
+    }
+
+    private String translatePath(HttpServletRequest req) {
+        return webappPath + req.getRequestURI().substring("/lux/".length());
     }
     
     class WrappedRequest extends HttpServletRequestWrapper {
@@ -71,7 +125,7 @@ public class LuxServlet extends HttpServlet {
             return parameterMap;
         }
         
-        // This is horrible - and we'll have serialization bugs
+        // This may be a bit fragile - I worry we'll have serialization bugs -
         // but the only alternative I can see is to provide a special xquery function
         // and pass the map into the Saxon Evaluator object - but we can't get that
         // from here, and it would be thread-unsafe anyway, which is bad for a server
