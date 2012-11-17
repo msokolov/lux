@@ -14,6 +14,7 @@ import lux.api.LuxException;
 import lux.api.QueryContext;
 import lux.api.ResultSet;
 import lux.compiler.PathOptimizer;
+import lux.functions.FieldTerms;
 import lux.functions.LuxCount;
 import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
@@ -85,6 +86,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         processor.registerExtensionFunction(new LuxSearch());
         processor.registerExtensionFunction(new LuxCount());
         processor.registerExtensionFunction(new LuxExists());
+        processor.registerExtensionFunction(new FieldTerms());
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
         if (indexer != null) {

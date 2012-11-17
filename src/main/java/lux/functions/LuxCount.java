@@ -4,11 +4,10 @@ import java.io.IOException;
 
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
+import net.sf.saxon.tree.iter.UnfailingIterator;
 import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
 
@@ -16,7 +15,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
-public class LuxCount extends LuxSearch {
+public class LuxCount extends SearchBase {
     
     public LuxCount() { }
     
@@ -30,8 +29,7 @@ public class LuxCount extends LuxSearch {
         return SequenceType.SINGLE_INTEGER;
     }
     
-    @SuppressWarnings("rawtypes")
-    @Override public SequenceIterator<Item> iterate (Query query, Saxon saxon, long facts) throws XPathException {
+    @Override public UnfailingIterator<Int64Value> iterate (Query query, Saxon saxon, long facts) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {
@@ -44,7 +42,7 @@ public class LuxCount extends LuxSearch {
         }
         saxon.getQueryStats().totalTime = System.currentTimeMillis() - t;
         saxon.getQueryStats().docCount += count;
-        return SingletonIterator.makeIterator((Item)new Int64Value(count));
+        return SingletonIterator.makeIterator(new Int64Value(count));
     }
 
 }

@@ -41,16 +41,25 @@ public class IndexTestSupport {
     public final static int QUERY_CONSTANT = 0x00000008;
 
     public IndexTestSupport() throws XMLStreamException, IOException, SaxonApiException {
-        this (new XmlIndexer (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|
-                //0,
-                XmlIndexer.INDEX_FULLTEXT), new RAMDirectory());
+        this ("lux/hamlet.xml");
+    }
+    
+    public IndexTestSupport(String xmlFileName) throws XMLStreamException, IOException, SaxonApiException {
+        this (xmlFileName,
+                new XmlIndexer (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|
+                XmlIndexer.INDEX_FULLTEXT),
+                new RAMDirectory());
     }
     
     public IndexTestSupport(XmlIndexer indexer, Directory dir) throws XMLStreamException, IOException, SaxonApiException {
+        this ("lux/hamlet.xml", indexer, dir);
+    }
+
+    public IndexTestSupport(String xmlFileName, XmlIndexer indexer, Directory dir) throws XMLStreamException, IOException, SaxonApiException {
         // create an in-memory Lucene index, index some content
         this.indexer = indexer;
         this.dir = dir;
-        indexAllElements (indexer, dir, "lux/hamlet.xml");
+        indexAllElements (indexer, dir, xmlFileName);
         searcher = new LuxSearcher(dir);
     }
 

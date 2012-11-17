@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import lux.api.QueryStats;
 import lux.search.LuxSearcher;
-import net.sf.saxon.om.Item;
+import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
@@ -14,8 +14,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
-@SuppressWarnings("rawtypes")
-public class ResultIterator implements SequenceIterator<Item>{
+public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     
     private final DocIdSetIterator docIter;
     private final Query query;
@@ -23,10 +22,10 @@ public class ResultIterator implements SequenceIterator<Item>{
     private final LuxSearcher searcher;
     private final Saxon saxon;
     private CachingDocReader docCache;
-    private Item current = null;
+    private NodeInfo current = null;
     private int position = 0;
     
-    public ResultIterator (Saxon saxon, Query query) throws IOException {
+    public SearchResultIterator (Saxon saxon, Query query) throws IOException {
         this.query = query;
         this.saxon = saxon;
         this.stats = saxon.getQueryStats();
@@ -38,7 +37,7 @@ public class ResultIterator implements SequenceIterator<Item>{
         docIter = searcher.searchOrdered(query);
     }
 
-    public Item next() throws XPathException {
+    public NodeInfo next() throws XPathException {
         long t = System.nanoTime();
         int startPosition = position;
         try {
@@ -50,7 +49,7 @@ public class ResultIterator implements SequenceIterator<Item>{
             } else {
                 long t1 = System.nanoTime();
                 XdmItem doc = docCache.get(docID);
-                Item item = (Item) doc.getUnderlyingValue();
+                NodeInfo item = (NodeInfo) doc.getUnderlyingValue();
                 // assert documents in order 
                 assert (current == null || ((TinyDocumentImpl)item).getDocumentNumber() > ((TinyDocumentImpl)current).getDocumentNumber());
                 current = item;
@@ -72,7 +71,7 @@ public class ResultIterator implements SequenceIterator<Item>{
         return current;
     }
 
-    public Item current() {
+    public NodeInfo current() {
         return current;
     }
 
@@ -84,9 +83,9 @@ public class ResultIterator implements SequenceIterator<Item>{
         // Saxon doesn't call this reliably
     }
 
-    public SequenceIterator<Item> getAnother() throws XPathException {
+    public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
-            return new ResultIterator (saxon, query);
+            return new SearchResultIterator (saxon, query);
         } catch (IOException e) {
             throw new XPathException (e);
         }

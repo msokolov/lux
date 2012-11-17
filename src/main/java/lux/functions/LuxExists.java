@@ -5,11 +5,10 @@ import java.io.IOException;
 import lux.compiler.XPathQuery;
 import lux.saxon.Saxon;
 import lux.xpath.FunCall;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
+import net.sf.saxon.tree.iter.UnfailingIterator;
 import net.sf.saxon.value.BooleanValue;
 import net.sf.saxon.value.SequenceType;
 
@@ -17,7 +16,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
-public class LuxExists extends LuxSearch {
+public class LuxExists extends SearchBase {
     
     public LuxExists() { }
 
@@ -31,8 +30,7 @@ public class LuxExists extends LuxSearch {
         return SequenceType.SINGLE_BOOLEAN;
     }    
     
-    @SuppressWarnings("rawtypes")
-    @Override public SequenceIterator<Item> iterate (Query query, Saxon saxon, long facts) throws XPathException {
+    @Override public UnfailingIterator<BooleanValue> iterate (Query query, Saxon saxon, long facts) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {
@@ -48,7 +46,7 @@ public class LuxExists extends LuxSearch {
         if ((facts & XPathQuery.BOOLEAN_FALSE) != 0) {
             exists = !exists;
         }
-        return SingletonIterator.makeIterator((Item)BooleanValue.get(exists));
+        return SingletonIterator.makeIterator(BooleanValue.get(exists));
     }
 }
 
