@@ -10,6 +10,7 @@ public class CommentConstructor extends AbstractExpression {
     public CommentConstructor (AbstractExpression abstractExpression) {
         super (Type.COMMENT);
         this.content = abstractExpression;
+        this.subs = new AbstractExpression[0];
     }
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
