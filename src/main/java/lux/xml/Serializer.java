@@ -110,7 +110,7 @@ public class Serializer implements StAXHandler {
                     if (prefix != null && prefix.length() > 0) {
                         doc.append (prefix).append(':');
                     }
-                    String value = r.getAttributeValue(i).replace("\"", "&quot;").replace("<", "&lt;");
+                    String value = r.getAttributeValue(i).replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;");
                     doc.append(r.getAttributeLocalName(i)).append ("=\"").append(value).append('"');
                 }
                 doc.append(">");

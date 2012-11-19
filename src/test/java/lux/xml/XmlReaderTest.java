@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
@@ -130,10 +131,7 @@ public class XmlReaderTest {
         Serializer serializer = new Serializer();
         handleDocument(serializer, "lux/reader-test.xml");
 
-        String xml = serializer.getDocument();
-        InputStream in = getClass().getClassLoader().getResourceAsStream ("lux/reader-test-norm1.xml");
-        String original = IOUtils.toString(in, "UTF-8");
-        assertEquals (original, xml);
+        assertSerialize(serializer, "lux/reader-test-norm1.xml");
     }
 
     @Test
@@ -141,8 +139,15 @@ public class XmlReaderTest {
         Serializer serializer = new Serializer();
         handleDocument(serializer, "lux/reader-test-ns.xml");
 
+        assertSerialize(serializer, "lux/reader-test-ns-norm1.xml");
+        
+        handleDocument (serializer, "lux/wikipedia-ns-test.xml");
+        assertSerialize(serializer, "lux/wikipedia-ns-test.xml");
+    }
+
+    private void assertSerialize(Serializer serializer, String norm) throws IOException {
         String xml = serializer.getDocument();
-        InputStream in = getClass().getClassLoader().getResourceAsStream ("lux/reader-test-ns-norm1.xml");
+        InputStream in = getClass().getClassLoader().getResourceAsStream (norm);
         String original = IOUtils.toString(in, "UTF-8");
         assertEquals (original, xml);
     }
