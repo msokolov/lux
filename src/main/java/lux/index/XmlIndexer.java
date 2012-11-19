@@ -231,6 +231,10 @@ public class XmlIndexer {
     public XmlPathMapper getPathMapper() {
         return pathMapper;
     }
+    
+    public XmlReader getXmlReader () {
+        return xmlReader;
+    }
 
     public String getDocumentText() {
         if (serializer != null) {
