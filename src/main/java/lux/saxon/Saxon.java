@@ -62,6 +62,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     private SaxonBuilder saxonBuilder;
     private SaxonTranslator translator;
     private PathOptimizer optimizer;
+    private TransformErrorListener errorListener;
     
     private CachingDocReader docReader;
     
@@ -82,6 +83,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         config.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
         defaultCollectionURIResolver = config.getCollectionURIResolver();
         config.setCollectionURIResolver(this);
+        config.setErrorListener(new TransformErrorListener());
         processor = new Processor (config);
         processor.registerExtensionFunction(new LuxSearch());
         processor.registerExtensionFunction(new LuxCount());
@@ -95,6 +97,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         invalidateCache();
         this.dialect = dialect;
         logger = LoggerFactory.getLogger(getClass());
+        errorListener = new TransformErrorListener();
     }
     
     /**
@@ -211,10 +214,9 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     @Override
     public ResultSet<?> iterate(Expression expr, QueryContext context) { 
         SaxonExpr saxonExpr = (SaxonExpr) expr;
+        context.setEvaluator(this);
         try {
             return saxonExpr.evaluate(context);
-        } catch (SaxonApiException e) {
-            return new XdmResultSet(e);
         } finally {
             docReader.clear();
         }
@@ -279,8 +281,9 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         if (xqueryCompiler == null) {
             xqueryCompiler = processor.newXQueryCompiler();
             xqueryCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-            xqueryCompiler.setErrorListener(config.getErrorListener());
+            xqueryCompiler.setErrorListener(errorListener);
         }
+        errorListener.clear();
         return xqueryCompiler;
     }
         
@@ -324,6 +327,10 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
 
     public PathOptimizer getOptimizer() {
         return optimizer;
+    }
+    
+    public TransformErrorListener getErrorListener () {
+        return errorListener;
     }
 
 }

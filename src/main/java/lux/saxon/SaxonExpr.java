@@ -63,12 +63,16 @@ public class SaxonExpr implements lux.api.Expression {
         return xquery.getBody();
     }
     
-    public ResultSet<?> evaluate(QueryContext context) throws SaxonApiException {
-        if (xpathExec != null) {
-           return new XdmResultSet (evaluateXPath(context));
-        }
-        if (xqueryExec != null) {
-            return new XdmResultSet (evaluateXQuery(context));
+    public ResultSet<?> evaluate(QueryContext context) {
+        try {
+            if (xpathExec != null) {
+                return new XdmResultSet (evaluateXPath(context));
+            }
+            if (xqueryExec != null) {
+                return new XdmResultSet (evaluateXQuery(context));
+            }
+        } catch (SaxonApiException e) {
+            return new XdmResultSet(((Saxon)context.getEvaluator()).getErrorListener().getErrors());
         }
         // TODO: throw an exception
         return null;
@@ -76,6 +80,9 @@ public class SaxonExpr implements lux.api.Expression {
     
     private XdmValue evaluateXQuery (QueryContext context) throws SaxonApiException {
         XQueryEvaluator eval = xqueryExec.load();
+        TransformErrorListener errorListener = ((Saxon)context.getEvaluator()).getErrorListener();
+        errorListener.clear();
+        eval.setErrorListener(errorListener);
         if (context != null) {
             eval.setContextItem((XdmItem) context.getContextItem());
             if (context.getVariableBindings() != null) {

@@ -1,6 +1,9 @@
 package lux.saxon;
 
+import java.util.Collection;
 import java.util.Iterator;
+
+import javax.xml.transform.TransformerException;
 
 import lux.api.ResultSet;
 import net.sf.saxon.s9api.XdmEmptySequence;
@@ -10,20 +13,16 @@ import net.sf.saxon.s9api.XdmValue;
 public class XdmResultSet implements ResultSet<XdmItem> {
     
     private final XdmValue value;
-    private final Exception ex;
+    private final Collection<TransformerException> errors;
     
     public XdmResultSet(XdmValue value) {
         this.value = value;
-        ex = null;
+        errors = null;
     }
     
-    public XdmResultSet(Exception ex) {
+    public XdmResultSet (Collection<TransformerException> errors) {
         this.value = XdmEmptySequence.getInstance();
-        Exception cause = ex;
-        while (cause != null && cause.getCause() != cause && (cause.getCause() instanceof Exception)) {
-            cause = (Exception) cause.getCause();
-        }
-        this.ex = cause;
+        this.errors = errors;
     }
 
     public XdmValue getXdmValue () {
@@ -38,8 +37,8 @@ public class XdmResultSet implements ResultSet<XdmItem> {
         return value.size();
     }
 
-    public Exception getException() {
-        return ex;
+    public Collection<TransformerException> getErrors() {
+        return errors;
     }
 
 }
