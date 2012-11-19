@@ -23,8 +23,20 @@ public class FLWOR extends AbstractExpression {
 
     @Override
     public void toString(StringBuilder buf) {
+        boolean inWhereClause = false;
         for (FLWORClause clause : clauses) {
-            clause.toString(buf);
+            if (clause instanceof WhereClause) {
+                // combine Saxon's adjacent where clauses into a single one
+                if (inWhereClause) {
+                    buf.append ("and ");
+                    clause.getSequence().toString(buf);
+                } else {
+                    inWhereClause = true;
+                    clause.toString(buf);
+                }
+            } else {
+                clause.toString(buf);
+            }
             buf.append(' ');
         }
         buf.append ("return ");
