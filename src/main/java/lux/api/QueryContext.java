@@ -13,6 +13,8 @@ public class QueryContext {
     
     private Object contextItem;
     
+    private Evaluator evaluator;
+    
     /**
      * bind an external variable so that it will be available in the scope of queries evaluated using this context
      * @param varName the name of the variable to bind
@@ -47,6 +49,14 @@ public class QueryContext {
     
     public String getXmlFieldName() {
         return XmlField.XML_STORE.getName();
+    }
+
+    public Evaluator getEvaluator() {
+        return evaluator;
+    }
+
+    public void setEvaluator(Evaluator evaluator) {
+        this.evaluator = evaluator;
     }
 
 }
