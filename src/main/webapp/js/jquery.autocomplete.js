@@ -14,14 +14,13 @@
 (function ($) {
     'use strict';
 
-    /*
     var reEscape = new RegExp('(\\' + ['/', '.', '*', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\'].join('|\\') + ')', 'g');
 
     function fnFormatResult(value, data, currentValue) {
         var pattern = '(' + currentValue.replace(reEscape, '\\$1') + ')';
         return value.replace(new RegExp(pattern, 'gi'), '<strong>$1<\/strong>');
     }
-    */
+
     function fnNoFormatResult(value, data, currentValue) {
         return value;
     }
@@ -49,7 +48,7 @@
             width: 0,
             highlight: true,
             params: {},
-            fnFormatResult: fnNoFormatResult,
+            fnFormatResult: options.fnFormatResult ? options.fnFormatResult : fnNoFormatResult,
             delimiter: null,
             zIndex: 9999
         };
@@ -96,7 +95,7 @@
                 this.options.width = this.el.outerWidth();
             }
 
-            this.mainContainerId = 'AutocompleteContainter_' + uid;
+            this.mainContainerId = 'AutocompleteContainer_' + uid;
 
             $('<div id="' + this.mainContainerId + '" style="position:absolute;z-index:9999;"><div class="autocomplete-w1"><div class="autocomplete" id="' + autocompleteElId + '" style="display:none; width:300px;"></div></div></div>').appendTo('body');
 
@@ -192,8 +191,14 @@
                 case 9: //KEY_TAB:
                 case 13: //KEY_RETURN:
                     if (this.selectedIndex === -1) {
+                        var el = this.el.get(0);
+                        // clear selection
+                        selectElementText (el, el.value.length, el.value.length);
+                        // don't immediately pop up again!
+                        this.ignoreValueChange = 1;
                         this.hide();
-                        return;
+                        // inhibit form submission
+                        // return;
                     }
                     this.select(this.selectedIndex);
                     if (e.keyCode === 9) {
@@ -300,6 +305,9 @@
             } else if (!this.isBadQuery(q)) {
                 me = this;
                 me.options.params.query = q;
+                // FIXME: make this more generic by pulling in all form element
+                // names and values as parameters
+                me.options.params.qname = document.getElementById('qname').value;
                 $.get(this.serviceUrl, me.options.params, function (txt) {
                     me.processResponse(q, txt);
                 }, 'text');
@@ -349,6 +357,15 @@
                 };
             };
 
+            // auto-suggest the first item, leaving the completion section in the text selection
+            var first = this.suggestions[0];
+            var input = this.el.val();
+            if (first.indexOf(input) == 0 && input.length < first.length) {
+                // set the value of the autocomplete element to the first suggested value
+                this.el.val(first);
+                selectElementText(this.el.get(0), input.length, first.length);
+            }
+
             this.container.hide().empty();
 
             for (i = 0; i < len; i++) {
@@ -358,7 +375,6 @@
                 div.click(mClick(i));
                 this.container.append(div);
             }
-
             this.enabled = true;
             this.container.show();
         },
@@ -533,3 +549,20 @@
         }
     };
 }(jQuery));
+
+function selectElementText(el, start, end) {
+    if( el.createTextRange ) {
+        var selRange = el.createTextRange();
+        selRange.collapse(true);
+        selRange.moveStart('character', start);
+        selRange.moveEnd('character', end);
+        selRange.select();
+    } else if( el.setSelectionRange ) {
+        el.setSelectionRange(start, end);
+    } else if( el.selectionStart ) {
+        el.selectionStart = start;
+        el.selectionEnd = end;
+    }
+    el.focus();
+}
+

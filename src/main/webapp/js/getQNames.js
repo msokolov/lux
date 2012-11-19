@@ -8,9 +8,18 @@ $(function () {
         dataType: 'json'
     }).done(function (data) {
         var status = $('#selection');
-        $('#query').autocomplete({
+        $('#qname').autocomplete({
             lookup: data,
             serviceUrl:'getQNames.xqy'
         });
     });
+});
+
+$('#term').autocomplete({
+    serviceUrl:'getTerms.xqy',
+    /*
+    fnFormatResult: function (value, data, currentValue) {
+        return value.substring(value.indexOf(currentValue));
+    }
+    */
 });

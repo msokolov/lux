@@ -1,3 +1,22 @@
+* app server
+This works OK but requires some minor damage to solr. Might be better as a
+separate lightweight app??
+** Need to create a mini-app
+map /*.xqy to XQueryServlet -- can we do this in jetty webdefault
+** solr QueryResponseWriter
+that serializes the output of XQuery evaluation as HTML (and/or XML or
+text).  Can configure a path should map to either a folder on the
+filesystem, or in lux storage. Use this to deploy a mini-appserver at
+/lux/index.xqy that demonstrates lux.
+** search demo
+*** autocompletion of node names and words
+using new lux:fieldTerms() method which uses a Lucene TermEnum.
+*** auto-select top term
+Display auto-completed portion selected so typing overwrites it.  Nifty
+javascript fun.
+*** sunflower logo
+I'm no artist but I like it.  ok - maybe try the circles version?  some
+other thing that's in between?
 * query API
 lux:search now accepts queries formatted as node trees using the Lucene XML
 query parser scheme.  The indexes provided include node (QName) path
@@ -10,8 +29,8 @@ eg //foo["phrase to find"] would match <foo><a>phrase<a> to <b>find</b></foo>
 eg //foo["phrase to find"] would match <foo><a>phrase<a>to<b>find</b></foo>
 * storage
 TinyBinary yields 5-20x speedup in document read time.  Documents
-are *larger* though - about twice as big, even using utf-8 encoding for the
-text.  Apparently 19 bytes per node is expensive.
+are *larger* though - about 1.5x as big, with the best encoding so far.
+Apparently 19 pointers per node is expensive.
 ** test run
 Original size=361 bytes, 'tiny' binary size=833 bytes
 DocBuilder: 907ms; TinyBinary: 116ms

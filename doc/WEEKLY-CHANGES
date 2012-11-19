@@ -22,6 +22,32 @@ PubFactory sandbox testing
 
 7/5: value and word indexes
 
+11/19: OK it's been a while since I updated - actually a lot has been done:
+
+query api: lux:search now accepts an xml node-tree as a query.  The intent
+is to provide convenience methods for constructing such a tree so that
+search can be called from xquery code more easily.
+
+binary storage: I implemented a binary storage format for TinyTree which
+allows for faster parsing; 5-20x speedup with a 1.5x size increase (varies,
+often less).  TinyBinary is in a branch though, since it relies on a
+modification to Saxon and I don't intend to release as part of the open
+source package.
+
+iFactory release: I released lux 0.2 to iFactory where it has been used in
+a limited way for some data analysis and exploration within the loader
+sandbox app.
+
+app server: I implemented a simple app server embedded with solr that
+serves up pages written in xquery.
+
+index term retrieval: I added an xquery function lux:fieldTerms that
+retrieves terms from the index.
+
+demo: I made a little search demo written in xquery that runs in the app
+server and demonstrates auto-completion of node names and term values, and
+search.  It sports a sunflwor logo.
+
 UPCOMING
 
 ****** bug fixes, testing (namespaces / attributes)

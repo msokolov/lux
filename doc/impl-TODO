@@ -1,11 +1,3 @@
-* app server
-** Need to create a mini-app
-map /*.xqy to XQueryServlet -- can we do this in jetty webdefault
-** solr QueryResponseWriter
-that serializes the output of XQuery evaluation as HTML (and/or XML or
-text).  Can configure a path should map to either a folder on the
-filesystem, or in lux storage. Use this to deploy a mini-appserver at
-/lux/index.xqy that demonstrates lux.
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE, but we can't because we extend
 Configuration.
@@ -19,6 +11,9 @@ collection() are considered to be in document order.
 This is our own binary storage format that reconstructs TinyTrees.  If we
 change to a Saxon-compatible Configuration, then we could support the use
 of PTree storage.
+* document insert via xquery
+should be able to insert directly to a local Directory containing a lucene index;
+any sharding would have to be taken care of externally
 * ifpress integration
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar and dependencies

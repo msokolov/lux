@@ -30,13 +30,15 @@ declare function demo:format-param ($p as element(param)) as xs:string
   <body>
     <form action="index.xqy" id="search">
       <div class="container">
-        <h1>Lux Demo</h1>
+        <h1><img class="logo" src="img/sunflwor52.png" alt="Lux" /> Lux Demo</h1>
         <div>
-          <input type="text" name="query" id="query"/>
+          <input type="text" name="qname" id="qname" />
+          <input type="text" name="term" id="term" />
+          <input type="submit" value="search" />
         </div>
         <div id="selection"></div>
       </div>
-      <input name="q" /><input type="submit" value="search" />
+      
     </form>
     <p id="search-description">{
       for $param in $lux:http/http/parameters/param 
@@ -45,5 +47,6 @@ declare function demo:format-param ($p as element(param)) as xs:string
     <script src="js/jquery-1.8.2.min.js"></script>
     <script src="js/jquery.autocomplete.js"></script>
     <script src="js/getQNames.js"></script>
+    <script>$("#qname").focus()</script>
   </body>
 </html>
