@@ -115,8 +115,6 @@ public class XQueryComponent extends QueryComponent {
         // multiple shards not implemented
         evaluator.setSearcher(new LuxSearcher(searcher));
         evaluator.setQueryStats(new QueryStats());
-        // TODO: catch compilation errors and report using the error reporting
-        // used for evaluation errors below
         String query = rb.getQueryString();
         if (StringUtils.isBlank(query)) {
             rsp.add("xpath-error", "query was blank");
@@ -125,7 +123,7 @@ public class XQueryComponent extends QueryComponent {
         }
     }
 
-    private void evaluateQuery(ResponseBuilder rb, SolrQueryResponse rsp, SolrIndexSearcher.QueryResult result, int start,
+    protected void evaluateQuery(ResponseBuilder rb, SolrQueryResponse rsp, SolrIndexSearcher.QueryResult result, int start,
             long timeAllowed, int len, String query) {
         Expression expr;
         try {
