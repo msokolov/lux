@@ -1,6 +1,6 @@
 * more design love
 color, form, line
-* Don't autocomplete when the user-entered term doesn't match
+* autocomplete all text terms when no qname selected
 * concatenate multiple terms into a path
 * search for term
 ** pagination

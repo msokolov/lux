@@ -1,16 +1,26 @@
-h1 { font-family: "Lucida Sans", Arial, Helvetica, sans-serif; }
-img.logo { vertical-align: middle }
-/*
-body { font-family: sans-serif; font-size: 14px; line-height: 1.6em; margin: 0; padding: 0; }
-.container { width: 800px; margin: 0 auto; }
-*/
+body { font-family: Arial, Helvetica, sans-serif; 
+       font-size: 14px; line-height: 1.6em; margin: 0; padding: 0;
+       background-color: #eeffdd;
+       color: #210337;
+     }
 
-.container { margin: 0 auto; }
+/******** header, branding ********/
+h1 { font-family: "Candara Bold", Arial, Helvetica, sans-serif; margin: 0.5em; }
+img.logo { vertical-align: middle }
+
+/******** search page controls ******/
+#search { padding-left: 3em; }
+
+/* .container { margin: 1em; } */
 .autocomplete-w1 { position: absolute; top: 0px; left: 0px; }
 .autocomplete { border: 1px solid #999; background: #FFF; cursor: default; text-align: left; max-height: 350px; overflow: auto; /* IE6 specific: */ _height: 350px; _margin: 0; _overflow-x: hidden; }
 .autocomplete .selected { background: #F0F0F0; }
 .autocomplete div { padding: 2px 2px; line-height: 1em; white-space: nowrap; overflow: hidden; }
 
-/*
-#query { font-size: 28px; padding: 10px; border: 1px solid #CCC; display: block; margin: 40px; }
-*/
+#search-description { color: #888888; }
+#search-description span { margin: 4px }
+
+#search-results { list-style: none; margin-left: 3em; padding-left: 0 }
+
+#pagination { margin-left: 3em; width: 400px }
+
