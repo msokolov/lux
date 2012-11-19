@@ -10,6 +10,8 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.xml.transform.TransformerException;
+
 import lux.api.Expression;
 import lux.api.LuxException;
 import lux.api.QueryContext;
@@ -130,7 +132,12 @@ public class XQueryComponent extends QueryComponent {
         	expr = evaluator.compile(query);
         } catch (LuxException ex) {
         	ex.printStackTrace();
-        	rsp.add("xpath-error", ex.getCause().getMessage());
+        	StringBuilder buf = new StringBuilder ();
+        	for (TransformerException te : evaluator.getErrorListener().getErrors()) {
+        	    buf.append (te.getMessageAndLocation());
+        	    buf.append ("\n");
+        	}
+        	rsp.add("xpath-error", buf.toString());
         	return;
         }
         //SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
@@ -159,9 +166,10 @@ public class XQueryComponent extends QueryComponent {
         }
         rsp.add("xpath-results", xpathResults);
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
-        Exception ex = queryResults.getException();
-        if (ex != null) {
-            rsp.add("xpath-error", ex.getMessage());
+        if (queryResults.getErrors() != null) {
+            for (TransformerException te : queryResults.getErrors()) {
+                rsp.add("xpath-error", te.getMessage() + " on line " + te.getLocator().getLineNumber() + " at column " + te.getLocator().getColumnNumber());
+            }
         }
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);
