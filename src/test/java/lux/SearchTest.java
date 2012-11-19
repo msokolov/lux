@@ -426,8 +426,8 @@ public class SearchTest {
     
     protected ResultSet<?> assertSearch(String expectedResult, String query, Integer props, Integer docCount, Integer cacheMisses) throws Exception {
         ResultSet<?> results = assertSearch (query, props, docCount, cacheMisses);
-        if (results.getException() != null) {
-            throw results.getException();
+        if (results.getErrors() != null) {
+            throw results.getErrors().iterator().next();
         }
         boolean hasResults = results.iterator().hasNext();
         String result = hasResults ? results.iterator().next().toString() : null;

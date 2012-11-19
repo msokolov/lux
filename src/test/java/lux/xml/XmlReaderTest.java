@@ -28,7 +28,10 @@ public class XmlReaderTest {
         SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
         handleDocument(saxonBuilder, "lux/reader-test.xml");
         XdmNode doc = saxonBuilder.getDocument();
+        assertDocContent(doc);
+    }
 
+    private void assertDocContent(XdmNode doc) {
         assertEquals("test", ((XdmNode) doc.axisIterator(Axis.CHILD).next()).getNodeName().toString());
         assertEquals(CONTENT, normalize(doc.getStringValue()));
     }
@@ -38,9 +41,24 @@ public class XmlReaderTest {
         SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
         handleDocument(saxonBuilder, "lux/reader-test-ns.xml");
         XdmNode doc = saxonBuilder.getDocument();
+        assertDocContent(doc);
+    }
+    
+    @Test 
+    public void testStripNamespaces () throws Exception {
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
+        handleDocument (saxonBuilder, "lux/reader-test-ns.xml", true);
+        XdmNode doc = saxonBuilder.getDocument();
+        assertDocContent(doc);
+        XdmNode title = (XdmNode) (doc.axisIterator(Axis.DESCENDANT, new net.sf.saxon.s9api.QName("title")).next());
+        assertEquals("title", title.getNodeName().toString());
+        assertEquals ("TEST", title.getStringValue());
 
-        assertEquals("test", ((XdmNode) doc.axisIterator(Axis.CHILD).next()).getNodeName().toString());
-        assertEquals(CONTENT, normalize(doc.getStringValue()));
+        handleDocument (saxonBuilder, "lux/wikipedia-ns-test.xml", true);
+        doc = saxonBuilder.getDocument();
+        
+        assertEquals ("wikipedia", doc.getStringValue());
+        assertEquals ("", ((XdmNode) doc.axisIterator(Axis.CHILD).next()).getNodeName().getNamespaceURI());
     }
 
     @Test 
@@ -176,8 +194,13 @@ public class XmlReaderTest {
     }
 
     private void handleDocument(StAXHandler handler, String path) throws XMLStreamException {
+        handleDocument(handler, path, false);
+    }
+    
+    private void handleDocument(StAXHandler handler, String path, boolean stripNamespaces) throws XMLStreamException {
         InputStream in = getClass().getClassLoader().getResourceAsStream (path);
         XmlReader xmlReader = new XmlReader ();
+        xmlReader.setStripNamespaces(stripNamespaces);
         xmlReader.addHandler(handler);
         xmlReader.read(in);
     }

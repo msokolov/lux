@@ -149,8 +149,8 @@ public class SearchQueryTest extends BasicQueryTest {
         saxon.setQueryStats(new QueryStats());
         SaxonExpr saxonExpr = saxon.compile(xpath);
         ResultSet<?> results = saxon.evaluate(saxonExpr);
-        if (results.getException() != null) {
-            throw new LuxException(results.getException());
+        if (results.getErrors() != null) {
+            throw new LuxException(results.getErrors().iterator().next());
         }
         return results;
     }
