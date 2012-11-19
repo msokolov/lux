@@ -4,8 +4,10 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -139,7 +141,7 @@ public class XmlReader {
         this.stripNamespaces = stripNamespaces;
     }
 
-    class NamespaceStrippingXMLStreamReader extends StreamReaderDelegate {
+    class NamespaceStrippingXMLStreamReader extends StreamReaderDelegate implements NamespaceContext {
         public NamespaceStrippingXMLStreamReader(XMLStreamReader xmlStreamReader) {
             super (xmlStreamReader);
         }
@@ -152,6 +154,11 @@ public class XmlReader {
         @Override
         public String getNamespaceURI() {
             return "";
+        }
+        
+        @Override
+        public int getNamespaceCount() {
+            return 0;
         }
         
         @Override
@@ -172,6 +179,36 @@ public class XmlReader {
         @Override
         public String getAttributeNamespace (int i) {
             return "";
+        }
+        
+        @Override
+        public NamespaceContext getNamespaceContext () {
+            return this;
+            // return super.getNamespaceContext();
+        }
+
+        @Override
+        public String getPrefix(String namespaceURI) {
+            return "";
+        }
+
+        @Override
+        public Iterator<String> getPrefixes(String namespaceURI) {
+            return new Iterator<String>() {
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+
+                @Override
+                public String next() {
+                    return null;
+                }
+
+                @Override
+                public void remove() {
+                }
+            };
         }
     }
     
