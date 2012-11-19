@@ -11,6 +11,7 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLResolver;
+import javax.xml.stream.util.StreamReaderDelegate;
 
 import org.codehaus.stax2.XMLInputFactory2;
 
@@ -28,6 +29,8 @@ public class XmlReader {
     private XMLInputFactory inputFactory;
 
     private ArrayList<StAXHandler> handlers = new ArrayList<StAXHandler>();
+    
+    private boolean stripNamespaces;
 
     /**
      * Consume the character stream, generating events for the handlers.
@@ -35,8 +38,12 @@ public class XmlReader {
      * @param reader source of xml StAX events
      * @throws XMLStreamException if the reader does
      */
-    public void read (Reader reader) throws XMLStreamException {        
-        read (getXMLInputFactory().createXMLStreamReader(reader));
+    public void read (Reader reader) throws XMLStreamException {
+        XMLStreamReader xmlStreamReader = getXMLInputFactory().createXMLStreamReader(reader);
+        if (stripNamespaces) {
+            xmlStreamReader = new NamespaceStrippingXMLStreamReader(xmlStreamReader);
+        }
+        read (xmlStreamReader);
     }
     
     /**
@@ -46,7 +53,11 @@ public class XmlReader {
      * @throws XMLStreamException if the reader does
      */
     public void read (InputStream in) throws XMLStreamException {  
-        read (getXMLInputFactory().createXMLStreamReader(in));
+        XMLStreamReader xmlStreamReader = getXMLInputFactory().createXMLStreamReader(in);
+        if (stripNamespaces) {
+            xmlStreamReader = new NamespaceStrippingXMLStreamReader(xmlStreamReader);
+        }
+        read (xmlStreamReader);
     }
     
     private XMLInputFactory getXMLInputFactory () {
@@ -112,6 +123,55 @@ public class XmlReader {
     public void reset () {
         for (StAXHandler handler : handlers) {
             handler.reset ();
+        }
+    }
+    
+    /**
+     * when true, all namespace information is stripped from the reported events.
+     * The result is as if all namespace declarations and prefixes were removed from the document.
+     * @return whether namespace information is stripped
+     */
+    public boolean isStripNamespaces() {
+        return stripNamespaces;
+    }
+
+    public void setStripNamespaces(boolean stripNamespaces) {
+        this.stripNamespaces = stripNamespaces;
+    }
+
+    class NamespaceStrippingXMLStreamReader extends StreamReaderDelegate {
+        public NamespaceStrippingXMLStreamReader(XMLStreamReader xmlStreamReader) {
+            super (xmlStreamReader);
+        }
+
+        @Override
+        public String getPrefix () {
+            return "";
+        }
+        
+        @Override
+        public String getNamespaceURI() {
+            return "";
+        }
+        
+        @Override
+        public String getNamespaceURI(int i) {
+            return "";
+        }
+        
+        @Override
+        public String getNamespaceURI(String s) {
+            return "";
+        }
+        
+        @Override
+        public String getAttributePrefix (int i) {
+            return "";
+        }
+        
+        @Override
+        public String getAttributeNamespace (int i) {
+            return "";
         }
     }
     
