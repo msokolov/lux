@@ -104,12 +104,12 @@ public class LuxSolrTest {
     }
     
     @Test public void testQueryError () throws Exception {
-        assertXPathSearchError("Prefix lux_elt_name_ms has not been declared", "lux_elt_name_ms:config");
+        assertXPathSearchError("Prefix lux_elt_name_ms has not been declared; Line#: 1; Column#: 22\n", "lux_elt_name_ms:config");
     }
     
     @Test
     public void testSyntaxError () throws Exception {
-        assertXPathSearchError("Unexpected token name \"bad\" beyond end of query", "hey bad boy");
+        assertXPathSearchError("Unexpected token name \"bad\" beyond end of query; Line#: 1; Column#: 4\n", "hey bad boy");
     }
     
     protected void assertQueryCount (int count, String query) throws SolrServerException {

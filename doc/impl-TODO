@@ -1,3 +1,16 @@
+* app server rest service 
+display documents from /doc/<uri>
+enforce uris begin with /
+* highlighting
+* document store / load
+* xslt
+We want to use for document output and also for input transformations
+provide as function from xquery: lux:transform()
+** also lux:eval()
+* eliminate lux.api
+the whole code base is Saxon-specific.  If we really want to support some
+other implementation, we have to do that now.  If it's just
+future-proofing, it's junk and we should nuke it.
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE, but we can't because we extend
 Configuration.
@@ -11,9 +24,11 @@ collection() are considered to be in document order.
 This is our own binary storage format that reconstructs TinyTrees.  If we
 change to a Saxon-compatible Configuration, then we could support the use
 of PTree storage.
-* document insert via xquery
+* lux xquery API
+** document insert
 should be able to insert directly to a local Directory containing a lucene index;
 any sharding would have to be taken care of externally
+** app server module import
 * ifpress integration
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar and dependencies

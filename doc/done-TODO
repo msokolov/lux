@@ -11,6 +11,7 @@ filesystem, or in lux storage. Use this to deploy a mini-appserver at
 ** search demo
 *** autocompletion of node names and words
 using new lux:fieldTerms() method which uses a Lucene TermEnum.
+**** Don't autocomplete when the user-entered term doesn't match
 *** auto-select top term
 Display auto-completed portion selected so typing overwrites it.  Nifty
 javascript fun.

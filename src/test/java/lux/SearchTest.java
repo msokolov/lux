@@ -16,6 +16,7 @@ import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
 
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.AfterClass;
@@ -379,16 +380,18 @@ public class SearchTest {
         assertSearch ("5", "count(lux:search('<LINE:\"holla bernardo\"'))", null, 5, 0);
         try {
             assertSearch (null, "lux:search(1,2,3)", null, null, null);
-            assertTrue ("expected exception", false);
+            assertTrue ("expected exception not thrown", false);
         } catch (LuxException e) { }
         try {
             assertSearch (null, "lux:search(1,'xx')", null, null, null);
-            assertTrue ("expected exception", false);
+            assertTrue ("expected exception not thrown", false);
         } catch (LuxException e) { }
         try {
             assertSearch (null, "lux:search(':::')", null, null, null);
-            assertTrue ("expected exception", false);
-        } catch (ParseException e) { }
+            assertTrue ("expected exception not thrown", false);
+        } catch (XPathException e) { 
+            assertEquals ("Failed to parse lucene query :::", e.getMessage());
+        }
         assertSearch ("65", "lux:count(text{'bernardo'})", null, 65, 0);
     }
     

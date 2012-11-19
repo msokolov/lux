@@ -28,6 +28,10 @@ public class TransformErrorListener implements ErrorListener {
 
     @Override
     public void fatalError(TransformerException exception) throws TransformerException {
+        while (exception != exception.getCause() && exception.getCause() != null
+                && exception.getCause() instanceof TransformerException) {
+            exception = (TransformerException) exception.getCause();
+        }
         errors.add(exception);
     }
 

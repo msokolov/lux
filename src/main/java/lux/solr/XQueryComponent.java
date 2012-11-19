@@ -166,7 +166,11 @@ public class XQueryComponent extends QueryComponent {
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
         if (queryResults.getErrors() != null) {
             for (TransformerException te : queryResults.getErrors()) {
-                rsp.add("xpath-error", te.getMessage() + " on line " + te.getLocator().getLineNumber() + " at column " + te.getLocator().getColumnNumber());
+                if (te.getLocator() != null) {
+                    rsp.add("xpath-error", te.getMessage() + " on line " + te.getLocator().getLineNumber() + " at column " + te.getLocator().getColumnNumber());
+                } else {
+                    rsp.add("xpath-error", te.getMessage());
+                }
             }
         }
         rb.setResult (result);

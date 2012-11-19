@@ -125,7 +125,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
             DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(XmlField.URI.getName(), href)));
             int docID = disi.nextDoc();
             if (docID == DocIdSetIterator.NO_MORE_DOCS) {
-                throw new LuxException("document '" +  href + "' not found");
+                throw new TransformerException("document '" +  href + "' not found");
             }
             XdmNode doc = getDocReader().get(docID);
             return doc.asSource(); 
@@ -214,6 +214,9 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     @Override
     public ResultSet<?> iterate(Expression expr, QueryContext context) { 
         SaxonExpr saxonExpr = (SaxonExpr) expr;
+        if (context == null) {
+            context = new QueryContext();
+        }
         context.setEvaluator(this);
         try {
             return saxonExpr.evaluate(context);
