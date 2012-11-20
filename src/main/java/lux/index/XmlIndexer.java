@@ -35,6 +35,8 @@ import org.apache.lucene.util.Version;
  * handlers with StAX (XML) events.  Some fields may share the same handler.  The association between
  * field and handler is implicit: the field calls an XmlIndexer getter to retrieve the handler.
  * 
+ * Also, this class is not thread-safe 
+ * 
  * This is all kind of a mess, and not readily extendable.  If you want to add a new type of field (a new XmlField instance),
  * you have to modify the indexer, which has knowledge of all the possible fields.  This is not a good design.
  * 
