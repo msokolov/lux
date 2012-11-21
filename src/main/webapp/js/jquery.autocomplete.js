@@ -184,35 +184,40 @@
             }
 
             switch (e.keyCode) {
-                case 27: //KEY_ESC:
-                    this.el.val(this.currentValue);
+            case 27: //KEY_ESC:
+                this.el.val(this.currentValue);
+                this.hide();
+                break;
+
+            case 8: // KEY_BS:
+                this.ignoreValueChange = 1;
+                return;
+
+            case 9: //KEY_TAB:
+            case 13: //KEY_RETURN:
+                if (this.selectedIndex === -1) {
+                    var el = this.el.get(0);
+                    // clear selection
+                    selectElementText (el, el.value.length, el.value.length);
+                    // don't immediately pop up again!
+                    this.ignoreValueChange = 1;
                     this.hide();
-                    break;
-                case 9: //KEY_TAB:
-                case 13: //KEY_RETURN:
-                    if (this.selectedIndex === -1) {
-                        var el = this.el.get(0);
-                        // clear selection
-                        selectElementText (el, el.value.length, el.value.length);
-                        // don't immediately pop up again!
-                        this.ignoreValueChange = 1;
-                        this.hide();
-                        // inhibit form submission
-                        // return;
-                    }
-                    this.select(this.selectedIndex);
-                    if (e.keyCode === 9) {
-                        return;
-                    }
-                    break;
-                case 38: //KEY_UP:
-                    this.moveUp();
-                    break;
-                case 40: //KEY_DOWN:
-                    this.moveDown();
-                    break;
-                default:
+                    // inhibit form submission
+                    // return;
+                }
+                this.select(this.selectedIndex);
+                if (e.keyCode === 9) {
                     return;
+                }
+                break;
+            case 38: //KEY_UP:
+                this.moveUp();
+                break;
+            case 40: //KEY_DOWN:
+                this.moveDown();
+                break;
+            default:
+                return;
             }
 
             // Cancel event if function did not return:
