@@ -13,7 +13,11 @@ public class QueryContext {
     
     private Object contextItem;
     
-    private Evaluator evaluator;
+    private final Evaluator evaluator;
+    
+    public QueryContext (Evaluator eval) {
+        evaluator = eval;
+    }
     
     /**
      * bind an external variable so that it will be available in the scope of queries evaluated using this context
@@ -53,10 +57,6 @@ public class QueryContext {
 
     public Evaluator getEvaluator() {
         return evaluator;
-    }
-
-    public void setEvaluator(Evaluator evaluator) {
-        this.evaluator = evaluator;
     }
 
 }
