@@ -18,6 +18,7 @@ import lux.functions.FieldTerms;
 import lux.functions.LuxCount;
 import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
+import lux.functions.Transform;
 import lux.index.XmlIndexer;
 import lux.index.field.XmlField;
 import lux.search.LuxSearcher;
@@ -37,6 +38,7 @@ import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.index.Term;
@@ -59,6 +61,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
 
     private XQueryCompiler xqueryCompiler;
     private XPathCompiler xpathCompiler;
+    private XsltCompiler xsltCompiler;
     private SaxonBuilder saxonBuilder;
     private SaxonTranslator translator;
     private PathOptimizer optimizer;
@@ -89,6 +92,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         processor.registerExtensionFunction(new LuxCount());
         processor.registerExtensionFunction(new LuxExists());
         processor.registerExtensionFunction(new FieldTerms());
+        processor.registerExtensionFunction(new Transform());
         saxonBuilder = new SaxonBuilder();
         translator = new SaxonTranslator(config);
         if (indexer != null) {
@@ -102,8 +106,10 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     
     /**
      * Creates a Saxon query evaluator with no searcher or indexer using the supplied 
-     * dialect.  A searcher and indexer must be supplied in order to compile or evaluate queries. 
-     * This constructor is used when the searcher is not available until query evaluation time.
+     * dialect.  A searcher and indexer must be supplied in order to compile or evaluate queries
+     * that are optimized for use with a Lux (Lucene) index. This constructor is used when the searcher is 
+     * not available until query evaluation time, or for compiling and executing queries that don't
+     * rely on documents stored in Lucene.
      */
     public Saxon (Dialect dialect) {
         this (null, null, dialect);
@@ -119,6 +125,10 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
      * implements URIResolver so as to resolve uris in service of fn:doc()
      */
     public Source resolve(String href, String base) throws TransformerException {
+        if (href.startsWith("file:")) {
+            // let the default resolver do its thing
+            return null;
+        }
         String path = href.startsWith("lux:/") ? href.substring(5) : href;
         path = path.replace('\\', '/');
         try {
@@ -166,7 +176,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         } catch (SaxonApiException e) {
             throw new LuxException ("Syntax error compiling: " + exprString, e);
         }
-        if (! isEnableLuxOptimization()) {
+        if (! isEnableLuxOptimization() || optimizer == null) {
             return new SaxonExpr (xpath, null);
         }        
         AbstractExpression expr = translator.exprFor(xpath.getUnderlyingExpression().getInternalExpression());
@@ -187,7 +197,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
-        if (! isEnableLuxOptimization()) {
+        if (! isEnableLuxOptimization() || optimizer == null) {
             return new SaxonExpr (xquery, null);
         }
         XQuery abstractQuery = translator.queryFor (xquery);
@@ -215,9 +225,8 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
     public ResultSet<?> iterate(Expression expr, QueryContext context) { 
         SaxonExpr saxonExpr = (SaxonExpr) expr;
         if (context == null) {
-            context = new QueryContext();
+            context = new QueryContext(this);
         }
-        context.setEvaluator(this);
         try {
             return saxonExpr.evaluate(context);
         } finally {
@@ -280,6 +289,15 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         }
     }
     
+    public XsltCompiler getXsltCompiler () {
+        if (xsltCompiler == null) {
+            xsltCompiler = processor.newXsltCompiler();
+            xsltCompiler.setErrorListener(errorListener);
+        }
+        errorListener.clear();
+        return xsltCompiler;
+    }
+
     public XQueryCompiler getXQueryCompiler () {
         if (xqueryCompiler == null) {
             xqueryCompiler = processor.newXQueryCompiler();
@@ -289,7 +307,7 @@ public class Saxon extends Evaluator implements URIResolver, CollectionURIResolv
         errorListener.clear();
         return xqueryCompiler;
     }
-        
+
     public XPathCompiler getXPathCompiler () {
         if (xpathCompiler == null) {
             xpathCompiler = processor.newXPathCompiler();
