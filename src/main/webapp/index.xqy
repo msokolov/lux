@@ -5,23 +5,42 @@ declare namespace demo="http://luxproject.net/demo";
 
 declare variable $lux:http as document-node() external;
 
+(:
+    Search Page
+    
+    TODO: document parameters, autocomplete behavior, pagination, view dispatcher,
+          search results formatting
+:)
+
 declare function demo:format-param ($p as element(param)) as xs:string
 {
   fn:concat ($p/@name, "=", fn:string-join ($p/value, ","))
 };
 
 declare function demo:query ($qname, $term)
-  as xs:string?
+  as xs:string
 {
-  let $query := concat ("node<", $qname, ":", $term)
-  where $qname and $term
-  return $query
+  if ($qname and $term) then
+    concat ("node<", $qname, ":", $term)
+  else if ($term) then
+    $term
+  else if ($qname) then
+    concat ("node<", $qname, ":[* TO *]")
+  else
+    "*:*"
 };
 
 declare function demo:search ($query, $start, $page-size)
 {
   for $doc in subsequence(lux:search ($query), $start, $page-size)
-  return <li><a href="doc.xqy/{$doc/base-uri()}">{substring($doc,1,120)}</a></li>
+    let $doctype := name($doc/*)
+    let $stylesheet-name := concat("file:src/main/webapp/", $doctype, "-result.xsl")
+    let $result-markup := 
+      if (doc-available ($stylesheet-name)) then
+        lux:transform (doc($stylesheet-name), $doc)
+      else
+        <a href="view.xqy{$doc/base-uri()}">{$doc/base-uri()}</a>
+    return <li>{$result-markup}</li>
 };
 
 let $page-size := 20
@@ -34,16 +53,6 @@ let $total := if ($query) then lux:count ($query) else 0
 let $results := if ($query) then demo:search ($query, $start, $page-size) else ()
 let $next := $start + count($results)
 return
-
-(:
-  OK - the basic form evaluation / http now works. How can we showcase 
-  integration w/Lucene?
-  4. search for matching documents, showing title and snippet(s)
-  pagination (no sorting?)
-
-  Error reporting is poor - we get the last of any syntax errors that 
-  are reported by Saxon - the first (or all) would be better
-:)
 <html>
   <head>
     <title>Lux Demo</title>

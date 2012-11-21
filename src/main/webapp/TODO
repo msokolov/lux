@@ -1,7 +1,4 @@
-* more design love
-color, form, line
+* wildcards
 * autocomplete all text terms when no qname selected
 * concatenate multiple terms into a path
-* search for term
-** pagination
-** result display
+phrase queries already work!
