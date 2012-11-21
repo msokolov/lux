@@ -127,6 +127,9 @@ public class XQueryComponent extends QueryComponent {
             long timeAllowed, int len, String query) {
         Expression expr;
         try {
+            // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
+            // of the query so error reporting will be able to report it
+            // and so it can include modules with relative paths
         	expr = evaluator.compile(query);
         } catch (LuxException ex) {
         	ex.printStackTrace();
@@ -145,7 +148,7 @@ public class XQueryComponent extends QueryComponent {
         QueryContext context = null;
         String xqueryPath = rb.req.getParams().get(LuxServlet.LUX_XQUERY);
         if (xqueryPath != null) {
-            context = new QueryContext();
+            context = new QueryContext(evaluator);
             context.bindVariable(LUX_HTTP, buildHttpParams(
                     rb.req.getParams().get(LuxServlet.LUX_HTTPINFO), 
                     xqueryPath
