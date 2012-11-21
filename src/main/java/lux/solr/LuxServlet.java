@@ -19,7 +19,11 @@ import org.apache.commons.io.IOUtils;
 /**
  * This servlet simply forwards all requests to /lux, with the path provided as the value of the "path" attribute.
  * It expects a SearchHandler configured with the LuxSearchComponent to be mapped to /lux in solrconfig.xml.
- * This is designed to be configured, in the container config, say webdefault.xml to match requests for *.xqy .
+ * This is designed to be configured, in the container config, say webdefault.xml or in web.xml to match requests for 
+ * *.xqy and to /lux/*.
+ * 
+ * Also: requests to /lux/*.xqy/* are forwarded in a similar way to the xquery module matching
+ * /lux/*.xqy with the remainder of the path (after .xqy) passed as the value of lux.httpinfo/http/path-extra.
  */
 public class LuxServlet extends HttpServlet {
     public static final String LUX_HTTPINFO = "lux.httpinfo";
@@ -55,9 +59,9 @@ public class LuxServlet extends HttpServlet {
             resp.sendError (HttpServletResponse.SC_NOT_FOUND);
         }
         */
-        String path = translatePath(req);
-        String ext = path.substring(path.lastIndexOf('.') + 1);
-        if (ext.equals ("xqy")) {
+        String requestUri = req.getRequestURI();
+        String ext = requestUri.substring(requestUri.lastIndexOf('.') + 1);
+        if (ext.equals ("xqy") || requestUri.contains(".xqy")) {
             forwardRequest(req, resp);
             return;
         }
@@ -66,6 +70,8 @@ public class LuxServlet extends HttpServlet {
             //resp.sendError (HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mimeType = "application/octet-stream";
         }
+
+        String path = translatePath(req);
         File f = new File(path);
         if (! f.exists()) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -95,9 +101,20 @@ public class LuxServlet extends HttpServlet {
     }
 
     private String translatePath(HttpServletRequest req) {
-        return webappPath + req.getRequestURI().substring("/lux/".length());
+        final int head = "/lux/".length();
+        int tail = req.getRequestURI().indexOf(".xqy");
+        if (tail > 0) {
+            return webappPath + req.getRequestURI().substring(head, tail + (".xqy".length()));
+        } else {
+            return webappPath + req.getRequestURI().substring(head);
+        }
     }
     
+    /**
+     * Adds parameters to the request:
+     * lux.xquery has the path to an xquery module
+     * lux.httpinfo has the request encapsulated as an XML document
+     */
     class WrappedRequest extends HttpServletRequestWrapper {
 
         private final Map<String,String[]> parameterMap;
@@ -143,6 +160,9 @@ public class LuxServlet extends HttpServlet {
                 buf.append("</param>");
             }
             buf.append ("</parameters>");
+            int tail = req.getRequestURI().indexOf(".xqy");
+            String pathExtra = req.getRequestURI().substring(tail + 4);
+            buf.append("<path-extra>").append(xmlEscape(pathExtra)).append("</path-extra>");
             // TODO: headers, path, etc?
             buf.append ("</http>");
             return buf.toString();
