@@ -9,7 +9,6 @@ import java.util.HashMap;
 import javax.xml.stream.XMLStreamException;
 
 import lux.index.XmlIndexer;
-import lux.saxon.Evaluator;
 import lux.search.LuxSearcher;
 
 import net.sf.saxon.s9api.Axis;

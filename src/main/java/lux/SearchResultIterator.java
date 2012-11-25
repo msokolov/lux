@@ -1,8 +1,7 @@
-package lux.saxon;
+package lux;
 
 import java.io.IOException;
 
-import lux.api.QueryStats;
 import lux.search.LuxSearcher;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;

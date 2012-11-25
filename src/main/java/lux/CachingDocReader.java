@@ -1,4 +1,4 @@
-package lux.saxon;
+package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -9,7 +9,6 @@ import java.util.Set;
 
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
-import lux.saxon.Evaluator.DocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.document.Document;

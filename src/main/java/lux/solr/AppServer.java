@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import lux.saxon.Evaluator;
+import lux.Evaluator;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.XdmItem;
 

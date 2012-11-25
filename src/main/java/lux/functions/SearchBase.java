@@ -1,11 +1,11 @@
 package lux.functions;
 
+import lux.Evaluator;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
-import lux.saxon.Evaluator;
 import net.sf.saxon.dom.NodeOverNodeInfo;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -109,7 +109,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             } catch (ParserException e) {
                 throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
-            LoggerFactory.getLogger(LuxSearch.class).debug("executing query: {}", query);
+            LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
             return iterate (query, eval, facts);
         }
         

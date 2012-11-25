@@ -1,6 +1,7 @@
 package lux.saxon;
 
 import static org.junit.Assert.assertEquals;
+import lux.Evaluator;
 import lux.XCompiler;
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import lux.compiler.XPathQuery;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
-import lux.saxon.Evaluator;
 import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
 import lux.xpath.ExpressionVisitorBase;

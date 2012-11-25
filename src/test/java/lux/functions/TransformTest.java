@@ -2,10 +2,10 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.api.QueryContext;
-import lux.saxon.Evaluator;
-import lux.saxon.Evaluator.Dialect;
-import lux.saxon.XdmResultSet;
+import lux.Evaluator;
+import lux.QueryContext;
+import lux.XdmResultSet;
+import lux.XCompiler.Dialect;
 import lux.xml.QName;
 
 import net.sf.saxon.s9api.XQueryExecutable;

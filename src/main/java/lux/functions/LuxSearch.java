@@ -2,8 +2,8 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.saxon.Evaluator;
-import lux.saxon.SearchResultIterator;
+import lux.Evaluator;
+import lux.SearchResultIterator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.om.NodeInfo;

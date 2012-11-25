@@ -1,15 +1,26 @@
+* thread safety
+Some aspects of Saxon are difficult to make thread safe and efficient (lock
+free): the CollectionURIResolver is shared at the Configuration level;
+Processor/Configuration are advertised as thread-safe.  However our
+resolver must be allocated per-thread in order to guarantee thread-safety.
+
+For example, in a multicore Solr setup, one Evaluator could have a Searcher
+tied to one core, while another Evaluator could be tied to a completely
+different core.  But there can only be a single CollectionURIResolver.
+
+Perhaps the solution is to pool Processors among threads, then?
+* eliminate lux.api and lux.saxon
+This is mostly done: still need to move these classes into the root (lux)
+package.  Then check for more cycles w/Sonar.
 * highlighting
 * document store / load
-* eliminate lux.api
-the whole code base is Saxon-specific.  If we really want to support some
-other implementation, we have to do that now.  If it's just
-future-proofing, it's junk and we should nuke it.
 * eval
 execute xquery from within xquery
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE, but we can't because we extend
 Configuration.  At the same time, we provide some critical performance
 boosts with this.
+** purchase Saxon-PE
 ** Don't extend Configuration
 We currently do this so we can use a custom Optimizer and FunctionLibrary
 to ensure that search results are regarded as properly in document order.

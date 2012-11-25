@@ -1,4 +1,4 @@
-package lux.saxon;
+package lux;
 
 import net.sf.saxon.tree.util.DocumentNumberAllocator;
 

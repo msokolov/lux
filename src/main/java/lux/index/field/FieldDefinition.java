@@ -131,6 +131,10 @@ public abstract class FieldDefinition {
         return termVector;
     }
     
+    public boolean isSingleValued () {
+        return false;
+    }
+    
     /**
      * Attempts to guess the Solr field properties (see {@link FieldProperties}) based on the available
      * information. Subclasses may need to override to get the correct behavior.  Norms are omitted from
@@ -152,7 +156,7 @@ public abstract class FieldDefinition {
         if (isStored == Field.Store.YES) {
             options |= 4; // STORED
         }
-        if (this != URIField.getInstance()) {
+        if (!isSingleValued()) {
             options |= 0x200; // MULTIVALUED
         }
         if (type != Type.TOKENS) {

@@ -13,10 +13,6 @@ import lux.functions.LuxSearch;
 import lux.functions.Transform;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
-import lux.saxon.Config;
-import lux.saxon.DocIDNumberAllocator;
-import lux.saxon.Evaluator.Dialect;
-import lux.saxon.TransformErrorListener;
 import lux.xpath.FunCall;
 import lux.xquery.XQuery;
 import net.sf.saxon.Configuration;
@@ -80,6 +76,12 @@ public class XCompiler {
         //this.dialect = dialect;
         logger = LoggerFactory.getLogger(getClass());
         errorListener = new TransformErrorListener();
+    }
+
+    public enum Dialect {
+        XPATH_1,
+        XPATH_2,
+        XQUERY_1
     }
     
     static Processor makeProcessor () {

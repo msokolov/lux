@@ -1,4 +1,4 @@
-package lux.api;
+package lux;
 
 import java.util.Collections;
 import java.util.HashMap;

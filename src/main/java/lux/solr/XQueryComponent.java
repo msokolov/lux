@@ -12,12 +12,12 @@ import java.util.Set;
 
 import javax.xml.transform.TransformerException;
 
+import lux.Evaluator;
+import lux.QueryContext;
 import lux.XCompiler;
-import lux.api.QueryContext;
+import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
-import lux.saxon.Evaluator;
-import lux.saxon.XdmResultSet;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.s9api.XQueryExecutable;

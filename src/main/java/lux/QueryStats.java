@@ -1,4 +1,4 @@
-package lux.api;
+package lux;
 
 /**
  * A class that holds statistics about the last query execution

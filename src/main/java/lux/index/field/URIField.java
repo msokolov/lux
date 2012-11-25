@@ -26,6 +26,11 @@ public class URIField extends FieldDefinition {
         return Collections.singleton(new Field (indexer.getConfiguration().getFieldName(this), indexer.getURI(), 
                 Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
     }
+    
+    @Override
+    public boolean isSingleValued() {
+        return true;
+    }
 
 }
 

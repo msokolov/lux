@@ -1,7 +1,7 @@
 package lux.functions;
 
-import lux.saxon.Config;
-import lux.saxon.Evaluator;
+import lux.Config;
+import lux.Evaluator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;

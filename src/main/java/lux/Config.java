@@ -1,4 +1,4 @@
-package lux.saxon;
+package lux;
 
 /**
  * Extends saxon Configuration providing lux-specific configuration.  It provides a function library,
@@ -15,6 +15,7 @@ package lux.saxon;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import lux.compiler.SaxonTranslator;
 import lux.functions.LuxFunctionLibrary;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
@@ -34,8 +35,8 @@ public class Config extends Configuration implements EntityResolver {
     public Config () {
         super();
         luxFunctionLibrary = new LuxFunctionLibrary();
-        optimizer = new Optimizer(this);
-    }    
+        optimizer = new Optimizer(this, new SaxonTranslator(this));
+    }
 
     // disable dtd processing
     public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {

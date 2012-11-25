@@ -1,17 +1,13 @@
-package lux.saxon;
+package lux;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.Map;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
-import javax.xml.transform.stream.StreamSource;
 
-import lux.XCompiler;
-import lux.api.QueryContext;
-import lux.api.QueryStats;
+import lux.XCompiler.Dialect;
 import lux.exception.LuxException;
 import lux.functions.LuxSearch;
 import lux.index.IndexConfiguration;
@@ -21,7 +17,6 @@ import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.CollectionURIResolver;
 import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
@@ -49,9 +44,10 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
     public Evaluator(XCompiler compiler, LuxSearcher searcher) {
         this.compiler = compiler;
         this.searcher = searcher;
-        compiler.getProcessor().getUnderlyingConfiguration().setURIResolver(this);
-        compiler.getProcessor().getUnderlyingConfiguration().setCollectionURIResolver(this);
-        saxonBuilder = new DocBuilder();
+        Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
+        config.setURIResolver(this);
+        config.setCollectionURIResolver(this);
+        saxonBuilder = new DocBuilder((DocIDNumberAllocator) config.getDocumentNumberAllocator(), compiler.getProcessor().newDocumentBuilder());
         if (searcher != null) {
             docReader = new CachingDocReader(searcher.getIndexReader(), saxonBuilder, compiler.getIndexConfiguration());
         } else {
@@ -77,12 +73,6 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
         if (dialect != Dialect.XQUERY_1) {
             throw new LuxException ("unsupported dialect: " + dialect);
         }
-    }
-    
-    public enum Dialect {
-        XPATH_1,
-        XPATH_2,
-        XQUERY_1
     }
     
     /**
@@ -148,28 +138,6 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
 
     public DocBuilder getBuilder() {
         return saxonBuilder;
-    }
-    
-    public class DocBuilder {
-        private DocumentBuilder documentBuilder;
-
-        DocBuilder () {
-            documentBuilder = compiler.getProcessor().newDocumentBuilder();
-            documentBuilder.setDTDValidation(false);
-        }
-        
-        public void setNextDocID (int docID) {
-            DocIDNumberAllocator allocator = (DocIDNumberAllocator) compiler.getProcessor().getUnderlyingConfiguration().getDocumentNumberAllocator();
-            allocator.setNextDocID(docID);            
-        }
-        
-        public XdmNode build(Reader reader, String uri) {
-            try {
-                return documentBuilder.build(new StreamSource (reader, uri));
-            } catch (SaxonApiException e) {
-               throw new LuxException(e);
-            }
-        }
     }
     
     public CachingDocReader getDocReader() {

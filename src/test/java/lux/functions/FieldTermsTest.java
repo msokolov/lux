@@ -5,9 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
+import lux.Evaluator;
 import lux.IndexTestSupport;
-import lux.saxon.Evaluator;
-import lux.saxon.XdmResultSet;
+import lux.XdmResultSet;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 

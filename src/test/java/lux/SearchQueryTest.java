@@ -4,13 +4,10 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Iterator;
 
-import lux.api.QueryStats;
 import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
-import lux.saxon.Evaluator;
 import lux.saxon.Expandifier;
-import lux.saxon.XdmResultSet;
 import lux.xml.ValueType;
 import lux.xquery.XQuery;
 import net.sf.saxon.s9api.SaxonApiException;

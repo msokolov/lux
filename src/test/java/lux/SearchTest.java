@@ -9,11 +9,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
 
-import lux.api.QueryStats;
 import lux.exception.LuxException;
-import lux.saxon.Evaluator;
 import lux.saxon.UnOptimizer;
-import lux.saxon.XdmResultSet;
 import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
 import net.sf.saxon.s9api.XQueryExecutable;

@@ -2,7 +2,7 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.saxon.Evaluator;
+import lux.Evaluator;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;

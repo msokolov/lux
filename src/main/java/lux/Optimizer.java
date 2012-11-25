@@ -1,6 +1,7 @@
-package lux.saxon;
+package lux;
 
 import lux.compiler.SaxonTranslator;
+import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.SlashExpression;
 import net.sf.saxon.expr.sort.DocumentSorter;
@@ -9,9 +10,9 @@ public class Optimizer extends net.sf.saxon.expr.parser.Optimizer {
     
     private SaxonTranslator translator;    
     
-    public Optimizer(Config config) {
+    public Optimizer(Configuration config, SaxonTranslator translator) {
         super(config);
-        translator = new SaxonTranslator((Config) config);
+        this.translator = translator;
     }
     
     /**

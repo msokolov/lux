@@ -51,7 +51,6 @@
                 <element name="Assignment" type="TypeFilter">
                     <element name="lux.saxon.**" type="IncludeTypePattern"/>
                     <element name="lux.search.**" type="StrongTypePattern"/>
-                    <element name="lux.query.**" type="StrongTypePattern"/>
                     <element name="lux.functions.**" type="StrongTypePattern"/>
                     <element name="lux.solr.LuxResponseWriter" type="StrongTypePattern"/>
                     <element name="lux.solr.XQueryComponent" type="StrongTypePattern"/>
