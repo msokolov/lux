@@ -2,7 +2,7 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.saxon.Saxon;
+import lux.saxon.Evaluator;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
@@ -29,7 +29,7 @@ public class LuxCount extends SearchBase {
         return SequenceType.SINGLE_INTEGER;
     }
     
-    @Override public UnfailingIterator<Int64Value> iterate (Query query, Saxon saxon, long facts) throws XPathException {
+    @Override public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {

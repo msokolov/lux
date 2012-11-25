@@ -1,20 +1,22 @@
 package lux;
 
-import static org.junit.Assert.*;
-
-import static lux.IndexTestSupport.*;
+import static lux.IndexTestSupport.QUERY_CONSTANT;
+import static lux.IndexTestSupport.QUERY_EXACT;
+import static lux.IndexTestSupport.QUERY_MINIMAL;
+import static lux.IndexTestSupport.QUERY_NO_DOCS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
 
-import lux.api.LuxException;
 import lux.api.QueryStats;
-import lux.api.ResultSet;
-import lux.saxon.Saxon;
-import lux.saxon.SaxonExpr;
+import lux.exception.LuxException;
+import lux.saxon.Evaluator;
 import lux.saxon.UnOptimizer;
+import lux.saxon.XdmResultSet;
 import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
-
+import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
 
@@ -48,13 +50,13 @@ public class SearchTest {
     
     @Test
     public void testSearchAllDocs() throws Exception {
-        ResultSet<?> results = assertSearch("/", IndexTestSupport.QUERY_EXACT);
+        XdmResultSet results = assertSearch("/", IndexTestSupport.QUERY_EXACT);
         assertEquals (index.totalDocs, results.size());
     }
     
     @Test
     public void testCountAllDocs () throws Exception {
-        ResultSet<?> results = assertSearch ("count(/)", QUERY_NO_DOCS, totalDocs);
+        XdmResultSet results = assertSearch ("count(/)", QUERY_NO_DOCS, totalDocs);
         assertEquals (String.valueOf(totalDocs), results.iterator().next().toString());
 
         results = assertSearch ("count(collection())", QUERY_NO_DOCS, totalDocs);
@@ -78,7 +80,7 @@ public class SearchTest {
     
     @Test
     public void testEmpty () throws Exception {
-        ResultSet<?> results = assertSearch ("empty(/)", QUERY_NO_DOCS, 1);
+        XdmResultSet results = assertSearch ("empty(/)", QUERY_NO_DOCS, 1);
         assertEquals ("false", results.iterator().next().toString());
         assertSearch ("false", "empty(//SCENE)", QUERY_NO_DOCS, 1);
         assertSearch ("true", "empty(//foo)", QUERY_NO_DOCS, 0);
@@ -90,7 +92,7 @@ public class SearchTest {
 
     @Test
     public void testNot() throws Exception {
-        ResultSet<?> results = assertSearch ("not(/)", QUERY_NO_DOCS, 1);
+        XdmResultSet results = assertSearch ("not(/)", QUERY_NO_DOCS, 1);
         assertEquals ("false", results.iterator().next().toString());
         assertSearch  ("false", "not(//SCENE)", QUERY_NO_DOCS, 1);
         assertSearch  ("true", "not(//foo)", QUERY_NO_DOCS, 0);
@@ -118,7 +120,7 @@ public class SearchTest {
     @Test
     public void testSearchAct() throws Exception {
         // path indexes make this exact
-        ResultSet<?> results = assertSearch ("/ACT", QUERY_EXACT);
+        XdmResultSet results = assertSearch ("/ACT", QUERY_EXACT);
         assertEquals (index.elementCounts.get("ACT") + 0, results.size());
         // Make sure that collection() is optimized
         results = assertSearch ("collection()/ACT", QUERY_EXACT);
@@ -130,13 +132,13 @@ public class SearchTest {
     
     @Test
     public void testSearchActScene() throws Exception {
-        ResultSet<?> results = assertSearch("/ACT/SCENE", QUERY_MINIMAL);
+        XdmResultSet results = assertSearch("/ACT/SCENE", QUERY_MINIMAL);
         assertEquals (index.elementCounts.get("SCENE") + 0, results.size());
     }
     
     @Test
     public void testSearchAllScenes() throws Exception {
-        ResultSet<?> results = assertSearch("/ACT", QUERY_MINIMAL);
+        XdmResultSet results = assertSearch("/ACT", QUERY_MINIMAL);
         assertEquals (5, results.size());
         XdmNode node = (XdmNode) results.iterator().next();
         String actURI = node.getDocumentURI().toString();
@@ -156,14 +158,14 @@ public class SearchTest {
     
     @Test
     public void testSearchAllSceneDocs() throws Exception {
-        ResultSet<?> results = assertSearch("(/)[.//SCENE]", QUERY_EXACT);
+        XdmResultSet results = assertSearch("(/)[.//SCENE]", QUERY_EXACT);
         // every SCENE, in its ACT and in the PLAY
         assertEquals (index.elementCounts.get("SCENE") + index.elementCounts.get("ACT") + 1, results.size());
     }
     
     @Test
     public void testSearchAllSceneDocsRoot() throws Exception {
-        ResultSet<?> results = assertSearch("//SCENE/root()", QUERY_EXACT);
+        XdmResultSet results = assertSearch("//SCENE/root()", QUERY_EXACT);
         // every SCENE, in its ACT and in the PLAY
         assertEquals (index.elementCounts.get("SCENE") + index.elementCounts.get("ACT") + 1, results.size());
     }
@@ -173,7 +175,7 @@ public class SearchTest {
         // every SCENE, in its ACT and in the PLAY
         int sceneDocCount = index.elementCounts.get("SCENE") + index.elementCounts.get("ACT") + 1;
 
-        ResultSet<?> results = assertSearch("count (//SCENE/root())", QUERY_NO_DOCS);
+        XdmResultSet results = assertSearch("count (//SCENE/root())", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
         
         results = assertSearch("count ((/)[.//SCENE])", QUERY_NO_DOCS);
@@ -189,7 +191,7 @@ public class SearchTest {
         assertResultValue(results, sceneDocCount);
     }
 
-    private void assertResultValue(ResultSet<?> results, int sceneDocCount) {
+    private void assertResultValue(XdmResultSet results, int sceneDocCount) {
         assertEquals (String.valueOf(sceneDocCount), results.iterator().next().toString());
     }
     
@@ -206,37 +208,39 @@ public class SearchTest {
     public void testTextComparison () {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR >= //PERSONA";
-        Saxon saxon = index.getEvaluator();
-        SaxonExpr saxonExpr = saxon.compile(xpath);
-        ResultSet<?> results = saxon.evaluate(saxonExpr);
+        Evaluator eval = index.makeEvaluator();
+        XCompiler compiler = eval.getCompiler();
+        XQueryExecutable xquery = compiler.compile(xpath);
+        XdmResultSet results = eval.evaluate(xquery);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
-        AbstractExpression aex = saxonExpr.getXPath();
-        aex = new UnOptimizer(index.indexer.getOptions()).unoptimize(aex);
-        SaxonExpr baseline = saxon.compile(aex.toString());
-        ResultSet<?> baseResult = saxon.evaluate(baseline);
-        assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());        
+        AbstractExpression aex = compiler.makeTranslator().queryFor(xquery).getBody();
+        aex = new UnOptimizer(index.indexer.getConfiguration()).unoptimize(aex);
+        XQueryExecutable baseline = compiler.compile(aex.toString());
+        XdmResultSet baseResult = eval.evaluate(baseline);
+        assertEquals ("result count mismatch for: " + xquery.toString(), baseResult.size(), results.size());        
     }
     
     @Test
     public void testComparisonPredicate () {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR[. >= //PERSONA]";
-        Saxon saxon = index.getEvaluator();
-        SaxonExpr saxonExpr = saxon.compile(xpath);
-        ResultSet<?> results = saxon.evaluate(saxonExpr);
+        Evaluator eval = index.makeEvaluator();
+        XCompiler compiler = eval.getCompiler();
+        XQueryExecutable xquery = compiler.compile(xpath);
+        XdmResultSet results = eval.evaluate(xquery);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results");
-        XQuery optimized = saxonExpr.getXQuery();
-        XQuery unoptimized = new UnOptimizer(index.indexer.getOptions()).unoptimize(optimized);
-        SaxonExpr baseline = saxon.compile(unoptimized.toString());
-        ResultSet<?> baseResult = saxon.evaluate(baseline);
-        assertEquals ("result count mismatch for: " + saxonExpr.toString(), baseResult.size(), results.size());
+        XQuery optimized = eval.getCompiler().makeTranslator().queryFor(xquery);
+        XQuery unoptimized = new UnOptimizer(index.indexer.getConfiguration()).unoptimize(optimized);
+        XQueryExecutable baseline = compiler.compile(unoptimized.toString());
+        XdmResultSet baseResult = eval.evaluate(baseline);
+        assertEquals ("result count mismatch for: " + xpath, baseResult.size(), results.size());
     }
     
     @Test
     public void testConstantExpression() throws Exception {
         // This resolves to a constant (Literal=true()) XPath expression and generates
         // a null Lucene query.  Make sure we don't try to execute the query.
-        ResultSet<?> results = assertSearch("'remorseless' or descendant::text", QUERY_CONSTANT);
+        XdmResultSet results = assertSearch("'remorseless' or descendant::text", QUERY_CONSTANT);
         assertEquals (1, results.size());
     }
     
@@ -376,6 +380,7 @@ public class SearchTest {
     
     @Test public void testLuxSearch () throws Exception {
         assertSearch ("5", "count(lux:search('\"holla bernardo\"'))", null, 5, 0);
+        assertSearch ("5", "count(lux:search('<:\"holla bernardo\"'))", null, 5, 0);
         assertSearch ("5", "count(lux:search('<LINE:\"holla bernardo\"'))", null, 5, 0);
         try {
             assertSearch (null, "lux:search(1,2,3)", null, null, null);
@@ -410,24 +415,24 @@ public class SearchTest {
         assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);        
     }
         
-    private ResultSet<?> assertSearch(String query) throws LuxException {
+    private XdmResultSet assertSearch(String query) throws LuxException {
         return assertSearch (query, 0);
     }
     
-    protected ResultSet<?> assertSearch(String query, Integer props) throws LuxException {
+    protected XdmResultSet assertSearch(String query, Integer props) throws LuxException {
         return assertSearch(query, props, null);
     }
     
-    protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount) throws LuxException {
+    protected XdmResultSet assertSearch(String query, Integer props, Integer docCount) throws LuxException {
         return assertSearch (query, props, docCount, null);
     }
     
-    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer facts, Integer docCount) throws Exception {
+    protected XdmResultSet assertSearch(String expectedResult, String query, Integer facts, Integer docCount) throws Exception {
         return assertSearch (expectedResult, query, facts, docCount, null);
     }
     
-    protected ResultSet<?> assertSearch(String expectedResult, String query, Integer props, Integer docCount, Integer cacheMisses) throws Exception {
-        ResultSet<?> results = assertSearch (query, props, docCount, cacheMisses);
+    protected XdmResultSet assertSearch(String expectedResult, String query, Integer props, Integer docCount, Integer cacheMisses) throws Exception {
+        XdmResultSet results = assertSearch (query, props, docCount, cacheMisses);
         if (results.getErrors() != null) {
             throw results.getErrors().iterator().next();
         }
@@ -451,11 +456,11 @@ public class SearchTest {
      * @return the query results
      * @throws LuxException
      */
-    protected ResultSet<?> assertSearch(String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException {
-        Saxon eval = index.getEvaluator();
-        SaxonExpr expr = (SaxonExpr) eval.compile(query);
+    protected XdmResultSet assertSearch(String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException {
+        Evaluator eval = index.makeEvaluator();
+        XQueryExecutable expr = eval.getCompiler().compile(query);
         System.out.println (expr);
-        ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr);
+        XdmResultSet results = (XdmResultSet) eval.evaluate(expr);
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));

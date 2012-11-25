@@ -1,4 +1,4 @@
-package lux.saxon;
+package lux.compiler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,8 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import lux.api.LuxException;
-import lux.api.ValueType;
+import lux.exception.LuxException;
+import lux.xml.QName;
+import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.BinaryOperation.Operator;
@@ -19,7 +20,6 @@ import lux.xpath.Namespace;
 import lux.xpath.PathExpression;
 import lux.xpath.PathStep;
 import lux.xpath.Predicate;
-import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
@@ -46,6 +46,7 @@ import lux.xquery.Variable;
 import lux.xquery.VariableDefinition;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
+import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.AtomicSequenceConverter;
 import net.sf.saxon.expr.Atomizer;
 import net.sf.saxon.expr.AxisExpression;
@@ -136,12 +137,13 @@ import org.apache.commons.lang.StringUtils;
 public class SaxonTranslator {
     
     public static final String CODEPOINT_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
-    private Config config;
+
+    private Configuration config;
     private HashMap<String,String> namespaceDeclarations;
     private HashMap<String,ExprClass> dispatcher;
     private QueryModule queryModule;
     
-    public SaxonTranslator (Config config) {
+    public SaxonTranslator (Configuration config) {
         this.config = config;
         namespaceDeclarations = new HashMap<String, String>();
         createDispatcher ();

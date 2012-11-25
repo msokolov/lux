@@ -1,18 +1,11 @@
 package lux.functions;
 
-import lux.index.XmlIndexer;
-import lux.index.field.XmlField;
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
+import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
-import lux.saxon.Config;
-import lux.saxon.Saxon;
-
-import org.apache.lucene.search.Query;
-import org.apache.lucene.xmlparser.CoreParser;
-import org.apache.lucene.xmlparser.ParserException;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Element;
-
+import lux.saxon.Evaluator;
 import net.sf.saxon.dom.NodeOverNodeInfo;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -24,6 +17,12 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
+import org.apache.lucene.search.Query;
+import org.apache.lucene.xmlparser.CoreParser;
+import org.apache.lucene.xmlparser.ParserException;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+
 public abstract class SearchBase extends ExtensionFunctionDefinition {
 
     private LuxQueryParser luxQueryParser;
@@ -33,17 +32,17 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         super();
     }
 
-    protected Query parseQuery(Item<?> queryArg, Saxon saxon) throws org.apache.lucene.queryParser.ParseException, ParserException {
+    protected Query parseQuery(Item<?> queryArg, IndexConfiguration config) throws org.apache.lucene.queryParser.ParseException, ParserException {
         if (queryArg instanceof NodeInfo) {
             NodeInfo queryNodeInfo = (NodeInfo) queryArg;
             NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
             if (queryDocument instanceof Element) {
-                return getXmlQueryParser().getQuery((Element) queryDocument);
+                return getXmlQueryParser(config).getQuery((Element) queryDocument);
             }
             // maybe it was a text node?
         }
         // parse the string value using the Lux query parser
-        return getLuxQueryParser().parse(queryArg.getStringValue());
+        return getLuxQueryParser(config).parse(queryArg.getStringValue());
     }
 
     @Override
@@ -64,16 +63,17 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 };
     }
 
-    protected LuxQueryParser getLuxQueryParser() {
+    protected LuxQueryParser getLuxQueryParser(IndexConfiguration xmlIndexer) {
         if (luxQueryParser == null) {
-            luxQueryParser = new LuxQueryParser (XmlIndexer.LUCENE_VERSION, XmlField.XML_TEXT.getName(), XmlField.ELEMENT_TEXT.getAnalyzer());
+            luxQueryParser = new LuxQueryParser (xmlIndexer);
         }
         return luxQueryParser;
     }
 
-    protected CoreParser getXmlQueryParser() {
+    protected CoreParser getXmlQueryParser(IndexConfiguration xmlIndexer) {
         if (xmlQueryParser == null) {
-            xmlQueryParser = new XmlQueryParser(XmlField.ELEMENT_TEXT);
+            FieldDefinition field = xmlIndexer.getField(FieldName.ELEMENT_TEXT);
+            xmlQueryParser = new XmlQueryParser(xmlIndexer.getFieldName(field), field.getAnalyzer());
         }
         return xmlQueryParser;
     }
@@ -84,7 +84,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     }
     
     @SuppressWarnings("rawtypes")
-    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Saxon saxon, long facts) throws XPathException;
+    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, long facts) throws XPathException;
 
     class LuxSearchCall extends ExtensionFunctionCall {
         
@@ -100,17 +100,17 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 IntegerValue num  = (IntegerValue) arguments[1].next();
                 facts = num.longValue();
             }
-            Saxon saxon = ((Config)context.getConfiguration()).getSaxon();
+            Evaluator eval = (Evaluator) context.getConfiguration().getCollectionURIResolver();
             Query query;
             try {
-                query = parseQuery(queryArg, saxon);
+                query = parseQuery(queryArg, eval.getCompiler().getIndexConfiguration());
             } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException ("Failed to parse lucene query " + queryArg.getStringValue(), e);
             } catch (ParserException e) {
                 throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
             LoggerFactory.getLogger(LuxSearch.class).debug("executing query: {}", query);
-            return iterate (query, saxon, facts);
+            return iterate (query, eval, facts);
         }
         
     }

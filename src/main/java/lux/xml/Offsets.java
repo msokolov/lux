@@ -1,4 +1,4 @@
-package lux.index.analysis;
+package lux.xml;
 
 import java.util.Arrays;
 

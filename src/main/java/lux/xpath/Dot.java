@@ -1,6 +1,5 @@
 package lux.xpath;
 
-import lux.compiler.ExpressionVisitor;
 
 public class Dot extends AbstractExpression {
     

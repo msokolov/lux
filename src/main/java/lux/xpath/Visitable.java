@@ -1,6 +1,5 @@
 package lux.xpath;
 
-import lux.compiler.ExpressionVisitor;
 
 public interface Visitable {
     AbstractExpression accept (ExpressionVisitor visitor);

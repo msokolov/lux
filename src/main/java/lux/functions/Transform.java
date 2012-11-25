@@ -1,7 +1,6 @@
 package lux.functions;
 
-import lux.saxon.Config;
-import lux.saxon.Saxon;
+import lux.saxon.Evaluator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -54,11 +53,11 @@ public class Transform extends ExtensionFunctionDefinition {
                 throws XPathException {
             NodeInfo stylesheet = (NodeInfo) arguments[0].next();
             NodeInfo node = (NodeInfo) arguments[1].next();
-            Saxon saxon = ((Config)context.getConfiguration()).getSaxon();
+            Evaluator eval = (Evaluator) context.getConfiguration().getCollectionURIResolver();
             try {
                 // TODO: cache compiled xslt somewhere
                 // TODO: accept and pass on parameter bindings
-                XsltExecutable xsltexec = saxon.getXsltCompiler().compile(stylesheet);
+                XsltExecutable xsltexec = eval.getCompiler().getXsltCompiler().compile(stylesheet);
                 XsltTransformer transformer = xsltexec.load();
                 transformer.setSource(node);
                 XdmDestination dest = new XdmDestination();

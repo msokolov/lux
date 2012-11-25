@@ -12,16 +12,15 @@ import java.util.Set;
 
 import javax.xml.transform.TransformerException;
 
-import lux.api.Expression;
-import lux.api.LuxException;
+import lux.XCompiler;
 import lux.api.QueryContext;
-import lux.api.QueryStats;
-import lux.api.ResultSet;
+import lux.exception.LuxException;
 import lux.index.XmlIndexer;
-import lux.saxon.Saxon;
-import lux.saxon.Saxon.Dialect;
+import lux.saxon.Evaluator;
+import lux.saxon.XdmResultSet;
 import lux.search.LuxSearcher;
-import lux.xpath.QName;
+import lux.xml.QName;
+import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
@@ -57,14 +56,14 @@ public class XQueryComponent extends QueryComponent {
     protected URL baseUri;
     protected IndexSchema schema;
     protected Set<String> fields = new HashSet<String>();
-    protected Saxon evaluator;
+    protected XCompiler compiler;
     protected XmlIndexer indexer;
     private Logger logger;
     
     public XQueryComponent() {
+        // FIXME - rename fields from solr config?
         indexer = new XmlIndexer ();  // FIXME: share with LuxUpdateProcessor?? at least have common config
-        evaluator = createEvaluator();
-        evaluator.setIndexer(indexer);
+        compiler = createXCompiler();
         logger = LoggerFactory.getLogger(XQueryComponent.class);
     }
     
@@ -113,28 +112,29 @@ public class XQueryComponent extends QueryComponent {
         long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
         // multiple shards not implemented
-        evaluator.setSearcher(new LuxSearcher(searcher));
-        evaluator.setQueryStats(new QueryStats());
+        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher));
         String query = rb.getQueryString();
         if (StringUtils.isBlank(query)) {
             rsp.add("xpath-error", "query was blank");
         } else {
-            evaluateQuery(rb, rsp, result, start, timeAllowed, len, query);
+            evaluateQuery(rb, rsp, result, evaluator, start, timeAllowed, len, query);
         }
     }
 
-    protected void evaluateQuery(ResponseBuilder rb, SolrQueryResponse rsp, SolrIndexSearcher.QueryResult result, int start,
-            long timeAllowed, int len, String query) {
-        Expression expr;
+    protected void evaluateQuery(ResponseBuilder rb, SolrQueryResponse rsp, SolrIndexSearcher.QueryResult result, 
+            Evaluator evaluator,
+            int start, long timeAllowed, int len, String query) {
+        XQueryExecutable expr;
+        XCompiler compiler = evaluator.getCompiler();
         try {
             // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
             // of the query so error reporting will be able to report it
             // and so it can include modules with relative paths
-        	expr = evaluator.compile(query);
+        	expr = compiler.compile(query);
         } catch (LuxException ex) {
         	ex.printStackTrace();
         	StringBuilder buf = new StringBuilder ();
-        	for (TransformerException te : evaluator.getErrorListener().getErrors()) {
+        	for (TransformerException te : compiler.getErrorListener().getErrors()) {
         	    buf.append (te.getMessageAndLocation());
         	    buf.append ("\n");
         	}
@@ -148,13 +148,14 @@ public class XQueryComponent extends QueryComponent {
         QueryContext context = null;
         String xqueryPath = rb.req.getParams().get(LuxServlet.LUX_XQUERY);
         if (xqueryPath != null) {
-            context = new QueryContext(evaluator);
+            context = new QueryContext();
             context.bindVariable(LUX_HTTP, buildHttpParams(
+                    evaluator,
                     rb.req.getParams().get(LuxServlet.LUX_HTTPINFO), 
                     xqueryPath
                     ));
         }
-        ResultSet<?> queryResults = evaluator.iterate(expr, context);
+        XdmResultSet queryResults = evaluator.iterate(expr, context);
         for (Object xpathResult : queryResults) {
             if (++ count < start) {
                 continue;
@@ -178,16 +179,16 @@ public class XQueryComponent extends QueryComponent {
         }
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);
-        logger.debug ("retrieved: " + ((Saxon)evaluator).getDocReader().getCacheMisses() + " docs, " +
+        logger.debug ("retrieved: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
                     xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
     }
 
-    private XdmNode buildHttpParams(String http, String path) {
+    private XdmNode buildHttpParams(Evaluator evaluator, String http, String path) {
         return (XdmNode) evaluator.getBuilder().build(new StringReader(http), path);
     }
 
-    private Saxon createEvaluator() {
-        return new Saxon(null, null, Dialect.XQUERY_1);
+    private XCompiler createXCompiler() {
+        return new XCompiler(indexer.getConfiguration());
     }
     
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) {

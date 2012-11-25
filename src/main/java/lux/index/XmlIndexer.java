@@ -1,18 +1,26 @@
 package lux.index;
 
+import static lux.index.IndexConfiguration.BUILD_DOCUMENT;
+import static lux.index.IndexConfiguration.COMPUTE_OFFSETS;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.INDEX_QNAMES;
+import static lux.index.IndexConfiguration.INDEX_VALUES;
+import static lux.index.IndexConfiguration.LUCENE_VERSION;
+import static lux.index.IndexConfiguration.NAMESPACE_UNAWARE;
+import static lux.index.IndexConfiguration.STORE_XML;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.api.LuxException;
-import lux.index.analysis.Offsets;
-import lux.index.field.XmlField;
+import lux.exception.LuxException;
+import lux.index.field.FieldDefinition;
+import lux.xml.Offsets;
 import lux.xml.SaxonDocBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
@@ -25,7 +33,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockObtainFailedException;
-import org.apache.lucene.util.Version;
 
 /**
  * Indexes XML documents.  The constructor accepts a set of flags that define a set of fields 
@@ -52,40 +59,28 @@ import org.apache.lucene.util.Version;
  */
 public class XmlIndexer {
     
+    private final IndexConfiguration configuration;
     private XmlReader xmlReader;
     private SaxonDocBuilder saxonBuilder;
     private Serializer serializer;
     private XmlPathMapper pathMapper;
-    private List<XmlField> fields = new ArrayList<XmlField>();
-    private MultiFieldAnalyzer fieldAnalyzers;
     private String uri;
     
-    private int options = 0;
-    
-    public static final Version LUCENE_VERSION = Version.LUCENE_34;
-    
-    public XmlIndexer () {
-        this (DEFAULT_OPTIONS);
+    public XmlIndexer (IndexConfiguration config) {
+        this.configuration = config;
+        init();
     }
     
-    public final static int BUILD_DOCUMENT=     0x00000001;
-    public final static int SERIALIZE_XML=      0x00000002;
-    public final static int NAMESPACE_UNAWARE=  0x00000004;
-    public final static int STORE_XML=          0x00000008;
-    public final static int STORE_PTREE=        0x00000010;
-    public final static int INDEX_QNAMES=       0x00000020;
-    public final static int INDEX_PATHS=        0x00000040;
-    public final static int INDEX_FULLTEXT=     0x00000080;
-    public final static int INDEX_VALUES=       0x00000100;
-    public final static int COMPUTE_OFFSETS=    0x00000200;
-    public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
-    public final static int DEFAULT_OPTIONS = STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
+    public XmlIndexer (long options) {
+        this (new IndexConfiguration(options));
+    }
     
-    public XmlIndexer (int options) {
-        this.options = options;
-        fieldAnalyzers = new MultiFieldAnalyzer();
+    public XmlIndexer () {
+        this (new IndexConfiguration());
+    }
+        
+    protected void init () {
         xmlReader = new XmlReader();
-        addField (XmlField.URI);
         if (isOption (INDEX_QNAMES) || isOption (INDEX_PATHS)) {
             // accumulate XML paths and QNames for indexing
             if (isOption (INDEX_FULLTEXT)) {
@@ -96,32 +91,10 @@ public class XmlIndexer {
             } else {
                 pathMapper = new XmlPathMapper();
             }
-            pathMapper.setNamespaceAware((options & NAMESPACE_UNAWARE) == 0);        
+            pathMapper.setNamespaceAware(! isOption(NAMESPACE_UNAWARE));        
             xmlReader.addHandler (pathMapper);
         }
-        if (isOption (INDEX_QNAMES)) {
-            addField(XmlField.ELT_QNAME);
-            addField(XmlField.ATT_QNAME);
-            if (isOption (INDEX_VALUES)) {
-                addField(XmlField.QNAME_VALUE);
-            }
-        }
-        if (isOption (INDEX_PATHS)) {
-            addField(XmlField.PATH);
-            if (isOption (INDEX_VALUES)) {
-                addField(XmlField.PATH_VALUE);                
-            }
-        }
         if (isOption (INDEX_FULLTEXT)) {
-            addField (XmlField.XML_TEXT);
-            addField (XmlField.ELEMENT_TEXT);
-            addField (XmlField.ATTRIBUTE_TEXT);
-            if (XmlField.XML_TEXT.getTermVector().withOffsets() || 
-                    XmlField.ELEMENT_TEXT.getTermVector().withOffsets() ||
-                    XmlField.ATTRIBUTE_TEXT.getTermVector().withOffsets()) {
-                // We may not need to bother computing offsets at all
-                options |= COMPUTE_OFFSETS;
-            }
             try {
                 if (isOption (COMPUTE_OFFSETS)) {
                     saxonBuilder = new SaxonDocBuilder(new Offsets());                    
@@ -134,7 +107,6 @@ public class XmlIndexer {
             }
         }
         if (isOption (STORE_XML)) {
-            addField(XmlField.XML_STORE);
             serializer = new Serializer();
             xmlReader.addHandler(serializer);
         }
@@ -148,11 +120,6 @@ public class XmlIndexer {
         }
     }
     
-    public void addField (XmlField field) {
-        fields.add(field);
-        fieldAnalyzers.put(field.getName(), field.getAnalyzer());
-    }
-    
     public void read (InputStream xml, String uri) throws XMLStreamException {
         reset();
         this.uri = uri;
@@ -164,8 +131,8 @@ public class XmlIndexer {
      * @param option an option flag; one of: NAMESPACE_AWARE, STORE_XML, STORE_PTREE, INDEX_QNAMES, INDEX_PATHS, INDEX_FULLTEXT
      * @return whether the option is set
      */
-    public boolean isOption (int option) {
-        return (options & option) != 0;
+    private boolean isOption (int option) {
+        return configuration.isOption(option);
     }
     
     public void read (Reader xml, String uri) throws XMLStreamException {
@@ -178,8 +145,8 @@ public class XmlIndexer {
         xmlReader.reset();
     }
     
-    public Collection<XmlField> getFields () {
-        return fields;
+    private Collection<FieldDefinition> getFields () {
+        return configuration.getFields();
     }
     
     public XdmNode getXdmNode () {
@@ -197,8 +164,13 @@ public class XmlIndexer {
         return saxonBuilder;
     }    
 
+    // FIXME: why does this method prefix the uri w/lux but the next one strip it off?
     public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
+        /*
+        String path = uri.startsWith("lux:/") ? uri.substring(5) : uri;
+        path = path.replace('\\', '/');
+        */
         uri = "lux:/" + uri;
         read(new StringReader(xml), uri);
         addLuceneDocument(indexWriter);
@@ -214,7 +186,7 @@ public class XmlIndexer {
 
     private void addLuceneDocument(IndexWriter indexWriter) throws CorruptIndexException, IOException {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
-        for (XmlField field : getFields()) {
+        for (FieldDefinition field : getFields()) {
             for (Fieldable f : field.getFieldValues(this)) {
                 doc.add(f);
             }
@@ -223,11 +195,7 @@ public class XmlIndexer {
     }
 
     public IndexWriter getIndexWriter(Directory dir) throws CorruptIndexException, LockObtainFailedException, IOException {
-        return new IndexWriter(dir, new IndexWriterConfig(LUCENE_VERSION, fieldAnalyzers));
-    }
-
-    public long getOptions() {
-        return options;
+        return new IndexWriter(dir, new IndexWriterConfig(LUCENE_VERSION, configuration.getFieldAnalyzers()));
     }
 
     public XmlPathMapper getPathMapper() {
@@ -249,6 +217,10 @@ public class XmlIndexer {
         return uri;
     }
     
+    public IndexConfiguration getConfiguration() {
+        return configuration;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

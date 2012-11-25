@@ -1,10 +1,10 @@
 package lux.xquery;
 
-import lux.compiler.ExpressionVisitor;
+import lux.xml.QName;
 import lux.xpath.AbstractExpression;
+import lux.xpath.ExpressionVisitor;
 import lux.xpath.LiteralExpression;
 import lux.xpath.Namespace;
-import lux.xpath.QName;
 
 public class ElementConstructor extends AbstractExpression {
 

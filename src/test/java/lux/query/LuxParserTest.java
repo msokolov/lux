@@ -1,8 +1,7 @@
 package lux.query;
 
-import static org.junit.Assert.*;
-import lux.index.XmlIndexer;
-import lux.index.field.XmlField;
+import static org.junit.Assert.assertEquals;
+import lux.index.IndexConfiguration;
 import lux.query.parser.LuxQueryParser;
 
 import org.apache.lucene.index.Term;
@@ -14,20 +13,20 @@ import org.junit.Test;
 
 public class LuxParserTest {
     
-    private static final String LUX_ATT_TEXT = XmlField.ATTRIBUTE_TEXT.getName();
+    private static final String LUX_ATT_TEXT = "lux_att_text";
 
-    private static final String LUX_ELT_TEXT = XmlField.ELEMENT_TEXT.getName();
+    private static final String LUX_ELT_TEXT = "lux_elt_text";
 
-    private static final String LUX_TEXT = XmlField.XML_TEXT.getName();
+    private static final String LUX_TEXT = "lux_text";
     
     private LuxQueryParser parser;
     
     @Test
     public void testParseLuxQuery () throws Exception {
-        parser = new LuxQueryParser(XmlIndexer.LUCENE_VERSION, "", XmlField.ELEMENT_TEXT.getAnalyzer());
+        parser = new LuxQueryParser(new IndexConfiguration());
         
         // standard Lucene field term
-        assertQuery (new TermQuery(new Term("", "term")), "term");
+        assertQuery (new TermQuery(new Term(LUX_TEXT, "term")), "term");
         assertQuery (new TermQuery(new Term("field", "term")), "field:term");
 
         // full text query
@@ -50,10 +49,10 @@ public class LuxParserTest {
     
     @Test
     public void testParseLuxQueryPhrase () throws Exception {
-        parser = new LuxQueryParser(XmlIndexer.LUCENE_VERSION, "", XmlField.ELEMENT_TEXT.getAnalyzer());
+        parser = new LuxQueryParser(new IndexConfiguration());
         
         // standard Lucene field term
-        assertQuery (makePhraseQuery ("", "big", "dog"), "\"big dog\"");
+        assertQuery (makePhraseQuery (LUX_TEXT, "big", "dog"), "\"big dog\"");
         assertQuery (makePhraseQuery ("field", "big", "dog"), "field:\"big dog\"");
 
         // full text query
@@ -85,6 +84,6 @@ public class LuxParserTest {
     // TODO phrase query
 
     private void assertQuery (Query q, String s) throws ParseException {
-        assertEquals (s, q, parser.parse(s));        
+        assertEquals (q.toString(), parser.parse(s).toString());        
     }
 }

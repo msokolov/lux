@@ -1,6 +1,6 @@
 package lux.index.attribute;
 
-import lux.xpath.QName;
+import lux.xml.QName;
 
 import org.apache.lucene.util.Attribute;
 

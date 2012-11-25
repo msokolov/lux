@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import lux.index.XmlIndexer;
-import lux.index.field.XmlField;
-import lux.saxon.Saxon.SaxonBuilder;
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
+import lux.saxon.Evaluator.DocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.document.Document;
@@ -31,16 +31,16 @@ public class CachingDocReader {
     private final String uriFieldName;
     private final FieldSelector fieldSelector;
     private final IndexReader reader;
-    private final SaxonBuilder builder;
+    private final DocBuilder builder;
     private int cacheHits=0;
     private int cacheMisses=0;
     private long buildTime=0;
     
-    public CachingDocReader (IndexReader reader, SaxonBuilder builder, XmlIndexer indexer) {
+    public CachingDocReader (IndexReader reader, DocBuilder builder, IndexConfiguration indexConfig) {
         this.reader = reader;
         this.builder = builder;
-        this.xmlFieldName = XmlField.XML_STORE.getName();
-        this.uriFieldName = XmlField.URI.getName();
+        this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
+        this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
         HashSet<String> fieldNames = new HashSet<String>();
         fieldNames.add(xmlFieldName);
         fieldNames.add(uriFieldName);
@@ -58,7 +58,8 @@ public class CachingDocReader {
         String xml = document.get(xmlFieldName);
         String uri = document.get(uriFieldName);
         long t0 = System.nanoTime();
-        XdmNode node = (XdmNode) builder.build(new StringReader (xml), uri, docID);
+        builder.setNextDocID(docID);
+        XdmNode node = builder.build(new StringReader (xml), uri);
         buildTime += (System.nanoTime() - t0);
         if (node != null) {
             cache.put(docID, node);

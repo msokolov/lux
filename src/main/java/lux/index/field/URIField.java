@@ -9,7 +9,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 
-public class URIField extends XmlField {
+public class URIField extends FieldDefinition {
     
     private static final URIField instance = new URIField();
     
@@ -23,7 +23,7 @@ public class URIField extends XmlField {
     
     @Override
     public Iterable<Field> getFieldValues(XmlIndexer indexer) {
-        return Collections.singleton(new Field (XmlField.URI.getName(), indexer.getURI(), 
+        return Collections.singleton(new Field (indexer.getConfiguration().getFieldName(this), indexer.getURI(), 
                 Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
     }
 

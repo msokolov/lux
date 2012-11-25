@@ -1,6 +1,8 @@
 package lux;
 
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
+
 
 public class PathQueryTest extends BasicQueryTest {
     
@@ -151,8 +153,7 @@ public class PathQueryTest extends BasicQueryTest {
 
     @Override
     public XmlIndexer getIndexer() {
-        // XmlIndexer.INDEX_QNAMES | XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM|
-        return new XmlIndexer(XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_FULLTEXT);
+        return new XmlIndexer(IndexConfiguration.INDEX_PATHS | IndexConfiguration.INDEX_FULLTEXT);
     }
 
 }

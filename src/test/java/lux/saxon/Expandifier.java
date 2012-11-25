@@ -1,8 +1,8 @@
 package lux.saxon;
 
-import lux.api.ValueType;
-import lux.compiler.ExpressionVisitorBase;
+import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
+import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 import lux.xpath.Root;
 import lux.xquery.XQuery;

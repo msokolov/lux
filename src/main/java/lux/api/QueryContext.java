@@ -4,20 +4,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import lux.index.field.XmlField;
-import lux.xpath.QName;
+import lux.xml.QName;
 
 public class QueryContext {
     
     private HashMap<QName, Object> variables;
     
     private Object contextItem;
-    
-    private final Evaluator evaluator;
-    
-    public QueryContext (Evaluator eval) {
-        evaluator = eval;
-    }
     
     /**
      * bind an external variable so that it will be available in the scope of queries evaluated using this context
@@ -49,14 +42,6 @@ public class QueryContext {
     
     public Object getContextItem () {
         return contextItem;
-    }
-    
-    public String getXmlFieldName() {
-        return XmlField.XML_STORE.getName();
-    }
-
-    public Evaluator getEvaluator() {
-        return evaluator;
     }
 
 }

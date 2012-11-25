@@ -5,8 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
 
-import lux.saxon.Config;
-import lux.saxon.Saxon;
+import lux.saxon.Evaluator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -77,7 +76,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                     start = arg1 == null ? "" : arg1.getStringValue();
                 }
             }
-            Saxon saxon = ((Config)context.getConfiguration()).getSaxon();
+            Evaluator saxon = (Evaluator) context.getConfiguration().getCollectionURIResolver();
             try {
                 if (fieldName == null) {
                     return new TermsIterator (saxon, null);
@@ -93,18 +92,18 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     
     class TermsIterator implements SequenceIterator<AtomicValue> {
         private final TermEnum terms;
-        private final Saxon saxon;
+        private final Evaluator saxon;
         private Term term;
         private int pos;
         
-        TermsIterator (Saxon saxon, Term term) throws IOException {
+        TermsIterator (Evaluator saxon, Term term) throws IOException {
             this.term = term;
             this.saxon = saxon;
             this.terms = createTerms(saxon, term);
             pos = 0;
         }
 
-        private TermEnum createTerms(Saxon saxon, Term term) throws IOException {
+        private TermEnum createTerms(Evaluator saxon, Term term) throws IOException {
             if (term != null) {
                 return saxon.getSearcher().getIndexReader().terms (term);
             } else {

@@ -3,11 +3,12 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.api.QueryContext;
-import lux.api.ResultSet;
-import lux.saxon.Saxon;
-import lux.saxon.Saxon.Dialect;
-import lux.xpath.QName;
+import lux.saxon.Evaluator;
+import lux.saxon.Evaluator.Dialect;
+import lux.saxon.XdmResultSet;
+import lux.xml.QName;
 
+import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
 
 import org.apache.commons.io.IOUtils;
@@ -42,18 +43,18 @@ public class TransformTest {
         // test a stylesheet that expects an external variable - attempt
         // to bind one, but it is not seen by the stylesheet
         String query = IOUtils.toString(TransformTest.class.getResourceAsStream("transform-context.xqy"));
-        QueryContext context = new QueryContext(saxon);
+        QueryContext context = new QueryContext();
         context.bindVariable(new QName("external-var"), new XdmAtomicValue(10));
-        ResultSet<?> results = saxon.compile(query).evaluate(context);
+        XdmResultSet results = evaluator.evaluate(evaluator.getCompiler().compile(query), context);
         assertNull ("got an unexpected error", results.getErrors());
         assertEquals ("undefined", results.iterator().next().toString());
     }
     
-    private static Saxon saxon;
+    private static Evaluator evaluator;
     
     @BeforeClass
     public static void setup () {
-        saxon = new Saxon(Dialect.XQUERY_1);
+        evaluator = new Evaluator(Dialect.XQUERY_1);
     }
 
     private void assertXQueryFile (String result, String queryFile) throws IOException {
@@ -70,7 +71,8 @@ public class TransformTest {
     }
     
     private void assertXQuery (String result, String query, String firstError) {
-        ResultSet<?> results = saxon.compile(query).evaluate(new QueryContext(saxon));
+        XQueryExecutable xquery = evaluator.getCompiler().compile(query);
+        XdmResultSet results = evaluator.evaluate(xquery, new QueryContext());
         if (result == null) {
             assertEquals (0, results.size());
             if (firstError != null) {

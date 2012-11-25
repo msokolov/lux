@@ -2,7 +2,7 @@ package lux.functions;
 
 import java.io.IOException;
 
-import lux.saxon.Saxon;
+import lux.saxon.Evaluator;
 import lux.saxon.SearchResultIterator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
@@ -39,14 +39,14 @@ public class LuxSearch extends SearchBase {
      * Iterate over the search results
      *
      * @param query the query to execute
-     * @param saxon 
+     * @param eval 
      * @return an iterator with the results of executing the query and applying the
      * expression to its result.
      * @throws XPathException
      */
-    public SequenceIterator<NodeInfo> iterate(final Query query, Saxon saxon, long facts) throws XPathException {        
+    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, long facts) throws XPathException {        
         try {
-            return new SearchResultIterator (saxon, query);
+            return new SearchResultIterator (eval, query);
         } catch (IOException e) {
             throw new XPathException (e);
         }

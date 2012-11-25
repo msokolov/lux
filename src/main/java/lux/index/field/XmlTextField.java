@@ -5,17 +5,14 @@ import java.util.Collections;
 import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.XmlTextTokenStream;
-import lux.query.ParseableQuery;
-import lux.query.QNameTextQuery;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.index.Term;
 
-public class XmlTextField extends XmlField {
+public class XmlTextField extends FieldDefinition {
 
     private static final XmlTextField instance = new XmlTextField();
     
@@ -24,11 +21,7 @@ public class XmlTextField extends XmlField {
     }
     
     protected XmlTextField () {
-        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO);
-    }
-
-    public ParseableQuery makeTextQuery (String value) {
-        return new QNameTextQuery(new Term(getName(), value));
+        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO, true);
     }
     
     @Override
@@ -36,7 +29,7 @@ public class XmlTextField extends XmlField {
         XdmNode doc = indexer.getXdmNode();
         SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
         XmlTextTokenStream tokens = new XmlTextTokenStream (doc, builder.getOffsets());
-        return new FieldValues (this, Collections.singleton(new Field(getName(), tokens, getTermVector())));
+        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
     }
 
 }

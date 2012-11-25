@@ -5,12 +5,11 @@ import java.util.Iterator;
 
 import javax.xml.transform.TransformerException;
 
-import lux.api.ResultSet;
 import net.sf.saxon.s9api.XdmEmptySequence;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
 
-public class XdmResultSet implements ResultSet<XdmItem> {
+public class XdmResultSet implements Iterable<XdmItem> {
     
     private final XdmValue value;
     private final Collection<TransformerException> errors;

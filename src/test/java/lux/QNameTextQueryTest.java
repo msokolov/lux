@@ -1,12 +1,14 @@
 package lux;
 
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
+
 
 public class QNameTextQueryTest extends BasicQueryTest {
 
     @Override
     public XmlIndexer getIndexer() {
-        return new XmlIndexer(XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT);
+        return new XmlIndexer(IndexConfiguration.INDEX_QNAMES | IndexConfiguration.INDEX_FULLTEXT);
     }
     
     public String getQueryXml (Q q) {

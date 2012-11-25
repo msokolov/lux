@@ -2,6 +2,8 @@ package lux.index.analysis;
 
 import java.io.IOException;
 
+import lux.xml.Offsets;
+
 
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;

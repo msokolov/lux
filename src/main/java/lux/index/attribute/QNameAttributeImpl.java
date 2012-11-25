@@ -3,7 +3,7 @@ package lux.index.attribute;
 import java.util.ArrayList;
 import java.util.List;
 
-import lux.xpath.QName;
+import lux.xml.QName;
 
 import org.apache.lucene.util.AttributeImpl;
 

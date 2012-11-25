@@ -20,20 +20,22 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     private final Query query;
     private final QueryStats stats;
     private final LuxSearcher searcher;
-    private final Saxon saxon;
     private CachingDocReader docCache;
     private NodeInfo current = null;
     private int position = 0;
     
-    public SearchResultIterator (Saxon saxon, Query query) throws IOException {
+    public SearchResultIterator (Evaluator eval, Query query) throws IOException {
+        this (eval.getSearcher(), eval.getDocReader(), eval.getQueryStats(), query);
+    }
+    
+    protected SearchResultIterator (LuxSearcher searcher, CachingDocReader docReader, QueryStats stats, Query query) throws IOException {
         this.query = query;
-        this.saxon = saxon;
-        this.stats = saxon.getQueryStats();
+        this.searcher = searcher;
+        this.docCache = docReader;
+        this.stats = stats;
         if (stats != null) {
             stats.query = query.toString();
         }
-        searcher = saxon.getSearcher();
-        docCache = saxon.getDocReader();
         docIter = searcher.searchOrdered(query);
     }
 
@@ -85,7 +87,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
 
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
-            return new SearchResultIterator (saxon, query);
+            return new SearchResultIterator (searcher, docCache, stats, query);
         } catch (IOException e) {
             throw new XPathException (e);
         }
@@ -95,7 +97,6 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         return SequenceIterator.LOOKAHEAD;
     }
     
-
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

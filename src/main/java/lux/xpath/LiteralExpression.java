@@ -4,9 +4,9 @@ package lux.xpath;
 import java.math.BigDecimal;
 import java.util.Date;
 
-import lux.api.LuxException;
-import lux.api.ValueType;
-import lux.compiler.ExpressionVisitor;
+import lux.exception.LuxException;
+import lux.xml.QName;
+import lux.xml.ValueType;
 
 import javax.xml.bind.DatatypeConverter;
 

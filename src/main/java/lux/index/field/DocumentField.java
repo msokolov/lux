@@ -12,7 +12,7 @@ import org.apache.lucene.document.Field.TermVector;
  * A stored field that is used to store the entire XML document.
  *
  */
-public class DocumentField extends XmlField {
+public class DocumentField extends FieldDefinition {
     
     private static final DocumentField instance = new DocumentField();
     
@@ -26,7 +26,7 @@ public class DocumentField extends XmlField {
     
     @Override
     public Iterable<Field> getFieldValues(XmlIndexer indexer) {
-        return new FieldValues (this, Collections.singleton(indexer.getDocumentText()));
+        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(indexer.getDocumentText()));
     }
     
     @Override

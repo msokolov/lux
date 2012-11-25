@@ -1,18 +1,5 @@
-package lux.compiler;
+package lux.xpath;
 
-import lux.xpath.AbstractExpression;
-import lux.xpath.BinaryOperation;
-import lux.xpath.Dot;
-import lux.xpath.FunCall;
-import lux.xpath.LiteralExpression;
-import lux.xpath.PathExpression;
-import lux.xpath.PathStep;
-import lux.xpath.Predicate;
-import lux.xpath.Root;
-import lux.xpath.Sequence;
-import lux.xpath.SetOperation;
-import lux.xpath.Subsequence;
-import lux.xpath.UnaryMinus;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
 import lux.xquery.ComputedElementConstructor;

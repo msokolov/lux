@@ -1,0 +1,56 @@
+* code reorg
+** Layers: this is defined by relationship to other external code
+what is the outer-facing "user" layer?
+
+for loading, compiling, executing XQuery, XPath and XSLT via:
+
+1) Java API 
+2) HTTP service/Web application
+3) internals
+
+*** saxon layer
+*** XML parser layer?
+*** solr layer
+*** lucene layer
+** functional slices
+*** indexing
+*** query analysis / optimization
+*** query execution
+*** app server
+* query workflow
+
+Evaluator.compile (String userQuery)
+ XQueryCompiler.compile -> XQueryExecutable
+ SaxonTranslator -> lux.xquery.XQuery {AbstractExpression tree}
+ PathOptimizer.optimize -> XQuery (optimized)
+ toString(buf) -> String
+ XQueryCompiler.compile -> XQueryExecutable
+
+Evaluator.evaluate (XQueryExecutable)
+  load() -> XQueryEvaluator
+  setContext (new QueryContext(this))
+  bind variables
+  XQueryEvaluator.evaluate()
+    function calls, eg:
+    LuxSearchCall.call
+      parseQuery
+        XmlQueryParser/LuxQueryParser .parse()
+          iterate(query, evaluator)
+            SearchResultIterator (query, evaluator)
+              disi = evaluator.searcher.search(query)
+              next()
+                docCache.get()
+                stats. set properties
+              getAnother (query, evaluator)
+
+* weird dependencies
+** lux.xml
+lux.LuxException, lux.index.analysis.Offsets
+** lux.Saxon
+lux.functions.* and vice-versa
+that's OK
+** lux.functions
+Config via LuxFunctionLibrary
+** CollectionURIResolver
+Uses LuxSearcher, CachingDocReader, QueryStats, ErrorListener
+has to be set into Configuration; Configuration is in the long-lived Processor

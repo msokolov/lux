@@ -1,9 +1,14 @@
 package lux.saxon;
 
 import static org.junit.Assert.assertEquals;
-import lux.index.XmlIndexer;
-import lux.saxon.Saxon.Dialect;
-import lux.xpath.AbstractExpression;
+import lux.XCompiler;
+import lux.compiler.PathOptimizer;
+import lux.compiler.SaxonTranslator;
+import lux.exception.LuxException;
+import lux.xquery.XQuery;
+
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XQueryExecutable;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -15,10 +20,10 @@ import org.junit.Test;
 // covers the same ground in a much more robust way.
 public class TranslatorTest {
     
-    private Saxon saxon;
+    private Evaluator eval;
     
     @Before public void setup () {
-        saxon = new Saxon(null, new XmlIndexer(), Dialect.XQUERY_1);
+        eval = new Evaluator();
     }
     
     @Test @Ignore public void testTranslate () {
@@ -170,12 +175,28 @@ public class TranslatorTest {
     }
     
     private void roundtrip (String xpath) {
-        SaxonExpr original = saxon.compile(xpath);
-        AbstractExpression aex = original.getXPath();
-        SaxonExpr retranslated = saxon.compile(aex.toString());
+        XQueryExecutable query;
+        XCompiler compiler = eval.getCompiler();
+        try {
+            query = compiler.getXQueryCompiler().compile(xpath);
+        } catch (SaxonApiException e) {
+            throw new LuxException(e);
+        }
+        SaxonTranslator translator = new SaxonTranslator(compiler.getProcessor().getUnderlyingConfiguration());
+        PathOptimizer optimizer = new PathOptimizer(compiler.getIndexConfiguration());
+        XQuery originalQuery = translator.queryFor(query);
+        XQuery optimizedQuery = optimizer.optimize(originalQuery);
+        XQuery retranslated;
+        try {
+            retranslated = translator.queryFor(compiler.getXQueryCompiler().compile(optimizedQuery.getBody().toString()));
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
+        // compare the (compiled, translated, serialized) optimized query with the 
+        // (compiled, translated, serialized) original query
         assertEquals (xpath + " was not preserved", 
-                original.getXPath().toString(), 
-                retranslated.getXPath().toString());
+                originalQuery.getBody().toString(), 
+                retranslated.getBody().toString());
     }
     
 }

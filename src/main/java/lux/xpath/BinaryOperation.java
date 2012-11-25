@@ -4,8 +4,7 @@
 
 package lux.xpath;
 
-import lux.api.ValueType;
-import lux.compiler.ExpressionVisitor;
+import lux.xml.ValueType;
 
 
 public class BinaryOperation extends AbstractExpression {

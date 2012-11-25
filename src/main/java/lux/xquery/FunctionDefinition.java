@@ -1,9 +1,9 @@
 package lux.xquery;
 
-import lux.api.ValueType;
+import lux.xml.QName;
+import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
-import lux.xpath.QName;
 
 public class FunctionDefinition extends FunCall {
 

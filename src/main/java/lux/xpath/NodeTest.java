@@ -4,7 +4,8 @@
 
 package lux.xpath;
 
-import lux.api.ValueType;
+import lux.xml.QName;
+import lux.xml.ValueType;
 
 public class NodeTest {
 

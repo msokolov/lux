@@ -1,29 +1,31 @@
-* app server rest service 
-display documents from /doc/<uri>
-enforce uris begin with /
 * highlighting
 * document store / load
-* xslt
-We want to use for document output and also for input transformations
-provide as function from xquery: lux:transform()
-** also lux:eval()
 * eliminate lux.api
 the whole code base is Saxon-specific.  If we really want to support some
 other implementation, we have to do that now.  If it's just
 future-proofing, it's junk and we should nuke it.
+* eval
+execute xquery from within xquery
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE, but we can't because we extend
-Configuration.
+Configuration.  At the same time, we provide some critical performance
+boosts with this.
 ** Don't extend Configuration
 We currently do this so we can use a custom Optimizer and FunctionLibrary
 to ensure that search results are regarded as properly in document order.
 We could avoid the need for this if we implement a CollectionURIResolver
 that handles a few special schemes (like lux:) since results from
 collection() are considered to be in document order.
-** Separate TinyBinary from Lux before distributing?
-This is our own binary storage format that reconstructs TinyTrees.  If we
-change to a Saxon-compatible Configuration, then we could support the use
-of PTree storage.
+*** DocumentSorter
+We also prevent additional sorting of the entire result set in some cases
+we can determine it to be unnecessary by overriding
+Optimizer.makeConditionalDocumentSorter.  This happens, eg when evaluating
+a path like exists(//foo//bar).  There is no way around this in Saxon HE,
+and it is a significant performance whack for many queries.
+**** Use fallback?
+If HE is detected, provide a custom Configuration?  TODO: test if
+optimization under PE/EE handles this anyway?  If not, performance could
+actually *degrade* with PE!
 * lux xquery API
 ** document insert
 should be able to insert directly to a local Directory containing a lucene index;

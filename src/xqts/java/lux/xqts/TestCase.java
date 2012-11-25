@@ -366,7 +366,7 @@ public class TestCase {
         Type type;
     }
 
-    public Boolean compareResult(ResultSet<?> results, XdmValue value) throws XPathException, SaxonApiException {
+    public Boolean compareResult(XdmResultSet results, XdmValue value) throws XPathException, SaxonApiException {
         XdmSequenceIterator iter = value.iterator();
         for (Object o: results) {
             XdmItem result = (XdmItem) o;

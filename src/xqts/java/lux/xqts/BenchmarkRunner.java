@@ -89,7 +89,7 @@ public class BenchmarkRunner extends RunnerBase {
         //System.out.println (expr);
         QueryStats stats = new QueryStats();
         eval.setQueryStats(stats);
-        ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, context);
+        XdmResultSet results = (XdmResultSet) eval.evaluate(expr, context);
         if (results.getException() != null) {
             if (! threwException) {
                 ++numfailed;

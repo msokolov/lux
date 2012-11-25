@@ -1,6 +1,6 @@
 package lux.query;
 
-import lux.xpath.QName;
+import lux.xml.QName;
 import lux.xquery.ElementConstructor;
 
 public final class MatchAllPQuery extends ParseableQuery {

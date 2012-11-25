@@ -1,13 +1,13 @@
 package lux.index.field;
 
-import lux.index.WhitespaceGapAnalyzer;
 import lux.index.XmlIndexer;
+import lux.index.analysis.WhitespaceGapAnalyzer;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 
-public class PathField extends XmlField {
+public class PathField extends FieldDefinition {
     
     private static final PathField instance = new PathField();
     
@@ -21,7 +21,7 @@ public class PathField extends XmlField {
     
     @Override
     public Iterable<Field> getFieldValues(XmlIndexer indexer) {
-        return new FieldValues (this, indexer.getPathMapper().getPathCounts().keySet());
+        return new FieldValues (indexer.getConfiguration(), this, indexer.getPathMapper().getPathCounts().keySet());
     }
 
     @Override

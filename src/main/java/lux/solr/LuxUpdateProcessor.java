@@ -1,15 +1,19 @@
 package lux.solr;
 
+import static lux.index.IndexConfiguration.*;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.index.WhitespaceGapAnalyzer;
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
-import lux.index.field.XmlField;
-import lux.index.field.XmlField.Type;
+import lux.index.analysis.WhitespaceGapAnalyzer;
+import lux.index.field.FieldDefinition;
+import lux.index.field.FieldDefinition.Type;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
@@ -39,29 +43,29 @@ import org.slf4j.LoggerFactory;
 
 public class LuxUpdateProcessor extends UpdateRequestProcessorFactory implements SolrCoreAware {
 
-    private XmlIndexer xmlIndexer;
+    private IndexConfiguration config;
     
     @Override
     public void init(@SuppressWarnings("rawtypes") final NamedList args) {
         // TODO: check if we are unnecessarily serializing the document
-        // We don't need XmlIndexer.STORE_XML to do that since the client passes us the xml_text field
+        // We don't need FieldName.STORE_XML to do that since the client passes us the xml_text field
         // but we declare the field to the indexer so that it gets defined in the schema
-        xmlIndexer = new XmlIndexer (XmlIndexer.INDEX_FULLTEXT | XmlIndexer.INDEX_PATHS);
+        config = new IndexConfiguration(INDEX_FULLTEXT | INDEX_PATHS);
         if (args != null) {
             SolrParams params = SolrParams.toSolrParams(args);
             // accept override from configuration so we can piggyback on existing 
             // document storage
             String xmlFieldName = params.get("xmlFieldName", null);
             if (xmlFieldName != null) {
-                XmlField.XML_STORE.setName (xmlFieldName);
+                config.renameField(config.getField(FieldName.XML_STORE), xmlFieldName);
             }
             String uriFieldName = params.get("uriFieldName", null);
             if (uriFieldName != null) {
-                XmlField.URI.setName (uriFieldName);
+                config.renameField(config.getField(FieldName.URI), uriFieldName);
             }
             String textFieldName = params.get("textFieldName", null);
             if (textFieldName != null) {
-                XmlField.XML_TEXT.setName (textFieldName);
+                config.renameField(config.getField(FieldName.XML_TEXT), textFieldName);
             }
             // add fields to config??
             // TODO: namespace-awareness?; namespace mapping
@@ -75,21 +79,22 @@ public class LuxUpdateProcessor extends UpdateRequestProcessorFactory implements
     public void inform(SolrCore core) {
         IndexSchema schema = core.getSchema();
         // XML_STORE is not included in the indexer's field list; we just use what came in on the request
-        informField (XmlField.XML_STORE, schema);
-        for (XmlField xmlField : xmlIndexer.getFields()) {
+        informField (config.getField(FieldName.XML_STORE), schema);
+        for (FieldDefinition xmlField : config.getFields()) {
             informField (xmlField, schema);
         }
         // must call this after making changes to the field map:
         schema.refreshAnalyzers();
     }
     
-    private void informField (XmlField xmlField, IndexSchema schema) {
+    private void informField (FieldDefinition xmlField, IndexSchema schema) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         Logger logger = LoggerFactory.getLogger(LuxUpdateProcessor.class);
-        if (fields.containsKey(xmlField.getName())) {
+        String fieldName = config.getFieldName(xmlField);
+        if (fields.containsKey(fieldName)) {
             // The Solr schema defines this field
-            logger.info("Field already defined: " + xmlField.getName());
+            logger.info("Field already defined: " + fieldName);
             return;
         }
         // look up the type of this field using the mapping in this class
@@ -102,17 +107,18 @@ public class LuxUpdateProcessor extends UpdateRequestProcessorFactory implements
             fieldType = fieldTypes.get(fieldType.getTypeName());
         }
         // Add the field to the schema
-        logger.info("Defining field: " + xmlField.getName() + " of type " + fieldType.getTypeName());
-        fields.put(xmlField.getName(), new SchemaField (xmlField.getName(), fieldType, xmlField.getSolrFieldProperties(), ""));
+        logger.info("Defining field: " + fieldName + " of type " + fieldType.getTypeName());
+        fields.put(fieldName, new SchemaField (fieldName, fieldType, xmlField.getSolrFieldProperties(), ""));
     }
     
-    private FieldType getFieldType(XmlField xmlField, IndexSchema schema) {
+    private FieldType getFieldType(FieldDefinition xmlField, IndexSchema schema) {
         // FIXME - we should store a field type name in XmlField and just look that up instead
         // of trying to infer from the analyzer
         Analyzer analyzer = xmlField.getAnalyzer();
+        String fieldName = config.getFieldName(xmlField);
         if (analyzer == null) {
             if (! (xmlField.isStored() == Store.YES)) {
-                throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + xmlField.getName() + "; no analyzer and not stored");
+                throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + fieldName + "; no analyzer and not stored");
             }
             return new StoredStringField ();
         }
@@ -125,7 +131,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessorFactory implements
         if (analyzer instanceof WhitespaceGapAnalyzer) {
             return new PathField ();
         }
-        throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + xmlField.getName() + "; unknown analyzer type: " + analyzer);
+        throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + fieldName + "; unknown analyzer type: " + analyzer);
     }
     
     class StoredStringField extends StrField {
@@ -177,30 +183,38 @@ public class LuxUpdateProcessor extends UpdateRequestProcessorFactory implements
         public LuxProcessorInstance (UpdateRequestProcessor next) {
             super(next);
         }
+        
+        private XmlIndexer getIndexer (IndexConfiguration config) {
+            // TODO: pool these
+            return new XmlIndexer(config);
+        }
 
         public void processAdd (AddUpdateCommand cmd) throws IOException {
-            Object o = cmd.getSolrInputDocument().getFieldValue(XmlField.XML_STORE.getName());
+            XmlIndexer xmlIndexer = getIndexer(config);
+            Object o = cmd.getSolrInputDocument().getFieldValue(config.getFieldName(FieldName.XML_STORE));
             if (o != null) {
                 String xml = (String) o;
-                String uri = (String) cmd.getSolrInputDocument().getFieldValue(XmlField.URI.getName());
+                String uri = (String) cmd.getSolrInputDocument().getFieldValue(config.getFieldName(FieldName.URI));
                 try {
                     xmlIndexer.read (new StringReader(xml), uri);
                 } catch (XMLStreamException e) {
-                    log.error ("Failed to parse " + XmlField.XML_STORE, e);
+                    log.error ("Failed to parse " + FieldName.XML_STORE, e);
                 }
-                for (XmlField field : xmlIndexer.getFields()) {
-                    if (field == XmlField.URI || field == XmlField.XML_STORE) {
+                for (FieldDefinition field : config.getFields()) {
+                    if (field == config.getField(FieldName.URI) ||  
+                            field == config.getField(FieldName.XML_STORE))
+                    {
                         // uri and xml are provided externally
                         continue;
                     }
                     Iterable<?> values = field.getValues(xmlIndexer);
                     if (values != null) {
                         for (Object value : values) {
-                            cmd.getSolrInputDocument().addField(field.getName(), value);
+                            cmd.getSolrInputDocument().addField(config.getFieldName(field), value);
                         }
                     } else {
                         for (Fieldable value : field.getFieldValues(xmlIndexer)) {
-                            cmd.getSolrInputDocument().addField(field.getName(), value);
+                            cmd.getSolrInputDocument().addField(config.getFieldName(field), value);
                         }
                     }
                 }

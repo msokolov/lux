@@ -1,17 +1,19 @@
 package lux;
 
 import static org.junit.Assert.assertEquals;
+import static lux.index.IndexConfiguration.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
-import lux.index.field.XmlField;
+import lux.index.field.FieldDefinition;
 import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
-
 import net.sf.saxon.s9api.SaxonApiException;
 
 import org.apache.lucene.index.IndexReader;
@@ -63,48 +65,49 @@ public class IndexTest {
 
     @Test
     public void testIndexQNames() throws Exception {
-        buildIndex ("qnames and xml", XmlIndexer.INDEX_QNAMES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qnames and xml", INDEX_QNAMES | STORE_XML | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
     @Test
     public void testIndexQNamesOnly () throws Exception {
-        buildIndex ("qnames", XmlIndexer.INDEX_QNAMES | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qnames", INDEX_QNAMES | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexPaths() throws Exception {
-        buildIndex ("paths and xml", XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("paths and xml", INDEX_PATHS | STORE_XML | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
     @Test
     public void testIndexPathsOnly () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("paths", XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_DOCUMENT);        
+        IndexTestSupport indexTestSupport = buildIndex ("paths", INDEX_PATHS | BUILD_DOCUMENT);        
         assertTotalDocs ();
+        // printAllTerms(indexTestSupport);
         assertPathQuery (indexTestSupport);
     }
     
     @Test
     public void testIndexFullText () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML |XmlIndexer.BUILD_DOCUMENT);        
+        IndexTestSupport indexTestSupport = buildIndex ("full-text", INDEX_FULLTEXT | STORE_XML |BUILD_DOCUMENT);        
         assertTotalDocs ();
-        //printAllTerms();
-        assertFullTextQuery (indexTestSupport.searcher, "PERSONA", "ROSENCRANTZ", 4);
+        //printAllTerms(indexTestSupport);
+        assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
     }
 
     @Test
     public void testIndexFullTextOnly () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text-only", XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_DOCUMENT);        
+        IndexTestSupport indexTestSupport = buildIndex ("full-text-only", INDEX_FULLTEXT | BUILD_DOCUMENT);        
         assertTotalDocs ();
-        //printAllTerms();
-        assertFullTextQuery (indexTestSupport.searcher, "PERSONA", "ROSENCRANTZ", 4);
+        //printAllTerms(indexTestSupport);
+        assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
     }
 
     private void assertPathQuery(IndexTestSupport indexTestSupport) throws ParseException, IOException {
         SrndQuery q = new QueryParser ().parse2("w(w({},\"ACT\"),\"SCENE\")");
-        Query q2 = q.makeLuceneQueryFieldNoBoost(XmlField.PATH.getName(),  new BasicQueryFactory());
+        Query q2 = q.makeLuceneQueryFieldNoBoost(indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.PATH),  new BasicQueryFactory());
         DocIdSetIterator iter = indexTestSupport.searcher.search(q2);
         int count = 0;
         while (iter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
@@ -113,10 +116,14 @@ public class IndexTest {
         assertEquals (5, count);
     }
     
-    private void assertFullTextQuery(LuxSearcher searcher, String qName, String term, int expectedCount) throws ParserException, IOException {
-        Query q = new XmlQueryParser(XmlField.ELEMENT_TEXT).parse
+    private void assertFullTextQuery(IndexTestSupport indexTestSupport, String qName, String term, int expectedCount) throws ParserException, IOException {
+        LuxSearcher searcher = indexTestSupport.searcher;
+        XmlIndexer indexer = indexTestSupport.indexer;
+        IndexConfiguration config = indexer.getConfiguration();
+        FieldDefinition field = config.getField(FieldName.ELEMENT_TEXT);
+        Query q = new XmlQueryParser(config.getFieldName(field), field.getAnalyzer()).parse
                 (new ByteArrayInputStream(("<QNameTextQuery fieldName=\"" +
-                		XmlField.ELEMENT_TEXT.getName() + "\" qName=\"" +
+                        config.getFieldName(FieldName.ELEMENT_TEXT) + "\" qName=\"" +
                 		qName + "\">" + term +
                 				"</QNameTextQuery>").getBytes()));
         DocIdSetIterator iter = searcher.search(q);
@@ -129,84 +136,85 @@ public class IndexTest {
 
     @Test
     public void testIndexFullTextOneDoc() throws Exception {
-        XmlIndexer indexer = new XmlIndexer (XmlIndexer.INDEX_FULLTEXT);
+        XmlIndexer indexer = new XmlIndexer (INDEX_FULLTEXT);
         IndexWriter indexWriter = indexer.getIndexWriter(dir);
         indexer.indexDocument(indexWriter, "/lux/reader-test.xml", 
                 getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
         indexWriter.close();
         System.out.println 
              (String.format("indexed path-values for lux/reader-test.xml in %d bytes", dir.sizeInBytes()));
-        printAllTerms();
-        assertFullTextQuery (new LuxSearcher (dir), "title", "TEST", 1);
+        IndexTestSupport indexTestSupport = new IndexTestSupport (null, indexer, dir);
+        printAllTerms(indexTestSupport);
+        assertFullTextQuery (indexTestSupport, "title", "TEST", 1);
     }
 
     @Test @Ignore
     public void testIndexPathValuesOneDoc() throws Exception {
-        XmlIndexer indexer = new XmlIndexer (XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES);
+        XmlIndexer indexer = new XmlIndexer (INDEX_PATHS | INDEX_VALUES);
         IndexWriter indexWriter = indexer.getIndexWriter(dir);
         indexer.indexDocument(indexWriter, "/lux/hamlet.xml", getClass().getClassLoader().getResourceAsStream("lux/hamlet.xml"));
         indexWriter.close();
         System.out.println 
              (String.format("indexed path-values for hamlet.xml in %d bytes", dir.sizeInBytes()));
         // hamlet.xml = 288815 bytes; indexed in 215040 bytes seems ok??
-        printAllTerms();
+        printAllTerms(new IndexTestSupport(null, indexer, dir));
     }
 
     @Test
     public void testIndexPathValuesOnly() throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("path-values", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.BUILD_DOCUMENT);
+        IndexTestSupport indexTestSupport = buildIndex ("path-values", INDEX_PATHS | INDEX_VALUES | BUILD_DOCUMENT);
         assertTotalDocs ();
         assertPathQuery(indexTestSupport);
     }
     
     @Test
     public void testIndexPathText () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("path-text", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_DOCUMENT);
+        IndexTestSupport indexTestSupport = buildIndex ("path-text", INDEX_PATHS | INDEX_FULLTEXT | BUILD_DOCUMENT);
         assertTotalDocs ();
         assertPathQuery(indexTestSupport);
     }    
 
     @Test
     public void testIndexQNameValues() throws Exception {
-        buildIndex ("qname-values and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_VALUES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qname-values and docs", INDEX_QNAMES | INDEX_VALUES | STORE_XML | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexQNameText() throws Exception {
-        buildIndex ("qname-text and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qname-text and docs", INDEX_QNAMES | INDEX_FULLTEXT | STORE_XML | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
     @Test
     public void testIndexQNameTextOnly() throws Exception {
-        buildIndex ("qname-text", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_FULLTEXT | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qname-text", INDEX_QNAMES | INDEX_FULLTEXT | BUILD_DOCUMENT);
         assertTotalDocs ();
         //printAllTerms();
     }
 
     @Test
     public void testIndexPathValues() throws Exception {
-        buildIndex ("path-values and docs", XmlIndexer.INDEX_PATHS | XmlIndexer.INDEX_VALUES | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("path-values and docs", INDEX_PATHS | INDEX_VALUES | STORE_XML | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexQNamesAndPaths() throws Exception {
-        buildIndex ("qnames and paths and docs", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qnames and paths and docs", INDEX_QNAMES | INDEX_PATHS | STORE_XML | BUILD_DOCUMENT);
         assertTotalDocs ();
-        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qnames and paths", INDEX_QNAMES | INDEX_PATHS | BUILD_DOCUMENT);
     }
 
     @Test
     public void testIndexQNamesAndPathsOnly() throws Exception {
-        buildIndex ("qnames and paths", XmlIndexer.INDEX_QNAMES | XmlIndexer.INDEX_PATHS | XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("qnames and paths", INDEX_QNAMES | INDEX_PATHS | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testStoreDocuments() throws Exception {
-        buildIndex ("xml storage", XmlIndexer.STORE_XML| XmlIndexer.BUILD_DOCUMENT);
+        buildIndex ("xml storage", STORE_XML| BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
@@ -230,12 +238,13 @@ public class IndexTest {
         return indexTestSupport;
     }
 
-    private void printAllTerms() throws Exception {
+    private void printAllTerms(IndexTestSupport indexTestSupport) throws Exception {
         IndexReader reader = IndexReader.open(dir);
         TermEnum terms = reader.terms();
         System.out.println ("Printing all terms (except uri)");
+        String uriFieldName = indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.URI);
         while (terms.next()) {
-            if (terms.term().field().equals(XmlField.URI.getName())) {
+            if (terms.term().field().equals(uriFieldName)) {
                 continue;
             }
             System.out.println (terms.term().toString() + ' ' + terms.docFreq());

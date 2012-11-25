@@ -3,7 +3,7 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.compiler.XPathQuery;
-import lux.saxon.Saxon;
+import lux.saxon.Evaluator;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
@@ -30,7 +30,7 @@ public class LuxExists extends SearchBase {
         return SequenceType.SINGLE_BOOLEAN;
     }    
     
-    @Override public UnfailingIterator<BooleanValue> iterate (Query query, Saxon saxon, long facts) throws XPathException {
+    @Override public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {

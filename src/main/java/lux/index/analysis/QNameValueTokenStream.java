@@ -1,17 +1,16 @@
-package lux.index.field;
+package lux.index.analysis;
 
 import java.io.IOException;
 
 import lux.index.XPathValueMapper;
-import lux.index.analysis.ValueTokenStream;
 
-final class QNameValueTokenStream extends ValueTokenStream {
+public final class QNameValueTokenStream extends ValueTokenStream {
     
     private static final int HASH_SIZE = XPathValueMapper.HASH_SIZE;
     private int bufpos;
     private char[] buf;
     
-    QNameValueTokenStream (Iterable<char[]> values) {
+    public QNameValueTokenStream (Iterable<char[]> values) {
         super (values);
         buf = new char[HASH_SIZE];
     }

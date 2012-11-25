@@ -2,9 +2,9 @@ package lux.query;
 
 import java.util.ArrayList;
 
+import lux.xml.QName;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
-import lux.xpath.QName;
 import lux.xpath.Sequence;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.ElementConstructor;

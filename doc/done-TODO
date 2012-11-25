@@ -1,3 +1,12 @@
+* code reorg
+Massive re-org, re-naming, etc.
+Untangled a lot of dependency cycles
+Split unchanging parts of XmlIndexer into IndexConfiguration
+Split Saxon into Compiler (mostly unchanging), and Evaluator (transient), but work remains here
+* xslt
+We want to use for document output and also for input transformations
+provide as function from xquery: lux:transform()
+** also lux:eval()
 * app server
 This works OK but requires some minor damage to solr. Might be better as a
 separate lightweight app??
@@ -8,6 +17,9 @@ that serializes the output of XQuery evaluation as HTML (and/or XML or
 text).  Can configure a path should map to either a folder on the
 filesystem, or in lux storage. Use this to deploy a mini-appserver at
 /lux/index.xqy that demonstrates lux.
+** rest service 
+Portion of url following .xqy now mapped as "path-extra" as in CGI.  In the
+demo, we use this to display documents from /view.xqy<uri>
 ** search demo
 *** autocompletion of node names and words
 using new lux:fieldTerms() method which uses a Lucene TermEnum.
@@ -18,6 +30,10 @@ javascript fun.
 *** sunflower logo
 I'm no artist but I like it.  ok - maybe try the circles version?  some
 other thing that's in between?
+*** more design love
+some color and a logo font
+*** pagination
+*** result display
 * query API
 lux:search now accepts queries formatted as node trees using the Lucene XML
 query parser scheme.  The indexes provided include node (QName) path
@@ -32,6 +48,12 @@ eg //foo["phrase to find"] would match <foo><a>phrase<a>to<b>find</b></foo>
 TinyBinary yields 5-20x speedup in document read time.  Documents
 are *larger* though - about 1.5x as big, with the best encoding so far.
 Apparently 19 pointers per node is expensive.
+** Separated TinyBinary from Lux trunk
+This is our own binary storage format that reconstructs TinyTrees.  If we
+change to a Saxon-compatible Configuration, then we could support the use
+of PTree storage.  I've left the code on a branch in the lux distro; it
+might be nice to provide it as a run-time plugin; we could load via
+reflection?
 ** test run
 Original size=361 bytes, 'tiny' binary size=833 bytes
 DocBuilder: 907ms; TinyBinary: 116ms

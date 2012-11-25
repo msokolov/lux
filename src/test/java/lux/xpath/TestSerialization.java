@@ -5,7 +5,8 @@
 package lux.xpath;
 
 import static org.junit.Assert.assertEquals;
-import lux.api.ValueType;
+import lux.xml.QName;
+import lux.xml.ValueType;
 import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.PathStep.Axis;
 import lux.xquery.ElementConstructor;

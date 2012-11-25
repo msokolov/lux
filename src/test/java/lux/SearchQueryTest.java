@@ -4,14 +4,14 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Iterator;
 
-import lux.api.LuxException;
 import lux.api.QueryStats;
-import lux.api.ResultSet;
-import lux.api.ValueType;
+import lux.exception.LuxException;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
+import lux.saxon.Evaluator;
 import lux.saxon.Expandifier;
-import lux.saxon.Saxon;
-import lux.saxon.SaxonExpr;
+import lux.saxon.XdmResultSet;
+import lux.xml.ValueType;
 import lux.xquery.XQuery;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryEvaluator;
@@ -66,7 +66,7 @@ public class SearchQueryTest extends BasicQueryTest {
 
     @Override
     public XmlIndexer getIndexer() {
-        return new XmlIndexer (XmlIndexer.INDEX_PATHS);
+        return new XmlIndexer (IndexConfiguration.INDEX_PATHS);
     }
 
     /**
@@ -79,8 +79,8 @@ public class SearchQueryTest extends BasicQueryTest {
         if (repeatCount > 1) {
             benchmark (xpath);
         } else {
-            Saxon saxon = index.getEvaluator();
-            ResultSet<?> results = evalQuery(xpath, saxon);
+            Evaluator saxon = index.makeEvaluator();
+            XdmResultSet results = evalQuery(xpath, saxon);
             XdmValue baseResult = evalBaseline(xpath, saxon);
             assertEquals ("result count mismatch for: " + optimized, baseResult.size(), results.size());        
             Iterator<?> baseIter = baseResult.iterator();
@@ -95,47 +95,46 @@ public class SearchQueryTest extends BasicQueryTest {
     }
 
     private void benchmark (String query) {
-        Saxon saxon = index.getEvaluator();
-        ResultSet<?> results = evalQuery(query, saxon);
-        XdmValue baselineResult = evalBaseline(query, saxon);
+        Evaluator eval = index.makeEvaluator();
+        XdmResultSet results = evalQuery(query, eval);
+        XdmValue baselineResult = evalBaseline(query, eval);
         for (int i = 0; i < repeatCount; i++) {
             long t0 = System.nanoTime();
-            evalQuery(query, saxon);
+            evalQuery(query, eval);
             long t = System.nanoTime() - t0;
             elapsed += t;
             t0 = System.nanoTime();
-            evalBaseline(query, saxon);
+            evalBaseline(query, eval);
             t = System.nanoTime() - t0;
             elapsedBaseline += t;
         }
         // TODO: also assert facts about query optimizations
         System.out.println (String.format("%dms using lux; %dms w/o lux", elapsed/1000000, elapsedBaseline/1000000));
         
-        results = evalQuery(query, saxon);
-        System.out.println ("lux retrieved " + results.size() + " results from " + saxon.getQueryStats());
-        printDocReaderStats(saxon);
-        baselineResult = evalBaseline(query, saxon);
-        System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + saxon.getQueryStats());
-        printDocReaderStats(saxon);
+        results = evalQuery(query, eval);
+        System.out.println ("lux retrieved " + results.size() + " results from " + eval.getQueryStats());
+        printDocReaderStats(eval);
+        baselineResult = evalBaseline(query, eval);
+        System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + eval.getQueryStats());
+        printDocReaderStats(eval);
     }
 
-    private void printDocReaderStats(Saxon saxon) {
+    private void printDocReaderStats(Evaluator saxon) {
         System.out.println (String.format(" %d/%d cache hits/misses, %dms building docs", 
                 saxon.getDocReader().getCacheHits(), saxon.getDocReader().getCacheMisses(),
                 saxon.getDocReader().getBuildTime()/1000000));
     }
 
-    private XdmValue evalBaseline(String xpath, Saxon saxon) {
+    private XdmValue evalBaseline(String xpath, Evaluator eval) {
         XdmValue baseResult;
         XQuery xq = null;
-        saxon.invalidateCache();
-        saxon.setQueryStats(new QueryStats());
+        XCompiler compiler = eval.getCompiler();
         try {
-            xq = saxon.getTranslator().queryFor(saxon.getXQueryCompiler().compile(xpath));
+            xq = compiler.makeTranslator().queryFor(compiler.compile(xpath));
             xq = new Expandifier().expandify(xq);
             String expanded = xq.toString();
             XQueryExecutable baseline;
-            baseline = saxon.getXQueryCompiler().compile(expanded);
+            baseline = compiler.compile(expanded);
             XQueryEvaluator baselineEval = baseline.load();
             baseResult = baselineEval.evaluate();
         } catch (SaxonApiException e) {
@@ -144,11 +143,11 @@ public class SearchQueryTest extends BasicQueryTest {
         return baseResult;
     }
 
-    private ResultSet<?> evalQuery(String xpath, Saxon saxon) {
-        saxon.invalidateCache();
-        saxon.setQueryStats(new QueryStats());
-        SaxonExpr saxonExpr = saxon.compile(xpath);
-        ResultSet<?> results = saxon.evaluate(saxonExpr);
+    private XdmResultSet evalQuery(String xpath, Evaluator eval) {
+        eval.invalidateCache();
+        eval.setQueryStats(new QueryStats());
+        XQueryExecutable xquery = eval.getCompiler().compile(xpath);
+        XdmResultSet results = eval.evaluate(xquery);
         if (results.getErrors() != null) {
             throw new LuxException(results.getErrors().iterator().next());
         }

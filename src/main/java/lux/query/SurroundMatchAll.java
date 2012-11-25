@@ -1,11 +1,9 @@
 package lux.query;
 
-import lux.index.field.XmlField;
+import lux.xml.QName;
 import lux.xpath.LiteralExpression;
-import lux.xpath.QName;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.ElementConstructor;
-
 
 /**
  * This query exists only to serve as a placeholder in an intermediate query compilation
@@ -19,7 +17,7 @@ public class SurroundMatchAll extends ParseableQuery {
 
     private static final ElementConstructor INSTANCE_ELEMENT_CONSTRUCTOR = 
             new ElementConstructor (new QName("SpanTerm"), new LiteralExpression("{}"), 
-                    new AttributeConstructor(new LiteralExpression ("fieldName"), new LiteralExpression (XmlField.PATH.getName())));
+                    new AttributeConstructor(new LiteralExpression ("fieldName"), new LiteralExpression ("lux_path")));
     private static final SurroundMatchAll INSTANCE = new SurroundMatchAll();
     
     public static final SurroundMatchAll getInstance () {

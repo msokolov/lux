@@ -60,7 +60,7 @@ public class TestRunner extends RunnerBase {
                 eval.setQueryStats(new QueryStats());
             }
             long t1 = System.nanoTime();
-            ResultSet<?> results = (ResultSet<?>) eval.evaluate(expr, context);
+            XdmResultSet results = (XdmResultSet) eval.evaluate(expr, context);
             long t2 = System.nanoTime();
             bindTime += (t0 - t00);
             // accumulated inside compileXQuery

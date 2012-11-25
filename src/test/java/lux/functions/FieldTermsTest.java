@@ -1,15 +1,15 @@
 package lux.functions;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
 import lux.IndexTestSupport;
-import lux.api.ResultSet;
-import lux.saxon.Saxon;
-import lux.saxon.SaxonExpr;
-
-import net.sf.saxon.s9api.XdmAtomicValue;
+import lux.saxon.Evaluator;
+import lux.saxon.XdmResultSet;
+import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmItem;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -53,12 +53,11 @@ public class FieldTermsTest {
     }
 
     private ArrayList<String> getFieldTerms(String xquery) {
-        Saxon eval = index.getEvaluator();
-        SaxonExpr expr = (SaxonExpr) eval.compile(xquery);
-        @SuppressWarnings("unchecked")
-        ResultSet<XdmAtomicValue> results = (ResultSet<XdmAtomicValue>) eval.evaluate(expr);
+        Evaluator eval = index.makeEvaluator();
+        XQueryExecutable exec = eval.getCompiler().compile(xquery);
+        XdmResultSet results = eval.evaluate(exec);
         ArrayList<String> terms = new ArrayList<String>();
-        for (XdmAtomicValue term : results) {
+        for (XdmItem term : results) {
             terms.add (term.getStringValue());
         }
         return terms;

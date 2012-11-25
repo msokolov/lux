@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<context version="7.1.8.189">
+    <scope name="lux" type="Project">
+        <architecture>
+            <element name="HTTP interface" type="Layer">
+                <element name="Assignment" type="TypeFilter">
+                    <element name="lux.solr.**" type="IncludeTypePattern"/>
+                </element>
+                <stereotype name="Unrestricted"/>
+            </element>
+            <element name="Java API" type="Layer">
+                <element name="Assignment" type="TypeFilter">
+                    <element name="lux.*" type="IncludeTypePattern"/>
+                    <element name="lux.search.**" type="StrongTypePattern"/>
+                    <element name="lux.saxon.**" type="StrongTypePattern"/>
+                    <element name="lux.index.XmlIndexer" type="StrongTypePattern"/>
+                    <element name="lux.api.**" type="StrongTypePattern"/>
+                </element>
+                <dependency type="AllowedDependency" toName="Project|lux::Layer|Internals"/>
+            </element>
+            <element name="Internals" type="Layer">
+                <element name="Assignment" type="TypeFilter">
+                    <element name="lux.xml.**" type="IncludeTypePattern"/>
+                    <element name="lux.xpath.**" type="IncludeTypePattern"/>
+                    <element name="lux.xquery.**" type="IncludeTypePattern"/>
+                    <element name="lux.query.**" type="IncludeTypePattern"/>
+                    <element name="lux.index.**" type="IncludeTypePattern"/>
+                    <element name="lux.functions.**" type="StrongTypePattern"/>
+                    <element name="lux.compiler.**" type="StrongTypePattern"/>
+                </element>
+                <stereotype name="Unrestricted"/>
+            </element>
+            <element name="indexing" type="VerticalSlice">
+                <element name="Assignment" type="TypeFilter">
+                    <element name="lux.index.**" type="StrongTypePattern"/>
+                    <element name="lux.solr.LuxUpdateProcessor" type="StrongTypePattern"/>
+                </element>
+                <stereotype name="Unrestricted"/>
+            </element>
+            <element name="analysis" type="VerticalSlice">
+                <element name="Assignment" type="TypeFilter">
+                    <element name="lux.xquery.*" type="IncludeTypePattern"/>
+                    <element name="lux.xpath.*" type="IncludeTypePattern"/>
+                    <element name="lux.query.**" type="IncludeTypePattern"/>
+                    <element name="lux.saxon.SaxonTranslator" type="StrongTypePattern"/>
+                    <element name="lux.compiler.**" type="StrongTypePattern"/>
+                </element>
+                <stereotype name="Unrestricted"/>
+            </element>
+            <element name="execution" type="VerticalSlice">
+                <element name="Assignment" type="TypeFilter">
+                    <element name="lux.saxon.**" type="IncludeTypePattern"/>
+                    <element name="lux.search.**" type="StrongTypePattern"/>
+                    <element name="lux.query.**" type="StrongTypePattern"/>
+                    <element name="lux.functions.**" type="StrongTypePattern"/>
+                    <element name="lux.solr.LuxResponseWriter" type="StrongTypePattern"/>
+                    <element name="lux.solr.XQueryComponent" type="StrongTypePattern"/>
+                    <element name="lux.saxon.SaxonTranslator" type="ExcludeTypePattern"/>
+                </element>
+                <stereotype name="Unrestricted"/>
+            </element>
+        </architecture>
+        <workspace>
+            <element name="src/main/java" type="JavaRootDirectory">
+                <reference name="Project|lux::BuildUnit|lux"/>
+            </element>
+            <element name="target/classes" type="JavaRootDirectory">
+                <reference name="Project|lux::BuildUnit|lux"/>
+            </element>
+        </workspace>
+        <physical>
+            <element name="lux" type="BuildUnit"/>
+        </physical>
+    </scope>
+    <scope name="External" type="External">
+        <element name="Filter" type="TypeFilter">
+            <element name="**" type="IncludeTypePattern"/>
+            <element name="java.io.*" type="ExcludeTypePattern"/>
+            <element name="java.lang.*" type="ExcludeTypePattern"/>
+            <element name="java.lang.annotation.*" type="ExcludeTypePattern"/>
+            <element name="java.lang.ref.*" type="ExcludeTypePattern"/>
+            <element name="java.math.*" type="ExcludeTypePattern"/>
+            <element name="java.nio.*" type="ExcludeTypePattern"/>
+            <element name="java.nio.channels.*" type="ExcludeTypePattern"/>
+            <element name="java.nio.channels.spi.*" type="ExcludeTypePattern"/>
+            <element name="java.nio.charset.*" type="ExcludeTypePattern"/>
+            <element name="java.nio.charset.spi.*" type="ExcludeTypePattern"/>
+            <element name="java.text.*" type="ExcludeTypePattern"/>
+            <element name="java.util.*" type="ExcludeTypePattern"/>
+            <element name="java.util.jar.*" type="ExcludeTypePattern"/>
+            <element name="java.util.prefs.*" type="ExcludeTypePattern"/>
+            <element name="java.util.regex.*" type="ExcludeTypePattern"/>
+            <element name="java.util.zip.*" type="ExcludeTypePattern"/>
+        </element>
+    </scope>
+    <scope name="Global" type="Global">
+        <element name="Configuration" type="Configuration"/>
+        <element name="Filter" type="TypeFilter">
+            <element name="**" type="IncludeTypePattern"/>
+        </element>
+    </scope>
+</context>

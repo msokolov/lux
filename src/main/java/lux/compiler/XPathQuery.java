@@ -4,16 +4,16 @@
 
 package lux.compiler;
 
-import lux.api.Expression;
-import lux.api.LuxException;
-import lux.api.ValueType;
-import lux.index.XmlIndexer;
+import lux.exception.LuxException;
+import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
 import lux.query.MatchAllPQuery;
 import lux.query.ParseableQuery;
 import lux.query.SurroundBoolean;
 import lux.query.SurroundMatchAll;
 import lux.query.SurroundSpanQuery;
+import lux.xml.ValueType;
+import net.sf.saxon.s9api.XQueryExecutable;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
@@ -32,7 +32,7 @@ import org.apache.lucene.search.BooleanClause.Occur;
 public class XPathQuery {
 
     private final ParseableQuery query;
-    private Expression expr;
+    private XQueryExecutable expr;
     private ValueType valueType;
     private final boolean immutable;
     
@@ -96,7 +96,7 @@ public class XPathQuery {
      * @param valueType the type of results returned by the xpath expression, as specifically as 
      * can be determined.
      */
-    protected XPathQuery(Expression expr, ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
+    protected XPathQuery(XQueryExecutable expr, ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
         this.expr = expr;
         this.query = query;
         this.facts = resultFacts;
@@ -104,7 +104,7 @@ public class XPathQuery {
         this.immutable = immutable;
     }
     
-    protected XPathQuery(Expression expr, ParseableQuery query, long resultFacts, ValueType valueType) {
+    protected XPathQuery(XQueryExecutable expr, ParseableQuery query, long resultFacts, ValueType valueType) {
         this (expr, query, resultFacts, valueType, false);
     }
     
@@ -115,17 +115,17 @@ public class XPathQuery {
      * @param options the indexer options; controls which type of match-all query may be returned
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
-    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, long options) {
+    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig) {
         if ((query instanceof MatchAllPQuery && resultFacts == MINIMAL) ||
                 query == SurroundMatchAll.getInstance()) {
             if (valueType == ValueType.DOCUMENT) {
-                if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+                if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
                     return PATH_MATCH_ALL;
                 }
                 return MATCH_ALL;
             }
             if (valueType == ValueType.NODE) {
-                if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+                if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
                     return PATH_MATCH_ALL_NODE;
                 }
                 return MATCH_ALL_NODE;
@@ -134,15 +134,15 @@ public class XPathQuery {
         return new XPathQuery (null, query, resultFacts, valueType);
     }
     
-    public static XPathQuery getMatchAllQuery (long options) {
-        if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+    public static XPathQuery getMatchAllQuery (IndexConfiguration indexConfig) {
+        if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
             return PATH_MATCH_ALL;
         }
         return MATCH_ALL;
     }
     
-    public static XPathQuery getUnindexedQuery (long options) {
-        if ((options & XmlIndexer.INDEX_PATHS) != 0) {
+    public static XPathQuery getUnindexedQuery (IndexConfiguration indexConfig) {
+        if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
             return PATH_UNINDEXED;
         }
         return UNINDEXED;
@@ -182,10 +182,10 @@ public class XPathQuery {
      * Combines this query with another, while specifying a valueType
      * restriction for the resultant query's results.
      */
-    public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type) {
+    public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
         long resultFacts = combineQueryFacts (this, precursor);
         ParseableQuery result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
-        return getQuery(result, resultFacts, type, 0);
+        return getQuery(result, resultFacts, type, config);
     }
 
     /**

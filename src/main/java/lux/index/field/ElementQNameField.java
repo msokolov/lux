@@ -7,7 +7,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 
-public final class ElementQNameField extends XmlField {
+public final class ElementQNameField extends FieldDefinition {
 
     private static final ElementQNameField instance = new ElementQNameField();
     
@@ -21,7 +21,7 @@ public final class ElementQNameField extends XmlField {
     
     @Override
     public Iterable<Field> getFieldValues(XmlIndexer indexer) {
-        return new FieldValues (this, indexer.getPathMapper().getEltQNameCounts().keySet());
+        return new FieldValues (indexer.getConfiguration(), this, indexer.getPathMapper().getEltQNameCounts().keySet());
     }
     
     @Override

@@ -1,7 +1,7 @@
 package lux.query;
 
+import lux.xml.QName;
 import lux.xpath.LiteralExpression;
-import lux.xpath.QName;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.ElementConstructor;
 

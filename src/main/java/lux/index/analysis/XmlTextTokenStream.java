@@ -1,6 +1,7 @@
 package lux.index.analysis;
 
-import lux.index.XmlIndexer;
+import lux.index.IndexConfiguration;
+import lux.xml.Offsets;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.analysis.LowerCaseFilter;
@@ -13,7 +14,7 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
     public XmlTextTokenStream(XdmNode doc, Offsets offsets) {
         super(doc, offsets);
         contentIter = new ContentIterator(doc);
-        wrapped = new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, tokenizer);
+        wrapped = new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, tokenizer);
     }
 
     @Override

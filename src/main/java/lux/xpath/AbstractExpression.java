@@ -1,6 +1,5 @@
 package lux.xpath;
 
-import lux.compiler.ExpressionVisitor;
 
 /**
  * An abstract XPath or XQuery expression.

@@ -5,21 +5,17 @@ import java.util.Collections;
 import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.ElementTokenStream;
-import lux.query.ParseableQuery;
-import lux.query.QNameTextQuery;
 import lux.xml.SaxonDocBuilder;
-import lux.xpath.QName;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.index.Term;
 
 /**
  * Indexes the text in each element of a document
  */
-public class ElementTextField extends XmlField {
+public class ElementTextField extends FieldDefinition {
     
     private static final ElementTextField instance = new ElementTextField();
         
@@ -39,16 +35,8 @@ public class ElementTextField extends XmlField {
         XdmNode doc = indexer.getXdmNode();
         SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
         ElementTokenStream tokens = new ElementTokenStream (doc, builder.getOffsets());
-        return new FieldValues (this, Collections.singleton(
-                        new Field(getName(), tokens, getTermVector())));
-    }
-    
-    public ParseableQuery makeElementValueQuery (QName qname, String value) {
-        return new QNameTextQuery(new Term(getName(), value), qname.getEncodedName());
-    }
-
-    public ParseableQuery makeAttributeValueQuery (QName qname, String value) {
-        return new QNameTextQuery(new Term(getName(), value), "@" + qname.getEncodedName());
+        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
+                        new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
     }
     
 }

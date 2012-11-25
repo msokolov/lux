@@ -26,19 +26,14 @@ import org.xml.sax.SAXException;
 public class Config extends Configuration implements EntityResolver {
 
     private final LuxFunctionLibrary luxFunctionLibrary;
-    private final Saxon saxon;
-
+    
     /**
-     * There must be only a single configuration per Saxon and vice-versa.
-     * @param saxon the Saxon evaluator to associate with this Configuration
+     * There must be only a single configuration per Evaluator and vice-versa.
+     * @param evaluator the evaluator to associate with this Configuration
      */
-    public Config (Saxon saxon) {
+    public Config () {
         super();
-        setURIResolver (saxon);
-        this.saxon = saxon;
-        luxFunctionLibrary = new LuxFunctionLibrary();;
-        // This prevents expansion of internal "parameter entities" among other things
-        getParseOptions().setEntityResolver(this);
+        luxFunctionLibrary = new LuxFunctionLibrary();
         optimizer = new Optimizer(this);
     }    
 
@@ -60,10 +55,6 @@ public class Config extends Configuration implements EntityResolver {
     @Override
     public void registerExtensionFunction(ExtensionFunctionDefinition function) {
         getIntegratedFunctionLibrary().registerFunction(function);
-    }
-  
-    public Saxon getSaxon() {
-        return saxon;
     }
     
 }

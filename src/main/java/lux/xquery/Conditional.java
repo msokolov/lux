@@ -1,7 +1,7 @@
 package lux.xquery;
 
-import lux.compiler.ExpressionVisitor;
 import lux.xpath.AbstractExpression;
+import lux.xpath.ExpressionVisitor;
 
 /**
  * represents xquery conditionals (if, then, else)

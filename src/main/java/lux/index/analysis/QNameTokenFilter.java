@@ -3,7 +3,7 @@ package lux.index.analysis;
 import java.io.IOException;
 
 import lux.index.attribute.QNameAttribute;
-import lux.xpath.QName;
+import lux.xml.QName;
 
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;

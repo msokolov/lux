@@ -1,8 +1,8 @@
 package lux.xquery;
 
-import lux.compiler.ExpressionVisitor;
+import lux.xml.QName;
 import lux.xpath.AbstractExpression;
-import lux.xpath.QName;
+import lux.xpath.ExpressionVisitor;
 
 public class Let extends AbstractExpression {
 

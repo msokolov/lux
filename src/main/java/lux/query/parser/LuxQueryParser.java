@@ -1,6 +1,7 @@
 package lux.query.parser;
 
-import lux.index.field.XmlField;
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -9,7 +10,6 @@ import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
 import org.apache.lucene.queryParser.ext.ExtensionQuery;
 import org.apache.lucene.queryParser.ext.Extensions;
 import org.apache.lucene.queryParser.ext.ParserExtension;
-import org.apache.lucene.util.Version;
 
 /**
  * A Lucene query parser extension that supports query terms of the form:
@@ -42,16 +42,29 @@ import org.apache.lucene.util.Version;
  */
 public class LuxQueryParser extends ExtendableQueryParser {
     
-    public LuxQueryParser(Version matchVersion, String f, Analyzer a) {
-        super(matchVersion, f, a, new NodeExtensions (new NodeParser(a)));
+    public LuxQueryParser(IndexConfiguration config) {
+        super(IndexConfiguration.LUCENE_VERSION, 
+                config.getFieldName(FieldName.XML_TEXT), 
+                config.getField(FieldName.ELEMENT_TEXT).getAnalyzer(), 
+                new NodeExtensions (new NodeParser(
+                        config.getFieldName(FieldName.XML_TEXT),
+                        config.getFieldName(FieldName.ELEMENT_TEXT),
+                        config.getFieldName(FieldName.ATTRIBUTE_TEXT),
+                        config.getField(FieldName.ELEMENT_TEXT).getAnalyzer())));
     }
     
     static class NodeParser extends ParserExtension {
         
+        private final String textFieldName;
+        private final String elementTextFieldName;
+        private final String attributeTextFieldName;
         QNameQueryBuilder queryBuilder;
         
-        NodeParser (Analyzer a) {
-            queryBuilder = new QNameQueryBuilder(a);            
+        NodeParser (String textFieldName, String elementTextFieldName, String attributeTextFieldName, Analyzer a) {
+            queryBuilder = new QNameQueryBuilder(a);
+            this.textFieldName = textFieldName;
+            this.elementTextFieldName = elementTextFieldName;
+            this.attributeTextFieldName = attributeTextFieldName;
         }
 
         @Override
@@ -60,14 +73,13 @@ public class LuxQueryParser extends ExtendableQueryParser {
             String term = query.getRawQueryString();
             // create either a term query or a phrase query (or a span?)
             if (StringUtils.isEmpty(field)) {
-                return queryBuilder.parseQueryTerm(XmlField.XML_TEXT.getName(), field, term, 1.0f);
+                return queryBuilder.parseQueryTerm(textFieldName, field, term, 1.0f);
             } else if (field.charAt(0) == '@') {
-                return queryBuilder.parseQueryTerm(XmlField.ATTRIBUTE_TEXT.getName(), field.substring(1), term, 1.0f);
+                return queryBuilder.parseQueryTerm(attributeTextFieldName, field.substring(1), term, 1.0f);
             } else {
-                return queryBuilder.parseQueryTerm(XmlField.ELEMENT_TEXT.getName(), field, term, 1.0f);
+                return queryBuilder.parseQueryTerm(elementTextFieldName, field, term, 1.0f);
             }
         }
-        
     }
     
     static class NodeExtensions extends Extensions {
@@ -87,7 +99,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
             if (indexOf < 0)
               return new Pair<String,String>(field, null);
             final String extensionKey = field.substring(0, indexOf);
-            final String indexField = indexOf >= field.length()-1 ? defaultField : field.substring(indexOf + 1);
+            final String indexField = indexOf >= field.length()-1 ? null : field.substring(indexOf + 1);
             return new Pair<String,String>(indexField, extensionKey);
         }
     }

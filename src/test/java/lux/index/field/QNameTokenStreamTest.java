@@ -7,8 +7,8 @@ import java.io.IOException;
 
 import lux.index.analysis.AttributeTokenStream;
 import lux.index.analysis.ElementTokenStream;
-import lux.index.analysis.Offsets;
 import lux.index.analysis.XmlTextTokenStream;
+import lux.xml.Offsets;
 import lux.xml.SaxonDocBuilder;
 import lux.xml.XmlReader;
 import net.sf.saxon.s9api.Processor;

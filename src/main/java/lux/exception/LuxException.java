@@ -1,4 +1,4 @@
-package lux.api;
+package lux.exception;
 
 public class LuxException extends RuntimeException {
     

@@ -12,7 +12,7 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.util.Version;
 
-public class PathValueField extends XmlField {
+public class PathValueField extends FieldDefinition {
     
     private static final PathValueField instance = new PathValueField();
     
@@ -28,8 +28,8 @@ public class PathValueField extends XmlField {
     public Iterable<Field> getFieldValues(XmlIndexer indexer) {
         // replace with a custom Fieldable
         XPathValueMapper mapper = (XPathValueMapper) indexer.getPathMapper();        
-        return new FieldValues (this, Collections.singleton
-                (new Field(getName(), 
+        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton
+                (new Field(indexer.getConfiguration().getFieldName(this), 
                         new PathValueTokenStream(mapper.getPathValues()), getTermVector())));
     }
 

@@ -1,5 +1,6 @@
 package lux.saxon;
 
+import lux.compiler.SaxonTranslator;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.SlashExpression;
 import net.sf.saxon.expr.sort.DocumentSorter;

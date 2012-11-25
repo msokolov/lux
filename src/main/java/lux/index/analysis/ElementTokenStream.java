@@ -1,7 +1,8 @@
 package lux.index.analysis;
 
-import lux.index.XmlIndexer;
+import lux.index.IndexConfiguration;
 import lux.index.attribute.QNameAttribute;
+import lux.xml.Offsets;
 import net.sf.saxon.expr.parser.Token;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.NodeKindTest;
@@ -24,7 +25,7 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
 
     public ElementTokenStream(XdmNode doc, Offsets offsets) {
         super(doc, offsets);
-        wrapped = new QNameTokenFilter(new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, tokenizer));
+        wrapped = new QNameTokenFilter(new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, tokenizer));
         contentIter = new ContentIterator(doc);
     }
     
@@ -39,7 +40,7 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
             XdmNode e = (XdmNode) nodeAncestors.next();
             if (e.getNodeKind() == XdmNodeKind.ELEMENT) {
                 QName qname = e.getNodeName();
-                qnameAtt.addQName(new lux.xpath.QName(qname.getNamespaceURI(),  qname.getLocalName()));
+                qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(),  qname.getLocalName()));
                 // if (! isTransparent (e))
                 // return;
             }

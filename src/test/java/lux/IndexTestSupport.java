@@ -1,15 +1,15 @@
 package lux;
 
+import static lux.index.IndexConfiguration.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.api.QueryStats;
 import lux.index.XmlIndexer;
-import lux.saxon.Saxon;
-import lux.saxon.Saxon.Dialect;
+import lux.saxon.Evaluator;
 import lux.search.LuxSearcher;
 
 import net.sf.saxon.s9api.Axis;
@@ -33,6 +33,7 @@ public class IndexTestSupport {
     LuxSearcher searcher;
     XmlIndexer indexer;
     int totalDocs;
+    XCompiler compiler;
     HashMap<String,Integer> elementCounts = new HashMap<String,Integer>();
         
     public final static int QUERY_EXACT = 0x00000001;
@@ -46,8 +47,7 @@ public class IndexTestSupport {
     
     public IndexTestSupport(String xmlFileName) throws XMLStreamException, IOException, SaxonApiException {
         this (xmlFileName,
-                new XmlIndexer (XmlIndexer.INDEX_QNAMES|XmlIndexer.INDEX_PATHS|XmlIndexer.STORE_XML|
-                XmlIndexer.INDEX_FULLTEXT),
+                new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_XML|INDEX_FULLTEXT),
                 new RAMDirectory());
     }
     
@@ -59,8 +59,11 @@ public class IndexTestSupport {
         // create an in-memory Lucene index, index some content
         this.indexer = indexer;
         this.dir = dir;
-        indexAllElements (indexer, dir, xmlFileName);
+        if (xmlFileName != null) {
+            indexAllElements (indexer, dir, xmlFileName);
+        }
         searcher = new LuxSearcher(dir);
+        compiler = new XCompiler (indexer.getConfiguration());
     }
 
     public void close() throws Exception {
@@ -111,10 +114,8 @@ public class IndexTestSupport {
         indexWriter.close(true);
     }
     
-    public Saxon getEvaluator() {
-        Saxon eval = new Saxon(searcher, indexer, Dialect.XQUERY_1);
-        eval.setQueryStats (new QueryStats());
-        return eval;
+    public Evaluator makeEvaluator() {
+        return new Evaluator(compiler, searcher);
     }
 
 

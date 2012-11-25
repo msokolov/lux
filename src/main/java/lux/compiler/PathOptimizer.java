@@ -1,22 +1,25 @@
 package lux.compiler;
 
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import lux.api.ValueType;
-import lux.index.XmlIndexer;
-import lux.index.field.AttributeTextField;
-import lux.index.field.ElementTextField;
-import lux.index.field.XmlField;
-import lux.index.field.XmlTextField;
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
 import lux.query.ParseableQuery;
+import lux.query.QNameTextQuery;
 import lux.query.SurroundTerm;
 import lux.query.TermPQuery;
+import lux.xml.QName;
+import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
 import lux.xpath.AbstractExpression.Type;
 import lux.xpath.BinaryOperation;
 import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.Dot;
+import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xpath.NodeTest;
@@ -24,7 +27,6 @@ import lux.xpath.PathExpression;
 import lux.xpath.PathStep;
 import lux.xpath.PathStep.Axis;
 import lux.xpath.Predicate;
-import lux.xpath.QName;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
@@ -59,18 +61,20 @@ import org.apache.lucene.search.BooleanClause.Occur;
 public class PathOptimizer extends ExpressionVisitorBase {
 
     private final ArrayList<XPathQuery> queryStack;
-    private final XmlIndexer indexer;
+    private final IndexConfiguration indexConfig;
     private final XPathQuery MATCH_ALL;
     private final XPathQuery UNINDEXED;
     
-    private final static String attrQNameField = XmlField.ATT_QNAME.getName();
-    private final static String elementQNameField = XmlField.ELT_QNAME.getName();
+    private final String attrQNameField;
+    private final String elementQNameField;
     
-    public PathOptimizer(XmlIndexer indexer) {
+    public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
-        MATCH_ALL = XPathQuery.getMatchAllQuery(indexer.getOptions());
-        UNINDEXED = XPathQuery.getUnindexedQuery(indexer.getOptions());
-        this.indexer = indexer;
+        MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
+        UNINDEXED = XPathQuery.getUnindexedQuery(indexConfig);
+        this.indexConfig = indexConfig;
+        attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
+        elementQNameField = indexConfig.getFieldName(FieldName.ELT_QNAME);
     }    
 
     /**
@@ -85,7 +89,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         push (MATCH_ALL);
         AbstractExpression main = query.getBody();
         // Don't attempt to optimize if no indexes are available, or if the query has no body
-        if (main != null && (indexer.getOptions() & XmlIndexer.INDEXES) != 0) {
+        if (main != null && indexConfig.isIndexingEnabled()) {
             main = optimize (main);
             return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(), query.getDefaultCollation(), 
                     query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(), 
@@ -172,7 +176,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = pop();
         if (n == 1) {
             ValueType type = valueType == null ? query.getResultType() : query.getResultType().promote(valueType);
-            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), type, indexer.getOptions());
+            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), type, indexConfig);
         } else {
             for (int i = 0; i < n-1; i++) {
                 query = combineQueries (pop(), occur, query, valueType);
@@ -246,7 +250,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             ResultOrientation orient) {
         XPathQuery query;
         Integer rSlop=null, lSlop=null;
-        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
+        if (indexConfig.isOption(INDEX_PATHS)) {
             SlopCounter slopCounter = new SlopCounter ();
 
             // count the left slop of the RHS
@@ -297,10 +301,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     && getQuery().getResultType() == ValueType.DOCUMENT) {
                 type = ValueType.DOCUMENT;
             }
-            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), getQuery().getFacts(), type, indexer.getOptions());
+            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), getQuery().getFacts(), type, indexConfig);
         } else {
             ParseableQuery termQuery = nodeNameTermQuery(step.getAxis(), name);
-            query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexer.getOptions());
+            query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexConfig);
         }
        push(query);
        return step;
@@ -353,7 +357,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (int i = funcall.getSubs().length; i > 0; --i) {
                 pop();
             }
-            push (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), 0, ValueType.VALUE, indexer.getOptions()));
+            push (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), 0, ValueType.VALUE, indexConfig));
         } else {
             combineTopQueries(funcall.getSubs().length, occur, funcall.getReturnType());
         }
@@ -471,21 +475,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private XPathQuery combineQueries(XPathQuery rq, Occur occur, XPathQuery lq, ValueType resultType) {
         XPathQuery query;
-        if (indexer.isOption(XmlIndexer.INDEX_PATHS)) {
+        if (indexConfig.isOption(INDEX_PATHS)) {
             query = lq.combineSpanQueries(rq, occur, resultType, -1);
         } else {
-            query = lq.combineBooleanQueries(occur, rq, occur, resultType);
+            query = lq.combineBooleanQueries(occur, rq, occur, resultType, indexConfig);
         }
         return query;
     }
     
     private ParseableQuery nodeNameTermQuery(Axis axis, QName name) {
-        if (indexer.isOption (XmlIndexer.INDEX_PATHS)) {
+        if (indexConfig.isOption (INDEX_PATHS)) {
             String nodeName = name.getEncodedName();
             if (axis == Axis.Attribute) {
                 nodeName = '@' + nodeName;
             }
-            Term term = new Term (XmlField.PATH.getName(), nodeName);
+            Term term = new Term (indexConfig.getFieldName(FieldName.PATH), nodeName);
             return new SurroundTerm (term);
         } else {
             String nodeName = name.getEncodedName();
@@ -555,7 +559,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     private void optimizeComparison(Predicate predicate) {
-        if (!indexer.isOption(XmlIndexer.INDEX_FULLTEXT)) {
+        if (!indexConfig.isOption(INDEX_FULLTEXT)) {
             return;
         }
         LiteralExpression value = null;
@@ -602,20 +606,32 @@ public class PathOptimizer extends ExpressionVisitorBase {
         QName nodeName = nodeTest.getQName();
         ParseableQuery termQuery = null;
         if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
-            termQuery = XmlTextField.getInstance().makeTextQuery(value.getValue().toString());
+            termQuery = makeTextQuery(value.getValue().toString(), indexConfig);
         }
         else if (nodeTest.getType() == ValueType.ELEMENT) {
-            termQuery = ElementTextField.getInstance().makeElementValueQuery(nodeName, value.getValue().toString());
+            termQuery = makeElementValueQuery(nodeName, value.getValue().toString(), indexConfig);
         } 
         else if (nodeTest.getType() == ValueType.ATTRIBUTE) {
-            termQuery = AttributeTextField.getInstance().makeAttributeValueQuery(nodeName, value.getValue().toString());
+            termQuery = makeAttributeValueQuery(nodeName, value.getValue().toString(), indexConfig);
         }
         if (termQuery != null) {
-            XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexer.getOptions());
+            XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexConfig);
             XPathQuery baseQuery = pop();
             query = combineQueries (query, Occur.MUST, baseQuery, baseQuery.getResultType());
             push(query);
         }
+    }
+
+    public static QNameTextQuery makeElementValueQuery (QName qname, String value, IndexConfiguration config) {
+        return new QNameTextQuery(new Term(config.getFieldName(IndexConfiguration.ELEMENT_TEXT), value), qname.getEncodedName());
+    }
+
+    public static ParseableQuery makeAttributeValueQuery (QName qname, String value, IndexConfiguration config) {
+        return new QNameTextQuery(new Term(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT), value), qname.getEncodedName());
+    }
+
+    public static ParseableQuery makeTextQuery (String value, IndexConfiguration config) {
+        return new QNameTextQuery(new Term(config.getFieldName(IndexConfiguration.XML_TEXT), value));
     }
 
     @Override
@@ -668,7 +684,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     private FunCall createSearchCall (QName functionName, XPathQuery query, long facts) {
-        String defaultField = indexer.isOption(XmlIndexer.INDEX_PATHS) ? XmlField.PATH.getName() :XmlField.ELT_QNAME.getName();
+        String defaultField = indexConfig.isOption(INDEX_PATHS) ? 
+                indexConfig.getFieldName(FieldName.PATH) : indexConfig.getFieldName(FieldName.ELT_QNAME);
         return new FunCall (functionName, query.getResultType(), 
                 //new LiteralExpression (query.getParseableQuery().toString(defaultField)),
                 query.getParseableQuery().toXmlNode(defaultField),

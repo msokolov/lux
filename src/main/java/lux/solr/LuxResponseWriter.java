@@ -3,7 +3,7 @@ package lux.solr;
 import java.io.IOException;
 import java.io.Writer;
 
-import lux.api.LuxException;
+import lux.exception.LuxException;
 
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;

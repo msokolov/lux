@@ -6,16 +6,16 @@ import static org.junit.Assert.assertSame;
 
 import java.util.ArrayList;
 
-import lux.api.ValueType;
-import lux.compiler.ExpressionVisitorBase;
 import lux.compiler.XPathQuery;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
-import lux.saxon.Saxon;
-import lux.saxon.Saxon.Dialect;
-import lux.saxon.SaxonExpr;
+import lux.saxon.Evaluator;
+import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
+import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
+import lux.xquery.XQuery;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -155,6 +155,7 @@ public class BasicQueryTest {
         // This was three separate queries, whose results would then have to be merged together,
         // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
         // together into a single query
+        // FIXME: currently failing since the Optimizer is not installed (and will fail w/Saxon PE, etc)
         assertQuery ("/PLAY/(ACT|PERSONAE)/TITLE", 0, ValueType.ELEMENT, Q.PLAY_ACT_OR_PERSONAE_TITLE);
     }
     
@@ -295,19 +296,22 @@ public class BasicQueryTest {
      */
 
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
-        Saxon saxon = new Saxon(null, getIndexer(), Dialect.XQUERY_1);
-        saxon.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-        saxon.declareNamespace("ns", "http://namespace.org/#ns");
-        assertQuery(xpath, optimized, facts, type, saxon, queries);
+        XCompiler compiler = new XCompiler(getIndexer().getConfiguration());
+        compiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
+        compiler.declareNamespace("ns", "http://namespace.org/#ns");
+        Evaluator eval = new Evaluator(compiler, null);
+        assertQuery(xpath, optimized, facts, type, eval, queries);
     }
 
-    private void assertQuery(String xpath, String optimized, int facts, ValueType type, Saxon saxon,
-            Q ... queries) {
-
-        SaxonExpr expr = saxon.compile(xpath);
-        AbstractExpression ex = expr.getXPath();
-        if (optimized != null) {
-            assertEquals (optimized, ex.toString());
+    private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, Evaluator eval,
+            Q ... queries) 
+    {
+        XCompiler compiler = eval.getCompiler();
+        compiler.compile(xpath);
+        XQuery optimizedQuery = compiler.getLastOptimized();
+        AbstractExpression ex = optimizedQuery.getBody();
+        if (expectedOptimized != null) {
+            assertEquals (expectedOptimized, optimizedQuery.toString());
         }
         SearchExtractor extractor = new SearchExtractor();
         ex.accept(extractor);
@@ -461,7 +465,7 @@ public class BasicQueryTest {
     }
 
     public XmlIndexer getIndexer() {
-        return new XmlIndexer(XmlIndexer.INDEX_QNAMES);
+        return new XmlIndexer(IndexConfiguration.INDEX_QNAMES);
     }
 
     static class MockQuery extends XPathQuery {

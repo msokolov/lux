@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import lux.index.field.XmlField;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest.METHOD;
@@ -25,6 +23,18 @@ import org.junit.Test;
 
 public class LuxSolrTest {
     
+    private static final String LUX_XML = "lux_xml";
+
+    private static final String URI = "lux_uri";
+
+    private static final String XML_TEXT = "lux_text";
+
+    private static final String LUX_PATH = "lux_path";
+
+    private static final String LUX_ELT_TEXT = "lux_elt_text";
+
+    private static final String LUX_ATT_TEXT = "lux_att_text";
+
     private static SolrServer solr;
     
     private final String SOLR_QUERY_TYPE = "/xquery";
@@ -50,16 +60,16 @@ public class LuxSolrTest {
         assertQueryCount (102, "*:*");
         // QNAME index is no longer part of the default setup created by LuxUpdateProcessor
         // TODO: expose index config in solrconfig.xml
-        //assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":config");
-        //assertQueryCount (1, XmlField.ELT_QNAME.getName() + ":schema");
-        assertQueryCount (1, XmlField.PATH.getName() + ":\"{} schema types fieldType\"");
-        assertQueryCount (1, XmlField.PATH.getName() + ":schema");
-        assertQueryCount (102, XmlField.PATH.getName() + ":\"{}\"");
-        assertQueryCount (1, XmlField.PATH.getName() + ":\"{} config luceneMatchVersion\"");
-        assertQueryCount (2, XmlField.XML_TEXT + ":true");
-        assertQueryCount (2, XmlField.ELEMENT_TEXT + ":enableLazyFieldLoading\\:true");
-        assertQueryCount (1, XmlField.ATTRIBUTE_TEXT + ":id\\:1");
-        assertQueryCount (1, XmlField.ATTRIBUTE_TEXT + ":type\\:random");
+        //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":config");
+        //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":schema");
+        assertQueryCount (1, LUX_PATH + ":\"{} schema types fieldType\"");
+        assertQueryCount (1, LUX_PATH + ":schema");
+        assertQueryCount (102, LUX_PATH + ":\"{}\"");
+        assertQueryCount (1, LUX_PATH + ":\"{} config luceneMatchVersion\"");
+        assertQueryCount (2, XML_TEXT + ":true");
+        assertQueryCount (2, LUX_ELT_TEXT + ":enableLazyFieldLoading\\:true");
+        assertQueryCount (1, LUX_ATT_TEXT + ":id\\:1");
+        assertQueryCount (1, LUX_ATT_TEXT + ":type\\:random");
     }
     
     @Test public void testXPathSearch() throws Exception {
@@ -156,17 +166,17 @@ public class LuxSolrTest {
 
     private static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField (XmlField.URI.getName(), path);
+        doc.addField (URI, path);
         FileInputStream in = new FileInputStream (path);
         String buf = IOUtils.toString(in);
-        doc.addField(XmlField.XML_STORE.getName(), buf);
+        doc.addField(LUX_XML, buf);
         docs.add(doc);
     }
     
     private static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField (XmlField.URI.getName(), uri);
-        doc.addField(XmlField.XML_STORE.getName(), text);
+        doc.addField (URI, uri);
+        doc.addField(LUX_XML, text);
         docs.add(doc);
     }
     

@@ -2,7 +2,7 @@ package lux.index.analysis;
 
 import java.io.Reader;
 
-import lux.index.XmlIndexer;
+import lux.index.IndexConfiguration;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
@@ -15,7 +15,7 @@ public final class DefaultAnalyzer extends Analyzer {
     
     @Override
     public TokenStream tokenStream(String fieldName, Reader reader) {
-        return new LowerCaseFilter(XmlIndexer.LUCENE_VERSION, new StandardTokenizer(XmlIndexer.LUCENE_VERSION, reader));
+        return new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, reader));
     }
 
 }

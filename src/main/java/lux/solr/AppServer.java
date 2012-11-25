@@ -4,9 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import lux.api.QueryStats;
+import lux.saxon.Evaluator;
 import lux.search.LuxSearcher;
-
 import net.sf.saxon.s9api.XdmItem;
 
 import org.apache.commons.io.IOUtils;
@@ -67,17 +66,15 @@ public class AppServer extends XQueryComponent {
         long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
         int len = -1;
         // multiple shards not implemented
-        evaluator.setSearcher(new LuxSearcher(searcher));
-        evaluator.setQueryStats(new QueryStats());
+        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher));
         String query = rb.getQueryString();
         if (StringUtils.isBlank(query)) {
             rsp.add("xpath-error", "query was blank");
         } else {
-            evaluateQuery(rb, rsp, result, start, timeAllowed, len, query);
+            evaluateQuery(rb, rsp, result, evaluator, start, timeAllowed, len, query);
         }
     }
 
-    
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) {
         xpathResults.add("result", item);
     }

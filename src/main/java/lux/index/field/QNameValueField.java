@@ -4,6 +4,7 @@ import java.util.Collections;
 
 import lux.index.XPathValueMapper;
 import lux.index.XmlIndexer;
+import lux.index.analysis.QNameValueTokenStream;
 
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.document.Field;
@@ -11,7 +12,7 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.util.Version;
 
-public class QNameValueField extends XmlField {
+public class QNameValueField extends FieldDefinition {
     
     private static final QNameValueField instance = new QNameValueField();
     
@@ -27,8 +28,8 @@ public class QNameValueField extends XmlField {
     public Iterable<Field> getFieldValues(XmlIndexer indexer) {
         // replace with a custom Fieldable
         XPathValueMapper mapper = (XPathValueMapper) indexer.getPathMapper();        
-        return new FieldValues (this, Collections.singleton
-                (new Field(getName(), 
+        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton
+                (new Field(indexer.getConfiguration().getFieldName(this), 
                         new QNameValueTokenStream (mapper.getPathValues()), TermVector.NO)));
     }
 

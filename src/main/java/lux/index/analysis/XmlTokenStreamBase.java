@@ -3,7 +3,7 @@ package lux.index.analysis;
 import java.io.IOException;
 import java.util.Iterator;
 
-import lux.index.XmlIndexer;
+import lux.index.IndexConfiguration;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
@@ -37,7 +37,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
     // TODO: change to QNameTextTokenStream(Analyzer)
     // and provide read (XdmNode)
     XmlTokenStreamBase(XdmNode doc) {
-        tokenizer = new StandardTokenizer(XmlIndexer.LUCENE_VERSION, this, new CharSequenceReader(""));
+        tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
     }
     
     /*
