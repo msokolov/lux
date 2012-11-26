@@ -1,3 +1,19 @@
+* document store / load
+** solr
+we need to coordinate with Solr's management of the index writer and
+related readers.  In 3.X., Solr doesn't yet have NRT support, so we will
+simply write documents and leave commit() up to the user.  IndexWriter is
+managed by Solr's UpdateHandler. Plan: create a DocumentWriter interface
+which takes a uri and an XdmNode and insert one in the Evaluator, making it
+available to lux.function.* Implement this using XmlIndexer and Solr
+UpdateHandler, or, for direct Lucene usage and for tests (?), using
+something wrapping an IndexWriter directly.
+** lucene-only
+IndexWriter (Directory) (singleton - must be only one)
+IndexReader.open (IndexWriter, boolean) (thread-safe; also singleton - per XCompiler?)
+IndexReader.reopen () after writing - mark a dirty flag somewhere
+IndexSearcher (IndexReader)
+close()/commit() - when?
 * thread safety
 Some aspects of Saxon are difficult to make thread safe and efficient (lock
 free): the CollectionURIResolver is shared at the Configuration level;
@@ -9,11 +25,7 @@ tied to one core, while another Evaluator could be tied to a completely
 different core.  But there can only be a single CollectionURIResolver.
 
 Perhaps the solution is to pool Processors among threads, then?
-* eliminate lux.api and lux.saxon
-This is mostly done: still need to move these classes into the root (lux)
-package.  Then check for more cycles w/Sonar.
 * highlighting
-* document store / load
 * eval
 execute xquery from within xquery
 * compatibility w/vanilla Saxon

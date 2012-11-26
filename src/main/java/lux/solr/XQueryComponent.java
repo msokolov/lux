@@ -1,5 +1,7 @@
 package lux.solr;
 
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -12,11 +14,13 @@ import java.util.Set;
 
 import javax.xml.transform.TransformerException;
 
+import lux.DocWriter;
 import lux.Evaluator;
 import lux.QueryContext;
 import lux.XCompiler;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
@@ -61,8 +65,6 @@ public class XQueryComponent extends QueryComponent {
     private Logger logger;
     
     public XQueryComponent() {
-        // FIXME - rename fields from solr config?
-        indexer = new XmlIndexer ();  // FIXME: share with LuxUpdateProcessor?? at least have common config
         compiler = createXCompiler();
         logger = LoggerFactory.getLogger(XQueryComponent.class);
     }
@@ -85,6 +87,9 @@ public class XQueryComponent extends QueryComponent {
                 throw new SolrException(ErrorCode.UNKNOWN, base + " is an invalid URL?", e);
             }
         }
+        IndexConfiguration config = LuxUpdateProcessorFactory.makeIndexConfiguration(INDEX_PATHS, args);
+        // FIXME: this requires duplicated config for field aliases - one for the update processor and one for this
+        indexer = new XmlIndexer (config);
     }
 
     @Override
@@ -105,6 +110,7 @@ public class XQueryComponent extends QueryComponent {
         if (!params.getBool(COMPONENT_NAME, true)) {
           return;
         }
+        //req.getCore().getUpdateHandler().
         SolrIndexSearcher searcher = req.getSearcher();
         SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         // ignored for now
@@ -112,7 +118,8 @@ public class XQueryComponent extends QueryComponent {
         long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
         // multiple shards not implemented
-        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher));
+        DocWriter docWriter = new SolrDocWriter (indexer, req.getCore().getUpdateHandler());
+        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         String query = rb.getQueryString();
         if (StringUtils.isBlank(query)) {
             rsp.add("xpath-error", "query was blank");

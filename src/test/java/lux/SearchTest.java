@@ -7,6 +7,7 @@ import static lux.IndexTestSupport.QUERY_NO_DOCS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import lux.exception.LuxException;
@@ -17,6 +18,8 @@ import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
 
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.store.LockObtainFailedException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -202,7 +205,7 @@ public class SearchTest {
     }
     
     @Test
-    public void testTextComparison () {
+    public void testTextComparison () throws Exception {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR >= //PERSONA";
         Evaluator eval = index.makeEvaluator();
@@ -218,7 +221,7 @@ public class SearchTest {
     }
     
     @Test
-    public void testComparisonPredicate () {
+    public void testComparisonPredicate () throws Exception {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR[. >= //PERSONA]";
         Evaluator eval = index.makeEvaluator();
@@ -412,15 +415,15 @@ public class SearchTest {
         assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);        
     }
         
-    private XdmResultSet assertSearch(String query) throws LuxException {
+    private XdmResultSet assertSearch(String query) throws Exception {
         return assertSearch (query, 0);
     }
     
-    protected XdmResultSet assertSearch(String query, Integer props) throws LuxException {
+    protected XdmResultSet assertSearch(String query, Integer props) throws Exception {
         return assertSearch(query, props, null);
     }
     
-    protected XdmResultSet assertSearch(String query, Integer props, Integer docCount) throws LuxException {
+    protected XdmResultSet assertSearch(String query, Integer props, Integer docCount) throws Exception {
         return assertSearch (query, props, docCount, null);
     }
     
@@ -452,8 +455,11 @@ public class SearchTest {
      * @param props properties asserted to hold for the query evaluation
      * @return the query results
      * @throws LuxException
+     * @throws IOException 
+     * @throws LockObtainFailedException 
+     * @throws CorruptIndexException 
      */
-    protected XdmResultSet assertSearch(String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException {
+    protected XdmResultSet assertSearch(String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException, CorruptIndexException, LockObtainFailedException, IOException {
         Evaluator eval = index.makeEvaluator();
         XQueryExecutable expr = eval.getCompiler().compile(query);
         System.out.println (expr);

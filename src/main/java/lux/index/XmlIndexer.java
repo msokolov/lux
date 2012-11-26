@@ -24,6 +24,7 @@ import lux.xml.Offsets;
 import lux.xml.SaxonDocBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
+import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -83,10 +84,7 @@ public class XmlIndexer {
         xmlReader = new XmlReader();
         if (isOption (INDEX_QNAMES) || isOption (INDEX_PATHS)) {
             // accumulate XML paths and QNames for indexing
-            if (isOption (INDEX_FULLTEXT)) {
-                pathMapper = new XmlPathMapper();
-            }
-            else if (isOption (INDEX_VALUES)) {
+            if (isOption (INDEX_VALUES)) {
                 pathMapper = new XPathValueMapper();
             } else {
                 pathMapper = new XmlPathMapper();
@@ -140,7 +138,12 @@ public class XmlIndexer {
         this.uri = uri;
         xmlReader.read (xml);
     }
-    
+
+    public void read(NodeInfo doc, String uri) throws XMLStreamException {
+        this.uri = uri;
+        getXmlReader().read(doc);
+    }
+
     private void reset() {
         xmlReader.reset();
     }
@@ -162,7 +165,7 @@ public class XmlIndexer {
     
     public SaxonDocBuilder getSaxonDocBuilder () {
         return saxonBuilder;
-    }    
+    }
 
     // FIXME: why does this method prefix the uri w/lux but the next one strip it off?
     public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
@@ -181,6 +184,12 @@ public class XmlIndexer {
         String path = uri.startsWith("lux:/") ? uri.substring(5) : uri;
         path = path.replace('\\', '/');
         read(xmlStream, path);
+        addLuceneDocument(indexWriter);
+    }
+
+    public void indexDocument(IndexWriter indexWriter, String path, NodeInfo node) throws XMLStreamException, CorruptIndexException, IOException {
+        reset();
+        read(node, path);
         addLuceneDocument(indexWriter);
     }
 

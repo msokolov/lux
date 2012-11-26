@@ -29,14 +29,12 @@ public class CachingDocReader {
     private final String xmlFieldName;
     private final String uriFieldName;
     private final FieldSelector fieldSelector;
-    private final IndexReader reader;
     private final DocBuilder builder;
     private int cacheHits=0;
     private int cacheMisses=0;
     private long buildTime=0;
     
-    public CachingDocReader (IndexReader reader, DocBuilder builder, IndexConfiguration indexConfig) {
-        this.reader = reader;
+    public CachingDocReader (DocBuilder builder, IndexConfiguration indexConfig) {
         this.builder = builder;
         this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
         this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
@@ -47,7 +45,7 @@ public class CachingDocReader {
         fieldSelector = new SetBasedFieldSelector(fieldNames, empty);
     }
     
-    public XdmNode get (int docID) throws IOException {
+    public XdmNode get (int docID, IndexReader reader) throws IOException {
         if (cache.containsKey(docID)) {
             ++cacheHits;
             return cache.get(docID);

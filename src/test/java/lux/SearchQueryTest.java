@@ -2,6 +2,7 @@ package lux;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import lux.exception.LuxException;
@@ -16,6 +17,8 @@ import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
 
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.store.LockObtainFailedException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -71,8 +74,11 @@ public class SearchQueryTest extends BasicQueryTest {
      * @param optimized ignored
      * @param facts ignored
      * @param queries ignored
+     * @throws IOException 
+     * @throws LockObtainFailedException 
+     * @throws CorruptIndexException 
      */
-    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
+    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) throws CorruptIndexException, LockObtainFailedException, IOException {
         if (repeatCount > 1) {
             benchmark (xpath);
         } else {
@@ -91,7 +97,7 @@ public class SearchQueryTest extends BasicQueryTest {
         }
     }
 
-    private void benchmark (String query) {
+    private void benchmark (String query) throws CorruptIndexException, LockObtainFailedException, IOException {
         Evaluator eval = index.makeEvaluator();
         XdmResultSet results = evalQuery(query, eval);
         XdmValue baselineResult = evalBaseline(query, eval);

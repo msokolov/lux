@@ -1,19 +1,29 @@
 package lux.xml;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLResolver;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLResolver;
 import javax.xml.stream.util.StreamReaderDelegate;
+
+import net.sf.saxon.Configuration;
+import net.sf.saxon.event.PipelineConfiguration;
+import net.sf.saxon.evpull.BracketedDocumentIterator;
+import net.sf.saxon.evpull.Decomposer;
+import net.sf.saxon.evpull.EventIterator;
+import net.sf.saxon.evpull.EventToStaxBridge;
+import net.sf.saxon.evpull.SingletonEventIterator;
+import net.sf.saxon.om.DocumentInfo;
+import net.sf.saxon.om.NodeInfo;
 
 import org.codehaus.stax2.XMLInputFactory2;
 
@@ -56,6 +66,26 @@ public class XmlReader {
      */
     public void read (InputStream in) throws XMLStreamException {  
         XMLStreamReader xmlStreamReader = getXMLInputFactory().createXMLStreamReader(in);
+        if (stripNamespaces) {
+            xmlStreamReader = new NamespaceStrippingXMLStreamReader(xmlStreamReader);
+        }
+        read (xmlStreamReader);
+    }
+    
+    public void read (NodeInfo node) throws XMLStreamException {
+        PipelineConfiguration pipe = node.getConfiguration().makePipelineConfiguration();
+        pipe.setHostLanguage(Configuration.XQUERY);
+        XMLStreamReader xmlStreamReader; 
+        // copied from net.sf.saxon.xqj.SaxonXQItem
+        if (node instanceof DocumentInfo) {
+            EventIterator eventIterator = new Decomposer(node, pipe);
+            xmlStreamReader = new EventToStaxBridge(eventIterator, pipe);
+        } else {
+            EventIterator contentIterator = new SingletonEventIterator(node);
+            EventIterator eventIterator = new BracketedDocumentIterator(contentIterator);
+            eventIterator = new Decomposer(eventIterator, pipe);
+            xmlStreamReader = new EventToStaxBridge(eventIterator, pipe);
+        }
         if (stripNamespaces) {
             xmlStreamReader = new NamespaceStrippingXMLStreamReader(xmlStreamReader);
         }
@@ -107,12 +137,21 @@ public class XmlReader {
     public void read (XMLStreamReader in)
         throws XMLStreamException
     {
+        boolean gotEndDocument = false;
+        // wrap every pass in start/end document??
         sendEvent (in, XMLStreamConstants.START_DOCUMENT);
-        for (;;) {
+        while (in.hasNext()) {
             int event = in.next();
+            if (event == XMLStreamConstants.START_DOCUMENT) {
+                continue;
+            }
             sendEvent(in, event);
-            if (event == XMLStreamConstants.END_DOCUMENT)
-                break;
+            if (event == XMLStreamConstants.END_DOCUMENT) {
+                gotEndDocument = true;
+            }
+        }
+        if (! gotEndDocument) {
+            sendEvent (in, XMLStreamConstants.END_DOCUMENT);
         }
     }
 

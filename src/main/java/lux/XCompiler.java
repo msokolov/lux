@@ -6,7 +6,10 @@ import java.io.StringReader;
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
+import lux.functions.Commit;
+import lux.functions.DeleteDocument;
 import lux.functions.FieldTerms;
+import lux.functions.InsertDocument;
 import lux.functions.LuxCount;
 import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
@@ -46,6 +49,10 @@ public class XCompiler {
     private XPathCompiler xpathCompiler;
     private XsltCompiler xsltCompiler;
     private boolean enableLuxOptimization;
+    // TODO: once we get a handle on an IndexWriter
+    // keep track of the number of writes so we can reopen readers that are out of sync
+    // private final AtomicInteger indexGeneration;
+    // private final IndexWriter indexWriter;
 
     /** Creates a Compiler configured according to the capabilities of a wrapped instance of a Saxon Processor.
      * Saxon-HE allows us to optimize result sorting and lazy evaluation.  Saxon-PE and -EE provide
@@ -58,6 +65,7 @@ public class XCompiler {
     protected XCompiler(Processor processor, IndexConfiguration indexConfig) {
         dialect = Dialect.XQUERY_1;
         this.indexConfig = indexConfig;
+        // indexGeneration = new AtomicInteger(0);
         enableLuxOptimization = indexConfig != null && indexConfig.isIndexingEnabled();
         
         this.processor = processor;
@@ -104,6 +112,9 @@ public class XCompiler {
         processor.registerExtensionFunction(new LuxExists());
         processor.registerExtensionFunction(new FieldTerms());
         processor.registerExtensionFunction(new Transform());
+        processor.registerExtensionFunction(new InsertDocument());
+        processor.registerExtensionFunction(new DeleteDocument());
+        processor.registerExtensionFunction(new Commit());
     }
     
     class EmptyEntityResolver implements EntityResolver {

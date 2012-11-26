@@ -49,7 +49,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 current = null;
             } else {
                 long t1 = System.nanoTime();
-                XdmItem doc = docCache.get(docID);
+                XdmItem doc = docCache.get(docID, searcher.getIndexReader());
                 NodeInfo item = (NodeInfo) doc.getUnderlyingValue();
                 // assert documents in order 
                 assert (current == null || ((TinyDocumentImpl)item).getDocumentNumber() > ((TinyDocumentImpl)current).getDocumentNumber());

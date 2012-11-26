@@ -2,6 +2,7 @@ package lux.search;
 
 import java.io.IOException;
 
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -18,7 +19,10 @@ public class LuxSearcher extends IndexSearcher {
   public LuxSearcher (IndexSearcher searcher) {
       super (searcher.getIndexReader());
   }
-
+  
+  public LuxSearcher (IndexReader reader) {
+      super (reader);
+  }
 
   /**
    * @param query the Lucene query

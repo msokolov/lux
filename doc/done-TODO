@@ -3,6 +3,9 @@ Massive re-org, re-naming, etc.
 Untangled a lot of dependency cycles
 Split unchanging parts of XmlIndexer into IndexConfiguration
 Split Saxon into Compiler (mostly unchanging), and Evaluator (transient), but work remains here
+** eliminated lux.api and lux.saxon
+This is mostly done: still need to move these classes into the root (lux)
+package.  Then check for more cycles w/Sonar.
 * xslt
 We want to use for document output and also for input transformations
 provide as function from xquery: lux:transform()

@@ -89,7 +89,7 @@ public class BasicQueryTest {
     }
 
     @Test
-    public void testConvertRootedPathToPredicate() {
+    public void testConvertRootedPathToPredicate() throws Exception {
         assertQuery ("//ACT/SCENE/root()", "lux:search(" + 
                      getQueryXml(Q.ACT_SCENE) + ",24)" +
         		"[(descendant::ACT/child::SCENE)/root(.)]", 
@@ -276,11 +276,11 @@ public class BasicQueryTest {
                 + ",2)/descendant::SCENE", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
     }
     
-    public void assertQuery (String xpath, int facts, Q ... queries) {
+    public void assertQuery (String xpath, int facts, Q ... queries) throws Exception {
         assertQuery (xpath, facts, null, queries);
     }
 
-    public void assertQuery (String xpath, int facts, ValueType type, Q ... queries) {
+    public void assertQuery (String xpath, int facts, ValueType type, Q ... queries) throws Exception{
         assertQuery (xpath, null, facts, type, queries);
     }
     
@@ -294,11 +294,11 @@ public class BasicQueryTest {
      * @param queries the expected lucene query strings
      */
 
-    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) {
+    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) throws Exception {
         XCompiler compiler = new XCompiler(getIndexer().getConfiguration());
         compiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
         compiler.declareNamespace("ns", "http://namespace.org/#ns");
-        Evaluator eval = new Evaluator(compiler, null);
+        Evaluator eval = new Evaluator(compiler, null, null);
         assertQuery(xpath, optimized, facts, type, eval, queries);
     }
 

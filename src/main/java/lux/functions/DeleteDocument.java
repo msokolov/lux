@@ -6,7 +6,6 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
-import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
@@ -16,18 +15,17 @@ import net.sf.saxon.value.SequenceType;
 /**
  * This function inserts a document to the index at the given uri.  
  */
-public class InsertDocument extends ExtensionFunctionDefinition {
+public class DeleteDocument extends ExtensionFunctionDefinition {
 
     @Override
     public StructuredQName getFunctionQName() {
-        return new StructuredQName("lux", FunCall.LUX_NAMESPACE, "insert");
+        return new StructuredQName("lux", FunCall.LUX_NAMESPACE, "delete");
     }
 
     @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] {
-                SequenceType.SINGLE_STRING,
-                SequenceType.SINGLE_NODE
+                SequenceType.SINGLE_STRING
         };
     }
 
@@ -47,9 +45,8 @@ public class InsertDocument extends ExtensionFunctionDefinition {
         public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
                 throws XPathException {
             String uri = arguments[0].next().getStringValue();
-            NodeInfo node = (NodeInfo) arguments[1].next();
             Evaluator eval = (Evaluator) context.getConfiguration().getCollectionURIResolver();
-            eval.getDocWriter().write(node, uri);
+            eval.getDocWriter().delete(uri);
             return EmptySequence.asIterator(EmptySequence.getInstance());
         }
         

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
+import lux.DocWriter;
 import lux.Evaluator;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.XdmItem;
@@ -66,7 +67,8 @@ public class AppServer extends XQueryComponent {
         long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
         int len = -1;
         // multiple shards not implemented
-        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher));
+        DocWriter docWriter = new SolrDocWriter (indexer, req.getCore().getUpdateHandler());
+        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         String query = rb.getQueryString();
         if (StringUtils.isBlank(query)) {
             rsp.add("xpath-error", "query was blank");

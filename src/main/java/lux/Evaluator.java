@@ -36,12 +36,13 @@ import org.apache.lucene.search.TermQuery;
 public class Evaluator implements URIResolver, CollectionURIResolver {
 
     private final XCompiler compiler;
-    private final LuxSearcher searcher;
     private final DocBuilder saxonBuilder;
     private final CachingDocReader docReader;
-    private QueryStats queryStats;
+    private final DocWriter docWriter;
+    private LuxSearcher searcher;
+    private QueryStats queryStats;    
 
-    public Evaluator(XCompiler compiler, LuxSearcher searcher) {
+    public Evaluator(XCompiler compiler, LuxSearcher searcher, DocWriter docWriter) {
         this.compiler = compiler;
         this.searcher = searcher;
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
@@ -49,10 +50,11 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
         config.setCollectionURIResolver(this);
         saxonBuilder = new DocBuilder((DocIDNumberAllocator) config.getDocumentNumberAllocator(), compiler.getProcessor().newDocumentBuilder());
         if (searcher != null) {
-            docReader = new CachingDocReader(searcher.getIndexReader(), saxonBuilder, compiler.getIndexConfiguration());
+            docReader = new CachingDocReader(saxonBuilder, compiler.getIndexConfiguration());
         } else {
             docReader = null;
         }
+        this.docWriter = docWriter;
         queryStats = new QueryStats();
         // FIXME: this introduces a point of contention that prevents multiple Evaluators
         // from sharing a single XCompiler.
@@ -65,7 +67,7 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
      * rely on documents stored in Lucene.
      */
     public Evaluator () {
-        this (new XCompiler(new IndexConfiguration()), null);
+        this (new XCompiler(new IndexConfiguration()), null, null);
     }
     
     public Evaluator (Dialect dialect) {
@@ -91,7 +93,7 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
             if (docID == DocIdSetIterator.NO_MORE_DOCS) {
                 throw new TransformerException("document '" +  href + "' not found");
             }
-            XdmNode doc = getDocReader().get(docID);
+            XdmNode doc = getDocReader().get(docID, getSearcher().getIndexReader());
             return doc.asSource(); 
         } catch (IOException e) {
             throw new TransformerException(e);
@@ -157,6 +159,17 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
         return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);
     }
     
+    /**
+     * reopen the searcher so it sees any updates
+     */
+    public void reopenSearcher() {
+        try {
+            searcher = new LuxSearcher (searcher.getIndexReader().reopen());
+        } catch (IOException e) {
+            throw new LuxException (e);
+        }
+    }
+    
     public LuxSearcher getSearcher() {
         return searcher;
     }    
@@ -177,6 +190,10 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
         if (docReader != null) {
             docReader.clear();
         }
+    }
+
+    public DocWriter getDocWriter() {
+        return docWriter;
     }
 
 }

@@ -1,6 +1,9 @@
 package lux;
 
-import static lux.index.IndexConfiguration.*;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.INDEX_QNAMES;
+import static lux.index.IndexConfiguration.STORE_XML;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +13,6 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
-
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
@@ -19,8 +21,11 @@ import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.store.RAMDirectory;
 
 /**
@@ -60,6 +65,9 @@ public class IndexTestSupport {
         this.dir = dir;
         if (xmlFileName != null) {
             indexAllElements (indexer, dir, xmlFileName);
+        } else {
+            // initialize an empty index
+            indexer.getIndexWriter(dir).close();
         }
         searcher = new LuxSearcher(dir);
         compiler = new XCompiler (indexer.getConfiguration());
@@ -113,8 +121,11 @@ public class IndexTestSupport {
         indexWriter.close(true);
     }
     
-    public Evaluator makeEvaluator() {
-        return new Evaluator(compiler, searcher);
+    public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {
+        IndexWriter indexWriter = indexer.getIndexWriter(dir);
+        searcher = new LuxSearcher(IndexReader.open(indexWriter, true));
+        DirectDocWriter docWriter = new DirectDocWriter(indexer, indexWriter);
+        return new Evaluator(compiler, searcher, docWriter);
     }
 
 

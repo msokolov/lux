@@ -92,22 +92,22 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     
     class TermsIterator implements SequenceIterator<AtomicValue> {
         private final TermEnum terms;
-        private final Evaluator saxon;
+        private final Evaluator eval;
         private Term term;
         private int pos;
         
-        TermsIterator (Evaluator saxon, Term term) throws IOException {
+        TermsIterator (Evaluator eval, Term term) throws IOException {
             this.term = term;
-            this.saxon = saxon;
-            this.terms = createTerms(saxon, term);
+            this.eval = eval;
+            this.terms = createTerms(term);
             pos = 0;
         }
 
-        private TermEnum createTerms(Evaluator saxon, Term term) throws IOException {
+        private TermEnum createTerms(Term term) throws IOException {
             if (term != null) {
-                return saxon.getSearcher().getIndexReader().terms (term);
+                return eval.getSearcher().getIndexReader().terms (term);
             } else {
-                TermEnum terms = saxon.getSearcher().getIndexReader().terms ();
+                TermEnum terms = eval.getSearcher().getIndexReader().terms ();
                 terms.next(); // position on first term as we do when a term start position is given
                 return terms;
             }
@@ -149,7 +149,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         @Override
         public SequenceIterator<AtomicValue> getAnother() throws XPathException {
             try {
-                return new TermsIterator (saxon, term);
+                return new TermsIterator (eval, term);
             } catch (IOException e) {
                 throw new XPathException (e);
             }
