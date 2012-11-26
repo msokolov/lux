@@ -52,20 +52,23 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     public static void addDocumentFields (XmlIndexer indexer, SolrInputDocument doc) {
         IndexConfiguration indexConfig = indexer.getConfiguration();
         for (FieldDefinition field : indexConfig.getFields()) {
+            String fieldName = indexConfig.getFieldName(field);
             if (field == indexConfig.getField(FieldName.URI) ||  
                     field == indexConfig.getField(FieldName.XML_STORE))
             {
-                // uri and xml are provided externally
-                continue;
+                if (doc.getField(fieldName) != null) {
+                    // uri and xml are provided externally in LuxUpdateProcessor
+                    continue;
+                }
             }
             Iterable<?> values = field.getValues(indexer);
             if (values != null) {
                 for (Object value : values) {
-                    doc.addField(indexConfig.getFieldName(field), value);
+                    doc.addField(fieldName, value);
                 }
             } else {
                 for (Fieldable value : field.getFieldValues(indexer)) {
-                    doc.addField(indexConfig.getFieldName(field), value);
+                    doc.addField(fieldName, value);
                 }
             }
         }

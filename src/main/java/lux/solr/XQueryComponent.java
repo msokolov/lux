@@ -1,6 +1,6 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -86,7 +86,7 @@ public class XQueryComponent extends QueryComponent {
                 throw new SolrException(ErrorCode.UNKNOWN, base + " is an invalid URL?", e);
             }
         }
-        IndexConfiguration config = LuxUpdateProcessorFactory.makeIndexConfiguration(INDEX_PATHS, args);
+        IndexConfiguration config = LuxUpdateProcessorFactory.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_XML, args);
         // FIXME: this requires duplicated config for field aliases - one for the update processor and one for this
         indexer = new XmlIndexer (config);
         compiler = createXCompiler();

@@ -9,7 +9,6 @@ import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 import net.sf.saxon.om.NodeInfo;
 
-import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.update.AddUpdateCommand;
 import org.apache.solr.update.CommitUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
@@ -36,12 +35,15 @@ public class SolrDocWriter implements DocWriter {
         cmd.overwriteCommitted = true;
         cmd.overwritePending = true;
         cmd.allowDups = false;
-        cmd.solrDoc = new SolrInputDocument();
-        LuxUpdateProcessor.addDocumentFields(indexer, cmd.solrDoc);
+        //cmd.solrDoc = new SolrInputDocument();
+        //LuxUpdateProcessor.addDocumentFields(indexer, cmd.solrDoc);
+        cmd.doc = indexer.createLuceneDocument();
         try {
             updateHandler.addDoc(cmd);
         } catch (IOException e) {
             throw new LuxException (e);
+        } finally {
+            indexer.reset();
         }
     }
 
