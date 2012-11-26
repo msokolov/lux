@@ -65,7 +65,6 @@ public class XQueryComponent extends QueryComponent {
     private Logger logger;
     
     public XQueryComponent() {
-        compiler = createXCompiler();
         logger = LoggerFactory.getLogger(XQueryComponent.class);
     }
     
@@ -90,6 +89,7 @@ public class XQueryComponent extends QueryComponent {
         IndexConfiguration config = LuxUpdateProcessorFactory.makeIndexConfiguration(INDEX_PATHS, args);
         // FIXME: this requires duplicated config for field aliases - one for the update processor and one for this
         indexer = new XmlIndexer (config);
+        compiler = createXCompiler();
     }
 
     @Override

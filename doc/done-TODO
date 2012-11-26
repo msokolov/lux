@@ -1,3 +1,5 @@
+* document updates via xquery
+lux:insert, lux:delete, lux:commit
 * code reorg
 Massive re-org, re-naming, etc.
 Untangled a lot of dependency cycles

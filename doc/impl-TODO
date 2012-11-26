@@ -50,9 +50,6 @@ If HE is detected, provide a custom Configuration?  TODO: test if
 optimization under PE/EE handles this anyway?  If not, performance could
 actually *degrade* with PE!
 * lux xquery API
-** document insert
-should be able to insert directly to a local Directory containing a lucene index;
-any sharding would have to be taken care of externally
 ** app server module import
 * ifpress integration
 Make sure it's easy to configure.  Check compatibility with pub factory usage

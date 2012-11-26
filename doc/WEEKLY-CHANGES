@@ -48,6 +48,14 @@ demo: I made a little search demo written in xquery that runs in the app
 server and demonstrates auto-completion of node names and term values, and
 search.  It sports a sunflwor logo.
 
+11/25
+
+Major code reorganization/renaming of packages etc.  I spent some quality
+time w/ Sonar/J and eliminated a lot of cyclical dependencies in an attempt
+to make the code cleaner and easier to maintain.
+
+I added the ability to do insert/delete/commit via xquery function calls.
+
 UPCOMING
 
 ****** bug fixes, testing (namespaces / attributes)

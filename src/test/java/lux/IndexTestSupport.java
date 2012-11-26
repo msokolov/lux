@@ -36,6 +36,7 @@ public class IndexTestSupport {
     Directory dir;
     LuxSearcher searcher;
     XmlIndexer indexer;
+    IndexWriter indexWriter;
     int totalDocs;
     XCompiler compiler;
     HashMap<String,Integer> elementCounts = new HashMap<String,Integer>();
@@ -69,13 +70,14 @@ public class IndexTestSupport {
             // initialize an empty index
             indexer.getIndexWriter(dir).close();
         }
-        searcher = new LuxSearcher(dir);
+        indexWriter = indexer.getIndexWriter(dir);
+        searcher = new LuxSearcher(IndexReader.open(indexWriter, true));
         compiler = new XCompiler (indexer.getConfiguration());
     }
 
     public void close() throws Exception {
         searcher.close();
-        dir.close();
+        indexWriter.close();
     }
 
     /**
@@ -122,8 +124,6 @@ public class IndexTestSupport {
     }
     
     public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {
-        IndexWriter indexWriter = indexer.getIndexWriter(dir);
-        searcher = new LuxSearcher(IndexReader.open(indexWriter, true));
         DirectDocWriter docWriter = new DirectDocWriter(indexer, indexWriter);
         return new Evaluator(compiler, searcher, docWriter);
     }

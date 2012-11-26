@@ -27,7 +27,7 @@ public class LoadDemoData {
             indexDir = argv[0];
         }
         Directory index = new SimpleFSDirectory (new File(indexDir));
-        String dataDir = "samples";
+        String dataDir = "samples/wikipedia";
         XmlIndexer indexer = new XmlIndexer();
         indexer.getXmlReader().setStripNamespaces(true);
         IndexWriter indexWriter = indexer.getIndexWriter(index);

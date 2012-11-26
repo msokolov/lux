@@ -201,8 +201,9 @@ public class IndexTest {
 
     @Test
     public void testIndexQNamesAndPaths() throws Exception {
-        buildIndex ("qnames and paths and docs", INDEX_QNAMES | INDEX_PATHS | STORE_XML | BUILD_DOCUMENT);
+        IndexTestSupport its = buildIndex ("qnames and paths and docs", INDEX_QNAMES | INDEX_PATHS | STORE_XML | BUILD_DOCUMENT);
         assertTotalDocs ();
+        its.close();
         buildIndex ("qnames and paths", INDEX_QNAMES | INDEX_PATHS | BUILD_DOCUMENT);
     }
 
