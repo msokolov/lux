@@ -140,11 +140,13 @@ public class XmlIndexer {
     }
 
     public void read(NodeInfo doc, String uri) throws XMLStreamException {
+        reset();
         this.uri = uri;
         getXmlReader().read(doc);
     }
 
-    private void reset() {
+    /** Clears out internal storage used while indexing a document */
+    public void reset() {
         xmlReader.reset();
     }
     
@@ -193,14 +195,22 @@ public class XmlIndexer {
         addLuceneDocument(indexWriter);
     }
 
-    private void addLuceneDocument(IndexWriter indexWriter) throws CorruptIndexException, IOException {
+    /**
+     * @return a Lucene {@link org.apache.lucene.document.Document} created from the field values stored in this indexer. The document
+     * is ready to be inserted into Lucene via {@link IndexWriter#addDocument}.
+     */
+    public org.apache.lucene.document.Document createLuceneDocument () {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
         for (FieldDefinition field : getFields()) {
             for (Fieldable f : field.getFieldValues(this)) {
                 doc.add(f);
             }
         }
-        indexWriter.addDocument(doc);
+        return doc;
+    }
+
+    private void addLuceneDocument(IndexWriter indexWriter) throws CorruptIndexException, IOException {
+        indexWriter.addDocument(createLuceneDocument());
     }
 
     public IndexWriter getIndexWriter(Directory dir) throws CorruptIndexException, LockObtainFailedException, IOException {
