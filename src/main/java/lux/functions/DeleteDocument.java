@@ -33,6 +33,16 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
     public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
         return SequenceType.EMPTY_SEQUENCE;
     }
+    
+    @Override
+    public boolean hasSideEffects () {
+        return true;
+    }
+    
+    @Override
+    public boolean trustResultType () {
+        return true;
+    }
 
     @Override
     public ExtensionFunctionCall makeCallExpression() {

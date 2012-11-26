@@ -28,7 +28,12 @@ public class LuxExists extends SearchBase {
     @Override
     public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
         return SequenceType.SINGLE_BOOLEAN;
-    }    
+    }
+    
+    @Override
+    public boolean trustResultType () {
+        return true;
+    }
     
     @Override public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts) throws XPathException {
         long t = System.currentTimeMillis();

@@ -29,6 +29,11 @@ public class LuxCount extends SearchBase {
         return SequenceType.SINGLE_INTEGER;
     }
     
+    @Override
+    public boolean trustResultType () {
+        return true;
+    }
+    
     @Override public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();

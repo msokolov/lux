@@ -33,6 +33,16 @@ public class Commit extends ExtensionFunctionDefinition {
     }
 
     @Override
+    public boolean hasSideEffects () {
+        return true;
+    }
+    
+    @Override
+    public boolean trustResultType () {
+        return true;
+    }
+    
+    @Override
     public ExtensionFunctionCall makeCallExpression() {
         return new CommitCall ();
     }

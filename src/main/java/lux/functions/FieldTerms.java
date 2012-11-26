@@ -51,6 +51,11 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     public int getMaximumNumberOfArguments() {
         return 2;
     }
+    
+    @Override
+    public boolean trustResultType () {
+        return true;
+    }
 
     @Override
     public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
