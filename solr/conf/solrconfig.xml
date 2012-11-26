@@ -1217,7 +1217,7 @@
         Indexes the given named field as an XML document. Enables index-assisted XQuery/XPath evaluation using Lux.
      --> 
     <updateRequestProcessorChain name="lux-update-chain">
-       <processor class="lux.solr.LuxUpdateProcessor">
+       <processor class="lux.solr.LuxUpdateProcessorFactory">
 <!--          <str name="xmlFieldName">lux_xml</str> -->
        </processor>
        <processor class="solr.LogUpdateProcessorFactory" />
