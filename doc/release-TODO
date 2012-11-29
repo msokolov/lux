@@ -12,6 +12,9 @@ some easy way to load files
 ** criteria for release 1.0
 *** Highest Quality
 Rigorous testing; no known major bugs.
+**** 90+ % test coverage
+Add an XQTS test 
+measure coverage w/Cobertura
 *** XQuery search API
 enable explicit access to indexes
 **** search, count, exists
