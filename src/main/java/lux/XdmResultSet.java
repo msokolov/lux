@@ -1,7 +1,7 @@
 package lux;
 
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.xml.transform.TransformerException;
 
@@ -12,14 +12,14 @@ import net.sf.saxon.s9api.XdmValue;
 public class XdmResultSet implements Iterable<XdmItem> {
     
     private final XdmValue value;
-    private final Collection<TransformerException> errors;
+    private final List<TransformerException> errors;
     
     public XdmResultSet(XdmValue value) {
         this.value = value;
         errors = null;
     }
     
-    public XdmResultSet (Collection<TransformerException> errors) {
+    public XdmResultSet (List<TransformerException> errors) {
         this.value = XdmEmptySequence.getInstance();
         this.errors = errors;
     }
@@ -36,7 +36,11 @@ public class XdmResultSet implements Iterable<XdmItem> {
         return value.size();
     }
 
-    public Collection<TransformerException> getErrors() {
+    /**
+     * @return the list of errors reported when compiling or evaluating an xquery expression.
+     * returns null if no errors were generated.
+     */
+    public List<TransformerException> getErrors() {
         return errors;
     }
 
