@@ -19,6 +19,7 @@ import lux.index.IndexConfiguration;
 import lux.xpath.FunCall;
 import lux.xquery.XQuery;
 import net.sf.saxon.Configuration;
+import net.sf.saxon.Configuration.LicenseFeature;
 import net.sf.saxon.lib.CollectionURIResolver;
 import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.Processor;
@@ -45,6 +46,7 @@ public class XCompiler {
     // is shared.  This is a limitation of the Saxon API, which provides a threadsafe compiler
     // class whose error reporting is not thread-safe.
     private final TransformErrorListener errorListener;
+    private final boolean isSaxonLicensed;
     private XQueryCompiler xqueryCompiler;
     private XPathCompiler xpathCompiler;
     private XsltCompiler xsltCompiler;
@@ -73,7 +75,8 @@ public class XCompiler {
         config.setDocumentNumberAllocator(new DocIDNumberAllocator());
         config.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
         config.getParseOptions().setEntityResolver(new EmptyEntityResolver());
-
+        isSaxonLicensed = config.isLicensedFeature(LicenseFeature.PROFESSIONAL_EDITION)
+                || config.isLicensedFeature(LicenseFeature.ENTERPRISE_XQUERY);
         defaultCollectionURIResolver = config.getCollectionURIResolver();
         registerExtensionFunctions(processor);
         if (indexConfig != null && indexConfig.isIndexingEnabled()) {
@@ -100,6 +103,7 @@ public class XCompiler {
         } catch (ClassNotFoundException e) { }
         try {
             if (Class.forName("com.saxonica.config.ProfessionalConfiguration") != null) {
+                //return new Processor (new Config());
                 return new Processor (true);
             }
         } catch (ClassNotFoundException e) { }
@@ -239,6 +243,10 @@ public class XCompiler {
 
     public TransformErrorListener getErrorListener() {
         return errorListener;
+    }
+
+    public boolean isSaxonLicensed() {
+        return isSaxonLicensed;
     }
     
 }
