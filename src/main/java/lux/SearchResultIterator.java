@@ -2,6 +2,7 @@ package lux;
 
 import java.io.IOException;
 
+import lux.exception.LuxException;
 import lux.search.LuxSearcher;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
@@ -34,6 +35,9 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         this.stats = stats;
         if (stats != null) {
             stats.query = query.toString();
+        }
+        if (searcher == null) {
+            throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
         docIter = searcher.searchOrdered(query);
     }
