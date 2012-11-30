@@ -24,27 +24,28 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+/**
+ * Config provides an Optimizer and a FunctionLibrary to Saxon.  The Optimizer identifies certain
+ * expressions as "already sorted", enabling Saxon to skip an expensive sorting operation.  The 
+ * FunctionLibrary performs a similar function, allowing certain functions to be identified as returning
+ * results in document order, so they won't need to be sorted again.  These optimizations do more than 
+ * simply skip a (no-op) sorting step: they also enable Saxon to evaluate these sorted sequences 
+ * lazily: if the sequences needed to be sorted, the entire sequence would have to be retrieved.
+ */
 public class Config extends Configuration implements EntityResolver {
 
     private final LuxFunctionLibrary luxFunctionLibrary;
     
-    /**
-     * There must be only a single configuration per Evaluator and vice-versa.
-     * @param evaluator the evaluator to associate with this Configuration
-     */
     public Config () {
         super();
         luxFunctionLibrary = new LuxFunctionLibrary();
         optimizer = new Optimizer(this, new SaxonTranslator(this));
     }
 
-    // disable dtd processing
+    /** This resolver effectively ignores DOCTYPE declarations by returning an empty stream for every entity.
+     */
     public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
         return new InputSource (new ByteArrayInputStream (new byte[0]));
-    }
-    
-    public DocIDNumberAllocator getDocumentNumberAllocator() {
-        return (DocIDNumberAllocator) super.getDocumentNumberAllocator();
     }
 
     @Override
