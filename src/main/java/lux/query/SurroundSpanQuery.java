@@ -2,6 +2,7 @@ package lux.query;
 
 import java.util.ArrayList;
 
+import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
@@ -66,6 +67,12 @@ public class SurroundSpanQuery extends ParseableQuery {
             clauseExprs [i++] = q.toXmlNode(field);
         }
         return new ElementConstructor (SPAN_NEAR_QNAME, new Sequence(clauseExprs), inOrderAtt, slopAtt);
+    }
+
+    @Override
+    public String toSurroundString(String field, IndexConfiguration config) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

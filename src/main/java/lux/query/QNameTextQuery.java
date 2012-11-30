@@ -1,5 +1,6 @@
 package lux.query;
 
+import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
@@ -60,6 +61,12 @@ public class QNameTextQuery extends ParseableQuery {
         }
         return new ElementConstructor
                 (elementName, new LiteralExpression(term.text()), fieldAtt, qNameAtt, boostAtt);
+    }
+
+    @Override
+    public String toSurroundString(String field, IndexConfiguration config) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

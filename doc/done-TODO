@@ -1,5 +1,17 @@
 * document updates via xquery
 lux:insert, lux:delete, lux:commit
+Note: these functions have no side-effects and return empty-sequence: in order to 
+prevent Saxon from optimizing them away, you have to pretend to do something with their
+result!
+** solr
+we need to coordinate with Solr's management of the index writer and
+related readers.  In 3.X., Solr doesn't yet have NRT support, so we 
+simply write documents and leave commit() up to the user.  IndexWriter is
+managed by Solr's UpdateHandler. We create a DocumentWriter interface
+which takes a uri and an XdmNode and insert one in the Evaluator, making it
+available to lux.function.* Implement this using XmlIndexer and Solr
+UpdateHandler, or, for direct Lucene usage and for tests (?), using
+something wrapping an IndexWriter directly.
 * code reorg
 Massive re-org, re-naming, etc.
 Untangled a lot of dependency cycles

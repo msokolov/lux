@@ -11,6 +11,7 @@ import lux.XCompiler.Dialect;
 import lux.exception.LuxException;
 import lux.functions.LuxSearch;
 import lux.index.IndexConfiguration;
+import lux.query.parser.LuxQueryParser;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.Configuration;
@@ -26,8 +27,10 @@ import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
 /**
@@ -99,6 +102,10 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
             throw new TransformerException(e);
         }
     }
+
+    public XdmResultSet evaluate(String query) {
+        return evaluate (compiler.compile(query), null);
+    }
     
     public XdmResultSet evaluate(XQueryExecutable exec) {
         return evaluate (exec, null);
@@ -147,14 +154,24 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
     }    
     
     /**
-     * implements CollectionURIResolver so as to resolve uris in service of fn:collection().
+     * implements CollectionURIResolver so as to resolve uris in service of fn:collection() (and fn:uri-collection()).
      * For now, all collections retrieve all documents.  TODO: implement directory-based collections.
      */
     public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
-        if (href == null || href.startsWith("lux:")) {
-            //String path = href.substring(5);
-            //path = path.replace('\\', '/');
+        if (href == null) {
             return new LuxSearch().iterate(new MatchAllDocsQuery(), this, 0);
+        }
+        if (href.startsWith("lux:")) {
+            // Saxon doesn't actually enforce that this is a valid URI, and we don't care about that either
+            String query = href.substring(4);
+            Query q;
+            try {
+                // TODO: use a prebuilt parser, don't construct a new one for every query
+                q = LuxQueryParser.makeLuxQueryParser(compiler.getIndexConfiguration()).parse(query);
+            } catch (ParseException e) {
+                throw new XPathException ("Failed to parse query: " + query, e);
+            }
+            return new LuxSearch().iterate(q, this, 0);
         }
         return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);
     }

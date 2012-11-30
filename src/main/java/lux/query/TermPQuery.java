@@ -1,15 +1,19 @@
 package lux.query;
 
+import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.ElementConstructor;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
 
 /**
  * An analogue of TermQuery whose toString method produces an expression that can be parsed by
  * Lucene's standard query parser (and its surround query parser).
+ * 
+ * The Term enclosed by TermPQuery 
  *
  */
 public class TermPQuery extends ParseableQuery {
@@ -57,7 +61,32 @@ public class TermPQuery extends ParseableQuery {
         }
         return new ElementConstructor
                 (elementName, new LiteralExpression(term.text()), fieldAtt, boostAtt);
-        
+    }
+    
+    @Override
+    public String toSurroundString (String field, IndexConfiguration config) {
+        StringBuilder buf = new StringBuilder ();
+        if (StringUtils.isBlank(term.field()) || term.field().equals(field)) {
+            buf.append (term.text());
+        }
+        else if (term.field().equals(config.getFieldName(IndexConfiguration.XML_TEXT))) {
+            buf.append ("<:").append(term.text());
+        }
+        else if (term.field().equals(config.getFieldName(IndexConfiguration.ELEMENT_TEXT))) {
+            String parts[] = term.text().split(":", 2);
+            buf.append ('<').append(parts[0]).append(':').append(parts[1]);
+        }
+        else if (term.field().equals(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT))) {
+            String parts[] = term.text().split(":", 2);
+            buf.append ("<@").append(parts[0]).append(':').append(parts[1]);
+        }
+        else {
+            buf.append(term.toString());
+        }
+        if (boost != 1.0f) {
+            buf.append('^').append(boost);
+        }
+        return buf.toString();
     }
 
 }

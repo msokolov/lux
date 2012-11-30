@@ -1,5 +1,6 @@
 package lux.query;
 
+import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
@@ -87,6 +88,12 @@ public class BooleanPQuery extends ParseableQuery {
         public ParseableQuery getQuery() {
             return query;
         }
+    }
+
+    @Override
+    public String toSurroundString(String field, IndexConfiguration config) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

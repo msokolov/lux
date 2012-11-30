@@ -1,5 +1,6 @@
 package lux.query;
 
+import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xquery.ElementConstructor;
 
@@ -15,6 +16,12 @@ public final class MatchAllPQuery extends ParseableQuery {
     @Override
     public ElementConstructor toXmlNode(String field) {
         return INSTANCE_ELEMENT_CONSTRUCTOR;
+    }
+
+    @Override
+    public String toSurroundString(String field, IndexConfiguration config) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

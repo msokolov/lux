@@ -1,19 +1,34 @@
-* document store / load
-** solr
-we need to coordinate with Solr's management of the index writer and
-related readers.  In 3.X., Solr doesn't yet have NRT support, so we will
-simply write documents and leave commit() up to the user.  IndexWriter is
-managed by Solr's UpdateHandler. Plan: create a DocumentWriter interface
-which takes a uri and an XdmNode and insert one in the Evaluator, making it
-available to lux.function.* Implement this using XmlIndexer and Solr
-UpdateHandler, or, for direct Lucene usage and for tests (?), using
-something wrapping an IndexWriter directly.
-** lucene-only
-IndexWriter (Directory) (singleton - must be only one)
-IndexReader.open (IndexWriter, boolean) (thread-safe; also singleton - per XCompiler?)
-IndexReader.reopen () after writing - mark a dirty flag somewhere
-IndexSearcher (IndexReader)
-close()/commit() - when?
+* demo
+** query sandbox
+*** eval
+execute xquery from within xquery
+** highlighting
+* optimized sorting
+* compatibility w/vanilla Saxon
+We'd like to be able to use Saxon PE/EE, but we can't because we extend
+Configuration.  At the same time, we provide some critical performance
+boosts with this.
+** purchase Saxon-PE
+** Don't extend Configuration
+We currently do this so we can use a custom FunctionLibrary
+to ensure that search results are regarded as properly in document order.
+We could avoid the need for this if we implement a CollectionURIResolver
+that handles a few special schemes (like lux:) since results from
+collection() are considered to be in document order.
+*** DocumentSorter
+We also prevent additional sorting of the entire result set in some cases
+we can determine it to be unnecessary by providing a custom Optimizer that overrides
+Optimizer.makeConditionalDocumentSorter.  This happens, eg when evaluating
+a path like exists(//foo//bar).  There is no way around this in Saxon HE,
+and it is a significant performance whack for many queries.  We need to test if Saxon PE
+and/or EE do a better job of optimization here.
+**** Use fallback?
+If HE is detected, provide a custom Configuration?  TODO: test if
+optimization under PE/EE handles this anyway?  If not, performance could
+actually *degrade* with PE!
+* HTML/HTML5
+try reading files using James Clark's fixup parser?
+* Solr/Lucene 4.0
 * thread safety
 Some aspects of Saxon are difficult to make thread safe and efficient (lock
 free): the CollectionURIResolver is shared at the Configuration level;
@@ -25,30 +40,6 @@ tied to one core, while another Evaluator could be tied to a completely
 different core.  But there can only be a single CollectionURIResolver.
 
 Perhaps the solution is to pool Processors among threads, then?
-* highlighting
-* eval
-execute xquery from within xquery
-* compatibility w/vanilla Saxon
-We'd like to be able to use Saxon PE/EE, but we can't because we extend
-Configuration.  At the same time, we provide some critical performance
-boosts with this.
-** purchase Saxon-PE
-** Don't extend Configuration
-We currently do this so we can use a custom Optimizer and FunctionLibrary
-to ensure that search results are regarded as properly in document order.
-We could avoid the need for this if we implement a CollectionURIResolver
-that handles a few special schemes (like lux:) since results from
-collection() are considered to be in document order.
-*** DocumentSorter
-We also prevent additional sorting of the entire result set in some cases
-we can determine it to be unnecessary by overriding
-Optimizer.makeConditionalDocumentSorter.  This happens, eg when evaluating
-a path like exists(//foo//bar).  There is no way around this in Saxon HE,
-and it is a significant performance whack for many queries.
-**** Use fallback?
-If HE is detected, provide a custom Configuration?  TODO: test if
-optimization under PE/EE handles this anyway?  If not, performance could
-actually *degrade* with PE!
 * lux xquery API
 ** app server module import
 * ifpress integration
@@ -153,8 +144,6 @@ return $doc/ifp:body
 ** contain() is over-optimized
 We replace it with a search call, but search is *analyzed* (so case is
 ignored, etc).
-** raise exception when query parse fails
-this is currently getting swallowed internally and only printed to stderr
 * features
 ** directory (uri component) index
 also link to collection()?
@@ -171,14 +160,7 @@ rename and consolidate naming of subclasses
 *** get rid of lux:search facts argument
 Note: this is still used to convey boolean-falsehood.
 ** remove these notes from the release
-** make clean package dependencies 
-*** fill out the generic API
-*** put all the Saxon-specific code in a package
-**  Object lifecycle
-Saxon currently holds the DocIdAllocator and CachingDocReader, but these
-should really be an object with query life-span.  Make sure that long-lived
-objects stay in Evaluator (Saxon) and short-lived ones in Context
-(SaxonContext).
+** make clean package dependencies
 * optimization ideas
 There are a few more things we can optimize using the "basic" indexing setup
 ** failure to optimize deep path query properly

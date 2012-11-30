@@ -17,6 +17,7 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
+import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.xmlparser.CoreParser;
 import org.apache.lucene.xmlparser.ParserException;
@@ -25,7 +26,7 @@ import org.w3c.dom.Element;
 
 public abstract class SearchBase extends ExtensionFunctionDefinition {
 
-    private LuxQueryParser luxQueryParser;
+    private ExtendableQueryParser luxQueryParser;
     private CoreParser xmlQueryParser;
 
     public SearchBase() {
@@ -63,9 +64,9 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 };
     }
 
-    protected LuxQueryParser getLuxQueryParser(IndexConfiguration xmlIndexer) {
+    protected ExtendableQueryParser getLuxQueryParser(IndexConfiguration xmlIndexer) {
         if (luxQueryParser == null) {
-            luxQueryParser = new LuxQueryParser (xmlIndexer);
+            luxQueryParser = LuxQueryParser.makeLuxQueryParser(xmlIndexer);
         }
         return luxQueryParser;
     }

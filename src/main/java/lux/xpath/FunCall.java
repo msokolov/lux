@@ -98,22 +98,10 @@ public class FunCall extends AbstractExpression {
     }
     
     public boolean isAbsolute () {
-        if (name.equals(FN_COLLECTION) || name.equals(LUX_SEARCH)) {
+        if (name.equals(LUX_SEARCH)) {
             return true;
         }
         return false;
-    }
-    
-    /** 
-     * replace collection() with the search function call
-     * @param search the search function call to use
-     * @return the search function call if this is collection(), otherwise return this
-     */
-    public AbstractExpression replaceRoot(FunCall search) {        
-        if (name.equals(FN_COLLECTION)) {
-            return search;
-        }
-        return this;
     }
     
     /**

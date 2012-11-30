@@ -425,21 +425,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 returnType = ValueType.BOOLEAN_FALSE;
                 qname = FunCall.LUX_EXISTS;
             }
-            else if (fname.equals(FunCall.FN_COLLECTION)) {
-                // We ignore any arguments to collection()
-                push (MATCH_ALL);
-                return new Root();
-                /*
-                functionFacts = XPathQuery.DOCUMENT_RESULTS;
-                returnType = ValueType.DOCUMENT;
-                // TODO: treat argument as lucene filter query?
-                qname = FunCall.LUX_SEARCH;
-                */
-            }
             else if (fname.equals(FunCall.FN_CONTAINS)) {
                 // FIXME - this is overly aggressive.  contains() doesn't have the same semantics
                 // as full-text search; eg it does no analysis so it
                 // matches more restrictively than our search function does
+                // We should continue to wrap the search call in the contains(): also, is it possible
+                // that we are *under-reporting* in some cases?
                 if (! subs[0].isAbsolute()) {
                     // don't query if the sequence arg isn't absolute??
                     // if the arg is relative, presumably the contains is in a predicate somewhere
@@ -675,14 +666,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return subsequence;
     }
     
-    private FunCall getSearchCall (int i, int facts) {
-        int j = queryStack.size() - i - 1;
-        XPathQuery query = queryStack.get(j);
-        queryStack.set (j, MATCH_ALL);
-        facts |= query.getFacts();
-        return createSearchCall(FunCall.LUX_SEARCH, query, facts);
-    }
-    
     private FunCall createSearchCall (QName functionName, XPathQuery query, long facts) {
         String defaultField = indexConfig.isOption(INDEX_PATHS) ? 
                 indexConfig.getFieldName(FieldName.PATH) : indexConfig.getFieldName(FieldName.ELT_QNAME);
@@ -690,6 +673,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 //new LiteralExpression (query.getParseableQuery().toString(defaultField)),
                 query.getParseableQuery().toXmlNode(defaultField),
                 new LiteralExpression (facts));
+    }
+    
+
+    private FunCall getSearchCall (int i, int facts) {
+        int j = queryStack.size() - i - 1;
+        XPathQuery query = queryStack.get(j);
+        queryStack.set (j, MATCH_ALL);
+        facts |= query.getFacts();
+        return createCollectionSearch(query);
+    }
+    
+    private FunCall createCollectionSearch(XPathQuery query) {
+        String defaultField = indexConfig.isOption(INDEX_PATHS) ? 
+                indexConfig.getFieldName(FieldName.PATH) : indexConfig.getFieldName(FieldName.ELT_QNAME);
+        return new FunCall (FunCall.FN_COLLECTION, query.getResultType(), 
+                new LiteralExpression ("lux:" + query.getParseableQuery().toSurroundString(defaultField, indexConfig)));
     }
 
     @Override

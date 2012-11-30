@@ -9,7 +9,7 @@
         <artifactId>saxon</artifactId>
         <scope>system</scope>
         <version>9.4.0.3</version>
-        <systemPath>${project.basedir}/lib/saxon9he.jar</systemPath>
+        <systemPath>${project.basedir}/lib/saxon9pe.jar</systemPath>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
@@ -66,6 +66,12 @@
   		<groupId>httpunit</groupId>
   		<artifactId>httpunit</artifactId>
   		<version>1.6.1</version>
+  		<scope>test</scope>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.hamcrest</groupId>
+  		<artifactId>hamcrest-all</artifactId>
+  		<version>1.1</version>
   		<scope>test</scope>
   	</dependency>
   </dependencies>

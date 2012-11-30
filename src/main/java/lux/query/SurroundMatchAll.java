@@ -1,5 +1,6 @@
 package lux.query;
 
+import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
@@ -27,6 +28,11 @@ public class SurroundMatchAll extends ParseableQuery {
     @Override
     public ElementConstructor toXmlNode(String field) {
         return INSTANCE_ELEMENT_CONSTRUCTOR;
+    }
+
+    @Override
+    public String toSurroundString(String defaultField, IndexConfiguration config) {
+        return config.getFieldName(IndexConfiguration.PATH) + ":{}";
     }
 
 }
