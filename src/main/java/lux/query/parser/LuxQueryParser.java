@@ -14,6 +14,7 @@ import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
 import org.apache.lucene.queryParser.ext.Extensions;
 import org.apache.lucene.util.Version;
@@ -142,6 +143,6 @@ public class LuxQueryParser extends ExtendableQueryParser {
         if (s.indexOf(' ') >= 0) {
             return '"' + s.replaceAll("\"", "\\\"") + '"';
         }
-        return escape (s);
+        return QueryParser.escape (s);
     }
 }

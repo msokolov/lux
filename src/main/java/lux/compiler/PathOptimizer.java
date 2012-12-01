@@ -442,6 +442,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_SEARCH;
             }
+            else if (fname.equals(FunCall.FN_COLLECTION)) {
+                if (subs.length == 0) {
+                    // Optimize when no arguments to collection()
+                    push (MATCH_ALL);
+                    return new Root();
+                } else {
+                    return funcall;
+                }
+            }
             if (qname != null) {
                 // We will insert a searching function. apply no restrictions to the enclosing scope:
                 push (MATCH_ALL);

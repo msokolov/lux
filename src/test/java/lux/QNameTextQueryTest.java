@@ -15,13 +15,13 @@ public class QNameTextQueryTest extends BasicQueryTest {
         switch (q) {
         case ACT_CONTENT:
         case ACT_CONTENT1:
-            return "<BooleanQuery><Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause><Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_elt_text\" qName=\"ACT\">content</QNameTextQuery></Clause></BooleanQuery>";
+            return "<BooleanQuery><Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">ACT</TermQuery></Clause><Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_elt_text\" qName=\"ACT\">content</QNameTextQuery></Clause></BooleanQuery>";
         case ACT_SCENE_CONTENT:
         case ACT_SCENE_CONTENT1:
             return "<BooleanQuery>" +
                     "<Clause occurs=\"must\"><BooleanQuery>" +
-                      "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" + 
-            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+                      "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SCENE</TermQuery></Clause>" + 
+            		  "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">ACT</TermQuery></Clause>" +
                       "</BooleanQuery></Clause>" +
                     "<Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_elt_text\" qName=\"SCENE\">content</QNameTextQuery></Clause>" +
             		"</BooleanQuery>";
@@ -29,8 +29,8 @@ public class QNameTextQueryTest extends BasicQueryTest {
         case ACT_ID_123:
             return "<BooleanQuery><Clause occurs=\"must\">" +
             		 "<BooleanQuery>" +
-            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" +
-            		  "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+            		  "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_att_name\">id</TermQuery></Clause>" +
+            		  "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">ACT</TermQuery></Clause>" +
             		 "</BooleanQuery></Clause>" +
             		 "<Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_att_text\" qName=\"id\">123</QNameTextQuery></Clause>" +
             		"</BooleanQuery>";
@@ -40,11 +40,11 @@ public class QNameTextQueryTest extends BasicQueryTest {
             		  "<BooleanQuery>" +
             		   "<Clause occurs=\"must\">" +
             		    "<BooleanQuery>" +
-            		     "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_att_name\">id</TermsQuery></Clause>" +
-            		     "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">SCENE</TermsQuery></Clause>" +
+            		     "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_att_name\">id</TermQuery></Clause>" +
+            		     "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SCENE</TermQuery></Clause>" +
             		     "</BooleanQuery>" +
             		    "</Clause>" +
-            		    "<Clause occurs=\"must\"><TermsQuery fieldName=\"lux_elt_name\">ACT</TermsQuery></Clause>" +
+            		    "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">ACT</TermQuery></Clause>" +
             		   "</BooleanQuery>" +
             		  "</Clause>" +
             		  "<Clause occurs=\"must\"><QNameTextQuery fieldName=\"lux_att_text\" qName=\"id\">123</QNameTextQuery></Clause>" +

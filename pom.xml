@@ -9,7 +9,7 @@
         <artifactId>saxon</artifactId>
         <scope>system</scope>
         <version>9.4.0.3</version>
-        <systemPath>${project.basedir}/lib/saxon9pe.jar</systemPath>
+        <systemPath>${project.basedir}/lib/saxon9he.jar</systemPath>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
@@ -21,7 +21,6 @@
       <groupId>org.codehaus.woodstox</groupId>
       <artifactId>woodstox-core-asl</artifactId>
       <version>4.1.1</version>
-      <scope>runtime</scope>
     </dependency>
   	<dependency>
   		<groupId>org.apache.solr</groupId>
@@ -54,13 +53,11 @@
   		<groupId>org.apache.lucene</groupId>
   		<artifactId>lucene-queryparser</artifactId>
   		<version>3.4.0</version>
-  		<scope>runtime</scope>
   	</dependency>
   	<dependency>
         <groupId>org.apache.lucene</groupId>
         <artifactId>lucene-xml-query-parser</artifactId>
         <version>3.4.0</version>
-        <scope>runtime</scope>
   	</dependency>
   	<dependency>
   		<groupId>httpunit</groupId>
