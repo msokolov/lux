@@ -37,6 +37,8 @@ public class QueryStats {
      * time spent retrieving and parsing documents
      */
     public long retrievalTime;
+
+    public String optimizedQuery;
     
     public String toString () {
         return String.format("%s: %dms %d docs, %dms docread", 

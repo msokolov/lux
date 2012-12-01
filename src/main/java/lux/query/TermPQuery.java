@@ -65,9 +65,12 @@ public class TermPQuery extends ParseableQuery {
         
         StringBuilder buf = new StringBuilder ();
 
-        if (!StringUtils.isBlank(term.field()) && !term.field().equals(field)) {
-            buf.append(term.field()).append(':');
+        if (StringUtils.isBlank(term.field())) {
+            buf.append(field);
+        } else {
+            buf.append(term.field());
         }
+        buf.append (':');
         
         buf.append (LuxQueryParser.escapeQParser(term.text()));
         

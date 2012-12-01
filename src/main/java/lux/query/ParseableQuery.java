@@ -3,7 +3,6 @@ package lux.query;
 import lux.index.IndexConfiguration;
 import lux.xquery.ElementConstructor;
 
-
 /**
  * ParseableQueries represent Lucene Queries in an abstract form that can be rendered as an XML tree
  * for later parsing. This is used by Lux to embed generated queries within an XQuery expression.
@@ -21,5 +20,9 @@ public abstract class ParseableQuery {
      * @return a String representation of the query, in the Surround Query Parser dialect
      */
     public abstract String toQueryString(String field, IndexConfiguration config);
+    
+    public String toString () {
+        return toQueryString ("", IndexConfiguration.DEFAULT);
+    }
 
 }

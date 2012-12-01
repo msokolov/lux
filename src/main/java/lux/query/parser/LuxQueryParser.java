@@ -3,7 +3,12 @@ package lux.query.parser;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
+import org.apache.lucene.queryParser.ext.Extensions;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
@@ -12,11 +17,6 @@ import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
-import org.apache.lucene.queryParser.ext.Extensions;
 import org.apache.lucene.util.Version;
 
 /**
@@ -74,19 +74,42 @@ public class LuxQueryParser extends ExtendableQueryParser {
     @Override
     public Query parse (String queryString) throws ParseException {
         Query q = super.parse(queryString);        
-        if (q instanceof BooleanQuery) {
-            Query q1 = ((BooleanQuery) q).getClauses()[0].getQuery();
-            if (q1 instanceof TermQuery) {
-                Term term = ((TermQuery) q1).getTerm();
-                if (term.field().equals("lux_within") || term.field().equals("lux_near")) {
-                    return convertSpans (q);                    
-                }
-            }
-        }
-        return q;
+        return maybeConvert (q);
     }
 
-    private SpanQuery convertSpans(Query q) {
+    private Query maybeConvert (Query q) {
+        if (! (q instanceof BooleanQuery)) {
+            return q;
+        }
+        BooleanQuery bq = (BooleanQuery) q;
+        Query q1 = bq.getClauses()[0].getQuery();
+        if (q1 instanceof TermQuery) {
+            Term term = ((TermQuery) q1).getTerm();
+            if (term.field().equals("lux_within") || term.field().equals("lux_near")) {
+                return toSpanQuery (bq);
+            }
+        }
+        // else (we didn't convert this query, but maybe some nested queries is marked as a span) :)
+        convertNestedSpans (bq);
+        return bq;
+    }
+
+    private void convertNestedSpans (BooleanQuery bq) {
+        for (BooleanClause clause : bq.clauses()) {
+            Query q = clause.getQuery();
+            Query converted = maybeConvert (q);
+            if (converted != q) {
+                clause.setQuery (converted);
+            }
+        }
+    }
+
+    /**
+       Converts BooleanQuery to SpanNearQuery, SpanOrQuery.
+       Converts TermQuery to SpanTermQuery.
+       It is an error to pass other Queries to this method.
+    */
+    private SpanQuery toSpanQuery(Query q) {
         if (q instanceof BooleanQuery) {
             BooleanQuery bq = (BooleanQuery) q;
             BooleanClause[] booleanClauses = bq.getClauses();
@@ -111,7 +134,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
                 }
                 else {
                     inOrder = true;
-                    slop = 1;
+                    slop = 0;
                     start = 0;
                 }
                 SpanQuery [] clauses = convertClauses (booleanClauses, start);
@@ -134,7 +157,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
         SpanQuery[] spans = new SpanQuery[clauses.length - start];
         for (int i = start; i < clauses.length; i++) {
             Query subquery = clauses[i].getQuery();
-            spans[i - start] = (SpanQuery) convertSpans (subquery);
+            spans[i - start] = (SpanQuery) toSpanQuery(subquery);
         }
         return spans;
     }

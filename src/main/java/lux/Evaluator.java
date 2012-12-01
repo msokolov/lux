@@ -32,6 +32,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class holds all the per-request state required for evaluating queries.
@@ -70,7 +71,7 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
      * rely on documents stored in Lucene.
      */
     public Evaluator () {
-        this (new XCompiler(new IndexConfiguration()), null, null);
+        this (new XCompiler(IndexConfiguration.DEFAULT), null, null);
     }
     
     public Evaluator (Dialect dialect) {
@@ -104,7 +105,9 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
     }
 
     public XdmResultSet evaluate(String query) {
-        return evaluate (compiler.compile(query), null);
+        XQueryExecutable compiledQuery = compiler.compile(query);
+        queryStats.optimizedQuery = compiler.getLastOptimized().toString();
+        return evaluate (compiledQuery, null);
     }
     
     public XdmResultSet evaluate(XQueryExecutable exec) {
@@ -171,6 +174,8 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
             } catch (ParseException e) {
                 throw new XPathException ("Failed to parse query: " + query, e);
             }
+            LoggerFactory.getLogger(getClass()).debug("executing query: {}", query);
+
             return new LuxSearch().iterate(q, this, 0);
         }
         return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);

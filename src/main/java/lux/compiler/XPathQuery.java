@@ -9,7 +9,6 @@ import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
 import lux.query.MatchAllPQuery;
 import lux.query.ParseableQuery;
-import lux.query.SpanBooleanPQuery;
 import lux.query.SpanMatchAll;
 import lux.query.SpanNearPQuery;
 import lux.xml.ValueType;
@@ -251,7 +250,7 @@ public class XPathQuery {
             return new SpanNearPQuery(distance, true, a, b);
         }
         // distance = -1
-        return new SpanBooleanPQuery (occur, a, b);
+        return new BooleanPQuery (occur, a, b);
     }
     
     private static final long combineFacts (long facts2, long facts3) {

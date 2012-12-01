@@ -40,7 +40,7 @@ public class LuxParserTest {
     
     @Before
     public void setup () {
-        indexConfig = new IndexConfiguration();
+        indexConfig = IndexConfiguration.DEFAULT;
         parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
     }
     
@@ -85,10 +85,10 @@ public class LuxParserTest {
     @Test 
     public void testUnparseTermQuery () throws Exception {
         // full text query
-        assertUnparseQuery ("term", makeTermPQuery("term"));
+        assertUnparseQuery ("lux_text:term", makeTermPQuery("term"));
         assertUnparseQuery ("field:term", makeTermPQuery("field", "term"));
 
-        assertUnparseQuery ("term^2.0", makeTermPQuery(LUX_TEXT, "term", 2));
+        assertUnparseQuery ("lux_text:term^2.0", makeTermPQuery(LUX_TEXT, "term", 2));
         assertUnparseQuery ("field:term^3.5", makeTermPQuery("field", "term", 3.5f));
         
         assertUnparseQuery ("<:term", new QNameTextQuery(new Term(LUX_TEXT, "term")));
@@ -129,11 +129,11 @@ public class LuxParserTest {
 
     @Test
     public void testUnparseBooleanQuery () throws Exception {
-        assertUnparseQuery ("+big +dog", 
+        assertUnparseQuery ("+lux_text:big +lux_text:dog", 
                             new BooleanPQuery (Occur.MUST, makeTermPQuery("big"), makeTermPQuery("dog")));
-        assertUnparseQuery ("big dog", 
+        assertUnparseQuery ("lux_text:big lux_text:dog", 
                             new BooleanPQuery (Occur.SHOULD, makeTermPQuery("big"), makeTermPQuery("dog")));
-        assertUnparseQuery ("+(big small) +dog", 
+        assertUnparseQuery ("+(lux_text:big lux_text:small) +lux_text:dog", 
                 new BooleanPQuery (Occur.MUST, new BooleanPQuery (Occur.SHOULD, makeTermPQuery("big"), makeTermPQuery("small")), 
                             makeTermPQuery("dog")));
     }
@@ -143,10 +143,9 @@ public class LuxParserTest {
         assertParseQuery (new MatchAllDocsQuery(), "*:*");
         assertUnparseQuery("*:*", new MatchAllPQuery());
     }
-    
 
     @Test
-    public void testParseLuxQueryPhrase () throws Exception {
+    public void testParsePhrase () throws Exception {
         // standard Lucene field term
         assertParseQuery (makePhraseQuery (LUX_TEXT, "big", "dog"), "\"big dog\"");
         assertParseQuery (makePhraseQuery ("field", "big", "dog"), "field:\"big dog\"");
@@ -165,8 +164,13 @@ public class LuxParserTest {
     
         // attribute text query
         assertParseQuery (makePhraseQuery(LUX_ATT_TEXT, "attribute:big", "attribute:dog"), "<@attribute:\"big dog\"");
-        assertParseQuery (makePhraseQuery(LUX_ATT_TEXT, "attribute:big", "attribute:dog"), "node<@attribute:\"big dog\"");        
-
+        assertParseQuery (makePhraseQuery(LUX_ATT_TEXT, "attribute:big", "attribute:dog"), "node<@attribute:\"big dog\"");
+    }
+    
+    @Test
+    public void testUnparsePhrase () throws Exception {
+        assertUnparseQuery ("<:\"big dog\"", new QNameTextQuery(new Term(LUX_TEXT, "big dog")));
+        assertUnparseQuery ("<element:\"big dog\"", new QNameTextQuery(new Term(LUX_ELT_TEXT, "big dog"), "element"));
     }
     
     @Test
@@ -206,14 +210,22 @@ public class LuxParserTest {
 
     @Test 
     public void testUnparseSpanQuery () throws Exception {
-        assertUnparseQuery ("(+lux_near:1 big dog)", makeSpanNearPQuery (LUX_TEXT, 1, false, "big", "dog"));
-        assertUnparseQuery ("(+lux_near:2 big dog)", makeSpanNearPQuery (LUX_TEXT, 2, false, "big", "dog"));
-        assertUnparseQuery ("(+lux_within:1 big dog)", makeSpanNearPQuery (LUX_TEXT, 1, true, "big", "dog"));
-        assertUnparseQuery ("(+lux_within:2 big dog)", makeSpanNearPQuery (LUX_TEXT, 2, true, "big", "dog"));
+        assertUnparseQuery ("(+lux_near:1 lux_text:big lux_text:dog)", makeSpanNearPQuery (LUX_TEXT, 1, false, "big", "dog"));
+        assertUnparseQuery ("(+lux_near:2 lux_text:big lux_text:dog)", makeSpanNearPQuery (LUX_TEXT, 2, false, "big", "dog"));
+        assertUnparseQuery ("(+lux_within:1 lux_text:big lux_text:dog)", makeSpanNearPQuery (LUX_TEXT, 1, true, "big", "dog"));
+        assertUnparseQuery ("(+lux_within:2 lux_text:big lux_text:dog)", makeSpanNearPQuery (LUX_TEXT, 2, true, "big", "dog"));
         assertUnparseQuery ("(+lux_near:1)", makeSpanNearPQuery (LUX_TEXT, 1, false));
 
-        assertUnparseQuery ("(lux_within:1 big dog)", makeSpanOrPQuery (LUX_TEXT, "big", "dog"));
-        assertUnparseQuery ("(lux_within:1)", makeSpanOrPQuery (LUX_TEXT));
+        assertUnparseQuery ("(lux_within:0 lux_text:big lux_text:dog)", makeSpanOrPQuery (LUX_TEXT, "big", "dog"));
+        assertUnparseQuery ("(lux_within:0)", makeSpanOrPQuery (LUX_TEXT));
+    }
+    
+    @Test
+    public void testParseSpanAndBoolean () throws Exception {
+        // test two spans in a boolean
+        assertParseQuery (makeBooleanQuery(Occur.MUST, makeSpanNearQuery(LUX_PATH, 0, false, "a", "b"), makeSpanNearQuery(LUX_TEXT, 0, false, "cat", "dog")),
+                "+(+lux_near:0 lux_path:a lux_path:b) +(+lux_near:0 lux_text:cat lux_text:dog)");
+        // test booleans in a span - should throw a parse error
     }
 
     // query construction helpers:

@@ -1,6 +1,7 @@
 package lux.query;
 
 import lux.index.IndexConfiguration;
+import lux.query.parser.LuxQueryParser;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
@@ -72,17 +73,18 @@ public class QNameTextQuery extends ParseableQuery {
     public String toQueryString (String field, IndexConfiguration config) {
         StringBuilder buf = new StringBuilder ();
         String tf = term.field();
+        String text = LuxQueryParser.escapeQParser(term.text());
         if (StringUtils.isBlank(qName)) {
-            buf.append ('<').append(':').append(term.text());
+            buf.append ('<').append(':').append(text);
         }
         else if (tf.equals(config.getFieldName(IndexConfiguration.ELEMENT_TEXT))) {
-            buf.append ('<').append(qName).append(':').append(term.text());
+            buf.append ('<').append(qName).append(':').append(text);
         }
         else if (tf.equals(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT))) {
-            buf.append ("<@").append(qName).append(':').append(term.text());
+            buf.append ("<@").append(qName).append(':').append(text);
         }
         else {
-            throw new IllegalStateException ("QNameTextQuery has qName with unknown field: " + tf);
+            throw new IllegalStateException ("QNameTextQuery has qName with non-node field: " + tf);
         }
         if (boost != 1.0f) {
             buf.append('^').append(boost);

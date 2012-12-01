@@ -33,7 +33,7 @@ import org.junit.Test;
 public class SearchTest {
     
     private static final int MIL = 1000000;
-    private static IndexTestSupport index;
+    protected static IndexTestSupport index;
     private static int totalDocs;
     
     @BeforeClass
@@ -466,6 +466,7 @@ public class SearchTest {
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));
+        System.out.println ("optimized query=" + stats.optimizedQuery);
         System.out.println (String.format("cache hits=%d, misses=%d", 
                 eval.getDocReader().getCacheHits(), eval.getDocReader().getCacheMisses()));
         if (props != null) {

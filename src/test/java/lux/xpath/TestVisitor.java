@@ -11,7 +11,7 @@ import org.junit.Test;
 public class TestVisitor {
 
     @Test public void testVisit () {
-        PathOptimizer opt = new PathOptimizer (new IndexConfiguration());
+        PathOptimizer opt = new PathOptimizer (IndexConfiguration.DEFAULT);
         PathExpression expr = new PathExpression (
                 new Root(),
                 new Predicate(

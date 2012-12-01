@@ -49,6 +49,8 @@ public class IndexConfiguration {
     private static final FieldDefinition PATH_VALUE = PathValueField.getInstance();
     private static final FieldDefinition XML_STORE = DocumentField.getInstance();
     private static final FieldDefinition QNAME_VALUE = QNameValueField.getInstance();
+
+    public static final IndexConfiguration DEFAULT = new IndexConfiguration();
     
     private long options;
     
@@ -59,8 +61,15 @@ public class IndexConfiguration {
     public MultiFieldAnalyzer getFieldAnalyzers() {
         return fieldAnalyzers;
     }
+    
+    public static IndexConfiguration makeIndexConfiguration (long options) {
+        if (options == DEFAULT_OPTIONS) {
+            return DEFAULT;
+        }
+        return new IndexConfiguration(options);
+    }
 
-    public IndexConfiguration (long options) {
+    protected IndexConfiguration (long options) {
         fields = new ArrayList<FieldDefinition>();
         fieldNames = new HashMap<FieldDefinition, String>();
         fieldAnalyzers = new MultiFieldAnalyzer();
@@ -71,7 +80,7 @@ public class IndexConfiguration {
         init();
     }
     
-    public IndexConfiguration () {
+    protected IndexConfiguration () {
         this (DEFAULT_OPTIONS);
     }
     

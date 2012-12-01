@@ -47,7 +47,7 @@ public class LuxUpdateProcessorFactory extends UpdateRequestProcessorFactory imp
     }
 
     public static IndexConfiguration makeIndexConfiguration (final int options, @SuppressWarnings("rawtypes") final NamedList args) {
-        IndexConfiguration config = new IndexConfiguration (options);
+        IndexConfiguration config = IndexConfiguration.makeIndexConfiguration (options);
         if (args != null) {
             SolrParams params = SolrParams.toSolrParams(args);
             // accept override from configuration so we can piggyback on existing 

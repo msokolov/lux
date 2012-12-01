@@ -67,6 +67,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     private final String attrQNameField;
     private final String elementQNameField;
+    private boolean generateCollectionSearch;
     
     public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
@@ -75,6 +76,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         this.indexConfig = indexConfig;
         attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
         elementQNameField = indexConfig.getFieldName(FieldName.ELT_QNAME);
+        setGenerateCollectionSearch(false);
     }    
 
     /**
@@ -689,9 +691,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = queryStack.get(j);
         queryStack.set (j, MATCH_ALL);
         facts |= query.getFacts();
-        return createSearchCall(FunCall.LUX_SEARCH, query, facts);
-        // TODO: convert to collection-based search
-        // return createCollectionSearch(query);
+        if (generateCollectionSearch) {
+            return createCollectionSearch(query);
+        } else {
+            return createSearchCall(FunCall.LUX_SEARCH, query, facts);
+        } 
     }
     
     private FunCall createCollectionSearch(XPathQuery query) {
@@ -737,6 +741,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
             clause.setSequence(optimizeExpression(seq, 0, 0));
         }
         return flwor;
+    }
+
+    /**
+     * @return whether to use string queries: collection("lux-search:query") 
+     * or (if false) xml queries: lux:search(<query/>)
+     */
+    public boolean isGenerateCollectionSearch() {
+        return generateCollectionSearch;
+    }
+
+    public void setGenerateCollectionSearch(boolean generateCollectionSearch) {
+        this.generateCollectionSearch = generateCollectionSearch;
     }
 
 }

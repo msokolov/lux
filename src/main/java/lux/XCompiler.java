@@ -50,7 +50,11 @@ public class XCompiler {
     private XQueryCompiler xqueryCompiler;
     private XPathCompiler xpathCompiler;
     private XsltCompiler xsltCompiler;
-    private boolean enableLuxOptimization;
+    
+    public enum SearchStrategy {
+        NONE, LUX_SEARCH, COLLECTION
+    }
+    private SearchStrategy searchStrategy;
     // TODO: once we get a handle on an IndexWriter
     // keep track of the number of writes so we can reopen readers that are out of sync
     // private final AtomicInteger indexGeneration;
@@ -68,7 +72,6 @@ public class XCompiler {
         dialect = Dialect.XQUERY_1;
         this.indexConfig = indexConfig;
         // indexGeneration = new AtomicInteger(0);
-        enableLuxOptimization = indexConfig != null && indexConfig.isIndexingEnabled();
         
         this.processor = processor;
         Configuration config = processor.getUnderlyingConfiguration();
@@ -77,6 +80,13 @@ public class XCompiler {
         config.getParseOptions().setEntityResolver(new EmptyEntityResolver());
         isSaxonLicensed = config.isLicensedFeature(LicenseFeature.PROFESSIONAL_EDITION)
                 || config.isLicensedFeature(LicenseFeature.ENTERPRISE_XQUERY);
+        if (indexConfig == null || !indexConfig.isIndexingEnabled()) {
+            searchStrategy = SearchStrategy.NONE;
+        } else if (isSaxonLicensed) {
+            searchStrategy = SearchStrategy.COLLECTION;
+        } else {
+            searchStrategy = SearchStrategy.LUX_SEARCH;
+        }
         defaultCollectionURIResolver = config.getCollectionURIResolver();
         registerExtensionFunctions(processor);
         if (indexConfig != null && indexConfig.isIndexingEnabled()) {
@@ -152,15 +162,14 @@ public class XCompiler {
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
-        if (! isEnableLuxOptimization()) {
+        if (searchStrategy == SearchStrategy.NONE) {
             return xquery;
         }
         SaxonTranslator translator = makeTranslator();
         XQuery abstractQuery = translator.queryFor (xquery);
         PathOptimizer optimizer = new PathOptimizer(indexConfig);
-
+        optimizer.setGenerateCollectionSearch(searchStrategy == SearchStrategy.COLLECTION);
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
-        lastOptimized = optimizedQuery;
         try {
             xquery = getXQueryCompiler().compile(optimizedQuery.toString());
         } catch (SaxonApiException e) {
@@ -233,12 +242,12 @@ public class XCompiler {
         return uriFieldName;
     }
 
-    public boolean isEnableLuxOptimization() {
-        return enableLuxOptimization;
+    public SearchStrategy getSearchStrategy() {
+        return searchStrategy;
     }
 
-    public void setEnableLuxOptimization(boolean enableLuxOptimization) {
-        this.enableLuxOptimization = enableLuxOptimization;
+    public void setSearchStrategy(SearchStrategy searchStrategy) {
+        this.searchStrategy = searchStrategy;
     }
 
     public TransformErrorListener getErrorListener() {
