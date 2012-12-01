@@ -21,9 +21,5 @@ public abstract class ParseableQuery {
      * @return a String representation of the query, in the Surround Query Parser dialect
      */
     public abstract String toQueryString(String field, IndexConfiguration config);
-    
-    protected String quoteString (String s) {
-        return '"' + s.replaceAll("([\\\"\\\\])", "\\$1") + '"';
-    }
 
 }

@@ -25,17 +25,9 @@ public class SpanBooleanPQuery extends BooleanPQuery {
             return super.toXmlNode(field);
         }        
         Clause [] clauses = getClauses();
-        if (clauses.length == 1) {
-            // TODO: handle Occur.MUST_NOT
-            if (getOccur().equals(Occur.MUST_NOT)) {
-                throw new UnsupportedOperationException("SurroundBoolean doesn't support MUST_NOT");
-            }
-            return new ElementConstructor (SPAN_OR_QNAME, clauses[0].getQuery().toXmlNode(field));
-        }
         AbstractExpression[] clauseExprs = new AbstractExpression[clauses.length];
-        int i = 0;
-        for (Clause q : clauses) {
-            clauseExprs [i++] = q.getQuery().toXmlNode(field);
+        for (int i = 0; i < clauses.length; i++) {
+            clauseExprs [i] = clauses[i].getQuery().toXmlNode(field);
         }
         return new ElementConstructor (SPAN_OR_QNAME, new Sequence(clauseExprs));
     }

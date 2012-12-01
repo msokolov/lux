@@ -72,7 +72,7 @@ public class TermPQuery extends ParseableQuery {
         buf.append (LuxQueryParser.escapeQParser(term.text()));
         
         if (boost != 1.0f) {
-            buf.append('^').append(boost);
+            buf.append('^').append(Float.toString(boost));
         }
         
         return buf.toString();

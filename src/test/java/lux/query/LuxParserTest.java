@@ -54,34 +54,42 @@ public class LuxParserTest {
     }
 
     @Test
-    public void testParseLuxQuery () throws Exception {
+    public void testParseTermQuery () throws Exception {
         
         // standard Lucene field term
-        assertParseQuery (new TermQuery(new Term(LUX_TEXT, "term")), "term");
-        assertParseQuery (new TermQuery(new Term("field", "term")), "field:term");
+        assertParseQuery (makeTermQuery(LUX_TEXT, "term"), "term");
+        assertParseQuery (makeTermQuery("field", "term"), "field:term");
+
+        assertParseQuery (makeTermQuery(LUX_TEXT, "term", 2), "term^2");
+        assertParseQuery (makeTermQuery("field", "term", 3), "field:term^3");
 
         // full text query
-        assertParseQuery (new TermQuery(new Term(LUX_TEXT, "term")), "<:term");
-        assertParseQuery (new TermQuery(new Term(LUX_TEXT, "term")), "node<:term");
+        assertParseQuery (makeTermQuery(LUX_TEXT, "term"), "<:term");
+        assertParseQuery (makeTermQuery(LUX_TEXT, "term"), "node<:term");
 
         // element text query
-        assertParseQuery (new TermQuery(new Term(LUX_ELT_TEXT, "element:term")), "<element:term");
-        assertParseQuery (new TermQuery(new Term(LUX_ELT_TEXT, "element:term")), "node<element:term");
+        assertParseQuery (makeTermQuery(LUX_ELT_TEXT, "element:term"), "<element:term");
+        assertParseQuery (makeTermQuery(LUX_ELT_TEXT, "element:term"), "node<element:term");
+        assertParseQuery (makeTermQuery(LUX_ELT_TEXT, "element:term", 2), "<element:term^2");
+        assertParseQuery (makeTermQuery(LUX_ELT_TEXT, "element:term", 3.5f), "node<element:term^3.5");
 
         // TODO: namespaces
-        // assertQuery (new TermQuery(new Term("lux_node", ":element{nsuri}\\:term")), ":ns:element:term");
-        // assertQuery (new TermQuery(new Term("lux_node", "element{nsuri}\\:term")), "node:ns:element:term");
+        // assertQuery (makeTermQuery("lux_node", ":element{nsuri}\\:term"), ":ns:element:term");
+        // assertQuery (makeTermQuery("lux_node", "element{nsuri}\\:term"), "node:ns:element:term");
     
         // attribute text query
-        assertParseQuery (new TermQuery(new Term(LUX_ATT_TEXT, "attribute:term")), "<@attribute:term");
-        assertParseQuery (new TermQuery(new Term(LUX_ATT_TEXT, "attribute:term")), "node<@attribute:term");
+        assertParseQuery (makeTermQuery(LUX_ATT_TEXT, "attribute:term"), "<@attribute:term");
+        assertParseQuery (makeTermQuery(LUX_ATT_TEXT, "attribute:term"), "node<@attribute:term");
     }
     
     @Test 
-    public void testUnparseQuery () throws Exception {
+    public void testUnparseTermQuery () throws Exception {
         // full text query
         assertUnparseQuery ("term", makeTermPQuery("term"));
         assertUnparseQuery ("field:term", makeTermPQuery("field", "term"));
+
+        assertUnparseQuery ("term^2.0", makeTermPQuery(LUX_TEXT, "term", 2));
+        assertUnparseQuery ("field:term^3.5", makeTermPQuery("field", "term", 3.5f));
         
         assertUnparseQuery ("<:term", new QNameTextQuery(new Term(LUX_TEXT, "term")));
         // field name is simply ignored when no QName is present:
@@ -125,6 +133,9 @@ public class LuxParserTest {
                             new BooleanPQuery (Occur.MUST, makeTermPQuery("big"), makeTermPQuery("dog")));
         assertUnparseQuery ("big dog", 
                             new BooleanPQuery (Occur.SHOULD, makeTermPQuery("big"), makeTermPQuery("dog")));
+        assertUnparseQuery ("+(big small) +dog", 
+                new BooleanPQuery (Occur.MUST, new BooleanPQuery (Occur.SHOULD, makeTermPQuery("big"), makeTermPQuery("small")), 
+                            makeTermPQuery("dog")));
     }
     
     @Test
@@ -177,11 +188,16 @@ public class LuxParserTest {
     
     @Test 
     public void testParseSpanQuery () throws Exception {
+        // The parser doesn't generate a degenerate BooleanQuery...
+        // assertParseQuery (makeSpanOrQuery (LUX_TEXT), "(lux_near:1)");
+        assertParseQuery (makeSpanTermQuery (LUX_TEXT, "big"), "(lux_near:1 big)");
         assertParseQuery (makeSpanOrQuery (LUX_TEXT, "big", "dog"), "(lux_near:1 big dog)");
         assertParseQuery (makeSpanOrQuery (LUX_TEXT, "big", "dog"), "(lux_near:2 big dog)");
         assertParseQuery (makeSpanOrQuery (LUX_TEXT, "big", "dog"), "(lux_within:1 big dog)");
         assertParseQuery (makeSpanOrQuery (LUX_TEXT, "big", "dog"), "(lux_within:2 big dog)");
 
+        assertParseQuery (makeSpanNearQuery (LUX_TEXT, 1, false), "(+lux_near:1)");
+        assertParseQuery (makeSpanTermQuery (LUX_TEXT, "big"), "(+lux_near:1 big)");
         assertParseQuery (makeSpanNearQuery (LUX_TEXT, 1, false, "big", "dog"), "(+lux_near:1 big dog)");
         assertParseQuery (makeSpanNearQuery (LUX_TEXT, 2, false, "big", "dog"), "(+lux_near:2 big dog)");
         assertParseQuery (makeSpanNearQuery (LUX_TEXT, 1, true, "big", "dog"), "(+lux_within:1 big dog)");
@@ -194,8 +210,10 @@ public class LuxParserTest {
         assertUnparseQuery ("(+lux_near:2 big dog)", makeSpanNearPQuery (LUX_TEXT, 2, false, "big", "dog"));
         assertUnparseQuery ("(+lux_within:1 big dog)", makeSpanNearPQuery (LUX_TEXT, 1, true, "big", "dog"));
         assertUnparseQuery ("(+lux_within:2 big dog)", makeSpanNearPQuery (LUX_TEXT, 2, true, "big", "dog"));
+        assertUnparseQuery ("(+lux_near:1)", makeSpanNearPQuery (LUX_TEXT, 1, false));
 
         assertUnparseQuery ("(lux_within:1 big dog)", makeSpanOrPQuery (LUX_TEXT, "big", "dog"));
+        assertUnparseQuery ("(lux_within:1)", makeSpanOrPQuery (LUX_TEXT));
     }
 
     // query construction helpers:
@@ -207,6 +225,12 @@ public class LuxParserTest {
     private TermQuery makeTermQuery (String field, String text) {
         return new TermQuery (new Term (field, text));
     }
+
+    private Query makeTermQuery(String field, String term, float boost) {
+        TermQuery q = makeTermQuery (field, term);
+        q.setBoost(boost);
+        return q;
+    }
     
     private TermPQuery makeTermPQuery (String text) {
         return makeTermPQuery (LUX_TEXT, text);
@@ -214,6 +238,11 @@ public class LuxParserTest {
 
     private TermPQuery makeTermPQuery (String field, String text) {
         return new TermPQuery (new Term (field, text));
+    }
+
+    private TermPQuery makeTermPQuery (String field, String text, float boost) {
+        TermPQuery q = new TermPQuery (new Term (field, text), boost);
+        return q;
     }
 
     private SpanTermQuery makeSpanTermQuery (String field, String text) {
