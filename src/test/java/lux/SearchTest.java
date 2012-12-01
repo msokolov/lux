@@ -462,7 +462,6 @@ public class SearchTest {
     protected XdmResultSet assertSearch(String query, Integer props, Integer docCount, Integer cacheMisses) throws LuxException, CorruptIndexException, LockObtainFailedException, IOException {
         Evaluator eval = index.makeEvaluator();
         XQueryExecutable expr = eval.getCompiler().compile(query);
-        System.out.println (expr);
         XdmResultSet results = (XdmResultSet) eval.evaluate(expr);
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 

@@ -19,9 +19,8 @@ public final class MatchAllPQuery extends ParseableQuery {
     }
 
     @Override
-    public String toSurroundString(String field, IndexConfiguration config) {
-        // TODO Auto-generated method stub
-        return null;
+    public String toQueryString(String field, IndexConfiguration config) {
+        return "*:*";
     }
 
 }

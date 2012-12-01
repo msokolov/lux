@@ -14,14 +14,14 @@ import lux.xquery.ElementConstructor;
  * 
  * TODO: determine how much efficiency is lost by using a SpanTerm query rather than a real MatchAllDocsQuery.
  */
-public class SurroundMatchAll extends ParseableQuery {
+public class SpanMatchAll extends ParseableQuery {
 
     private static final ElementConstructor INSTANCE_ELEMENT_CONSTRUCTOR = 
             new ElementConstructor (new QName("SpanTerm"), new LiteralExpression("{}"), 
                     new AttributeConstructor(new LiteralExpression ("fieldName"), new LiteralExpression ("lux_path")));
-    private static final SurroundMatchAll INSTANCE = new SurroundMatchAll();
+    private static final SpanMatchAll INSTANCE = new SpanMatchAll();
     
-    public static final SurroundMatchAll getInstance () {
+    public static final SpanMatchAll getInstance () {
         return INSTANCE;
     }    
 
@@ -31,8 +31,8 @@ public class SurroundMatchAll extends ParseableQuery {
     }
 
     @Override
-    public String toSurroundString(String defaultField, IndexConfiguration config) {
-        return config.getFieldName(IndexConfiguration.PATH) + ":{}";
+    public String toQueryString(String defaultField, IndexConfiguration config) {
+        return config.getFieldName(IndexConfiguration.PATH) + ":\\{\\}";
     }
 
 }

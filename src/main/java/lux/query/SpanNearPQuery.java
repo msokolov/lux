@@ -13,7 +13,7 @@ import lux.xquery.ElementConstructor;
 /**
  * Model a SpanNearQuery
  */
-public class SurroundSpanQuery extends ParseableQuery {
+public class SpanNearPQuery extends ParseableQuery {
     
     private static final LiteralExpression SLOP_ATT_NAME = new LiteralExpression("slop");
     private static final QName SPAN_NEAR_QNAME = new QName("SpanNear");
@@ -22,7 +22,7 @@ public class SurroundSpanQuery extends ParseableQuery {
     private int slop;
     private boolean inOrder;
 
-    public SurroundSpanQuery(int slop, boolean inOrder, ParseableQuery ... clauses) {
+    public SpanNearPQuery(int slop, boolean inOrder, ParseableQuery ... clauses) {
         if (slop == 0 && inOrder) {
             this.clauses = mergeSubClauses(clauses);
         } else {
@@ -36,8 +36,8 @@ public class SurroundSpanQuery extends ParseableQuery {
     private ParseableQuery[] mergeSubClauses(ParseableQuery [] clauses) {
         ArrayList<ParseableQuery> subclauses = new ArrayList<ParseableQuery>();
         for (ParseableQuery clause : clauses) {
-            if (clause instanceof SurroundSpanQuery) {
-                SurroundSpanQuery subquery = (SurroundSpanQuery) clause;
+            if (clause instanceof SpanNearPQuery) {
+                SpanNearPQuery subquery = (SpanNearPQuery) clause;
                 if (subquery.slop == 0 && subquery.inOrder) {
                     for (ParseableQuery subclause : subquery.clauses) {
                         subclauses.add(subclause);
@@ -70,9 +70,15 @@ public class SurroundSpanQuery extends ParseableQuery {
     }
 
     @Override
-    public String toSurroundString(String field, IndexConfiguration config) {
-        // TODO Auto-generated method stub
-        return null;
+    public String toQueryString(String field, IndexConfiguration config) {
+        String markerName = inOrder ? "lux_within:" : "lux_near:";
+        StringBuilder buf = new StringBuilder();
+        buf.append("(+").append(markerName).append(slop);
+        for (ParseableQuery clause : clauses) {
+            buf.append(' ').append (clause.toQueryString(field, config));
+        }
+        buf.append(')');
+        return buf.toString();
     }
 
 }

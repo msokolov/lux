@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import lux.index.analysis.DefaultAnalyzer;
 import lux.index.field.AttributeQNameField;
 import lux.index.field.AttributeTextField;
 import lux.index.field.DocumentField;
@@ -63,6 +64,8 @@ public class IndexConfiguration {
         fields = new ArrayList<FieldDefinition>();
         fieldNames = new HashMap<FieldDefinition, String>();
         fieldAnalyzers = new MultiFieldAnalyzer();
+        // TODO: configuration?  Inherit from XML_TEXT?
+        fieldAnalyzers.put(null, new DefaultAnalyzer());
         addField (URI);
         this.options = options;
         init();

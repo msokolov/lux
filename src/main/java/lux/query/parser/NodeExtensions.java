@@ -7,7 +7,7 @@ class NodeExtensions extends Extensions {
     NodeExtensions (NodeParser parser) {
         super ('<'); // set extension field delimiter
         add ("node", parser);
-        add ("", parser);            
+        add ("", parser);
     }
 
     /**

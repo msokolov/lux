@@ -10,7 +10,7 @@ import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.query.ParseableQuery;
 import lux.query.QNameTextQuery;
-import lux.query.SurroundTerm;
+import lux.query.SpanTermPQuery;
 import lux.query.TermPQuery;
 import lux.xml.QName;
 import lux.xml.ValueType;
@@ -475,15 +475,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     private ParseableQuery nodeNameTermQuery(Axis axis, QName name) {
+        String nodeName = name.getEncodedName();
         if (indexConfig.isOption (INDEX_PATHS)) {
-            String nodeName = name.getEncodedName();
             if (axis == Axis.Attribute) {
                 nodeName = '@' + nodeName;
             }
             Term term = new Term (indexConfig.getFieldName(FieldName.PATH), nodeName);
-            return new SurroundTerm (term);
+            return new SpanTermPQuery (term);
         } else {
-            String nodeName = name.getEncodedName();
             String fieldName = (axis == Axis.Attribute) ? attrQNameField : elementQNameField;
             Term term = new Term (fieldName, nodeName);
             return new TermPQuery (term);
@@ -681,14 +680,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = queryStack.get(j);
         queryStack.set (j, MATCH_ALL);
         facts |= query.getFacts();
-        return createCollectionSearch(query);
+        return createSearchCall(FunCall.LUX_SEARCH, query, facts);
+        // TODO: convert to collection-based search
+        // return createCollectionSearch(query);
     }
     
     private FunCall createCollectionSearch(XPathQuery query) {
         String defaultField = indexConfig.isOption(INDEX_PATHS) ? 
                 indexConfig.getFieldName(FieldName.PATH) : indexConfig.getFieldName(FieldName.ELT_QNAME);
         return new FunCall (FunCall.FN_COLLECTION, query.getResultType(), 
-                new LiteralExpression ("lux:" + query.getParseableQuery().toSurroundString(defaultField, indexConfig)));
+                new LiteralExpression ("lux:" + query.getParseableQuery().toQueryString(defaultField, indexConfig)));
     }
 
     @Override

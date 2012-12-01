@@ -20,7 +20,7 @@ public abstract class ParseableQuery {
      * @param field the prevailing field in the query's surrounding context.
      * @return a String representation of the query, in the Surround Query Parser dialect
      */
-    public abstract String toSurroundString(String field, IndexConfiguration config);
+    public abstract String toQueryString(String field, IndexConfiguration config);
     
     protected String quoteString (String s) {
         return '"' + s.replaceAll("([\\\"\\\\])", "\\$1") + '"';

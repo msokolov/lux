@@ -9,9 +9,9 @@ import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
 import lux.query.MatchAllPQuery;
 import lux.query.ParseableQuery;
-import lux.query.SurroundBoolean;
-import lux.query.SurroundMatchAll;
-import lux.query.SurroundSpanQuery;
+import lux.query.SpanBooleanPQuery;
+import lux.query.SpanMatchAll;
+import lux.query.SpanNearPQuery;
 import lux.xml.ValueType;
 import net.sf.saxon.s9api.XQueryExecutable;
 
@@ -83,11 +83,11 @@ public class XPathQuery {
 
     private final static XPathQuery UNINDEXED = new XPathQuery(null, MatchAllPQuery.getInstance(), 0, ValueType.VALUE, true);
 
-    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
+    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SpanMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(null, SurroundMatchAll.getInstance(), MINIMAL, ValueType.NODE, true);
+    private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(null, SpanMatchAll.getInstance(), MINIMAL, ValueType.NODE, true);
 
-    private final static XPathQuery PATH_UNINDEXED = new XPathQuery(null, SurroundMatchAll.getInstance(), 0, ValueType.VALUE, true);
+    private final static XPathQuery PATH_UNINDEXED = new XPathQuery(null, SpanMatchAll.getInstance(), 0, ValueType.VALUE, true);
     
     /**
      * @param expr an XPath 2.0 expression
@@ -117,7 +117,7 @@ public class XPathQuery {
      */
     public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig) {
         if ((query instanceof MatchAllPQuery && resultFacts == MINIMAL) ||
-                query == SurroundMatchAll.getInstance()) {
+                query == SpanMatchAll.getInstance()) {
             if (valueType == ValueType.DOCUMENT) {
                 if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
                     return PATH_MATCH_ALL;
@@ -233,25 +233,25 @@ public class XPathQuery {
             if (occur != Occur.MUST) {
                 throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
             }
-            return new SurroundSpanQuery(distance, true, a, b);
+            return new SpanNearPQuery(distance, true, a, b);
         }
 
         // don't create a span query for //foo; a single term is enough
         // distance < 0 means no distance could be computed
-        if (a instanceof SurroundMatchAll && occur != Occur.MUST_NOT && (distance > 90 || distance < 0)) {
+        if (a instanceof SpanMatchAll && occur != Occur.MUST_NOT && (distance > 90 || distance < 0)) {
             return b;
         }
-        if (b instanceof SurroundMatchAll) {
+        if (b instanceof SpanMatchAll) {
             return a;
         }
         if (distance > 0) {
             if (occur != Occur.MUST) {
                 throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
             }
-            return new SurroundSpanQuery(distance, true, a, b);
+            return new SpanNearPQuery(distance, true, a, b);
         }
         // distance = -1
-        return new SurroundBoolean (occur, a, b);
+        return new SpanBooleanPQuery (occur, a, b);
     }
     
     private static final long combineFacts (long facts2, long facts3) {

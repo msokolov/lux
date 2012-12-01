@@ -1,7 +1,7 @@
 package lux.saxon;
 
 import lux.index.IndexConfiguration;
-import lux.query.SurroundMatchAll;
+import lux.query.SpanMatchAll;
 import lux.xml.QName;
 import lux.xpath.AbstractExpression;
 import lux.xpath.ExpressionVisitorBase;
@@ -27,7 +27,7 @@ public class UnOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(FunCall func) {
         if (func.getName().equals(luxSearchQName)) {
             if (indexConfig.isOption (IndexConfiguration.INDEX_PATHS)) {
-                func.getSubs()[0] = SurroundMatchAll.getInstance().toXmlNode("lux_path");
+                func.getSubs()[0] = SpanMatchAll.getInstance().toXmlNode("lux_path");
             } else {
                 func.getSubs()[0] = new LiteralExpression ("*:*");
             }

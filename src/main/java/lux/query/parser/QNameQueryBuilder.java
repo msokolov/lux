@@ -32,7 +32,7 @@ public class QNameQueryBuilder implements QueryBuilder {
         return parseQueryTerm(fieldName, qName, text, boost);
     }
 
-    public Query parseQueryTerm(String fieldName, String qName, String text, float boost) {
+    Query parseQueryTerm(String fieldName, String qName, String text, float boost) {
         StringBuilder termText = new StringBuilder();
         if (StringUtils.isNotEmpty(qName)) {
             termText.append(qName).append(':');

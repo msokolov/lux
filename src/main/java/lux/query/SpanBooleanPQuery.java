@@ -1,5 +1,6 @@
 package lux.query;
 
+import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xpath.AbstractExpression;
 import lux.xpath.Sequence;
@@ -8,14 +9,14 @@ import lux.xquery.ElementConstructor;
 import org.apache.lucene.search.BooleanClause.Occur;
 
 /**
- * simplified BooleanQuery model for the surround query parser
+ * simplified BooleanQuery model for use with Spans
  * - all clauses have the same occur value, which must be AND
  * or OR, not NOT.
  */
-public class SurroundBoolean extends BooleanPQuery {
+public class SpanBooleanPQuery extends BooleanPQuery {
     private static final QName SPAN_OR_QNAME = new QName("SpanOr");
 
-    public SurroundBoolean (Occur occur, ParseableQuery ... queries) {
+    public SpanBooleanPQuery (Occur occur, ParseableQuery ... queries) {
         super (occur, queries);
     }
     
@@ -37,6 +38,17 @@ public class SurroundBoolean extends BooleanPQuery {
             clauseExprs [i++] = q.getQuery().toXmlNode(field);
         }
         return new ElementConstructor (SPAN_OR_QNAME, new Sequence(clauseExprs));
+    }
+    
+    @Override
+    public String toQueryString(String field, IndexConfiguration config) {
+        StringBuilder buf = new StringBuilder();
+        buf.append("(lux_within:1");
+        for (Clause clause : getClauses()) {
+            buf.append(' ').append (clause.getQuery().toQueryString(field, config));
+        }
+        buf.append(')');
+        return buf.toString();
     }
 }
 

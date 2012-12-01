@@ -90,10 +90,31 @@ public class BooleanPQuery extends ParseableQuery {
         }
     }
 
+    // derived from BooleanQuery.toString()
     @Override
-    public String toSurroundString(String field, IndexConfiguration config) {
-        // TODO Auto-generated method stub
-        return null;
+    public String toQueryString(String field, IndexConfiguration config) {
+        StringBuilder buf = new StringBuilder();
+        for (int i = 0 ; i < clauses.length; i++) {
+          Clause c = clauses[i];
+          if (c.occur == Occur.MUST_NOT) {
+            buf.append("-");
+          }
+          else if (c.occur == Occur.MUST) {
+            buf.append("+");
+          }
+          ParseableQuery subq = c.getQuery();
+          if (subq != null) {
+            if (subq instanceof BooleanPQuery) {
+              buf.append('(').append(subq.toQueryString(field, config)).append(')');
+            } else {
+              buf.append(subq.toQueryString(field, config));
+            }
+          }
+          if (i < clauses.length-1) {
+            buf.append(' ');
+          }
+        }
+        return buf.toString();
     }
 
 }

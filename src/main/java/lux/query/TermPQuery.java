@@ -1,6 +1,7 @@
 package lux.query;
 
 import lux.index.IndexConfiguration;
+import lux.query.parser.LuxQueryParser;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
@@ -10,11 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
 
 /**
- * An analogue of TermQuery whose toString method produces an expression that can be parsed by
- * Lucene's standard query parser (and its surround query parser).
- * 
- * The Term enclosed by TermPQuery 
- *
+ * Parseable analogue of TermQuery.
  */
 public class TermPQuery extends ParseableQuery {
 
@@ -22,7 +19,7 @@ public class TermPQuery extends ParseableQuery {
 
     private static final LiteralExpression FIELD_ATTR_NAME = new LiteralExpression("fieldName");
 
-    private static final QName TERMS_QUERY_QNAME = new QName("TermsQuery");
+    private static final QName TERM_QUERY_QNAME = new QName("TermQuery");
 
     private final Term term;
     
@@ -47,7 +44,7 @@ public class TermPQuery extends ParseableQuery {
 
     @Override
     public ElementConstructor toXmlNode(String field) {
-        return toXmlNode(field, TERMS_QUERY_QNAME);
+        return toXmlNode(field, TERM_QUERY_QNAME);
     }
     
     protected ElementConstructor toXmlNode (String field, QName elementName) {
@@ -64,28 +61,20 @@ public class TermPQuery extends ParseableQuery {
     }
     
     @Override
-    public String toSurroundString (String field, IndexConfiguration config) {
+    public String toQueryString (String field, IndexConfiguration config) {
+        
         StringBuilder buf = new StringBuilder ();
-        if (StringUtils.isBlank(term.field()) || term.field().equals(field)) {
-            buf.append (term.text());
+
+        if (!StringUtils.isBlank(term.field()) && !term.field().equals(field)) {
+            buf.append(term.field()).append(':');
         }
-        else if (term.field().equals(config.getFieldName(IndexConfiguration.XML_TEXT))) {
-            buf.append ("<:").append(term.text());
-        }
-        else if (term.field().equals(config.getFieldName(IndexConfiguration.ELEMENT_TEXT))) {
-            String parts[] = term.text().split(":", 2);
-            buf.append ('<').append(parts[0]).append(':').append(parts[1]);
-        }
-        else if (term.field().equals(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT))) {
-            String parts[] = term.text().split(":", 2);
-            buf.append ("<@").append(parts[0]).append(':').append(parts[1]);
-        }
-        else {
-            buf.append(term.toString());
-        }
+        
+        buf.append (LuxQueryParser.escapeQParser(term.text()));
+        
         if (boost != 1.0f) {
             buf.append('^').append(boost);
         }
+        
         return buf.toString();
     }
 

@@ -6,6 +6,7 @@ import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.ElementConstructor;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
 
 /**
@@ -63,10 +64,30 @@ public class QNameTextQuery extends ParseableQuery {
                 (elementName, new LiteralExpression(term.text()), fieldAtt, qNameAtt, boostAtt);
     }
 
+    /**
+     * @throws IllegalStateException if a qName was provided, but the field is not one of the
+     * known QName-based fields (lux_elt_text or lux_att_text)
+     */
     @Override
-    public String toSurroundString(String field, IndexConfiguration config) {
-        // TODO Auto-generated method stub
-        return null;
+    public String toQueryString (String field, IndexConfiguration config) {
+        StringBuilder buf = new StringBuilder ();
+        String tf = term.field();
+        if (StringUtils.isBlank(qName)) {
+            buf.append ('<').append(':').append(term.text());
+        }
+        else if (tf.equals(config.getFieldName(IndexConfiguration.ELEMENT_TEXT))) {
+            buf.append ('<').append(qName).append(':').append(term.text());
+        }
+        else if (tf.equals(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT))) {
+            buf.append ("<@").append(qName).append(':').append(term.text());
+        }
+        else {
+            throw new IllegalStateException ("QNameTextQuery has qName with unknown field: " + tf);
+        }
+        if (boost != 1.0f) {
+            buf.append('^').append(boost);
+        }
+        return buf.toString();
     }
 
 }
