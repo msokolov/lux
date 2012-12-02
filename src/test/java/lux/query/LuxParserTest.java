@@ -230,42 +230,42 @@ public class LuxParserTest {
 
     // query construction helpers:
 
-    private TermQuery makeTermQuery (String text) {
+    public static TermQuery makeTermQuery (String text) {
         return makeTermQuery (LUX_TEXT, text);
     }
 
-    private TermQuery makeTermQuery (String field, String text) {
+    public static TermQuery makeTermQuery (String field, String text) {
         return new TermQuery (new Term (field, text));
     }
 
-    private Query makeTermQuery(String field, String term, float boost) {
+    public static Query makeTermQuery(String field, String term, float boost) {
         TermQuery q = makeTermQuery (field, term);
         q.setBoost(boost);
         return q;
     }
     
-    private TermPQuery makeTermPQuery (String text) {
+    public static TermPQuery makeTermPQuery (String text) {
         return makeTermPQuery (LUX_TEXT, text);
     }
 
-    private TermPQuery makeTermPQuery (String field, String text) {
+    public static TermPQuery makeTermPQuery (String field, String text) {
         return new TermPQuery (new Term (field, text));
     }
 
-    private TermPQuery makeTermPQuery (String field, String text, float boost) {
+    public static TermPQuery makeTermPQuery (String field, String text, float boost) {
         TermPQuery q = new TermPQuery (new Term (field, text), boost);
         return q;
     }
 
-    private SpanTermQuery makeSpanTermQuery (String field, String text) {
+    public static SpanTermQuery makeSpanTermQuery (String field, String text) {
         return new SpanTermQuery (new Term(field, text));
     }
     
-    private SpanTermPQuery makeSpanTermPQuery (String field, String text) {
+    public static SpanTermPQuery makeSpanTermPQuery (String field, String text) {
         return new SpanTermPQuery (new Term(field, text));
     }
     
-    private BooleanQuery makeBooleanQuery(Occur occur, Query ... queries) {
+    public static BooleanQuery makeBooleanQuery(Occur occur, Query ... queries) {
         BooleanQuery bq = new BooleanQuery ();
         for (Query query : queries) {
             bq.add(query, occur);
@@ -273,7 +273,7 @@ public class LuxParserTest {
         return bq;
     }
     
-    private PhraseQuery makePhraseQuery(String field, String ... terms) {
+    public static PhraseQuery makePhraseQuery(String field, String ... terms) {
         PhraseQuery pq = new PhraseQuery();
         for (String term : terms) {
             pq.add(new Term (field, term));
@@ -281,7 +281,7 @@ public class LuxParserTest {
         return pq;
     }
     
-    private SpanQuery makeSpanOrQuery(String field, String ... terms) {
+    public static SpanQuery makeSpanOrQuery(String field, String ... terms) {
         SpanQuery [] clauses = new SpanQuery [terms.length];
         for (int i = 0; i < terms.length; i++) {
             clauses[i] = makeSpanTermQuery(field, terms[i]);
@@ -289,7 +289,7 @@ public class LuxParserTest {
         return new SpanOrQuery(clauses);
     }
     
-    private SpanQuery makeSpanNearQuery(String field, int slop, boolean inOrder, String ... terms) {
+    public static SpanQuery makeSpanNearQuery(String field, int slop, boolean inOrder, String ... terms) {
         SpanQuery [] clauses = new SpanQuery [terms.length];
         for (int i = 0; i < terms.length; i++) {
             clauses[i] = makeSpanTermQuery(field, terms[i]);
@@ -297,7 +297,7 @@ public class LuxParserTest {
         return new SpanNearQuery(clauses, slop, inOrder);
     }
     
-    private ParseableQuery makeSpanNearPQuery(String field, int slop, boolean inOrder, String ... terms) {
+    public static ParseableQuery makeSpanNearPQuery(String field, int slop, boolean inOrder, String ... terms) {
         ParseableQuery [] clauses = new ParseableQuery [terms.length];
         for (int i = 0; i < terms.length; i++) {
             clauses[i] = new SpanTermPQuery(new Term (field, terms[i]));
@@ -305,7 +305,7 @@ public class LuxParserTest {
         return new SpanNearPQuery(slop, inOrder, clauses);
     }
     
-    private ParseableQuery makeSpanOrPQuery(String field, String ... terms) {
+    public static ParseableQuery makeSpanOrPQuery(String field, String ... terms) {
         ParseableQuery [] clauses = new ParseableQuery [terms.length];
         for (int i = 0; i < terms.length; i++) {
             clauses[i] = new SpanTermPQuery(new Term (field, terms[i]));
