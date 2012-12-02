@@ -25,8 +25,8 @@ public class OptimizerTest {
 
     @Test
     public void testDeepPath () throws Exception {
-        // this is currently failing
-        Query expected = makeSpanNearQuery("lux_path", 0, true, "PLAY", "ACT", "SCENE", "SPEECH", "LINE");
+        // this was failing because SlopCounter terminated at Literals (like the 4 in ACT[4])
+        Query expected = makeSpanNearQuery("lux_path", 0, true, "{}", "PLAY", "ACT", "SCENE", "SPEECH", "LINE");
         assertQuery (expected, "string(/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3])");
     }
 

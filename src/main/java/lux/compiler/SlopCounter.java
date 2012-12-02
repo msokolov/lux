@@ -5,7 +5,6 @@ import lux.xpath.AbstractExpression;
 import lux.xpath.BinaryOperation;
 import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
-import lux.xpath.LiteralExpression;
 import lux.xpath.NodeTest;
 import lux.xpath.PathStep;
 import lux.xpath.Root;
@@ -117,12 +116,6 @@ public class SlopCounter extends ExpressionVisitorBase {
         }
         done = true;
         return f;
-    }
-
-    @Override
-    public AbstractExpression visit(LiteralExpression lit) {
-        done = true;
-        return lit;
     }
 
     @Override

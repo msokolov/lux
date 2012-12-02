@@ -667,7 +667,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         optimizeSubExpressions (subsequence, 0);
         AbstractExpression start = subsequence.getStartExpr();
         AbstractExpression length = subsequence.getLengthExpr();
-        // TODO: encode pagination information in the call to lux:search created here
         XPathQuery lengthQuery = null;
         if (length != null) {
             lengthQuery = pop ();
