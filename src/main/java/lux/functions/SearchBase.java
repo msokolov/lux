@@ -1,11 +1,6 @@
 package lux.functions;
 
 import lux.Evaluator;
-import lux.index.FieldName;
-import lux.index.IndexConfiguration;
-import lux.index.field.FieldDefinition;
-import lux.query.parser.LuxQueryParser;
-import lux.query.parser.XmlQueryParser;
 import net.sf.saxon.dom.NodeOverNodeInfo;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -17,33 +12,28 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
-import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.xmlparser.CoreParser;
 import org.apache.lucene.xmlparser.ParserException;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
 public abstract class SearchBase extends ExtensionFunctionDefinition {
 
-    private ExtendableQueryParser luxQueryParser;
-    private CoreParser xmlQueryParser;
-
     public SearchBase() {
         super();
     }
 
-    protected Query parseQuery(Item<?> queryArg, IndexConfiguration config) throws org.apache.lucene.queryParser.ParseException, ParserException {
+    protected Query parseQuery(Item<?> queryArg, Evaluator eval) throws org.apache.lucene.queryParser.ParseException, ParserException {
         if (queryArg instanceof NodeInfo) {
             NodeInfo queryNodeInfo = (NodeInfo) queryArg;
             NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
             if (queryDocument instanceof Element) {
-                return getXmlQueryParser(config).getQuery((Element) queryDocument);
+                return eval.getXmlQueryParser().getQuery((Element) queryDocument);
             }
             // maybe it was a text node?
         }
         // parse the string value using the Lux query parser
-        return getLuxQueryParser(config).parse(queryArg.getStringValue());
+        return eval.getLuxQueryParser().parse(queryArg.getStringValue());
     }
 
     @Override
@@ -62,21 +52,6 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 SequenceType.SINGLE_ITEM,
                 SequenceType.OPTIONAL_INTEGER
                 };
-    }
-
-    protected ExtendableQueryParser getLuxQueryParser(IndexConfiguration xmlIndexer) {
-        if (luxQueryParser == null) {
-            luxQueryParser = LuxQueryParser.makeLuxQueryParser(xmlIndexer);
-        }
-        return luxQueryParser;
-    }
-
-    protected CoreParser getXmlQueryParser(IndexConfiguration xmlIndexer) {
-        if (xmlQueryParser == null) {
-            FieldDefinition field = xmlIndexer.getField(FieldName.ELEMENT_TEXT);
-            xmlQueryParser = new XmlQueryParser(xmlIndexer.getFieldName(field), field.getAnalyzer());
-        }
-        return xmlQueryParser;
     }
 
     @Override
@@ -104,7 +79,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             Evaluator eval = (Evaluator) context.getConfiguration().getCollectionURIResolver();
             Query query;
             try {
-                query = parseQuery(queryArg, eval.getCompiler().getIndexConfiguration());
+                query = parseQuery(queryArg, eval);
             } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException ("Failed to parse lucene query " + queryArg.getStringValue(), e);
             } catch (ParserException e) {

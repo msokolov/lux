@@ -170,6 +170,7 @@ public class XCompiler {
         PathOptimizer optimizer = new PathOptimizer(indexConfig);
         optimizer.setGenerateCollectionSearch(searchStrategy == SearchStrategy.COLLECTION);
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
+        lastOptimized = optimizedQuery;
         try {
             xquery = getXQueryCompiler().compile(optimizedQuery.toString());
         } catch (SaxonApiException e) {

@@ -10,8 +10,11 @@ import javax.xml.transform.URIResolver;
 import lux.XCompiler.Dialect;
 import lux.exception.LuxException;
 import lux.functions.LuxSearch;
+import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
+import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.Configuration;
@@ -44,6 +47,8 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
     private final CachingDocReader docReader;
     private final DocWriter docWriter;
     private LuxSearcher searcher;
+    private LuxQueryParser queryParser;
+    private XmlQueryParser xmlQueryParser;
     private QueryStats queryStats;    
 
     public Evaluator(XCompiler compiler, LuxSearcher searcher, DocWriter docWriter) {
@@ -170,11 +175,11 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
             Query q;
             try {
                 // TODO: use a prebuilt parser, don't construct a new one for every query
-                q = LuxQueryParser.makeLuxQueryParser(compiler.getIndexConfiguration()).parse(query);
+                q = getLuxQueryParser().parse(query);
             } catch (ParseException e) {
                 throw new XPathException ("Failed to parse query: " + query, e);
             }
-            LoggerFactory.getLogger(getClass()).debug("executing query: {}", query);
+            LoggerFactory.getLogger(getClass()).debug("executing query: {}", q);
 
             return new LuxSearch().iterate(q, this, 0);
         }
@@ -216,6 +221,22 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
 
     public DocWriter getDocWriter() {
         return docWriter;
+    }
+    
+    public LuxQueryParser getLuxQueryParser() {
+        if (queryParser == null) {
+            queryParser = LuxQueryParser.makeLuxQueryParser(compiler.getIndexConfiguration());
+        }
+        return queryParser;
+    }
+
+    public XmlQueryParser getXmlQueryParser () {
+        if (xmlQueryParser == null) {
+            IndexConfiguration config = compiler.getIndexConfiguration();
+            FieldDefinition field = config.getField(FieldName.ELEMENT_TEXT);
+            xmlQueryParser = new XmlQueryParser(config.getFieldName(field), field.getAnalyzer());
+        }
+        return xmlQueryParser;
     }
 
 }
