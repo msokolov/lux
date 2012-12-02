@@ -30,12 +30,12 @@ public class Root extends AbstractExpression {
     }
 
     /** 
-     * replace this with the search function call
-     * @param search the search function call to use
-     * @return the search function call
+     * replace this with the given expression
+     * @param replacement the expression to use in place of this
+     * @return the same expression
      */
-    public AbstractExpression replaceRoot(FunCall search) {        
-        return search;
+    public AbstractExpression replaceRoot(AbstractExpression replacement) {        
+        return replacement;
     }
 
 }

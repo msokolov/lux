@@ -56,6 +56,13 @@ to make the code cleaner and easier to maintain.
 
 I added the ability to do insert/delete/commit via xquery function calls.
 
+12/1/2012
+
+I implemented searching via collection(), but this doesn't actually enable
+any additional optimizations in Saxon PE/EE.  I'll leave the code path in
+place for now, just in case some future Saxon release makes this useful.  A
+whole day of work wasted on a failed experiment. Poop.
+
 UPCOMING
 
 ****** bug fixes, testing (namespaces / attributes)

@@ -96,14 +96,14 @@ public class FunCall extends AbstractExpression {
         }
         return false;
     }
-    
+    /*
     public boolean isAbsolute () {
         if (name.equals(LUX_SEARCH)) {
             return true;
         }
         return false;
     }
-    
+    */
     /**
      * @return for functions that return their argument, like data() and typecasts,
      * the argument's rightmost subexpression is returned.

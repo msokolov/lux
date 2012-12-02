@@ -5,43 +5,9 @@ execute xquery from within xquery
 ** highlighting
 * optimized sorting
 * compatibility w/vanilla Saxon
-We'd like to be able to use Saxon PE/EE, but we can't because we extend
-Configuration.  At the same time, we provide some critical performance
-boosts with this.
-** use collection() for queries
-Need to come up with a query dialect that we can generate and parse.  To
-make the parsing tractable, use ExtendableQueryParser.  Added an extension
-so you can indicate span queries.  To generate, add a toQueryString()
-method to ParseableQuery.
-*** TermPQuery, SpanTerm, and QNameTextQuery
-can we consolidate?  One possible problem is QNTQ produces PhraseQuerys
-which can't be embedded in Spans, which we use to encode XPaths.
-
-However as it is now, we don't generate QNTQ embedded in spans. 
-
-//foo/bar[. = 'big dog'] will convert into:
-
-lux:path(1w( 99w(/ foo) bar)) AND lux_elt_text:("bar\:big bar\:dog")
-
-We could even be more clever and generate:
-
-lux:path(1w( 99w(/ foo) bar))
-  AND lux_elt_text:("bar\:big bar\:dog")
-  AND lux_elt_text:("foo\:big foo\:dog")
-  AND lux_elt_text:("foo\:big bar\:dog")
-  AND lux_elt_text:("bar\:big foo\:dog")
-
-and we *still* wouldn't need to worry about the embedding issue.
-**** QNameTextQuery
-has term and qName (ie field, qName and text) Field can be one of:
-lux_att_text, lux_elt_text, or lux_text generates a <QNameTextQuery> which,
-when parsed, expands into either a TermQuery or a PhraseQuery.
-**** TermPQuery
-has term only: field is same as QNameTextQuery, but text is qName *only*
-Generates a <TermsQuery>.  I don't think this is ever actually used.
-**** SurroundTerm
-just like TermPQuery - what do we need this for??
-Generates a <SpanTerm>
+We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
+Configuration, you lose out on some nice performance optimizations for some
+queries that search large numbers of documents.
 ** purchase Saxon-PE
 ** Don't extend Configuration
 We currently do this so we can use a custom FunctionLibrary
@@ -56,10 +22,6 @@ Optimizer.makeConditionalDocumentSorter.  This happens, eg when evaluating
 a path like exists(//foo//bar).  There is no way around this in Saxon HE,
 and it is a significant performance whack for many queries.  We need to test if Saxon PE
 and/or EE do a better job of optimization here.
-**** Use fallback?
-If HE is detected, provide a custom Configuration?  TODO: test if
-optimization under PE/EE handles this anyway?  If not, performance could
-actually *degrade* with PE!
 * HTML/HTML5
 try reading files using James Clark's fixup parser?
 * Solr/Lucene 4.0

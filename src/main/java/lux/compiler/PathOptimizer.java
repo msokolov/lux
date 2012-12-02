@@ -6,6 +6,7 @@ import static lux.index.IndexConfiguration.INDEX_PATHS;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import lux.XCompiler.SearchStrategy;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.query.ParseableQuery;
@@ -32,6 +33,7 @@ import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
+import lux.xquery.ForClause;
 import lux.xquery.Variable;
 import lux.xquery.XQuery;
 
@@ -67,7 +69,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     private final String attrQNameField;
     private final String elementQNameField;
-    private boolean generateCollectionSearch;
+    private boolean optimizeForOrderedResults;
+    private int nextVariableNumber = 0;
     
     public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
@@ -76,7 +79,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         this.indexConfig = indexConfig;
         attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
         elementQNameField = indexConfig.getFieldName(FieldName.ELT_QNAME);
-        setGenerateCollectionSearch(false);
+        optimizeForOrderedResults = true;
     }    
 
     /**
@@ -128,19 +131,32 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @param facts additional facts to apply to the query
      */
     private AbstractExpression optimizeExpression (AbstractExpression expr, int j, int facts) {
-        if (expr.isAbsolute()) {
-            FunCall search = getSearchCall(j, facts);
-            if (search.getReturnType().equals(ValueType.DOCUMENT)) {
-                // Avoid the need to sort the results of this expression so that it can be 
-                // embedded in a subsequence or similar and evaluated lazily.
-                AbstractExpression tail = expr.getTail();
-                if (tail != null) {
-                    return new Predicate (search, tail);
-                }
-            }
-            expr = expr.replaceRoot (search);
+        if (! expr.isAbsolute()) {
+            return expr;
         }
-        return expr;
+        FunCall search = getSearchCall(j, facts);
+        if (search.getReturnType().equals(ValueType.DOCUMENT)) {
+            // Avoid the need to sort the results of this expression so that it can be 
+            // embedded in a subsequence or similar and evaluated lazily.
+            AbstractExpression tail = expr.getTail();
+            if (tail != null) {
+                return new Predicate (search, tail);
+            }
+        }
+        if (optimizeForOrderedResults) {
+            return expr.replaceRoot (search);
+        } else {
+            // We can't assert that lux:search is document-ordered since saxon PE/EE doesn't allow it;
+            // the next best thing is to produce an expression that is not expected to be 
+            // *in* document order.  In some cases where the context requires ordering (like intersect)
+            // this leads to suboptimal evaluation (ie retrieving all of one of the sequences)
+            Variable var = new Variable (new QName("_lx" + nextVariableNumber++));
+            expr = expr.replaceRoot(var);
+            // for $var in lux:search(...) return $var op $expr
+            // TODO: if op was //, replace with descendant::
+            // avoids the need for document-ordering (b/c we are *already* document-ordered)
+            return new FLWOR (expr, new ForClause(var, null, search));
+        }
     }
 
     /**
@@ -223,7 +239,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(Predicate predicate) {
         // Allow the base expression to be optimized later so we have an opportunity to combine the 
         // predicate query with the base query
-        optimizeExpression (predicate.getFilter(), 0, 0);
+        predicate.setFilter (optimizeExpression (predicate.getFilter(), 0, 0));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         
@@ -389,10 +405,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     public AbstractExpression optimizeFunCall (FunCall funcall) {
         AbstractExpression[] subs = funcall.getSubs();
-        if (subs.length == 1 && !subs[0].isAbsolute()) {
-            return funcall;
-        }
-        
         QName fname = funcall.getName();
         
         // If this function's single argument is a call to lux:search, get its query.  We may remove the call
@@ -402,6 +414,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (fname.equals(FunCall.FN_COUNT) || fname.equals(FunCall.FN_EXISTS) || fname.equals(FunCall.FN_EMPTY)) {
                 searchArg = subs[0].getSubs()[0];
             }
+        } else if (subs.length == 1 && !subs[0].isAbsolute()) {
+            return funcall;
         }
 
         XPathQuery query = pop();
@@ -691,10 +705,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = queryStack.get(j);
         queryStack.set (j, MATCH_ALL);
         facts |= query.getFacts();
-        if (generateCollectionSearch) {
-            return createCollectionSearch(query);
-        } else {
+        if (optimizeForOrderedResults) {
             return createSearchCall(FunCall.LUX_SEARCH, query, facts);
+        } else {
+            return createCollectionSearch(query);
         } 
     }
     
@@ -744,15 +758,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     /**
-     * @return whether to use string queries: collection("lux-search:query") 
-     * or (if false) xml queries: lux:search(<query/>)
+     * @return whether to generate code that relies on our ability to assert that lux:search() returns
+     * results in "document order" - ie ordered by document ID.
      */
-    public boolean isGenerateCollectionSearch() {
-        return generateCollectionSearch;
+    public boolean isOptimizedForOrderedResults() {
+        return optimizeForOrderedResults;
     }
 
-    public void setGenerateCollectionSearch(boolean generateCollectionSearch) {
-        this.generateCollectionSearch = generateCollectionSearch;
+    public void setSearchStrategy (SearchStrategy searchStrategy ) {
+        this.optimizeForOrderedResults = (searchStrategy == SearchStrategy.LUX_SEARCH);
     }
 
 }

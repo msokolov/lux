@@ -1,3 +1,47 @@
+* Saxon PE/EE compatibility
+** detect licensing status
+We now detect which version of Saxon is installed and whether it is
+licensed, and choose a search strategy based on that.
+** implemented collection()-based querying
+I did this - but it was a waste of time.  I realized about 80% of the way
+through that I should have actually tested to see whether fn:collection()
+was in fact marked as document-ordered (ORDERED_NODESET) by Saxon.  It
+appears it wasn't, in spite of what M. Kay said.  Perhaps they'll decide
+that was a bug and fix it, so I'll leave the code in place.
+
+Need to come up with a query dialect that we can generate and parse.  To
+make the parsing tractable, use ExtendableQueryParser.  Added an extension
+so you can indicate span queries.  To generate, add a toQueryString()
+method to ParseableQuery.
+*** TermPQuery, SpanTerm, and QNameTextQuery
+can we consolidate?  One possible problem is QNTQ produces PhraseQuerys
+which can't be embedded in Spans, which we use to encode XPaths.
+
+However as it is now, we don't generate QNTQ embedded in spans. 
+
+//foo/bar[. = 'big dog'] will convert into:
+
+lux:path(1w( 99w(/ foo) bar)) AND lux_elt_text:("bar\:big bar\:dog")
+
+We could even be more clever and generate:
+
+lux:path(1w( 99w(/ foo) bar))
+  AND lux_elt_text:("bar\:big bar\:dog")
+  AND lux_elt_text:("foo\:big foo\:dog")
+  AND lux_elt_text:("foo\:big bar\:dog")
+  AND lux_elt_text:("bar\:big foo\:dog")
+
+and we *still* wouldn't need to worry about the embedding issue.
+**** QNameTextQuery
+has term and qName (ie field, qName and text) Field can be one of:
+lux_att_text, lux_elt_text, or lux_text generates a <QNameTextQuery> which,
+when parsed, expands into either a TermQuery or a PhraseQuery.
+**** TermPQuery
+has term only: field is same as QNameTextQuery, but text is qName *only*
+Generates a <TermsQuery>.  I don't think this is ever actually used.
+**** SurroundTerm
+just like TermPQuery - what do we need this for??
+Generates a <SpanTerm>
 * document updates via xquery
 lux:insert, lux:delete, lux:commit
 Note: these functions have no side-effects and return empty-sequence: in order to 

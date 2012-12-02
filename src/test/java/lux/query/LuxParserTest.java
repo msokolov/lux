@@ -225,6 +225,7 @@ public class LuxParserTest {
         // test two spans in a boolean
         assertParseQuery (makeBooleanQuery(Occur.MUST, makeSpanNearQuery(LUX_PATH, 0, false, "a", "b"), makeSpanNearQuery(LUX_TEXT, 0, false, "cat", "dog")),
                 "+(+lux_near:0 lux_path:a lux_path:b) +(+lux_near:0 lux_text:cat lux_text:dog)");
+        assertUnparseQuery ("+lux_path:b +lux_text:dog", makeBooleanPQuery(Occur.MUST, makeSpanTermPQuery(LUX_PATH, "b"), makeSpanTermPQuery(LUX_TEXT, "dog")));
         // test booleans in a span - should throw a parse error
     }
 
@@ -271,6 +272,10 @@ public class LuxParserTest {
             bq.add(query, occur);
         }
         return bq;
+    }
+    
+    public static BooleanPQuery makeBooleanPQuery(Occur occur, ParseableQuery ... queries) {
+        return new BooleanPQuery (occur, queries);
     }
     
     public static PhraseQuery makePhraseQuery(String field, String ... terms) {

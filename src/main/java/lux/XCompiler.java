@@ -52,7 +52,7 @@ public class XCompiler {
     private XsltCompiler xsltCompiler;
     
     public enum SearchStrategy {
-        NONE, LUX_SEARCH, COLLECTION
+        NONE, LUX_SEARCH, SAXON_LICENSE
     }
     private SearchStrategy searchStrategy;
     // TODO: once we get a handle on an IndexWriter
@@ -83,7 +83,7 @@ public class XCompiler {
         if (indexConfig == null || !indexConfig.isIndexingEnabled()) {
             searchStrategy = SearchStrategy.NONE;
         } else if (isSaxonLicensed) {
-            searchStrategy = SearchStrategy.COLLECTION;
+            searchStrategy = SearchStrategy.SAXON_LICENSE;
         } else {
             searchStrategy = SearchStrategy.LUX_SEARCH;
         }
@@ -168,7 +168,7 @@ public class XCompiler {
         SaxonTranslator translator = makeTranslator();
         XQuery abstractQuery = translator.queryFor (xquery);
         PathOptimizer optimizer = new PathOptimizer(indexConfig);
-        optimizer.setGenerateCollectionSearch(searchStrategy == SearchStrategy.COLLECTION);
+        optimizer.setSearchStrategy(searchStrategy);
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         lastOptimized = optimizedQuery;
         try {

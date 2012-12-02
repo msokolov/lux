@@ -32,7 +32,7 @@ public class BooleanPQuery extends ParseableQuery {
     }    
     
     public Occur getOccur () {
-        return clauses[0].occur;
+        return clauses.length > 0 ? clauses[0].occur : Occur.SHOULD;
     }
     
     public Clause[] getClauses() {

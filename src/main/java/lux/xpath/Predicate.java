@@ -22,6 +22,10 @@ public class Predicate extends AbstractExpression {
     public final AbstractExpression getFilter() {
         return subs[1];
     }
+
+    public final void setFilter(AbstractExpression filter) {
+        subs[1] = filter;
+    }
     
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);

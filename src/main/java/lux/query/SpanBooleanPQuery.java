@@ -34,6 +34,9 @@ public class SpanBooleanPQuery extends BooleanPQuery {
     
     @Override
     public String toQueryString(String field, IndexConfiguration config) {
+        if (getOccur().equals(Occur.MUST)) {
+            return super.toQueryString(field, config);
+        }
         StringBuilder buf = new StringBuilder();
         buf.append("(lux_within:0");
         for (Clause clause : getClauses()) {

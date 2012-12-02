@@ -4,8 +4,7 @@ import static lux.IndexTestSupport.QUERY_CONSTANT;
 import static lux.IndexTestSupport.QUERY_EXACT;
 import static lux.IndexTestSupport.QUERY_MINIMAL;
 import static lux.IndexTestSupport.QUERY_NO_DOCS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -16,7 +15,6 @@ import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
-import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.store.LockObtainFailedException;
@@ -261,7 +259,7 @@ public class SearchTest {
     public void testLazyEvaluation () throws Exception {
         // These expressions are optimized in the sense that lux evaluates them all by retrieving
         // only the minimal number of required documents (with the available indexes).
-        
+
         // Note this relies on Lucene's default sort by order of insertion (ie by docid)
         assertSearch ("BERNARDO", "subsequence(//SCENE, 1, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
         assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 1);
@@ -393,7 +391,7 @@ public class SearchTest {
         try {
             assertSearch (null, "lux:search(':::')", null, null, null);
             assertTrue ("expected exception not thrown", false);
-        } catch (XPathException e) { 
+        } catch (LuxException e) { 
             assertEquals ("Failed to parse lucene query :::", e.getMessage());
         }
         assertSearch ("65", "lux:count(text{'bernardo'})", null, 65, 0);
@@ -463,6 +461,9 @@ public class SearchTest {
         Evaluator eval = index.makeEvaluator();
         XQueryExecutable expr = eval.getCompiler().compile(query);
         XdmResultSet results = (XdmResultSet) eval.evaluate(expr);
+        if (results.getErrors() != null) {
+            throw new LuxException (results.getErrors().get(0).getMessage());
+        }
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));
