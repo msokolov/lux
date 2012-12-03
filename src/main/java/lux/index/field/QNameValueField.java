@@ -10,6 +10,7 @@ import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
+import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.util.Version;
 
 public class QNameValueField extends FieldDefinition {
@@ -25,7 +26,7 @@ public class QNameValueField extends FieldDefinition {
     }
     
     @Override
-    public Iterable<Field> getFieldValues(XmlIndexer indexer) {
+    public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         // replace with a custom Fieldable
         XPathValueMapper mapper = (XPathValueMapper) indexer.getPathMapper();        
         return new FieldValues (indexer.getConfiguration(), this, Collections.singleton

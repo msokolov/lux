@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Collection;
+import java.util.HashMap;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -25,8 +26,13 @@ import lux.xml.SaxonDocBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
 import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XPathCompiler;
+import net.sf.saxon.s9api.XPathExecutable;
+import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.CorruptIndexException;
@@ -62,13 +68,18 @@ public class XmlIndexer {
     
     private final IndexConfiguration configuration;
     private XmlReader xmlReader;
+    // TODO: consolidate with XCompiler 
+    private Processor processor;
+    private XPathCompiler compiler;
     private SaxonDocBuilder saxonBuilder;
     private Serializer serializer;
     private XmlPathMapper pathMapper;
     private String uri;
+    private HashMap<String,XPathExecutable> xpathCache;
     
     public XmlIndexer (IndexConfiguration config) {
         this.configuration = config;
+        xpathCache = new HashMap<String, XPathExecutable>();
         init();
     }
     
@@ -93,28 +104,53 @@ public class XmlIndexer {
             xmlReader.addHandler (pathMapper);
         }
         if (isOption (INDEX_FULLTEXT)) {
-            try {
-                if (isOption (COMPUTE_OFFSETS)) {
-                    saxonBuilder = new SaxonDocBuilder(new Offsets());                    
-                } else {
-                    saxonBuilder = new SaxonDocBuilder();
-                }
-                xmlReader.addHandler(saxonBuilder);
-            } catch (SaxonApiException e) {
-                throw new LuxException (e);
-            }
-        }
+            initDocBuilder();
+        }   
         if (isOption (STORE_XML)) {
             serializer = new Serializer();
             xmlReader.addHandler(serializer);
         }
         if (isOption (BUILD_DOCUMENT) && saxonBuilder == null) {
-            try {
-                saxonBuilder = new SaxonDocBuilder();
-            } catch (SaxonApiException e) {
-                throw new LuxException (e);
+            initDocBuilder();
+        }
+    }
+    
+    private Processor getProcessor () {
+        if (processor == null) {
+            processor = new Processor(false);
+        }
+        return processor;
+    }
+    
+    private XPathCompiler getXPathCompiler () {
+        if (compiler == null) {
+            compiler = getProcessor().newXPathCompiler();
+        }
+        return compiler;
+    }
+    
+
+    public XdmValue evaluateXPath(String xpath) throws SaxonApiException {
+        XPathExecutable xpathExec = xpathCache.get(xpath);
+        if (xpathExec == null) {
+            xpathExec = getXPathCompiler().compile(xpath);
+            xpathCache.put(xpath, xpathExec);
+        }
+        XPathSelector xps  = xpathExec.load();
+        xps.setContextItem(getXdmNode());
+        return xps.evaluate();
+    }
+    
+    private void initDocBuilder () {
+        try {
+            if (isOption (COMPUTE_OFFSETS)) {
+                saxonBuilder = new SaxonDocBuilder(getProcessor(), new Offsets());                    
+            } else {
+                saxonBuilder = new SaxonDocBuilder(getProcessor());
             }
             xmlReader.addHandler(saxonBuilder);
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
         }
     }
     
@@ -239,6 +275,7 @@ public class XmlIndexer {
     public IndexConfiguration getConfiguration() {
         return configuration;
     }
+
 
 }
 

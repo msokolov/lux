@@ -4,6 +4,27 @@
 execute xquery from within xquery
 ** highlighting
 * optimized sorting
+** support ordering by named indexes
+
+Create function lux:key(name as xs:string) returning item which accepts the
+name of a lucene index. Then arrange for order by lux:key('foo') to order
+by the (single) value of foo, and replace the funcall with constant true()
+
+Create function lux:has-key(name as xs:string, value as item()) - add the
+constraint key(name)=value to the prevailing search query and replace the
+expression with the constant true()
+
+Rename fieldTerms to lux:key-terms(name as xs:string) ?
+
+** order by optimization
+Compute the XPath of the order by expression and compare to known XPath
+indexes Requires that index definitions be discovered, or registered?  Need
+to make sure the index analysis is compatible with the order by collation
+** configuration
+define keys in IndexConfiguration
+** testing strategy
+
+** demo
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
 Configuration, you lose out on some nice performance optimizations for some

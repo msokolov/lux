@@ -28,12 +28,12 @@ public class SaxonDocBuilder implements StAXHandler {
      * creates its own Saxon processor and DocumentBuilder
      * @throws SaxonApiException if there is an error instantiating the Saxon services.
      */
-    public SaxonDocBuilder () throws SaxonApiException {
-        this (new Processor (false).newDocumentBuilder());
+    public SaxonDocBuilder (Processor processor) throws SaxonApiException {
+        this (processor.newDocumentBuilder());
     }
     
-    public SaxonDocBuilder(Offsets offsets) throws SaxonApiException {
-        this (new Processor (false).newDocumentBuilder(), offsets);
+    public SaxonDocBuilder(Processor processor, Offsets offsets) throws SaxonApiException {
+        this (processor.newDocumentBuilder(), offsets);
     }
 
     public SaxonDocBuilder(DocumentBuilder builder) throws SaxonApiException {

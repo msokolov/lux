@@ -11,6 +11,7 @@ import net.sf.saxon.s9api.XdmNode;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
+import org.apache.lucene.document.Fieldable;
 
 /**
  * Indexes the text in each element of a document
@@ -31,7 +32,7 @@ public class ElementTextField extends FieldDefinition {
     }
     
     @Override
-    public Iterable<Field> getFieldValues(XmlIndexer indexer) {
+    public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
         SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
         ElementTokenStream tokens = new ElementTokenStream (doc, builder.getOffsets());

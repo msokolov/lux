@@ -12,12 +12,16 @@ import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
+import lux.index.field.FieldDefinition.Type;
+import lux.index.field.XPathField;
 import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.SaxonApiException;
 
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.queryParser.surround.parser.ParseException;
 import org.apache.lucene.queryParser.surround.parser.QueryParser;
@@ -25,7 +29,9 @@ import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
 import org.apache.lucene.queryParser.surround.query.SrndQuery;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.xmlparser.ParserException;
 import org.junit.After;
@@ -133,6 +139,26 @@ public class IndexTest {
         }
         assertEquals (expectedCount, count);
     }
+    
+    private void assertXPathIntField (IndexTestSupport indexTestSupport) throws ParseException, IOException {
+        Query q = NumericRangeQuery.newIntRange("nodecount", 6000, 20000, true, true);
+        DocIdSetIterator iter = indexTestSupport.searcher.search(q);
+        int count = 0;
+        while (iter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+            ++ count;
+        }
+        assertEquals (1, count);
+    }
+    
+    private void assertXPathStringField (IndexTestSupport indexTestSupport) throws ParseException, IOException {
+        Query q = new TermQuery (new Term ("doctype", "ACT"));
+        DocIdSetIterator iter = indexTestSupport.searcher.search(q);
+        int count = 0;
+        while (iter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+            ++ count;
+        }
+        assertEquals (5, count);
+    }
 
     @Test
     public void testIndexFullTextOneDoc() throws Exception {
@@ -219,6 +245,16 @@ public class IndexTest {
         assertTotalDocs ();
     }
     
+    @Test
+    public void testXPathIndexes () throws Exception {
+        XmlIndexer indexer = new XmlIndexer (BUILD_DOCUMENT);
+        indexer.getConfiguration().addField(new XPathField<Integer>("nodecount", "count(//node())", null, Store.NO, Type.INT));
+        indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
+        IndexTestSupport indexTestSupport = buildIndex("xpath", indexer);
+        assertXPathIntField(indexTestSupport);
+        assertXPathStringField(indexTestSupport);
+    }
+    
     @Before
     public void setup() {
         dir = new RAMDirectory();
@@ -231,6 +267,10 @@ public class IndexTest {
     
     private IndexTestSupport buildIndex (String desc, int options) throws XMLStreamException, IOException, SaxonApiException {
         XmlIndexer indexer = new XmlIndexer (options);
+        return buildIndex(desc, indexer);
+    }
+
+    private IndexTestSupport buildIndex(String desc, XmlIndexer indexer) throws XMLStreamException, IOException, SaxonApiException {
         long t0 = System.currentTimeMillis();
         IndexTestSupport indexTestSupport = new IndexTestSupport (indexer, dir);
         System.out.println 

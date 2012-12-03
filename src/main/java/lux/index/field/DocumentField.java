@@ -4,7 +4,6 @@ import java.util.Collections;
 
 import lux.index.XmlIndexer;
 
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 
@@ -22,11 +21,6 @@ public class DocumentField extends FieldDefinition {
     
     protected DocumentField () {
         super ("lux_xml", null, Store.YES, Type.STRING, TermVector.NO);
-    }
-    
-    @Override
-    public Iterable<Field> getFieldValues(XmlIndexer indexer) {
-        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(indexer.getDocumentText()));
     }
     
     @Override

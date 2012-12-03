@@ -15,6 +15,7 @@ import lux.index.QNameTextMapper;
 import lux.index.XPathValueMapper;
 import lux.index.XmlPathMapper;
 import net.sf.saxon.s9api.Axis;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
@@ -26,7 +27,7 @@ public class XmlReaderTest {
     
     @Test
     public void testSaxonBuilder() throws Exception {
-        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder(new Processor(false));
         handleDocument(saxonBuilder, "lux/reader-test.xml");
         XdmNode doc = saxonBuilder.getDocument();
         assertDocContent(doc);
@@ -39,7 +40,7 @@ public class XmlReaderTest {
 
     @Test
     public void testSaxonBuilderNS() throws Exception {
-        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder(new Processor(false));
         handleDocument(saxonBuilder, "lux/reader-test-ns.xml");
         XdmNode doc = saxonBuilder.getDocument();
         assertDocContent(doc);
@@ -47,7 +48,7 @@ public class XmlReaderTest {
     
     @Test 
     public void testStripNamespaces () throws Exception {
-        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder();
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder(new Processor(false));
         handleDocument (saxonBuilder, "lux/reader-test-ns.xml", true);
         XdmNode doc = saxonBuilder.getDocument();
         assertDocContent(doc);

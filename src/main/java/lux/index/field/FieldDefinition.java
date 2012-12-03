@@ -1,5 +1,6 @@
 package lux.index.field;
 
+import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -8,21 +9,19 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
+import org.apache.lucene.document.Fieldable;
 import org.apache.solr.schema.FieldProperties;
 
 /**
  * represents a field in the index corresponding to some XML content.
  * 
- * An XmlField has a name, which may be configured, but must remain the sane for all uses
+ * An XmlField has a name, which may be configured, but must remain the same for all uses
  * of a single index.
  * 
  * XmlField provides methods for retrieving Lucene field configuration, and for retrieving values
  * from the XmlIndexer to be passed to Lucene.
  * 
- * TODO: revise:
- * Built-in fields include QName, Path, and FullText.  We plan to allow for
- * Value and Text fields tied to QName and Path, and eventually also for
- * some xpath indexing, and typed indexes.
+ * see {@link lux.index.IndexConfiguration} for a list of current built-in fields.
  */
 public abstract class FieldDefinition {
     // the default name of the field as it appears in queries, and in the index
@@ -44,7 +43,10 @@ public abstract class FieldDefinition {
         return renameable;
     }
 
-    // a datatype - placeholder for future implementation; for now everything is STRING
+    /** Represents the type of data fed to the index for a given field.
+     * TOKENS-type fields are expected to provide a TokenStream, where the
+     * other types provide each values as a Java object.
+     */
     public enum Type {
         TOKENS, STRING, INT
     };
@@ -61,8 +63,10 @@ public abstract class FieldDefinition {
     /**
      * Represents a Solr/Lucene field
      * @param name the name of the field
-     * @param analyzer the analyzer associated with the field.  This will be used to analyze string field values,
-     * and to analyze queries.  If the field values are not strings (eg if they are a TokenStream), the analyzer is used only for queries. 
+     * @param analyzer the analyzer associated with the field.  This will
+     * be used to analyze string field values, and to analyze queries.  If
+     * the field values are not strings (eg if they are a TokenStream), the
+     * analyzer is used only for queries.
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
      */
@@ -83,15 +87,23 @@ public abstract class FieldDefinition {
     }
     
     /** Wraps the values as Field, which includes the values and the Lucene indexing options.
+     * Subclasses must implement getValues() or override this method
      * @param xmlIndexer the indexer that holds the field values
      * @return the accumulated values of the field, as Fieldables
      */
-    public abstract Iterable<Field> getFieldValues (XmlIndexer xmlIndexer);
+    public Iterable<? extends Fieldable> getFieldValues(XmlIndexer indexer) {
+        Iterable<?> values = getValues(indexer);
+        if (values == null) {
+            throw new LuxException(getClass().getName() + ".getValues() returned null: did you neglect to implement it?");
+        }
+        return new FieldValues (indexer.getConfiguration(), this, getValues(indexer));
+    }
+
 
     /** The Solr XmlUpdateProcessor calls this.  If it returns null, the caller should use the values
      * from getFieldValues() instead.
      * @param indexer the indexer that holds the field values
-     * @return the accumulated values of the field, as primitive objects
+     * @return the accumulated values of the field, as primitive objects (String or Integer). If 
      */
     public Iterable<?> getValues (XmlIndexer indexer) {
         return null;
@@ -108,8 +120,7 @@ public abstract class FieldDefinition {
     }
     
     /**
-     * @return The type of data stored in the field.  This may be STRING, INT, or TOKENS.  TOKENS represent 
-     * pre-tokenized fields that define their own analyzers.
+     * @return The type of data stored in the field.
      */
     public Type getType () {
         return type;

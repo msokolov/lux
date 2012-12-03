@@ -3,7 +3,6 @@ package lux.index.field;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 
@@ -17,11 +16,6 @@ public final class ElementQNameField extends FieldDefinition {
     
     protected ElementQNameField () {
         super ("lux_elt_name", new KeywordAnalyzer(), Store.NO, Type.STRING, TermVector.NO);
-    }
-    
-    @Override
-    public Iterable<Field> getFieldValues(XmlIndexer indexer) {
-        return new FieldValues (indexer.getConfiguration(), this, indexer.getPathMapper().getEltQNameCounts().keySet());
     }
     
     @Override

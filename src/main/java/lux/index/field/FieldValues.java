@@ -5,8 +5,10 @@ import java.util.Iterator;
 import lux.index.IndexConfiguration;
 
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.NumericField;
 
-public class FieldValues implements Iterable<Field> {
+public class FieldValues implements Iterable<Fieldable> {
     
     private final FieldDefinition field;
     private final String fieldName;
@@ -18,11 +20,11 @@ public class FieldValues implements Iterable<Field> {
         this.fieldName = indexConfig.getFieldName(field);
     }
 
-    public Iterator<Field> iterator() {
+    public Iterator<Fieldable> iterator() {
         return new FieldIterator(values.iterator());
     }
     
-    class FieldIterator implements Iterator<Field> {
+    class FieldIterator implements Iterator<Fieldable> {
         private Iterator<?> iter;
 
         FieldIterator (Iterator<?> iter) {
@@ -33,17 +35,21 @@ public class FieldValues implements Iterable<Field> {
             return iter.hasNext();
         }
 
-        public Field next() {
+        public Fieldable next() {
+            // FIXME: for best indexing performance, avoid GC and re-use these Field objects:
+            // can also re-use Documents.  Can only use each field instance once per document
             Object value = iter.next();
             switch (field.getType()) {
             case STRING:
                 return new Field(fieldName, value.toString(), field.isStored(), field.getIndexOptions());
             case INT:
-                throw new IllegalStateException("unimplemented field type: INT");
+                NumericField nf = new NumericField(fieldName);
+                nf.setIntValue((Integer) value);
+                return nf;
             case TOKENS:
                 return (Field) value;
             default:
-                    throw new IllegalStateException("unimplemented field type: " + field.getType());                    
+                throw new IllegalStateException("unimplemented field type: " + field.getType());                    
             }
         }
 

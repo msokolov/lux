@@ -1,6 +1,7 @@
 package lux.index.field;
 
 import java.util.Collections;
+import java.util.Set;
 
 import lux.index.XmlIndexer;
 
@@ -22,7 +23,7 @@ public class URIField extends FieldDefinition {
     }
     
     @Override
-    public Iterable<Field> getFieldValues(XmlIndexer indexer) {
+    public Set<Field> getFieldValues(XmlIndexer indexer) {
         return Collections.singleton(new Field (indexer.getConfiguration().getFieldName(this), indexer.getURI(), 
                 Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
     }
