@@ -60,14 +60,14 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     }
     
     @SuppressWarnings("rawtypes")
-    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, long facts) throws XPathException;
+    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, long facts, String sortCriteria) throws XPathException;
 
     class LuxSearchCall extends ExtensionFunctionCall {
         
         @SuppressWarnings("rawtypes") @Override
         public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
             
-            if (arguments.length == 0 || arguments.length > 2) {
+            if (arguments.length == 0 || arguments.length > 3) {
                 throw new XPathException ("wrong number of arguments");
             }
             Item queryArg = arguments[0].next();        
@@ -75,6 +75,10 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             if (arguments.length >= 2) {
                 IntegerValue num  = (IntegerValue) arguments[1].next();
                 facts = num.longValue();
+            }
+            String sortCriteria = null;
+            if (arguments.length >= 3) {
+                sortCriteria = arguments[2].next().getStringValue();
             }
             Evaluator eval = (Evaluator) context.getConfiguration().getCollectionURIResolver();
             Query query;
@@ -86,7 +90,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
-            return iterate (query, eval, facts);
+            return iterate (query, eval, facts, sortCriteria);
         }
         
     }

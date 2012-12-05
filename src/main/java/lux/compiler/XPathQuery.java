@@ -13,9 +13,10 @@ import lux.query.SpanBooleanPQuery;
 import lux.query.SpanMatchAll;
 import lux.query.SpanNearPQuery;
 import lux.xml.ValueType;
-import net.sf.saxon.s9api.XQueryExecutable;
+import lux.xpath.AbstractExpression;
 
 import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.Sort;
 
 /**
  * Wraps a Lucene Query, with advice as to how to process its results as XPath.
@@ -32,7 +33,6 @@ import org.apache.lucene.search.BooleanClause.Occur;
 public class XPathQuery {
 
     private final ParseableQuery query;
-    private XQueryExecutable expr;
     private ValueType valueType;
     private final boolean immutable;
     
@@ -40,8 +40,21 @@ public class XPathQuery {
      * optimizations.  In the comments, we refer to the "result type" of the query meaning the
      * result type of the xpath expression that the query was generated from.
      */
-    protected long facts;
+    private long facts;
     
+    /**
+     * A Lucene sort order to be applied to the query.  This will have been computed from an XQuery order by expression.
+     */
+    private Sort sort;
+    
+    public Sort getSort() {
+        return sort;
+    }
+
+    public void setSort(Sort sort) {
+        this.sort = sort;
+    }
+
     /**
      * A query is exact iff its xpath expression returns exactly one value per document, and the
      * generated lucene query returns exactly those documents satisfying the xpath expression.
@@ -77,17 +90,17 @@ public class XPathQuery {
     public static final int DOCUMENT_RESULTS=0x00000018;
     
 
-    public final static XPathQuery MATCH_ALL = new XPathQuery(null, MatchAllPQuery.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(null, MatchAllPQuery.getInstance(), MINIMAL, ValueType.NODE, true);
+    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.NODE, true);
 
-    private final static XPathQuery UNINDEXED = new XPathQuery(null, MatchAllPQuery.getInstance(), 0, ValueType.VALUE, true);
+    private final static XPathQuery UNINDEXED = new XPathQuery(MatchAllPQuery.getInstance(), 0, ValueType.VALUE, true);
 
-    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(null, SpanMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
+    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(null, SpanMatchAll.getInstance(), MINIMAL, ValueType.NODE, true);
+    private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL, ValueType.NODE, true);
 
-    private final static XPathQuery PATH_UNINDEXED = new XPathQuery(null, SpanMatchAll.getInstance(), 0, ValueType.VALUE, true);
+    private final static XPathQuery PATH_UNINDEXED = new XPathQuery(SpanMatchAll.getInstance(), 0, ValueType.VALUE, true);
     
     /**
      * @param expr an XPath 2.0 expression
@@ -96,16 +109,15 @@ public class XPathQuery {
      * @param valueType the type of results returned by the xpath expression, as specifically as 
      * can be determined.
      */
-    protected XPathQuery(XQueryExecutable expr, ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
-        this.expr = expr;
+    protected XPathQuery(ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
         this.query = query;
         this.facts = resultFacts;
         setType (valueType);
         this.immutable = immutable;
     }
     
-    protected XPathQuery(XQueryExecutable expr, ParseableQuery query, long resultFacts, ValueType valueType) {
-        this (expr, query, resultFacts, valueType, false);
+    protected XPathQuery(ParseableQuery query, long resultFacts, ValueType valueType) {
+        this (query, resultFacts, valueType, false);
     }
     
     /** 
@@ -131,7 +143,7 @@ public class XPathQuery {
                 return MATCH_ALL_NODE;
             }
         }
-        return new XPathQuery (null, query, resultFacts, valueType);
+        return new XPathQuery (query, resultFacts, valueType);
     }
     
     public static XPathQuery getMatchAllQuery (IndexConfiguration indexConfig) {
@@ -197,7 +209,7 @@ public class XPathQuery {
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance) {
         long resultFacts = combineQueryFacts (this, precursor);
         ParseableQuery result = combineSpans (this.query, occur, precursor.query, distance);
-        return new XPathQuery(expr, result, resultFacts, type);
+        return new XPathQuery(result, resultFacts, type);
     }
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
@@ -313,6 +325,14 @@ public class XPathQuery {
 
   public boolean isImmutable() {
       return immutable;
+  }
+
+  public AbstractExpression toXmlNode(String defaultField) {
+      return getParseableQuery().toXmlNode(defaultField);
+  }
+
+  public String toQueryString(String defaultField, IndexConfiguration indexConfig) {
+      return getParseableQuery().toQueryString(defaultField, indexConfig);
   }
 
 }

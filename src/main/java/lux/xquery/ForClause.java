@@ -41,9 +41,9 @@ public class ForClause extends FLWORClause {
         seq.toString(buf);
     }
 
-    public AbstractExpression accept(ExpressionVisitor visitor) {
+    public ForClause accept(ExpressionVisitor visitor) {
         seq = seq.accept(visitor);
-        return seq;
+        return visitor.visit(this);
     }
 
 }

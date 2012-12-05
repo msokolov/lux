@@ -41,7 +41,7 @@ public class FieldTermsTest {
     
     @Test
     public void testAllTerms () throws Exception {
-        ArrayList<String> terms = getFieldTerms("lux:fieldTerms()");
+        ArrayList<String> terms = getFieldTerms("lux:field-terms()");
         // make the condition a bit loose so that if we add fields or more
         // text, the test will still pass OK.  We basically want to make sure that
         // argument passing works when there is no field or start position specified
@@ -50,7 +50,7 @@ public class FieldTermsTest {
     
     @Test
     public void testFieldTermsStart () throws Exception {
-        ArrayList<String> terms = getFieldTerms("lux:fieldTerms('lux_elt_name', 'ti')");
+        ArrayList<String> terms = getFieldTerms("lux:field-terms('lux_elt_name', 'ti')");
         assertArrayEquals (new String[] {"title", "token"}, 
                 terms.toArray(new String[0]));
     }

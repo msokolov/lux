@@ -1,0 +1,8 @@
+* XCompiler
+what to call this?
+* functions
+LuxSearch -> Search
+LuxCount -> Count
+LuxExists -> Exists
+* ExpressionVisitor(Base)
+move to lux.compiler

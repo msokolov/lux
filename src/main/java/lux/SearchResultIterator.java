@@ -10,9 +10,12 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
+import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 
 public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     
@@ -20,26 +23,53 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     private final Query query;
     private final QueryStats stats;
     private final LuxSearcher searcher;
+    private final String sortCriteria;
     private CachingDocReader docCache;
     private NodeInfo current = null;
     private int position = 0;
     
-    public SearchResultIterator (Evaluator eval, Query query) throws IOException {
-        this (eval.getSearcher(), eval.getDocReader(), eval.getQueryStats(), query);
+    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria) throws IOException {
+        this (eval.getSearcher(), eval.getDocReader(), eval.getQueryStats(), query, sortCriteria);
     }
     
-    protected SearchResultIterator (LuxSearcher searcher, CachingDocReader docReader, QueryStats stats, Query query) throws IOException {
+    protected SearchResultIterator (LuxSearcher searcher, CachingDocReader docReader, QueryStats stats, Query query, String sortCriteria) throws IOException {
         this.query = query;
         this.searcher = searcher;
         this.docCache = docReader;
         this.stats = stats;
+        this.sortCriteria = sortCriteria;
         if (stats != null) {
             stats.query = query.toString();
         }
         if (searcher == null) {
             throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
-        docIter = searcher.searchOrdered(query);
+        if (sortCriteria != null) {
+            docIter = searcher.search(query, makeSortFromCriteria(sortCriteria));
+        } else {
+            docIter = searcher.searchOrdered(query);
+        }
+    }
+
+    private Sort makeSortFromCriteria(String sortCriteria) {
+        String[] fields = sortCriteria.split(",");
+        SortField[] sortFields = new SortField [fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            String [] tokens = fields[i].split("\\s+");
+            boolean reverse = false;
+            if (tokens.length > 1) {
+                if (tokens[2].equals("descending")) {
+                    reverse = true;
+                } else if (!tokens[2].equals("ascending")) {
+                    throw new LuxException ("Invalid sort key keyword: " + tokens[2] + " in: " + sortCriteria);
+                }
+                if (tokens.length > 2) {
+                    throw new LuxException ("Invalid sort key: " + sortCriteria);
+                }
+                sortFields[i] = new SortField(tokens[0], SortField.STRING, reverse);
+            }
+        }
+        return new Sort(sortFields);
     }
 
     public NodeInfo next() throws XPathException {
@@ -90,7 +120,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
 
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
-            return new SearchResultIterator (searcher, docCache, stats, query);
+            return new SearchResultIterator (searcher, docCache, stats, query, sortCriteria);
         } catch (IOException e) {
             throw new XPathException (e);
         }

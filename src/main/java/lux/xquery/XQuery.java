@@ -21,10 +21,11 @@ public class XQuery {
     private final String baseURI;
     private final Boolean preserveNamespaces;
     private final Boolean inheritNamespaces;
+    private final boolean emptyLeast;
     
     public XQuery (String defaultElementNamespace, String defaultFunctionNamespace, String defaultCollation, 
             Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, 
-            AbstractExpression body, String baseURI, Boolean copyNamespacesPreserve, Boolean copyNamespacesInherit) {
+            AbstractExpression body, String baseURI, Boolean copyNamespacesPreserve, Boolean copyNamespacesInherit, boolean emptyLeast) {
         this.namespaceDeclarations = namespaceDeclarations;
         this.externalVariables = variableDefinitions;
         this.defaultCollation = defaultCollation;
@@ -35,6 +36,7 @@ public class XQuery {
         this.baseURI = baseURI;
         this.inheritNamespaces = copyNamespacesInherit;
         this.preserveNamespaces = copyNamespacesPreserve;
+        this.emptyLeast = emptyLeast;
     }
     
     public XQuery (AbstractExpression body) {
@@ -48,6 +50,7 @@ public class XQuery {
         this.baseURI = null;
         this.inheritNamespaces = null;
         this.preserveNamespaces = null;
+        this.emptyLeast = false;
     }
     
     public String toString () {
@@ -156,6 +159,10 @@ public class XQuery {
 
     public String getBaseURI() {
         return baseURI;
+    }
+
+    public boolean isEmptyLeast() {
+        return emptyLeast;
     }
 
 }

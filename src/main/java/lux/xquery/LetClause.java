@@ -29,9 +29,9 @@ public class LetClause extends FLWORClause {
         seq.toString(buf);
     }
 
-    public AbstractExpression accept(ExpressionVisitor visitor) {
+    public LetClause accept(ExpressionVisitor visitor) {
         seq = seq.accept(visitor);
-        return seq;
+        return visitor.visit(this);
     }
 
 }

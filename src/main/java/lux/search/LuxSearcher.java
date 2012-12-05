@@ -7,6 +7,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.Directory;
 
@@ -32,6 +33,16 @@ public class LuxSearcher extends IndexSearcher {
    */
   public DocIdSetIterator search (Query query) throws IOException {
       return new DocIterator (query, false);
+  }
+  
+  /**
+   * @param query the Lucene query
+   * @return the results of the query as a Lucene DocIdSetIterator, ordered using the sort criterion. 
+   * Results are returned in batches, so deep paging is possible, but expensive.
+   * @throws IOException
+   */
+  public DocIdSetIterator search (Query query, Sort sort) throws IOException {
+      return new DocIterator (query, sort);
   }
 
   /**
@@ -64,8 +75,18 @@ public class LuxSearcher extends IndexSearcher {
           docID = -1;
           advanceScorer();
       }
+      
+      /**
+       * @param query the lucene query whose results will be iterated
+       * @param sort the sort criterion
+       * @throws IOException
+       */
+      public DocIterator(Query query, Sort sort) {
+          ordered = false;
+        // TODO Auto-generated constructor stub
+      }
 
-      private void advanceScorer () throws IOException {
+    private void advanceScorer () throws IOException {
           while (nextReader < subReaders.length) {
               docBase = docStarts[nextReader];
               scorer = weight.scorer(subReaders[nextReader++], ordered, true);

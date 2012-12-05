@@ -35,7 +35,7 @@ public class LuxExists extends SearchBase {
         return true;
     }
     
-    @Override public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts) throws XPathException {
+    @Override public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {

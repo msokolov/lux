@@ -19,19 +19,16 @@ import net.sf.saxon.value.SequenceType;
 
 
 /**
- * This function accepts the name of a Lucene field, and a starting position,
+ * This function accepts the name of a Lucene field, and a starting value,
  * and returns the sequence of terms drawn from the field, ordered according
- * to its natural order, starting with the first term that is >= to the specified
- * starting position.
+ * to its natural order, starting with the first term that is >= the starting value.
  * 
- * TODO: accept an indexable-sequence (restricted class of XdmItem) 
- * rather than a field name, and infer the field name from that.
  */
 public class FieldTerms extends ExtensionFunctionDefinition {
 
     @Override
     public StructuredQName getFunctionQName() {
-        return new StructuredQName("lux", FunCall.LUX_NAMESPACE, "fieldTerms");
+        return new StructuredQName("lux", FunCall.LUX_NAMESPACE, "field-terms");
     }
 
     @Override

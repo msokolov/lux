@@ -9,6 +9,7 @@ import lux.exception.LuxException;
 import lux.functions.Commit;
 import lux.functions.DeleteDocument;
 import lux.functions.FieldTerms;
+import lux.functions.FieldValues;
 import lux.functions.InsertDocument;
 import lux.functions.LuxCount;
 import lux.functions.LuxExists;
@@ -125,6 +126,7 @@ public class XCompiler {
         processor.registerExtensionFunction(new LuxCount());
         processor.registerExtensionFunction(new LuxExists());
         processor.registerExtensionFunction(new FieldTerms());
+        processor.registerExtensionFunction(new FieldValues());
         processor.registerExtensionFunction(new Transform());
         processor.registerExtensionFunction(new InsertDocument());
         processor.registerExtensionFunction(new DeleteDocument());

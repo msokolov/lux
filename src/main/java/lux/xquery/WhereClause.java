@@ -25,9 +25,9 @@ public class WhereClause extends FLWORClause {
         predicate.toString(buf);
     }
 
-    public AbstractExpression accept(ExpressionVisitor visitor) {
+    public WhereClause accept(ExpressionVisitor visitor) {
         predicate = predicate.accept(visitor);
-        return predicate;
+        return visitor.visit(this);
     }
 
 }

@@ -34,7 +34,7 @@ public class LuxCount extends SearchBase {
         return true;
     }
     
-    @Override public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts) throws XPathException {
+    @Override public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {

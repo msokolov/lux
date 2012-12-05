@@ -7,17 +7,21 @@ import lux.xquery.Conditional;
 import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
+import lux.xquery.ForClause;
 import lux.xquery.InstanceOf;
 import lux.xquery.Let;
+import lux.xquery.LetClause;
+import lux.xquery.OrderByClause;
 import lux.xquery.ProcessingInstructionConstructor;
 import lux.xquery.Satisfies;
 import lux.xquery.TextConstructor;
 import lux.xquery.Variable;
+import lux.xquery.WhereClause;
 
 public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     
     /**
-     * Tihs method is called by every visit() method in this class. 
+     * This method is called by every visit() method in this class. 
      * Subclasses may extend this convenience method in order to provide a default behavior for all
      * expressions for which they don't provide an explicit visit() override.
      * @param expr an expression to visit
@@ -83,6 +87,11 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     }
 
     @Override
+    public ForClause visit (ForClause forClause) {
+        return forClause;
+    }
+
+    @Override
     public AbstractExpression visit(FunCall func) {
         return visitDefault (func);
     }
@@ -98,8 +107,18 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     }
 
     @Override
+    public LetClause visit (LetClause letClause) {
+        return letClause;
+    }
+
+    @Override
     public AbstractExpression visit(LiteralExpression literal) {
         return visitDefault (literal);
+    }
+
+    @Override
+    public OrderByClause visit (OrderByClause orderByClause) {
+        return orderByClause;
     }
 
     @Override
@@ -161,6 +180,12 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     public AbstractExpression visit(Variable var) {
         return visitDefault (var);
     }
+
+    @Override
+    public WhereClause visit (WhereClause whereClause) {
+        return whereClause;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

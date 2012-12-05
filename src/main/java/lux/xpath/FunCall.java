@@ -47,6 +47,7 @@ public class FunCall extends AbstractExpression {
     public static final QName LUX_SEARCH = new QName (LUX_NAMESPACE, "search", "lux");
     public static final QName LUX_COUNT = new QName (LUX_NAMESPACE, "count", "lux");
     public static final QName LUX_EXISTS = new QName (LUX_NAMESPACE, "exists", "lux");
+    public static final QName LUX_FIELD_VALUES = new QName (LUX_NAMESPACE, "field-values", "lux");
     
     public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
     public static final QName FN_ROOT = new QName (FN_NAMESPACE, "root", "fn");
@@ -96,18 +97,12 @@ public class FunCall extends AbstractExpression {
         }
         return false;
     }
-    /*
-    public boolean isAbsolute () {
-        if (name.equals(LUX_SEARCH)) {
-            return true;
-        }
-        return false;
-    }
-    */
+
     /**
-     * @return for functions that return their argument, like data() and typecasts,
-     * the argument's rightmost subexpression is returned.
-     * For other functions, the function expression itself is returned.
+     * @return for "transparent" functions that return their argument, like
+     * data() and typecasts, the argument's rightmost subexpression (last
+     * context step) is returned.  For other functions, the function
+     * expression itself is returned.
      */
     @Override
     public AbstractExpression getLastContextStep () {

@@ -19,6 +19,10 @@ public class OrderByClause extends FLWORClause {
     public void setSequence (AbstractExpression seq) {
     }
 
+    public SortKey[] getSortKeys () {
+        return sortKeys;
+    }
+
     @Override
     public void toString(StringBuilder buf) {
         buf.append ("order by ");
@@ -29,7 +33,7 @@ public class OrderByClause extends FLWORClause {
         }
     }
 
-    public AbstractExpression accept(ExpressionVisitor visitor) {
+    public OrderByClause accept(ExpressionVisitor visitor) {
         for (int i = 0; i < sortKeys.length; i++) {
             AbstractExpression key = sortKeys[i].getKey();
             AbstractExpression key2 = key.accept(visitor);
@@ -37,7 +41,7 @@ public class OrderByClause extends FLWORClause {
                 sortKeys[i] = new SortKey(key2, sortKeys[i].getOrder(), sortKeys[i].getCollation(), sortKeys[i].isEmptyLeast());
             }
         }
-        return null;
+        return visitor.visit(this);
     }
 }
 

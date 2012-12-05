@@ -468,11 +468,10 @@ public class BasicQueryTest {
     }
 
     static class MockQuery extends XPathQuery {
-        private String queryString;
+        private final String queryString;
 
         MockQuery (String queryString, long facts) {
-            super (null, null, facts, XPathQuery.typeFromFacts (facts));
-            this.facts = facts;
+            super (null, facts, XPathQuery.typeFromFacts (facts));
             this.queryString = queryString;
         }
 

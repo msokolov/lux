@@ -194,7 +194,8 @@ public class SaxonTranslator {
                 body,
                 queryModule.getBaseURI(),
                 isPreserveNamespaces,
-                isInheritNamespaces);
+                isInheritNamespaces,
+                queryModule.isEmptyLeast());
     }
     
     public XQuery queryFor(AbstractExpression ex) {

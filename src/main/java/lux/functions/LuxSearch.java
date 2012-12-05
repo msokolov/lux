@@ -33,8 +33,21 @@ public class LuxSearch extends SearchBase {
     public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
         return SequenceType.makeSequenceType(NodeKindTest.DOCUMENT, StaticProperty.ALLOWS_ZERO_OR_MORE);
     }
-
-
+    
+    @Override
+    public SequenceType[] getArgumentTypes() {
+        return new SequenceType[] { 
+                SequenceType.SINGLE_ITEM,
+                SequenceType.OPTIONAL_INTEGER,
+                SequenceType.OPTIONAL_STRING
+                };
+    }
+    
+    @Override
+    public int getMaximumNumberOfArguments() {
+        return 3;
+    }
+    
     /**
      * Iterate over the search results
      *
@@ -44,9 +57,10 @@ public class LuxSearch extends SearchBase {
      * expression to its result.
      * @throws XPathException
      */
-    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, long facts) throws XPathException {        
+    @Override
+    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, long facts, String sortCriteria) throws XPathException {        
         try {
-            return new SearchResultIterator (eval, query);
+            return new SearchResultIterator (eval, query, sortCriteria);
         } catch (IOException e) {
             throw new XPathException (e);
         }

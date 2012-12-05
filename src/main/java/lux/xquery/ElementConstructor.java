@@ -8,7 +8,7 @@ import lux.xpath.Namespace;
 
 public class ElementConstructor extends AbstractExpression {
 
-    private final QName qname;
+    private final QName name;
     private final Namespace[] namespaces;
     private final AttributeConstructor[] attributes;
     
@@ -23,7 +23,7 @@ public class ElementConstructor extends AbstractExpression {
      */
     public ElementConstructor(QName qname, Namespace[] namespaces, AbstractExpression content, AttributeConstructor ... attributes) {
         super(Type.ELEMENT);
-        this.qname = qname;
+        this.name = qname;
         this.subs = new AbstractExpression[] { content };
         this.namespaces = namespaces;
         this.attributes = attributes;
@@ -35,7 +35,7 @@ public class ElementConstructor extends AbstractExpression {
 
     public ElementConstructor (QName qname, AttributeConstructor ... attributes) {
         super(Type.ELEMENT);
-        this.qname = qname;
+        this.name = qname;
         this.subs = new AbstractExpression[0];
         this.namespaces = null;
         this.attributes = attributes;
@@ -49,7 +49,7 @@ public class ElementConstructor extends AbstractExpression {
     @Override
     public void toString(StringBuilder buf) {
         buf.append ('<');
-        qname.toString(buf);
+        name.toString(buf);
         boolean hasNsDecl = namespaces != null && namespaces.length > 0;
         if (hasNsDecl) {
             buf.append (' ');
@@ -107,7 +107,7 @@ public class ElementConstructor extends AbstractExpression {
                 buf.append ('}');
             }
             buf.append("</");
-            qname.toString(buf);
+            name.toString(buf);
             buf.append ('>');
         }
     }
@@ -115,7 +115,7 @@ public class ElementConstructor extends AbstractExpression {
     private AbstractExpression getContent() {
         return subs.length > 0 ? subs[0] : null;
     }
-
+    
     private void appendNamespace (Namespace ns, StringBuilder buf) {
         buf.append ("xmlns");
         if (!ns.getPrefix().isEmpty()) {
