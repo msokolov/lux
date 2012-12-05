@@ -4,10 +4,13 @@ import java.io.IOException;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.Directory;
 
@@ -42,7 +45,7 @@ public class LuxSearcher extends IndexSearcher {
    * @throws IOException
    */
   public DocIdSetIterator search (Query query, Sort sort) throws IOException {
-      return new DocIterator (query, sort);
+      return new TopDocsIterator (query, sort);
   }
 
   /**
@@ -75,18 +78,8 @@ public class LuxSearcher extends IndexSearcher {
           docID = -1;
           advanceScorer();
       }
-      
-      /**
-       * @param query the lucene query whose results will be iterated
-       * @param sort the sort criterion
-       * @throws IOException
-       */
-      public DocIterator(Query query, Sort sort) {
-          ordered = false;
-        // TODO Auto-generated constructor stub
-      }
 
-    private void advanceScorer () throws IOException {
+      private void advanceScorer () throws IOException {
           while (nextReader < subReaders.length) {
               docBase = docStarts[nextReader];
               scorer = weight.scorer(subReaders[nextReader++], ordered, true);
@@ -128,6 +121,50 @@ public class LuxSearcher extends IndexSearcher {
       
   }
   
+  class TopDocsIterator extends DocIdSetIterator {
+      
+      private final Query query;
+      private final Sort sort;
+      private int docID = -1;
+      private int iDocNext = 0;
+      private int iDocBase = 0;
+      private TopDocs topDocs;
+      private static final int BATCH_SIZE = 200;
+      
+      TopDocsIterator (Query query, Sort sort) throws IOException {
+          this.query = query;
+          this.sort = sort;
+          topDocs = search(createNormalizedWeight(query), null, BATCH_SIZE, sort, false);
+      }
+
+      @Override
+      public int docID() {
+          return docID;
+      }
+
+      @Override
+      public int nextDoc() throws IOException {
+          if (iDocNext < topDocs.scoreDocs.length) {
+              docID = topDocs.scoreDocs[iDocNext++].doc;
+          }
+          else if (iDocBase + iDocNext < topDocs.totalHits) {
+              // load a larger batch of docs
+              topDocs = search(createNormalizedWeight(query), null, BATCH_SIZE, sort, false);
+          }
+          else {
+              // exhausted the entire result set
+              docID = -1;
+          }
+          return docID;
+      }
+
+    @Override
+    public int advance(int target) throws IOException {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+    
+  }
 
 }
 
