@@ -1,15 +1,19 @@
 package lux.xquery;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 import lux.xpath.AbstractExpression;
 import lux.xpath.ExpressionVisitor;
 import lux.xpath.LiteralExpression;
 
 public class OrderByClause extends FLWORClause {
 
-    private final SortKey[] sortKeys;
+    private final ArrayList<SortKey> sortKeys;
     
     public OrderByClause(SortKey[] sortKeys) {
-        this.sortKeys = sortKeys;
+        this.sortKeys = new ArrayList<SortKey>();
+        Collections.addAll(this.sortKeys, sortKeys);
     }
     
     public AbstractExpression getSequence() {
@@ -19,26 +23,33 @@ public class OrderByClause extends FLWORClause {
     public void setSequence (AbstractExpression seq) {
     }
 
-    public SortKey[] getSortKeys () {
+    /**
+     * @return a *mutable* list of the sort keys.
+     */
+    public ArrayList<SortKey> getSortKeys () {
         return sortKeys;
     }
 
     @Override
     public void toString(StringBuilder buf) {
+        if (sortKeys.isEmpty()) {
+            return;
+        }
         buf.append ("order by ");
-        sortKeys[0].toString(buf);
-        for (int i = 1; i < sortKeys.length; i++) {
+        sortKeys.get(0).toString(buf);
+        for (int i = 1; i < sortKeys.size(); i++) {
             buf.append(", ");
-            sortKeys[i].toString(buf);
+            sortKeys.get(i).toString(buf);
         }
     }
 
     public OrderByClause accept(ExpressionVisitor visitor) {
-        for (int i = 0; i < sortKeys.length; i++) {
-            AbstractExpression key = sortKeys[i].getKey();
+        for (int i = 0; i < sortKeys.size(); i++) {
+            SortKey sk = sortKeys.get(i);
+            AbstractExpression key = sk.getKey();
             AbstractExpression key2 = key.accept(visitor);
             if (key != key2) {
-                sortKeys[i] = new SortKey(key2, sortKeys[i].getOrder(), sortKeys[i].getCollation(), sortKeys[i].isEmptyLeast());
+                sortKeys.set(i, new SortKey(key2, sk.getOrder(), sk.getCollation(), sk.isEmptyLeast()));
             }
         }
         return visitor.visit(this);

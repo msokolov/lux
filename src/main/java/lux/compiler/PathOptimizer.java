@@ -5,6 +5,7 @@ import static lux.index.IndexConfiguration.INDEX_PATHS;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import lux.XCompiler.SearchStrategy;
 import lux.index.FieldName;
@@ -42,7 +43,6 @@ import lux.xquery.XQuery;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 
 /**
@@ -198,7 +198,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = pop();
         if (n == 1) {
             ValueType type = valueType == null ? query.getResultType() : query.getResultType().promote(valueType);
-            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), type, indexConfig);
+            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), type, indexConfig, query.getSortFields());
         } else {
             for (int i = 0; i < n-1; i++) {
                 query = combineQueries (pop(), occur, query, valueType);
@@ -323,10 +323,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     && getQuery().getResultType() == ValueType.DOCUMENT) {
                 type = ValueType.DOCUMENT;
             }
-            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), getQuery().getFacts(), type, indexConfig);
+            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), getQuery().getFacts(), type, indexConfig, getQuery().getSortFields());
         } else {
             ParseableQuery termQuery = nodeNameTermQuery(step.getAxis(), name);
-            query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexConfig);
+            query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexConfig, getQuery().getSortFields());
         }
        push(query);
        return step;
@@ -381,7 +381,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (int i = args.length; i > 0; --i) {
                 pop();
             }
-            push (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), 0, ValueType.VALUE, indexConfig));
+            push (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), 0, ValueType.VALUE, indexConfig, null));
         } else {
             combineTopQueries(args.length, occur, funcall.getReturnType());
         }
@@ -390,7 +390,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 AbstractExpression arg = args[0];
                 if (arg.getType() == Type.LITERAL) {
                     // save away the field name as a possible sort key
-                    queryStack.get(0).setSort(new Sort(new SortField (arg.toString(), SortField.STRING)));
+                    getQuery().setSortFields(new SortField[] {new SortField (((LiteralExpression)arg).getValue().toString(), SortField.STRING)});
                 }
             }
         }
@@ -645,7 +645,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             termQuery = makeAttributeValueQuery(nodeName, value.getValue().toString(), indexConfig);
         }
         if (termQuery != null) {
-            XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexConfig);
+            XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexConfig, null);
             XPathQuery baseQuery = pop();
             query = combineQueries (query, Occur.MUST, baseQuery, baseQuery.getResultType());
             push(query);
@@ -719,10 +719,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private FunCall createSearchCall (QName functionName, XPathQuery query, long facts) {
         String defaultField = indexConfig.isOption(INDEX_PATHS) ? 
                 indexConfig.getFieldName(FieldName.PATH) : indexConfig.getFieldName(FieldName.ELT_QNAME);
-        return new FunCall (functionName, query.getResultType(), 
-                query.toXmlNode(defaultField),
-                new LiteralExpression (facts),
-                new LiteralExpression (createSortString(query.getSort())));
+        if (query.getSortFields() == null || query.getSortFields().length == 0) {
+            return new FunCall (functionName, query.getResultType(), 
+                    query.toXmlNode(defaultField),
+                    new LiteralExpression (facts));
+        } else {
+            return new FunCall (functionName, query.getResultType(), 
+                    query.toXmlNode(defaultField),
+                    new LiteralExpression (facts),
+                    new LiteralExpression (createSortString(query.getSortFields())));
+        }
     }
     
     private FunCall createCollectionSearch(XPathQuery query) {
@@ -732,17 +738,17 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 return new FunCall (FunCall.FN_COLLECTION, query.getResultType(), 
                 new LiteralExpression ("lux:" + 
                         query.toQueryString(defaultField, indexConfig) +
-                        "?sort=" + createSortString(query.getSort())));        
+                        "?sort=" + createSortString(query.getSortFields())));        
     }
     
     /**
      * create an string describing sort options to be passed as an argument search
      * @return
      */
-    private String createSortString (Sort sort) {
+    private String createSortString (SortField[] sort) {
         StringBuilder buf = new StringBuilder();
         if (sort != null) {
-            for (SortField sortField : sort.getSort()) {
+            for (SortField sortField : sort) {
                 buf.append (sortField.getField());
                 if (sortField.getReverse()) {
                     buf.append (" descending");
@@ -798,14 +804,24 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public OrderByClause visit (OrderByClause orderByClause) {
-        ArrayList<SortField> sortFields  = new ArrayList<SortField>();
-        for (SortKey sortKey : orderByClause.getSortKeys()) {
-            AbstractExpression order = sortKey.getOrder();
+        LinkedList<SortField> sortFields  = new LinkedList<SortField>();
+        ArrayList<SortKey> sortKeys = orderByClause.getSortKeys();
+        boolean foundUnindexedSort = false;
+        int stackOffset = queryStack.size() - sortKeys.size();
+        for (int i = 0; i < sortKeys.size(); i++) {
             // pop the queries corresponding to each *and ignore them*: results don't need to 
-            // match the order by query in order to match the overall query
-            XPathQuery q = pop();
-            if (q.getSort() != null) {
-                SortField sortField = q.getSort().getSort()[0];
+            // match the order by query in order to match the overall query,
+            // but accumulate a list of contiguous indexed order keys
+            
+            // Pull queries from middle of stack since they get pushed in reverse order
+            XPathQuery q = queryStack.remove(stackOffset);
+            if (q.getSortFields() == null) {
+                // once we find an unindexed sort field, stop adding sort indexes to the query
+                foundUnindexedSort = true;
+            } else if (! foundUnindexedSort) {
+                SortKey sortKey = sortKeys.get(i);
+                String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();
+                SortField sortField = q.getSortFields()[0];
                 if (order.toString().equals("descending")) {
                     // reverse sort order
                     sortField = new SortField (sortField.getField(), sortField.getType(), true);
@@ -827,18 +843,20 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     sortField.setMissingValue(0);
                 }
                 */
+                // add at the beginning: fields pop off the stack in reverse order
                 sortFields.add(sortField);
+                sortKeys.remove(i);
+                -- i; // don't advance: we shrank the list
             }
         }
         if (sortFields.isEmpty()) {
             push (MATCH_ALL);
         } else {
-            XPathQuery query = XPathQuery.getQuery(MatchAllPQuery.getInstance(), 0, ValueType.DOCUMENT, indexConfig);
-            query.setSort(new Sort(sortFields.toArray(new SortField[sortFields.size()])));
+            XPathQuery query = XPathQuery.getQuery(MatchAllPQuery.getInstance(), MATCH_ALL.getFacts(), ValueType.DOCUMENT, indexConfig, null);
+            query.setSortFields(sortFields.toArray(new SortField[sortFields.size()]));
             push (query);
-            // plus Sort criterion
         }
-      return orderByClause;
+        return orderByClause;
     }
 
     /**

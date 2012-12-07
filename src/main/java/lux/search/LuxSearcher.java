@@ -4,13 +4,11 @@ import java.io.IOException;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.Directory;
 
@@ -149,7 +147,12 @@ public class LuxSearcher extends IndexSearcher {
           }
           else if (iDocBase + iDocNext < topDocs.totalHits) {
               // load a larger batch of docs
-              topDocs = search(createNormalizedWeight(query), null, BATCH_SIZE, sort, false);
+              // TODO: a better implementation would remember the previous endpoint
+              // by value (total ordering=sortkey,docID) and skip over the first set of docs,
+              // storing only the next batch - we could possibly add a term to the query expressing
+              // this?
+              iDocBase = iDocNext;
+              topDocs = search(createNormalizedWeight(query), null, iDocNext + BATCH_SIZE, sort, false);
           }
           else {
               // exhausted the entire result set
@@ -160,8 +163,8 @@ public class LuxSearcher extends IndexSearcher {
 
     @Override
     public int advance(int target) throws IOException {
-        // TODO Auto-generated method stub
-        return 0;
+        // unimplemented - do we need this?
+        return NO_MORE_DOCS;
     }
     
   }

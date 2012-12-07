@@ -16,7 +16,7 @@ import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
 
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 
 /**
  * Wraps a Lucene Query, with advice as to how to process its results as XPath.
@@ -45,14 +45,14 @@ public class XPathQuery {
     /**
      * A Lucene sort order to be applied to the query.  This will have been computed from an XQuery order by expression.
      */
-    private Sort sort;
+    private SortField[] sortFields;
     
-    public Sort getSort() {
-        return sort;
+    public SortField[] getSortFields() {
+        return sortFields;
     }
 
-    public void setSort(Sort sort) {
-        this.sort = sort;
+    public void setSortFields(SortField[] sortFields) {
+        this.sortFields = sortFields;
     }
 
     /**
@@ -124,11 +124,12 @@ public class XPathQuery {
      * @param query the query on which the result is based
      * @param resultFacts the facts to use in the new query
      * @param valueType the result type of the new query
+     * @param sortFields2 
      * @param options the indexer options; controls which type of match-all query may be returned
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
-    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig) {
-        if ((query instanceof MatchAllPQuery && resultFacts == MINIMAL) ||
+    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig, SortField[] sortFields) {
+        if ((query instanceof MatchAllPQuery && resultFacts == MINIMAL && sortFields == null) ||
                 query == SpanMatchAll.getInstance()) {
             if (valueType == ValueType.DOCUMENT) {
                 if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
@@ -143,7 +144,9 @@ public class XPathQuery {
                 return MATCH_ALL_NODE;
             }
         }
-        return new XPathQuery (query, resultFacts, valueType);
+        XPathQuery q = new XPathQuery (query, resultFacts, valueType);
+        q.setSortFields(sortFields);
+        return q;
     }
     
     public static XPathQuery getMatchAllQuery (IndexConfiguration indexConfig) {
@@ -197,7 +200,25 @@ public class XPathQuery {
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
         long resultFacts = combineQueryFacts (this, precursor);
         ParseableQuery result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
-        return getQuery(result, resultFacts, type, config);
+        SortField[] combined = combineSortFields(precursor);
+        return getQuery(result, resultFacts, type, config, combined);
+    }
+
+    private SortField[] combineSortFields(XPathQuery precursor) {
+        if (sortFields != null) {
+            if (precursor.sortFields != null) {
+                SortField[] combined = new SortField [sortFields.length + precursor.sortFields.length];
+                System.arraycopy(sortFields, 0, combined, 0, sortFields.length);
+                System.arraycopy(precursor.sortFields, 0, combined, sortFields.length, precursor.sortFields.length);
+                return combined;
+            } else {
+                return sortFields;
+            }
+        } else if (precursor.sortFields != null) {
+            return precursor.sortFields;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -209,7 +230,10 @@ public class XPathQuery {
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance) {
         long resultFacts = combineQueryFacts (this, precursor);
         ParseableQuery result = combineSpans (this.query, occur, precursor.query, distance);
-        return new XPathQuery(result, resultFacts, type);
+        SortField[] combinedSorts = combineSortFields(precursor);
+        XPathQuery q = new XPathQuery(result, resultFacts, type);
+        q.setSortFields(combinedSorts);
+        return q;
     }
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {

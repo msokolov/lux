@@ -16,6 +16,7 @@ import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xquery.XQuery;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -32,6 +33,16 @@ public class BasicQueryTest {
             MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
             LUX_FOO, LINE, 
     };
+    
+    protected XCompiler compiler;
+    protected Evaluator eval;
+    
+    @Before public void setup () {
+        compiler = new XCompiler(getIndexer().getConfiguration());
+        compiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
+        compiler.declareNamespace("ns", "http://namespace.org/#ns");
+        eval = new Evaluator(compiler, null, null);
+    }
     
     @Test public void testNoQuery () throws Exception {
 
@@ -276,6 +287,38 @@ public class BasicQueryTest {
                 + ",2)/descendant::SCENE", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
     }
     
+    @Test public void testOrderBy () throws Exception {
+        String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc";
+        assertQuery (query, XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT);
+        assertSortKeys (query, "sortkey");
+    }
+    
+    @Test 
+    public void testOrderBy2 () throws Exception {
+        // two indexed sortkeys
+        String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc";
+        assertQuery (query, XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT);
+        assertSortKeys (query, "sortkey,sk2");
+    }
+    
+    @Test 
+    public void testOrderByDescending () throws Exception {
+        // two indexed sortkeys, plus descending
+        String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey') descending, $doc/lux:field-values('sk2') return $doc";
+        assertSortKeys (query, "sortkey descending,sk2");
+    }
+    
+    @Test
+    public void testOrderByNoIndex () throws Exception {
+        // one indexed sortkey, one xpath sort
+        String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/date descending return $doc";
+        assertSortKeys (query, "sortkey");
+
+        // one xpath sort, one indexed sortkey
+        query = "for $doc in //ACT order by $doc/date, $doc/lux:field-values('sortkey') ascending return $doc";
+        assertSortKeys (query, new String[0]);
+    }
+    
     public void assertQuery (String xpath, int facts, Q ... queries) throws Exception {
         assertQuery (xpath, facts, null, queries);
     }
@@ -295,17 +338,24 @@ public class BasicQueryTest {
      */
 
     public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) throws Exception {
-        XCompiler compiler = new XCompiler(getIndexer().getConfiguration());
-        compiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-        compiler.declareNamespace("ns", "http://namespace.org/#ns");
-        Evaluator eval = new Evaluator(compiler, null, null);
         assertQuery(xpath, optimized, facts, type, eval, queries);
+    }
+
+    private void assertSortKeys(String xpath, String ... sortFields) {
+        compiler.compile(xpath);
+        XQuery optimizedQuery = compiler.getLastOptimized();
+        AbstractExpression ex = optimizedQuery.getBody();
+        SortExtractor extractor = new SortExtractor();
+        ex.accept(extractor);
+        assertEquals ("incorrect number of sort fields:", sortFields.length, extractor.sorts.size());
+        for (int i = 0; i < sortFields.length; i++) {
+            assertEquals (sortFields[i], extractor.sorts.get(i));
+        }
     }
 
     private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, Evaluator eval,
             Q ... queries) 
     {
-        XCompiler compiler = eval.getCompiler();
         compiler.compile(xpath);
         XQuery optimizedQuery = compiler.getLastOptimized();
         AbstractExpression ex = optimizedQuery.getBody();
@@ -504,6 +554,22 @@ public class BasicQueryTest {
                         : queryArg.toString();
                 long facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
                 queries.add( new MockQuery (q, facts));
+            }
+            return funcall;
+        }
+        
+    }
+    
+    static class SortExtractor extends ExpressionVisitorBase {
+        ArrayList<String> sorts = new ArrayList<String>();
+        
+        public FunCall visit (FunCall funcall) {
+            if (funcall.getName().equals (FunCall.LUX_SEARCH)) {
+                if (funcall.getSubs().length >= 3) {
+                    AbstractExpression sortArg = funcall.getSubs()[2];
+                    String s = ((LiteralExpression)sortArg).getValue().toString();
+                    sorts.add(s);
+                }
             }
             return funcall;
         }

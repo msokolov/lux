@@ -4,20 +4,29 @@ import static lux.IndexTestSupport.QUERY_CONSTANT;
 import static lux.IndexTestSupport.QUERY_EXACT;
 import static lux.IndexTestSupport.QUERY_MINIMAL;
 import static lux.IndexTestSupport.QUERY_NO_DOCS;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.INDEX_QNAMES;
+import static lux.index.IndexConfiguration.STORE_XML;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Iterator;
 
 import lux.exception.LuxException;
+import lux.index.XmlIndexer;
+import lux.index.field.XPathField;
+import lux.index.field.FieldDefinition.Type;
 import lux.saxon.UnOptimizer;
 import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmNode;
 
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.store.LockObtainFailedException;
+import org.apache.lucene.store.RAMDirectory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -36,7 +45,10 @@ public class SearchTest {
     
     @BeforeClass
     public static void setup () throws Exception {
-        index = new IndexTestSupport();
+        XmlIndexer indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_XML|INDEX_FULLTEXT);
+        indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
+        index = new IndexTestSupport("lux/hamlet.xml", indexer, new RAMDirectory());
+        
         // new IndexTestSupport(XmlIndexer.INDEX_QNAMES|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM, new RAMDirectory());
         totalDocs= index.totalDocs;
     }
@@ -412,7 +424,21 @@ public class SearchTest {
         // FIXME - this isn't optimized as well as it could be; it has some Booleans in it?
         assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);        
     }
+    
+    @Test
+    public void testOrderBy () throws Exception {
+        assertSearch ("ACT", "(for $doc in lux:search('bernardo')" + 
+            " order by lux:field-values('doctype', $doc) return $doc/*/name())[1]", 0, 1);
+    }
         
+    @Test
+    public void testOrderByPagination () throws Exception {
+        // TODO: optimize so we can skip over the unused results - should be able 
+        // to reduce to doc-count = 1
+        assertSearch ("ACT", "(for $doc in lux:search('bernardo')" + 
+            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
+    }
+    
     private XdmResultSet assertSearch(String query) throws Exception {
         return assertSearch (query, 0);
     }

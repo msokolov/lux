@@ -34,12 +34,12 @@ public class SearchPathQueryTest extends BasicQueryTest {
     private static int repeatCount=1;
     
     @BeforeClass
-    public static void setup () throws Exception {
+    public static void setupClass () throws Exception {
         index = new IndexTestSupport();
     }
     
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDownClass() throws Exception {
         index.close();
     }
     
