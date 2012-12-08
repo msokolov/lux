@@ -125,7 +125,7 @@ public class LuxSearcher extends IndexSearcher {
       private final Sort sort;
       private int docID = -1;
       private int iDocNext = 0;
-      private int iDocBase = 0;
+      // private int iDocBase = 0;
       private TopDocs topDocs;
       private static final int BATCH_SIZE = 200;
       
@@ -145,13 +145,13 @@ public class LuxSearcher extends IndexSearcher {
           if (iDocNext < topDocs.scoreDocs.length) {
               docID = topDocs.scoreDocs[iDocNext++].doc;
           }
-          else if (iDocBase + iDocNext < topDocs.totalHits) {
+          else if (iDocNext < topDocs.totalHits) {
               // load a larger batch of docs
               // TODO: a better implementation would remember the previous endpoint
               // by value (total ordering=sortkey,docID) and skip over the first set of docs,
               // storing only the next batch - we could possibly add a term to the query expressing
               // this?
-              iDocBase = iDocNext;
+              // iDocBase = iDocNext;
               topDocs = search(createNormalizedWeight(query), null, iDocNext + BATCH_SIZE, sort, false);
           }
           else {
