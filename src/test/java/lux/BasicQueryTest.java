@@ -31,7 +31,7 @@ public class BasicQueryTest {
             ACT, ACT1, ACT2, ACT_CONTENT, ACT_CONTENT1, ACT_SCENE, ACT_SCENE1, ACT_SCENE_CONTENT, ACT_SCENE_CONTENT1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
             ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
             MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
-            LUX_FOO, LINE, 
+            LUX_FOO, LINE, TITLE, 
     };
     
     protected XCompiler compiler;
@@ -330,6 +330,20 @@ public class BasicQueryTest {
         assertSortKeys (query, new String[0]);
     }
     
+    // This test ensures that the optimizer ignores the argument of string(), and does not 
+    // use it to limit the set of documents evaluated by the query
+    @Test
+    public void testAtomizingEmptySequence () throws Exception {
+        String query = "(for $doc in collection() return string ($doc/*/TITLE))[2]";
+        // should return the titles of the second document in document order (which is a TITLE 
+        // and has no TITLE), but this was failing because we fetched only documents containing TITLE
+        assertQuery (query, 0, Q.MATCH_ALL);
+
+        query = "(for $doc in collection() return data($doc//TITLE))[2]";
+        assertQuery (query, XPathQuery.MINIMAL, Q.TITLE);
+
+    }
+    
     public void assertQuery (String xpath, int facts, Q ... queries) throws Exception {
         assertQuery (xpath, facts, null, queries);
     }
@@ -527,6 +541,8 @@ public class BasicQueryTest {
                   "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">PLAY</TermQuery></Clause>" + 
                 "</BooleanQuery></Clause>" +
                 "</BooleanQuery>";
+        case TITLE:
+            return "<TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery>";
         case MATCH_ALL: return "<MatchAllDocsQuery />";
         case AND: return "<TermQuery fieldName=\"lux_elt_name\">AND</TermQuery>";
         case LUX_FOO: return "<TermQuery fieldName=\"lux_elt_name\">foo&#x7B;http%3A%2F%2Fluxproject.net&#x7D;</TermQuery>";
