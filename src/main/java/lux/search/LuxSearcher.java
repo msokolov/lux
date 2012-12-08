@@ -156,7 +156,7 @@ public class LuxSearcher extends IndexSearcher {
           }
           else {
               // exhausted the entire result set
-              docID = -1;
+              docID = NO_MORE_DOCS;
           }
           return docID;
       }
