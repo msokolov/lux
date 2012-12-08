@@ -57,9 +57,9 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
             String [] tokens = fields[i].split("\\s+");
             boolean reverse = false;
             if (tokens.length > 1) {
-                if (tokens[2].equals("descending")) {
+                if (tokens[1].equals("descending")) {
                     reverse = true;
-                } else if (!tokens[2].equals("ascending")) {
+                } else if (!tokens[1].equals("ascending")) {
                     throw new LuxException ("Invalid sort key keyword: " + tokens[2] + " in: " + sortCriteria);
                 }
                 if (tokens.length > 2) {
