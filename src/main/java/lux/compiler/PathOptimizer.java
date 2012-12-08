@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import lux.XCompiler.SearchStrategy;
+import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.query.ParseableQuery;
@@ -37,9 +38,11 @@ import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
+import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
 import lux.xquery.SortKey;
 import lux.xquery.Variable;
+import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
 
 import org.apache.lucene.index.Term;
@@ -776,6 +779,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(FLWOR flwor) {
+        // combine any constraint from the return clause with the constraint from the clauses
+        flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0);
+        getQuery().setSortFields(null); // ignore any ordering expressions found in the return clause
         int length = flwor.getClauses().length;
         // iterate in reverse order so we can unwind the query stack from its "top"
         // which corresponds to the "bottom" of the expression tree.
@@ -787,8 +793,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
             AbstractExpression seq = clause.getSequence();
             clause.setSequence(optimizeExpression(seq, 0));
         }
-        // combine any constraint from the return clause with the constraint from the clauses
-        flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0);
         return flwor;
     }
 
@@ -799,9 +803,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         boolean foundUnindexedSort = false;
         int stackOffset = queryStack.size() - sortKeys.size();
         for (int i = 0; i < sortKeys.size(); i++) {
-            // pop the queries corresponding to each *and ignore them*: results don't need to 
-            // match the order by query in order to match the overall query,
-            // but accumulate a list of contiguous indexed order keys
+            // pop the queries off the stack that correspond to each sort key in this order by clause.
+            // Accumulate a list of contiguous indexed order keys.  Merge them with the
+            // query on the stack as an ordering criterion (not as a filter)
             
             // Pull queries from middle of stack since they get pushed in reverse order
             XPathQuery q = queryStack.remove(stackOffset);
@@ -810,29 +814,36 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 foundUnindexedSort = true;
             } else if (! foundUnindexedSort) {
                 SortKey sortKey = sortKeys.get(i);
+                AbstractExpression key = sortKey.getKey();
+                if (key instanceof FunCall) {
+                    // special case - it would be nice if Saxon figured this out when compiling
+                    FunCall keyFun = (FunCall)key;
+                    if (keyFun.getName().equals(FunCall.LUX_FIELD_VALUES) &&
+                        keyFun.getSubs().length < 2) {
+                        throw new LuxException("lux:field-values($key) depends on the context where there is no context defined");
+                    }
+                }
                 String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();
                 SortField sortField = q.getSortFields()[0];
                 if (order.toString().equals("descending")) {
                     // reverse sort order
                     sortField = new SortField (sortField.getField(), sortField.getType(), true);
                 }
-                /* FIXME:
-                 * punt on empty least/greatest for Strings for now: 
-                 * Lucene 4.0 seems to have a more sensible
-                 * implementation
-                 */
-                /*
-                if (sortField.getType() != SortField.STRING) {
-                    if (sortKey.isEmptyLeast()) {
-                        // use a minimum value for missing value
-                        switch (type) {
-                        }
-                    } else {
-                        // use a maximum value for missing value
-                    }
-                    sortField.setMissingValue(0);
+                if (! sortKey.isEmptyLeast()) {
+                    /* FIXME:
+                     * punt on empty greatest for Strings for now: 
+                     * Lucene 4.0 seems to have a more sensible
+                     * implementation
+                     */
+                    /*
+                    if (sortField.getType() == SortField.STRING) {
+                        sortField.setMissingValue("\uffff");
+                    } 
+                    else {
+                    */
+                    foundUnindexedSort = true;
+                    continue;
                 }
-                */
                 // add at the beginning: fields pop off the stack in reverse order
                 sortFields.add(sortField);
                 sortKeys.remove(i);
@@ -846,6 +857,24 @@ public class PathOptimizer extends ExpressionVisitorBase {
             push (query);
         }
         return orderByClause;
+    }
+    
+    @Override
+    public ForClause visit (ForClause forClause) {
+        getQuery().setSortFields(null);
+        return forClause;
+    }
+
+    @Override
+    public WhereClause visit (WhereClause whereClause) {
+        getQuery().setSortFields(null);
+        return whereClause;
+    }
+    
+    @Override
+    public LetClause visit (LetClause letClause) {
+        getQuery().setSortFields(null);
+        return letClause;
     }
 
     /**
