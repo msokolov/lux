@@ -13,7 +13,6 @@ import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.ArrayIterator;
-import net.sf.saxon.tree.iter.EmptyIterator;
 import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.StringValue;
 
@@ -78,7 +77,7 @@ public class FieldValues extends ExtensionFunctionDefinition {
     
     class FieldValuesCall extends ExtensionFunctionCall {
 
-        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @SuppressWarnings({ "rawtypes" })
         @Override
         public SequenceIterator<? extends Item> call(SequenceIterator<? extends Item>[] arguments, XPathContext context)
                 throws XPathException {
@@ -87,7 +86,7 @@ public class FieldValues extends ExtensionFunctionDefinition {
             if (arguments.length == 1) {
                 Item contextItem = context.getContextItem();
                 if (! (contextItem instanceof NodeInfo)) {
-                    return EmptyIterator.getInstance();
+                    throw new XPathException ("Call to lux:field-values($field-name) depends on context, but there is no context defined");
                 }
                 node = (NodeInfo) contextItem;
             } else {
