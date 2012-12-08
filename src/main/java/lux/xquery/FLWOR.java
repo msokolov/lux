@@ -12,10 +12,14 @@ public class FLWOR extends AbstractExpression {
         this.clauses = clauses;
         subs = new AbstractExpression[] { returnExpression };
     }
-    
+    // (return (let (for sequence (where) (order by))))
     public AbstractExpression accept(ExpressionVisitor visitor) {
-        for (FLWORClause clause : clauses) {
-            clause.accept (visitor);
+        for (int i = 0; i < clauses.length; i++) {
+            // accept in forward order since queries get reversed on the stack, and
+            // lower-numbered clauses depend on higher-numbered clauses.
+            // This leaves the deepest query at the top of the stack (last in),
+            // so it can be popped out first as we unwind in visit()
+            clauses[i].accept (visitor);
         }
         subs[0] = getReturnExpression().accept(visitor);
         return visitor.visit(this);

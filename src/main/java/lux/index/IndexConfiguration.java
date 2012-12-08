@@ -146,6 +146,12 @@ public class IndexConfiguration {
         return fieldName.getField();
     }
     
+    public String getDefaultFieldName () {
+        return isOption(INDEX_PATHS) ? 
+                getFieldName(FieldName.PATH) : 
+                    getFieldName(FieldName.ELT_QNAME);
+    }
+    
     /**
      * 
      * @param option an option flag; one of: NAMESPACE_AWARE, STORE_XML, STORE_PTREE, INDEX_QNAMES, INDEX_PATHS, INDEX_FULLTEXT

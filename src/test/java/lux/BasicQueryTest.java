@@ -293,8 +293,19 @@ public class BasicQueryTest {
         assertSortKeys (query, "sortkey");
     }
     
+    @Test public void testOrderByContextArgument () throws Exception {
+        String query = "for $doc in //ACT order by lux:field-values('sortkey', $doc) return $doc";
+        assertQuery (query, XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT);
+        assertSortKeys (query, "sortkey");
+    }
+
+    @Test public void testOrderBySearchFunCall () throws Exception {
+        String query = "for $doc in lux:search('foo') order by lux:field-values('sortkey', $doc) return $doc";
+        assertQuery (query, null, XPathQuery.MINIMAL, ValueType.DOCUMENT, "foo");
+        assertSortKeys (query, "sortkey");
+    }
     @Test 
-    public void testOrderBy2 () throws Exception {
+    public void testOrderBy2Keys () throws Exception {
         // two indexed sortkeys
         String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc";
         assertQuery (query, XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT);
@@ -337,8 +348,8 @@ public class BasicQueryTest {
      * @param queries the expected lucene query strings
      */
 
-    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) throws Exception {
-        assertQuery(xpath, optimized, facts, type, eval, queries);
+    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Evaluator eval, Q ... queries) throws Exception {
+        assertQuery(xpath, optimized, facts, type, queries);
     }
 
     private void assertSortKeys(String xpath, String ... sortFields) {
@@ -352,9 +363,17 @@ public class BasicQueryTest {
             assertEquals (sortFields[i], extractor.sorts.get(i));
         }
     }
-
-    private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, Evaluator eval,
-            Q ... queries) 
+    private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, 
+            Q ... queries) {
+        String[] qs = new String[queries.length];
+        int i = 0;
+        for (Q q : queries) {
+            qs[i++] = getQueryXml(q);
+        }
+        assertQuery (xpath, expectedOptimized, facts, type, qs);
+    }
+    private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, 
+            String ... queries) 
     {
         compiler.compile(xpath);
         XQuery optimizedQuery = compiler.getLastOptimized();
@@ -366,7 +385,7 @@ public class BasicQueryTest {
         ex.accept(extractor);
         assertEquals ("wrong number of queries for " + xpath, queries.length, extractor.queries.size());
         for (int i = 0; i < queries.length; i++) {
-            assertEquals (getQueryXml(queries[i]), extractor.queries.get(i).toString());
+            assertEquals (queries[i], extractor.queries.get(i).toString());
             //assertEquals (getQueryString(queries[i]), extractor.queries.get(i).toString());
         }
         if (queries.length > 0) {
@@ -552,7 +571,10 @@ public class BasicQueryTest {
                 AbstractExpression queryArg = funcall.getSubs()[0];
                 String q = (queryArg instanceof LiteralExpression) ? ((LiteralExpression)queryArg).getValue().toString()
                         : queryArg.toString();
-                long facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
+                long facts=0;
+                if (funcall.getSubs().length > 1) {
+                    facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
+                }
                 queries.add( new MockQuery (q, facts));
             }
             return funcall;

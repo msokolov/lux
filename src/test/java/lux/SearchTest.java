@@ -427,6 +427,9 @@ public class SearchTest {
     
     @Test
     public void testOrderBy () throws Exception {
+        // FIXME: we don't yet have a solution that allows us to push the order by
+        // optimization (to say nothing of additional constraints) into a user-supplied
+        // query using the string query syntax.
         assertSearch ("ACT", "(for $doc in lux:search('bernardo')" + 
             " order by lux:field-values('doctype', $doc) return $doc/*/name())[1]", 0, 1);
     }
@@ -435,7 +438,7 @@ public class SearchTest {
     public void testOrderByPagination () throws Exception {
         // TODO: optimize so we can skip over the unused results - should be able 
         // to reduce to doc-count = 1
-        assertSearch ("ACT", "(for $doc in lux:search('bernardo')" + 
+        assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
             " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
     }
     

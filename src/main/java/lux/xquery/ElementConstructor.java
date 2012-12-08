@@ -9,6 +9,10 @@ import lux.xpath.Namespace;
 public class ElementConstructor extends AbstractExpression {
 
     private final QName name;
+    public QName getName() {
+        return name;
+    }
+
     private final Namespace[] namespaces;
     private final AttributeConstructor[] attributes;
     

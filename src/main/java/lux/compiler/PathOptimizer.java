@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import lux.XCompiler.SearchStrategy;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
-import lux.query.MatchAllPQuery;
 import lux.query.ParseableQuery;
 import lux.query.QNameTextQuery;
 import lux.query.SpanTermPQuery;
@@ -31,8 +30,10 @@ import lux.xpath.PathStep;
 import lux.xpath.PathStep.Axis;
 import lux.xpath.Predicate;
 import lux.xpath.Root;
+import lux.xpath.SearchCall;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
+import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
@@ -126,7 +127,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // visit the expression tree, optimizing any absolute sub-expressions
         expr = expr.accept (this);
         // optimize the top level expression
-        return optimizeExpression (expr, 0, 0);
+        return optimizeExpression (expr, 0);
     }
     
     /**
@@ -134,11 +135,30 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @param j the query stack depth at which expr's query is to be found
      * @param facts additional facts to apply to the query
      */
-    private AbstractExpression optimizeExpression (AbstractExpression expr, int j, int facts) {
+    private AbstractExpression optimizeExpression (AbstractExpression expr, int j) {
+        if (expr instanceof SearchCall) {
+            // TODO: when handling count(), exists(), etc: merging facts loses info about their optimizations
+            // append any additional constraints from where clauses
+            // and ordering criteria from order by clauses
+            // to an existing search call
+            if (!(expr instanceof SearchCall)) {
+                AbstractExpression queryArg = expr.getSubs()[0];
+                if (queryArg instanceof LiteralExpression) {
+                    // TODO: parse into a ParseableQuery
+                    // which will later on be output as a string, then parsed into an xml node tree, and finally into a Lucene query????
+                    // getLuxQueryParser().p
+                } else if (! (queryArg instanceof ElementConstructor)) {
+                    // if it's some kind of dynamic expression resulting in a query, give up
+                    return expr;
+                }
+                expr = new SearchCall (queryArg, ValueType.VALUE, new SortField[0]);
+            }
+            return mergeSearchCall ((SearchCall) expr, j);
+        }
         if (! expr.isAbsolute()) {
             return expr;
         }
-        FunCall search = getSearchCall(j, facts);
+        FunCall search = getSearchCall(j);
         if (search.getReturnType().equals(ValueType.DOCUMENT)) {
             // Avoid the need to sort the results of this expression so that it can be 
             // embedded in a subsequence or similar and evaluated lazily.
@@ -173,10 +193,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @param facts assertions about the search to be injected, if any.  These are or-ed with 
      * facts found in the search query. In fact we always pass 0 here?  So TODO: nuke facts.
      */
-    protected void optimizeSubExpressions(AbstractExpression expr, int facts) {
+    protected void optimizeSubExpressions(AbstractExpression expr) {
         AbstractExpression[] subs = expr.getSubs();
         for (int i = 0; i < subs.length; i ++) {
-            subs[i] = optimizeExpression (subs[i], subs.length - i - 1, facts);
+            subs[i] = optimizeExpression (subs[i], subs.length - i - 1);
         }
     }    
 
@@ -243,7 +263,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(Predicate predicate) {
         // Allow the base expression to be optimized later so we have an opportunity to combine the 
         // predicate query with the base query
-        predicate.setFilter (optimizeExpression (predicate.getFilter(), 0, 0));
+        predicate.setFilter (optimizeExpression (predicate.getFilter(), 0));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         
@@ -355,7 +375,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return luxfunc;
         }
         // see if the function args can be converted to searches.
-        optimizeSubExpressions(funcall, 0);
+        optimizeSubExpressions(funcall);
         Occur occur;
         String namespaceURI = name.getNamespaceURI();
         if (! (namespaceURI.equals (FunCall.FN_NAMESPACE) ||
@@ -418,7 +438,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @return an optimized function, or the original function call
      */
     
-    public AbstractExpression optimizeFunCall (FunCall funcall) {
+    private AbstractExpression optimizeFunCall (FunCall funcall) {
         AbstractExpression[] subs = funcall.getSubs();
         QName fname = funcall.getName();
         
@@ -429,7 +449,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (fname.equals(FunCall.FN_COUNT) || fname.equals(FunCall.FN_EXISTS) || fname.equals(FunCall.FN_EMPTY)) {
                 searchArg = subs[0].getSubs()[0];
             }
-        } else if (subs.length == 1 && !subs[0].isAbsolute()) {
+        } else if (fname.equals(FunCall.LUX_SEARCH) && !(funcall instanceof SearchCall)) {
+            return new SearchCall (subs[0], funcall.getReturnType(), null);
+        }
+        else if (subs.length == 1 && !subs[0].isAbsolute()) {
             return funcall;
         }
 
@@ -489,15 +512,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     // create a searching function call using the argument to the enclosed lux:search call
                     return new FunCall (qname, returnType, searchArg, new LiteralExpression (XPathQuery.MINIMAL));
                 }
-                long facts;
                 if (query.isImmutable()) {
-                    facts = functionFacts | XPathQuery.MINIMAL;
+                    // combine functionFacts with query
+                    if (functionFacts != 0) {
+                        query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts() | functionFacts, returnType, indexConfig, query.getSortFields());
+                    }
                 } else {
                     query.setType(returnType);
                     query.setFact(functionFacts, true);
-                    facts = query.getFacts();
                 }
-                return createSearchCall(qname, query, facts);
+                return createSearchCall(qname, query);
             }
         }
         push (query);
@@ -538,7 +562,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(BinaryOperation op) {
-        optimizeSubExpressions(op, 0);
+        optimizeSubExpressions(op);
         XPathQuery rq = pop();
         XPathQuery lq = pop();
         ValueType type = lq.getResultType().promote (rq.getResultType());
@@ -679,7 +703,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(Subsequence subsequence) {
-        optimizeSubExpressions (subsequence, 0);
+        optimizeSubExpressions (subsequence);
         AbstractExpression start = subsequence.getStartExpr();
         AbstractExpression length = subsequence.getLengthExpr();
         XPathQuery lengthQuery = null;
@@ -704,67 +728,36 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return subsequence;
     }
 
-    private FunCall getSearchCall (int i, int facts) {
+    // merge any sorting criteria from the query at position i on the stack
+    // with the search call.  TODO: also merge any query with the existing
+    // query
+    private SearchCall mergeSearchCall (SearchCall search, int i) {
+        int j = queryStack.size() - i - 1;
+        XPathQuery query = queryStack.get(j);
+        search.combineQuery(query, indexConfig);
+        return search;
+    }
+    
+    private FunCall getSearchCall (int i) {
         int j = queryStack.size() - i - 1;
         XPathQuery query = queryStack.get(j);
         queryStack.set (j, MATCH_ALL);
-        facts |= query.getFacts();
-        if (optimizeForOrderedResults) {
-            return createSearchCall(FunCall.LUX_SEARCH, query, facts);
-        } else {
-            return createCollectionSearch(query);
-        } 
+        return createSearchCall(FunCall.LUX_SEARCH, query);
     }
     
-    private FunCall createSearchCall (QName functionName, XPathQuery query, long facts) {
-        String defaultField = indexConfig.isOption(INDEX_PATHS) ? 
-                indexConfig.getFieldName(FieldName.PATH) : indexConfig.getFieldName(FieldName.ELT_QNAME);
-        if (query.getSortFields() == null || query.getSortFields().length == 0) {
-            return new FunCall (functionName, query.getResultType(), 
-                    query.toXmlNode(defaultField),
-                    new LiteralExpression (facts));
-        } else {
-            return new FunCall (functionName, query.getResultType(), 
-                    query.toXmlNode(defaultField),
-                    new LiteralExpression (facts),
-                    new LiteralExpression (createSortString(query.getSortFields())));
+    private FunCall createSearchCall (QName functionName, XPathQuery query) {
+        if (functionName.equals(FunCall.LUX_SEARCH)) {
+            // searchCall.setFnCollection (!optimizeForOrderedResults);
+            return new SearchCall(query, indexConfig);
         }
+        return new FunCall (functionName, query.getResultType(),
+                query.toXmlNode(indexConfig.getDefaultFieldName()),
+                new LiteralExpression (query.getFacts()));
     }
     
-    private FunCall createCollectionSearch(XPathQuery query) {
-        String defaultField = indexConfig.isOption(INDEX_PATHS) ? 
-                indexConfig.getFieldName(FieldName.PATH) : indexConfig.getFieldName(FieldName.ELT_QNAME);
-        // FIXME: URL (or URI?) escaping here:
-                return new FunCall (FunCall.FN_COLLECTION, query.getResultType(), 
-                new LiteralExpression ("lux:" + 
-                        query.toQueryString(defaultField, indexConfig) +
-                        "?sort=" + createSortString(query.getSortFields())));        
-    }
-    
-    /**
-     * create an string describing sort options to be passed as an argument search
-     * @return
-     */
-    private String createSortString (SortField[] sort) {
-        StringBuilder buf = new StringBuilder();
-        if (sort != null) {
-            for (SortField sortField : sort) {
-                buf.append (sortField.getField());
-                if (sortField.getReverse()) {
-                    buf.append (" descending");
-                }
-                buf.append (",");
-            }
-            if (buf.length() > 0) {
-                buf.setLength(buf.length() - 1);
-            }
-        }
-        return buf.toString();
-    }
-
     @Override
     public AbstractExpression visit(Sequence sequence) {
-        optimizeSubExpressions(sequence, 0);
+        optimizeSubExpressions(sequence);
         combineTopQueries (sequence.getSubs().length, Occur.SHOULD);
         return sequence;
     }
@@ -786,19 +779,19 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(FLWOR flwor) {
-        flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0, 0);
-        // combine any constraint from the return clause with the constraint from the last
-        // for, let, or where clause
         int length = flwor.getClauses().length;
-        for (int i = 0; i < length; i++) {
-            // queries are pushed in order, so the first is deepest
+        // iterate in reverse order so we can unwind the query stack from its "top"
+        // which corresponds to the "bottom" of the expression tree.
+        for (int i = length - 1; i >= 0; i--) {
             // TODO: is MUST correct here??? What if we have an irrelevant let clause?
             // for $foo in /foo let $bar := /bar return $foo??
             combineTopQueries(2, Occur.MUST);
-            FLWORClause clause = flwor.getClauses()[length - i - 1];
+            FLWORClause clause = flwor.getClauses()[i];
             AbstractExpression seq = clause.getSequence();
-            clause.setSequence(optimizeExpression(seq, 0, 0));
+            clause.setSequence(optimizeExpression(seq, 0));
         }
+        // combine any constraint from the return clause with the constraint from the clauses
+        flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0);
         return flwor;
     }
 
@@ -852,8 +845,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (sortFields.isEmpty()) {
             push (MATCH_ALL);
         } else {
-            XPathQuery query = XPathQuery.getQuery(MatchAllPQuery.getInstance(), MATCH_ALL.getFacts(), ValueType.DOCUMENT, indexConfig, null);
-            query.setSortFields(sortFields.toArray(new SortField[sortFields.size()]));
+            XPathQuery query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), MATCH_ALL.getFacts(), ValueType.DOCUMENT, indexConfig, sortFields.toArray(new SortField[sortFields.size()]));
             push (query);
         }
         return orderByClause;

@@ -12,11 +12,12 @@ import org.apache.lucene.search.BooleanClause.Occur;
 
 public class BooleanPQuery extends ParseableQuery {
 
-    private static final QName CLAUSE_QNAME = new QName("Clause");
-    private static final LiteralExpression OCCURS_ATT_NAME = new LiteralExpression("occurs");
-    private static final AttributeConstructor MUST_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("must"));
-    private static final AttributeConstructor SHOULD_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("should"));
-    private static final AttributeConstructor MUST_NOT_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("mustNot"));
+    public static final QName BOOLEAN_QUERY_QNAME = new QName("BooleanQuery");
+    public static final QName CLAUSE_QNAME = new QName("Clause");
+    public static final LiteralExpression OCCURS_ATT_NAME = new LiteralExpression("occurs");
+    public static final AttributeConstructor MUST_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("must"));
+    public static final AttributeConstructor SHOULD_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("should"));
+    public static final AttributeConstructor MUST_NOT_OCCUR_ATT = new AttributeConstructor (OCCURS_ATT_NAME, new LiteralExpression ("mustNot"));
     private Clause clauses[];
     
     public BooleanPQuery (Clause ... clauses) {
@@ -60,7 +61,7 @@ public class BooleanPQuery extends ParseableQuery {
             }
             clauseExprs[i++] = new ElementConstructor(CLAUSE_QNAME, q, occurAtt);
         }
-        return new ElementConstructor(new QName("BooleanQuery"), new Sequence(clauseExprs));
+        return new ElementConstructor(BOOLEAN_QUERY_QNAME, new Sequence(clauseExprs));
     }
     
     public static class Clause {

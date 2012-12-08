@@ -10,7 +10,6 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
-import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
@@ -66,8 +65,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 if (tokens.length > 2) {
                     throw new LuxException ("Invalid sort key: " + sortCriteria);
                 }
-                sortFields[i] = new SortField(tokens[0], SortField.STRING, reverse);
             }
+            sortFields[i] = new SortField(tokens[0], SortField.STRING, reverse);
         }
         return new Sort(sortFields);
     }
@@ -127,7 +126,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     }
 
     public int getProperties() {
-        return SequenceIterator.LOOKAHEAD;
+        return 0;
     }
     
 }

@@ -67,12 +67,15 @@ public class XPathQuery {
      */
     public static final int MINIMAL=0x00000002;
     
+
+    // FIXME: the result type flags should not be stored this way: they are not independent and combinable in a boolean
+    // manner; rather they are mutually exclusive
+    public static final int RESULT_TYPE_FLAGS = 0x0000001C;
+
     /**
      * A query is counting if its expression returns the count of the results of the lucene query
      */
     public static final int COUNTING=0x00000004;
-    
-    public static final int RESULT_TYPE_FLAGS = 0x00000018;
 
     /**
      * A query is boolean_true if its result type is boolean, and the existence of a single query result indicates a 'true()' value
@@ -89,7 +92,6 @@ public class XPathQuery {
      */
     public static final int DOCUMENT_RESULTS=0x00000018;
     
-
     public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
     
     private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.NODE, true);
@@ -171,7 +173,9 @@ public class XPathQuery {
             return ValueType.BOOLEAN;
         } else if (typecode == XPathQuery.DOCUMENT_RESULTS) {
             return ValueType.DOCUMENT;
-        } 
+        } else if (typecode == XPathQuery.COUNTING) {
+            return ValueType.INT;
+        }
         return ValueType.VALUE;                
     }
     
@@ -244,7 +248,7 @@ public class XPathQuery {
             return b.facts;
         }
         else {
-            return combineFacts(a.facts, b.facts);
+            return combineFacts(a.facts, b.facts) ;
         }
     }
 
@@ -343,6 +347,9 @@ public class XPathQuery {
       }
       else if (valueType == ValueType.DOCUMENT) {
           facts |= DOCUMENT_RESULTS;
+      }
+      else if (valueType == ValueType.INT) {
+          facts |= COUNTING;
       }
       // no other type info is stored in facts since it's not needed by search()
   }
