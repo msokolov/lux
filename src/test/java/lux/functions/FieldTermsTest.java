@@ -34,7 +34,7 @@ public class FieldTermsTest {
 
     @Test
     public void testFieldTerms () throws Exception {
-        ArrayList<String> terms = getFieldTerms("lux:fieldTerms('lux_elt_name')");
+        ArrayList<String> terms = getFieldTerms("lux:field-terms('lux_elt_name')");
         assertArrayEquals (new String[] {"entities", "test", "title", "token"}, 
                 terms.toArray(new String[0]));
     }
