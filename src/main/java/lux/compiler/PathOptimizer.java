@@ -357,14 +357,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * If a function F is emptiness-preserving, in other words F(a,b,c...)
      * is empty ( =()) if *any* of its arguments are empty, and is
      * non-empty if *all* of its arguments are non-empty, then its
-     * argument's queries are combined with Occur.MUST.  This is the
-     * default case, and such functions are not mapped explicitly in
-     * fnArgParity.
+     * argument's queries can be combined with Occur.MUST.  At first I thought that was the way
+     * most functions work, but it's not: string(()) = '', not ()
      *
-     * Otherwise, no optimization is possible, and the argument queries are combined with Occur.SHOULD.
+     * Otherwise, no optimization is possible in the general case, which we indicate by 
+     * combining with Occur.SHOULD.
      *
-     * count() (and maybe max(), min(), and avg()?) is optimized as a
-     * special case.
+     * count(), exists() and not()
+     *  (and maybe max(), min(), and avg()?) are optimized as special cases.
      * @return 
      */
 
@@ -392,10 +392,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
             occur = fnArgParity.get(name.getLocalPart());
             // what does it mean if occur is null here??
         } else {
-            // for functions in fn: and xs: namespaces not listed below, we assume that
-            // their result will be empty if any of their arguments are, so we combine their argument 
-            // queries with AND
-            occur = Occur.MUST;
+            // for functions in fn: and xs: namespaces not listed below, we assume that they 
+            // are *not* optimizable
+            occur = Occur.SHOULD;
         }
         AbstractExpression[] args = funcall.getSubs();
         if (occur == Occur.SHOULD) {
@@ -418,18 +417,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return funcall;
     }
 
-    // TODO: fill out the rest of this table
+    // TODO: just make this a set of emptiness-preserving functions
+    // the Occur value isn't really needed or useful 
     protected static HashMap<String, Occur> fnArgParity = new HashMap<String, Occur>();
+
     static {
-        fnArgParity.put("collection", null);
-        fnArgParity.put("doc", null);
-        fnArgParity.put("uri-collection", null);
-        fnArgParity.put("unparsed-text", null);
-        fnArgParity.put("generate-id", null);
-        fnArgParity.put("deep-equal", null);
-        fnArgParity.put("error", null);
         fnArgParity.put("empty", Occur.SHOULD);
         fnArgParity.put("not", Occur.SHOULD);
+        fnArgParity.put("string", Occur.SHOULD);
+        fnArgParity.put("data", Occur.MUST);
+        fnArgParity.put("exists", Occur.MUST);
+        fnArgParity.put("root", Occur.MUST);
+        fnArgParity.put("collection", Occur.MUST);
+        fnArgParity.put("doc", Occur.MUST);
+        fnArgParity.put("uri-collection", Occur.MUST);
+        fnArgParity.put("unparsed-text", Occur.MUST);
     };
     
     /**
