@@ -71,7 +71,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private final ArrayList<XPathQuery> queryStack;
     private final IndexConfiguration indexConfig;
     private final XPathQuery MATCH_ALL;
-    private final XPathQuery UNINDEXED;
     
     private final String attrQNameField;
     private final String elementQNameField;
@@ -81,7 +80,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
-        UNINDEXED = XPathQuery.getUnindexedQuery(indexConfig);
         this.indexConfig = indexConfig;
         attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
         elementQNameField = indexConfig.getFieldName(FieldName.ELT_QNAME);
@@ -450,7 +448,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 searchArg = subs[0].getSubs()[0];
             }
         } else if (fname.equals(FunCall.LUX_SEARCH) && !(funcall instanceof SearchCall)) {
-            return new SearchCall (subs[0], funcall.getReturnType(), null);
+            return new SearchCall (subs[0], ValueType.VALUE, null);
         }
         else if (subs.length == 1 && !subs[0].isAbsolute()) {
             return funcall;
@@ -696,8 +694,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(Variable variable) {
-        // TODO - optimize through variable references?
-        push (UNINDEXED);
+        push (MATCH_ALL);
         return variable;
     }
 
@@ -845,7 +842,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (sortFields.isEmpty()) {
             push (MATCH_ALL);
         } else {
-            XPathQuery query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), MATCH_ALL.getFacts(), ValueType.DOCUMENT, indexConfig, sortFields.toArray(new SortField[sortFields.size()]));
+            XPathQuery query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), MATCH_ALL.getFacts(), MATCH_ALL.getResultType(), indexConfig, sortFields.toArray(new SortField[sortFields.size()]));
             push (query);
         }
         return orderByClause;

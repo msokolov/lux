@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 
 /**
  * executes all the BasicQueryTest test cases using path indexes and compares results against
- * an unindexed baseline.
+ * an unindexed/unoptimized baseline.
  *
  */
 public class SearchPathQueryTest extends BasicQueryTest {
@@ -48,19 +48,19 @@ public class SearchPathQueryTest extends BasicQueryTest {
         switch (q) {
         case ACT_SCENE: return "w(\"ACT\",\"SCENE\")";
         case SCENE: return "\"SCENE\"";
-        default: throw new UnsupportedOperationException("No query string for " + q + " in " + getClass().getSimpleName());
+        default: return super.getQueryString(q);
         }
     }
 
     @Override
     public String getQueryXml (Q q) {
         switch (q) {
-        case ACT_SCENE: return "<SpanNear ordered=\"true\" slop=\"1\">" +
-        		"<SpanTerm>ACT</SpanTerm>" +
-        		"<SpanTerm>SCENE</SpanTerm>" +
+        case ACT_SCENE: return "<SpanNear inOrder=\"true\" slop=\"0\">" +
+        		"<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +
+        		"<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
         		"</SpanNear>";
-        case SCENE: return "SCENE";
-        default: throw new UnsupportedOperationException("No query string for " + q + " in " + getClass().getSimpleName());
+        case SCENE: return "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>";
+        default: return super.getQueryXml(q);
         }
     }
 
@@ -78,14 +78,14 @@ public class SearchPathQueryTest extends BasicQueryTest {
      * @throws LockObtainFailedException 
      * @throws CorruptIndexException 
      */
-    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Q ... queries) throws CorruptIndexException, LockObtainFailedException, IOException {
+    public void assertQuery (String xpath, int facts, ValueType type, Q ... queries) throws IOException {
         if (repeatCount > 1) {
             benchmark (xpath);
         } else {
             Evaluator saxon = index.makeEvaluator();
             XdmResultSet results = evalQuery(xpath, saxon);
             XdmValue baseResult = evalBaseline(xpath, saxon);
-            assertEquals ("result count mismatch for: " + optimized, baseResult.size(), results.size());        
+            assertEquals ("result count mismatch for: " + xpath, baseResult.size(), results.size());        
             Iterator<?> baseIter = baseResult.iterator();
             Iterator<?> resultIter = results.iterator();
             for (int i = 0 ; i < results.size(); i++) {

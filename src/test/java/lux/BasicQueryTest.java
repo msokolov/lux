@@ -301,7 +301,7 @@ public class BasicQueryTest {
 
     @Test public void testOrderBySearchFunCall () throws Exception {
         String query = "for $doc in lux:search('foo') order by lux:field-values('sortkey', $doc) return $doc";
-        assertQuery (query, null, XPathQuery.MINIMAL, ValueType.DOCUMENT, "foo");
+        assertQuery (query, null, XPathQuery.MINIMAL, ValueType.VALUE, "foo");
         assertSortKeys (query, "sortkey");
     }
     @Test 
@@ -363,6 +363,7 @@ public class BasicQueryTest {
             assertEquals (sortFields[i], extractor.sorts.get(i));
         }
     }
+
     private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, 
             Q ... queries) {
         String[] qs = new String[queries.length];
@@ -372,6 +373,7 @@ public class BasicQueryTest {
         }
         assertQuery (xpath, expectedOptimized, facts, type, qs);
     }
+
     private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, 
             String ... queries) 
     {

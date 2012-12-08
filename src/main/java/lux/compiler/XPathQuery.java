@@ -29,6 +29,13 @@ import org.apache.lucene.search.SortField;
  * We're not allowed to miss a document, though. Some evaluators that return the
  * correct doc set still may need additional evaluation though if the results
  * are not to be documents.
+ * 
+ * TODO: cleanup
+ * I don't think we make use of the information about return type at all, except for
+ * counting and boolean (which are stored in facts, weirdly).  ValueType.NODE, DOCUMENT, etc
+ * all seem pointless
+ * 
+ * Also: get rid of immutable queries
  */
 public class XPathQuery {
 
@@ -131,8 +138,10 @@ public class XPathQuery {
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
     public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig, SortField[] sortFields) {
-        if ((query instanceof MatchAllPQuery && resultFacts == MINIMAL && sortFields == null) ||
-                query == SpanMatchAll.getInstance()) {
+        if (sortFields == null &&
+                ( (query instanceof MatchAllPQuery && resultFacts == MINIMAL && sortFields == null) ||
+                  ( query == SpanMatchAll.getInstance())) ) 
+        {
             if (valueType == ValueType.DOCUMENT) {
                 if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
                     return PATH_MATCH_ALL;
@@ -241,6 +250,8 @@ public class XPathQuery {
     }
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
+        // TODO: get rid of these special cases, and the immutable queries
+        // ther logic for maintaining them is tortured and the purported benefit is dubious
         if (b.isEmpty()) {
             return a.facts; 
         }

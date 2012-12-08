@@ -18,24 +18,25 @@ import org.apache.lucene.search.SortField;
 public class SearchCall extends FunCall {
 
     private AbstractExpression queryArg;
-    private XPathQuery query;
+    private XPathQuery query; // for facts and sortFields only
     private boolean fnCollection;
     
     public SearchCall(XPathQuery query, IndexConfiguration config) {
-        super(FunCall.LUX_SEARCH, query.getResultType());
-        this.query = query;
-        queryArg = query.getParseableQuery().toXmlNode(config.getDefaultFieldName());
-        fnCollection = false;
-        generateArguments();
+        this (query.getParseableQuery().toXmlNode(config.getDefaultFieldName()), query.getFacts(), query.getResultType(), query.getSortFields());
     }
 
-    public SearchCall(AbstractExpression queryArg, ValueType resultType, SortField[] sortFields) {
+    public SearchCall(AbstractExpression abstractExpression, ValueType returnType, SortField[] sortFields) {
+        this (abstractExpression, XPathQuery.MINIMAL, returnType, sortFields);
+    }
+    
+    public SearchCall(AbstractExpression queryArg, long facts, ValueType resultType, SortField[] sortFields) {
         super(FunCall.LUX_SEARCH, resultType);
         this.queryArg = queryArg;
         fnCollection = false;
-        query = XPathQuery.getQuery(null, 0, resultType, null, sortFields); // ??
+        query = XPathQuery.getQuery(null, facts, resultType, null, sortFields);
         generateArguments();
     }
+
 
     public void combineQuery(XPathQuery query, IndexConfiguration config) {
         ElementConstructor additional = query.getParseableQuery().toXmlNode(config.getDefaultFieldName());
