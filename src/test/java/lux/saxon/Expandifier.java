@@ -24,7 +24,7 @@ public class Expandifier extends ExpressionVisitorBase {
     public XQuery expandify(XQuery xquery) {
         AbstractExpression body = expandify(xquery.getBody());
         return new XQuery (xquery.getDefaultElementNamespace(), xquery.getDefaultFunctionNamespace(), xquery.getDefaultCollation(),
-                xquery.getNamespaceDeclarations(), xquery.getVariableDefinitions(), xquery.getFunctionDefinitions(),
+                xquery.getModuleImports(), xquery.getNamespaceDeclarations(), xquery.getVariableDefinitions(), xquery.getFunctionDefinitions(),
                 body, xquery.getBaseURI(), xquery.isPreserveNamespaces(), xquery.isInheritNamespaces(), xquery.isEmptyLeast());        
     }
 

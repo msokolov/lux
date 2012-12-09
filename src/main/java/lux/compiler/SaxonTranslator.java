@@ -36,6 +36,7 @@ import lux.xquery.ForClause;
 import lux.xquery.FunctionDefinition;
 import lux.xquery.InstanceOf;
 import lux.xquery.LetClause;
+import lux.xquery.ModuleImport;
 import lux.xquery.OrderByClause;
 import lux.xquery.ProcessingInstructionConstructor;
 import lux.xquery.Satisfies;
@@ -164,6 +165,13 @@ public class SaxonTranslator {
     public XQuery queryFor(XQueryExecutable xquery) {
         XQueryExpression saxonQuery = xquery.getUnderlyingCompiledQuery();
         queryModule = saxonQuery.getStaticContext();
+        Iterator<?> moduleIter = queryModule.getExecutable().getQueryLibraryModules();
+        ArrayList<ModuleImport> importedModules = new ArrayList<ModuleImport>();
+        while (moduleIter.hasNext()) {
+            QueryModule importedModule = (QueryModule) moduleIter.next();
+            String moduleNamespace = importedModule.getModuleNamespace();
+            importedModules.add(new ModuleImport(getPrefixForNamespace(moduleNamespace), moduleNamespace, importedModule.getSystemId()));
+        }
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
         // Namespace declarations are accumulated while walking the expression trees:
         namespaceDeclarations.clear();
@@ -188,6 +196,7 @@ public class SaxonTranslator {
                 queryModule.getDefaultElementNamespace(),
                 queryModule.getDefaultFunctionNamespace(),
                 defaultCollation,
+                importedModules.toArray(new ModuleImport[importedModules.size()]),
                 getNamespaceDeclarations(queryModule), 
                 variableDefinitions, 
                 functionDefinitions, 

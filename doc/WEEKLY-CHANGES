@@ -63,13 +63,20 @@ any additional optimizations in Saxon PE/EE.  I'll leave the code path in
 place for now, just in case some future Saxon release makes this useful.  A
 whole day of work wasted on a failed experiment. Poop.
 
+12/8/2012
+
+Made some improvements to the document-order optimization situation in
+PE/EE.  Where we can prove that document order is not required we now
+generate a flwor expression rather than an xpath, so that we are not
+imposing a requirement to sort results in document order.
+
+Implemented xpath indexes, and order by optimizations that can use them via
+lux:field-values().  Fixed a longstanding bug where we would optimize too
+many functions by default: we are now conservative - we don't use a
+function's arguments to limit the query unless we can prove that it
+preserves sequences.
+
 UPCOMING
 
-****** bug fixes, testing (namespaces / attributes)
-
-****** package and RELEASE 0.9 to ifactory
-
-****** joins
-
-****** complete spec, testing, xqts?
+****** package and RELEASE 0.4 to ifactory
 

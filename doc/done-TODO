@@ -1,3 +1,23 @@
+* optimized sorting
+** support ordering by named indexes
+
+Create function lux:key(name as xs:string) returning item which accepts the
+name of a lucene index. Then arrange for order by lux:key('foo') to order
+by the (single) value of foo, and replace the funcall with constant true()
+
+Create function lux:has-key(name as xs:string, value as item()) - add the
+constraint key(name)=value to the prevailing search query and replace the
+expression with the constant true()
+
+Rename fieldTerms to lux:key-terms(name as xs:string) ?
+
+** order by optimization
+Compute the XPath of the order by expression and compare to known XPath
+indexes Requires that index definitions be discovered, or registered?  Need
+to make sure the index analysis is compatible with the order by collation
+** configuration
+define keys in IndexConfiguration
+** testing strategy
 * Saxon PE/EE compatibility
 ** detect licensing status
 We now detect which version of Saxon is installed and whether it is
@@ -8,6 +28,11 @@ through that I should have actually tested to see whether fn:collection()
 was in fact marked as document-ordered (ORDERED_NODESET) by Saxon.  It
 appears it wasn't, in spite of what M. Kay said.  Perhaps they'll decide
 that was a bug and fix it, so I'll leave the code in place.
+
+However some progress was made on this front by following through on
+another of Michael Kay's comments: don't generate a document-ordered
+expression if you don't need to.  So now we use flwor expressions in those
+cases rather than path expressions.
 
 Need to come up with a query dialect that we can generate and parse.  To
 make the parsing tractable, use ExtendableQueryParser.  Added an extension

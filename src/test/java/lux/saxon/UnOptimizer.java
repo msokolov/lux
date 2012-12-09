@@ -38,7 +38,7 @@ public class UnOptimizer extends ExpressionVisitorBase {
     public XQuery unoptimize(XQuery xquery) {
         AbstractExpression body = unoptimize(xquery.getBody());
         return new XQuery (xquery.getDefaultElementNamespace(), xquery.getDefaultFunctionNamespace(), xquery.getDefaultCollation(),
-                xquery.getNamespaceDeclarations(), xquery.getVariableDefinitions(), xquery.getFunctionDefinitions(),
+                xquery.getModuleImports(), xquery.getNamespaceDeclarations(), xquery.getVariableDefinitions(), xquery.getFunctionDefinitions(),
                 body, xquery.getBaseURI(), xquery.isPreserveNamespaces(), xquery.isInheritNamespaces(), xquery.isEmptyLeast());        
     }
 

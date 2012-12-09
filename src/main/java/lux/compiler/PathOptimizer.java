@@ -104,7 +104,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (main != null && indexConfig.isIndexingEnabled()) {
             main = optimize (main);
             return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(), query.getDefaultCollation(), 
-                    query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(), 
+                    query.getModuleImports(), query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(),
                     main, query.getBaseURI(), query.isPreserveNamespaces(), query.isInheritNamespaces(), query.isEmptyLeast());
         }
         // TODO optimize function definitions?  Could they possibly benefit from that?

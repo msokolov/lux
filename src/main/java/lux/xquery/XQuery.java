@@ -1,11 +1,11 @@
 package lux.xquery;
 
-import org.apache.commons.lang.StringUtils;
-
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xpath.Namespace;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * represents an XQuery module, its static context (not counting any definitions in the enclosing context),
@@ -17,6 +17,7 @@ public class XQuery {
     private final Namespace[] namespaceDeclarations;
     private final String defaultElementNamespace, defaultFunctionNamespace, defaultCollation;
     private final VariableDefinition[] externalVariables;
+    private final ModuleImport[] importedModules;
     private final AbstractExpression body;
     private final String baseURI;
     private final Boolean preserveNamespaces;
@@ -24,7 +25,7 @@ public class XQuery {
     private final boolean emptyLeast;
     
     public XQuery (String defaultElementNamespace, String defaultFunctionNamespace, String defaultCollation, 
-            Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, 
+            ModuleImport[] importedModules, Namespace[] namespaceDeclarations, VariableDefinition[] variableDefinitions, FunctionDefinition[] defs, 
             AbstractExpression body, String baseURI, Boolean copyNamespacesPreserve, Boolean copyNamespacesInherit, boolean emptyLeast) {
         this.namespaceDeclarations = namespaceDeclarations;
         this.externalVariables = variableDefinitions;
@@ -37,6 +38,7 @@ public class XQuery {
         this.inheritNamespaces = copyNamespacesInherit;
         this.preserveNamespaces = copyNamespacesPreserve;
         this.emptyLeast = emptyLeast;
+        this.importedModules = importedModules;
     }
     
     public XQuery (AbstractExpression body) {
@@ -51,6 +53,7 @@ public class XQuery {
         this.inheritNamespaces = null;
         this.preserveNamespaces = null;
         this.emptyLeast = false;
+        this.importedModules = null;
     }
     
     public String toString () {
@@ -95,16 +98,26 @@ public class XQuery {
             buf.append(";\n");
         }
         if (namespaceDeclarations != null) {
+            OUTER:
             for (Namespace ns : namespaceDeclarations) {
                 if (ns.getPrefix().isEmpty() || "xml".equals (ns.getPrefix())) {
                     // handle this using specific mappings for element/function default namespaces
                     continue;
                     //buf.append("declare default element namespace ").append('=');                
-                } else {
-                    buf.append("declare namespace ").append(ns.getPrefix()).append('=');
                 }
+                for (ModuleImport importedModule : importedModules) {
+                    if (importedModule.getPrefix().equals(ns.getPrefix())) {
+                        continue OUTER;
+                    }
+                }
+                buf.append("declare namespace ").append(ns.getPrefix()).append('=');
                 LiteralExpression.quoteString (ns.getNamespace(), buf);
                 buf.append(";\n");
+            }
+        }
+        if (importedModules != null) {
+            for (ModuleImport importedModule : importedModules) {
+                importedModule.toString(buf);
             }
         }
         if (externalVariables != null) {
@@ -163,6 +176,10 @@ public class XQuery {
 
     public boolean isEmptyLeast() {
         return emptyLeast;
+    }
+
+    public ModuleImport[] getModuleImports() {
+        return importedModules;
     }
 
 }
