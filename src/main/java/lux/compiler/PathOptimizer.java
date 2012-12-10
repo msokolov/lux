@@ -365,7 +365,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
      *
      * count(), exists() and not()
      *  (and maybe max(), min(), and avg()?) are optimized as special cases.
-     * @return 
+     *  
+     * @param funcall the function call expression to optimize
+     * @return the same function call expression, after having possibly optimized its arguments
      */
 
     public AbstractExpression visit(FunCall funcall) {

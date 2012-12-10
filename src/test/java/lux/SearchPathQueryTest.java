@@ -71,7 +71,6 @@ public class SearchPathQueryTest extends BasicQueryTest {
 
     /**
      * @param xpath the path to test
-     * @param optimized ignored
      * @param facts ignored
      * @param queries ignored
      * @throws IOException 

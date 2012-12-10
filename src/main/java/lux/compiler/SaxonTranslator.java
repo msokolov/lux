@@ -158,7 +158,7 @@ public class SaxonTranslator {
     }
 
     /** Converts from a Saxon to a lux xquery representation.
-     * @param expr a Saxon representation of an XQuery module
+     * @param xquery a Saxon representation of an XQuery module
      * @return a lux representation of an equivalent XQuery module
      */
 

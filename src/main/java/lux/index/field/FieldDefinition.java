@@ -88,7 +88,7 @@ public abstract class FieldDefinition {
     
     /** Wraps the values as Field, which includes the values and the Lucene indexing options.
      * Subclasses must implement getValues() or override this method
-     * @param xmlIndexer the indexer that holds the field values
+     * @param indexer the indexer that holds the field values
      * @return the accumulated values of the field, as Fieldables
      */
     public Iterable<? extends Fieldable> getFieldValues(XmlIndexer indexer) {

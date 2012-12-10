@@ -38,7 +38,6 @@ public class Serializer implements StAXHandler {
      *
      * @param r source of xml StAX events
      * @param evtType the type of StAX event
-     * @throws XMLStreamException if the reader does
      */
     public void handleEvent (XMLStreamReader r, int evtType)
     {

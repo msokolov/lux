@@ -8,7 +8,6 @@ import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
@@ -84,8 +83,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 long t1 = System.nanoTime();
                 XdmItem doc = docCache.get(docID, searcher.getIndexReader());
                 NodeInfo item = (NodeInfo) doc.getUnderlyingValue();
-                // assert documents in order 
-                assert (current == null || ((TinyDocumentImpl)item).getDocumentNumber() > ((TinyDocumentImpl)current).getDocumentNumber());
+                // assert documents in order : Note this is no longer accurate now that we have implemented "order by"
+                // assert (current == null || ((TinyDocumentImpl)item).getDocumentNumber() > ((TinyDocumentImpl)current).getDocumentNumber());
                 current = item;
                 ++position;
                 if (stats != null) {

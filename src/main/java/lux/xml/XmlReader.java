@@ -61,7 +61,7 @@ public class XmlReader {
     /**
      * Consume the byte stream, generating events for the handlers.
      *
-     * @param reader source of xml StAX events
+     * @param in source of xml StAX events
      * @throws XMLStreamException if the reader does
      */
     public void read (InputStream in) throws XMLStreamException {  

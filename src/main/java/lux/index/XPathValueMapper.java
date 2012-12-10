@@ -10,7 +10,7 @@ import javax.xml.stream.XMLStreamReader;
 
 /**
  * 
- * Each path-value is a string of path components, as defined in {@see XmlPathMapper}, followed by
+ * Each path-value is a string of path components, as defined in {@link XmlPathMapper}, followed by
  * a value token.  Element and attribute string values are represented by 8-character hashes of their first N characters.  
  * If the value fits in 8 characters, it is padded with nulls (unicode 0).  The hash algorithm is analogous to that used by 
  * java.lang.String, but arithmetic is done with shorts rather than ints, and we keep more of them so that

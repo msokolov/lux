@@ -133,8 +133,8 @@ public class XPathQuery {
      * @param query the query on which the result is based
      * @param resultFacts the facts to use in the new query
      * @param valueType the result type of the new query
-     * @param sortFields2 
-     * @param options the indexer options; controls which type of match-all query may be returned
+     * @param indexConfig the indexer configuration; controls which type of match-all query may be returned
+     * @param sortFields the sort fields to record in the query
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
     public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig, SortField[] sortFields) {
@@ -311,7 +311,7 @@ public class XPathQuery {
 
     /**
      * Set this query's result type to be the least restrictive type encompassing its type and the given type
-     * @param valueType the type to restrict to
+     * @param type the type to restrict to
      */
     public void restrictType(ValueType type) {
         if (immutable) throw new LuxException ("attempt to modify immutable query");

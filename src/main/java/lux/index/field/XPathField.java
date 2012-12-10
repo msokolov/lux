@@ -15,7 +15,7 @@ import org.apache.lucene.document.Field.TermVector;
 
 /**
  * Indexes the values of the XPath expression evaluated with the document as the context item
- * T is the type of the values returned and must correspond with the {@link XmlFieldDefinition#Type}:
+ * T is the type of the values returned and must correspond with the {@link FieldDefinition.Type}:
  * STRING =&gt; String, and INT =&gt; Integer.
  */
 public class XPathField<T> extends FieldDefinition {
