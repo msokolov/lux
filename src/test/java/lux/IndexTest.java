@@ -40,10 +40,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * measures space and time for different indexing options
+ * Measures space and time for different indexing options, and validates
+ * indexing results.
  * 
- * The timings are off; we'd need to run this repeatedly to avoid transient startup effects which
- * overwhelm the measurements for a single run.
+ * The timings are off; we'd need to run this repeatedly to avoid transient
+ * startup effects which overwhelm the measurements for a single run.
  * 
  * But the space numbers (in bytes) should be valid (from Directory.sizeInBytes()):
  * XML storage: 3664896 (3.5M)
