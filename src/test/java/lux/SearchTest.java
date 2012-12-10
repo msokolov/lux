@@ -49,7 +49,6 @@ public class SearchTest {
         indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
         index = new IndexTestSupport("lux/hamlet.xml", indexer, new RAMDirectory());
         
-        // new IndexTestSupport(XmlIndexer.INDEX_QNAMES|XmlIndexer.STORE_XML|XmlIndexer.BUILD_JDOM, new RAMDirectory());
         totalDocs= index.totalDocs;
     }
     
