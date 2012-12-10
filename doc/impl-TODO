@@ -4,7 +4,6 @@
 *** eval
 execute xquery from within xquery
 ** highlighting
-** app server module import
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
 Configuration, you lose out on some nice performance optimizations for some
@@ -24,7 +23,8 @@ a path like exists(//foo//bar).  There is no way around this in Saxon HE,
 and it is a significant performance whack for many queries.  We need to test if Saxon PE
 and/or EE do a better job of optimization here.
 * HTML/HTML5
-try reading files using James Clark's fixup parser?
+try reading files using James Clark's fixup parser?  Tag Soup, more likely
+- is this built in to Saxon?
 * Solr/Lucene 4.0
 * thread safety
 Some aspects of Saxon are difficult to make thread safe and efficient (lock
@@ -41,8 +41,6 @@ Perhaps the solution is to pool Processors among threads, then?
 Or: make a CollectionURIResolver that *is* threadsafe and pulls the
 thread-unsafe resource as needed from a pool?
 
-* lux xquery API
-** app server module import
 * ifpress integration
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar and dependencies

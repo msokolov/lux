@@ -76,6 +76,11 @@ many functions by default: we are now conservative - we don't use a
 function's arguments to limit the query unless we can prove that it
 preserves sequences.
 
+12/9/2012
+
+Module imports now work, via the filesystem.  Basically we just made sure
+that we didn;t get in Saxon's way.
+
 UPCOMING
 
 ****** package and RELEASE 0.4 to ifactory

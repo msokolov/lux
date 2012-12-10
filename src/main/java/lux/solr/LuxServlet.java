@@ -148,7 +148,7 @@ public class LuxServlet extends HttpServlet {
         // from here, and it would be thread-unsafe anyway, which is bad for a server
         private String buildHttpInfo(HttpServletRequest req) {
             StringBuilder buf = new StringBuilder();
-            buf.append (String.format("<http method=\"%s\">", req.getMethod()));
+            buf.append (String.format("<http method=\"%s\" uri=\"%s\">", req.getMethod(), xmlEscape(req.getRequestURI())));
             buf.append ("<parameters>");
             for (Object o : req.getParameterMap().entrySet()) {
                 @SuppressWarnings("unchecked")

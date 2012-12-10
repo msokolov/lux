@@ -8,6 +8,11 @@ body { font-family: Arial, Helvetica, sans-serif;
 h1 { font-family: "Candara Bold", Arial, Helvetica, sans-serif; margin: 0.5em; }
 img.logo { vertical-align: middle }
 
+/******** browse page layout ******/
+#browse-list { margin-left: 3em; }
+#browse-list span { margin-left: 1em; }
+#browse-list input { margin-right: 0.5em; }
+
 /******** search page controls ******/
 #search { padding-left: 3em; }
 

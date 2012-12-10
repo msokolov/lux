@@ -1,15 +1,18 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.*;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
 
+import java.util.HashMap;
 import java.util.Map;
-
+import java.util.Map.Entry;
 
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.analysis.WhitespaceGapAnalyzer;
 import lux.index.field.FieldDefinition;
 import lux.index.field.FieldDefinition.Type;
+import lux.index.field.XPathField;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
@@ -37,6 +40,7 @@ import org.slf4j.LoggerFactory;
 public class LuxUpdateProcessorFactory extends UpdateRequestProcessorFactory implements SolrCoreAware {
 
     IndexConfiguration indexConfiguration;
+    private Map<String,String> xpathFieldConfig;
     
     @Override
     public void init(@SuppressWarnings("rawtypes") final NamedList args) {
@@ -44,28 +48,36 @@ public class LuxUpdateProcessorFactory extends UpdateRequestProcessorFactory imp
         // We don't need FieldName.STORE_XML to do that since the client passes us the xml_text field
         // but we declare the field to the indexer so that it gets defined in the schema
         indexConfiguration = makeIndexConfiguration(INDEX_FULLTEXT | INDEX_PATHS, args);
+        NamedList<String> fields = (NamedList<String>) args.get("fields");
+        if (fields != null) {
+            xpathFieldConfig = new HashMap<String, String>();
+            for (Entry<String,String> f : fields) {
+                xpathFieldConfig.put(f.getKey(), f.getValue());
+            }
+        }
     }
 
     public static IndexConfiguration makeIndexConfiguration (final int options, @SuppressWarnings("rawtypes") final NamedList args) {
         IndexConfiguration config = IndexConfiguration.makeIndexConfiguration (options);
-        if (args != null) {
-            SolrParams params = SolrParams.toSolrParams(args);
-            // accept override from configuration so we can piggyback on existing 
-            // document storage
-            String xmlFieldName = params.get("xmlFieldName", null);
-            if (xmlFieldName != null) {
-                config.renameField(config.getField(FieldName.XML_STORE), xmlFieldName);
-            }
-            String uriFieldName = params.get("uriFieldName", null);
-            if (uriFieldName != null) {
-                config.renameField(config.getField(FieldName.URI), uriFieldName);
-            }
-            String textFieldName = params.get("textFieldName", null);
-            if (textFieldName != null) {
-                config.renameField(config.getField(FieldName.XML_TEXT), textFieldName);
-            }
-            // TODO: namespace mapping - we should be able to declare namespace prefix bindings in solrconfig.xml
+        if (args == null) {
+            return config;
         }
+        SolrParams params = SolrParams.toSolrParams(args);
+        // accept override from configuration so we can piggyback on existing 
+        // document storage
+        String xmlFieldName = params.get("xmlFieldName", null);
+        if (xmlFieldName != null) {
+            config.renameField(config.getField(FieldName.XML_STORE), xmlFieldName);
+        }
+        String uriFieldName = params.get("uriFieldName", null);
+        if (uriFieldName != null) {
+            config.renameField(config.getField(FieldName.URI), uriFieldName);
+        }
+        String textFieldName = params.get("textFieldName", null);
+        if (textFieldName != null) {
+            config.renameField(config.getField(FieldName.XML_TEXT), textFieldName);
+        }
+        // TODO: namespace mapping - we should be able to declare namespace prefix bindings in solrconfig.xml
         return config;
     }
     
@@ -78,6 +90,16 @@ public class LuxUpdateProcessorFactory extends UpdateRequestProcessorFactory imp
         informField (indexConfiguration.getField(FieldName.XML_STORE), schema);
         for (FieldDefinition xmlField : indexConfiguration.getFields()) {
             informField (xmlField, schema);
+        }
+        if (xpathFieldConfig != null) {
+            for (Entry<String,String> f : xpathFieldConfig.entrySet()) {
+                SchemaField field = core.getSchema().getField(f.getKey());
+                FieldType fieldType = field.getType();
+                if (fieldType == null) {
+                    throw new SolrException (ErrorCode.SERVER_ERROR, "Field " + f.getKey() + " declared in lux config, but not defined in schema");
+                }
+                indexConfiguration.addField(new XPathField<String>(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO, Type.STRING));
+            }
         }
         // must call this after making changes to the field map:
         schema.refreshAnalyzers();

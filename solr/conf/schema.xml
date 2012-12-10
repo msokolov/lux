@@ -398,6 +398,7 @@
    <!-- whether the content is active / enabled for display -->
    <field name="active" type="boolean" indexed="true" stored="false" multiValued="false"/>
 
+   <field name="title" type="string" indexed="true" stored="true" multiValued="false" xpath="/*/title" />
    <!-- Uncommenting the following will create a "timestamp" field using
         a default value of "NOW" to indicate when each document was indexed.
      -->

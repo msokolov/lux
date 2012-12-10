@@ -15,6 +15,7 @@ import lux.functions.LuxCount;
 import lux.functions.LuxExists;
 import lux.functions.LuxSearch;
 import lux.functions.Transform;
+import lux.functions.file.FileExtensions;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.xpath.FunCall;
@@ -122,6 +123,7 @@ public class XCompiler {
     }
     
     private void registerExtensionFunctions(Processor processor) {
+        // TODO: move this list into a single class in the lux.functions package
         processor.registerExtensionFunction(new LuxSearch());
         processor.registerExtensionFunction(new LuxCount());
         processor.registerExtensionFunction(new LuxExists());
@@ -131,6 +133,8 @@ public class XCompiler {
         processor.registerExtensionFunction(new InsertDocument());
         processor.registerExtensionFunction(new DeleteDocument());
         processor.registerExtensionFunction(new Commit());
+
+        FileExtensions.registerFunctions(processor);
     }
     
     class EmptyEntityResolver implements EntityResolver {

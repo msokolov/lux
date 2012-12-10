@@ -1218,6 +1218,10 @@
      --> 
     <updateRequestProcessorChain name="lux-update-chain">
        <processor class="lux.solr.LuxUpdateProcessorFactory">
+        <lst name="fields">
+          <!--  define additional fields using XPath-->
+          <str name="title">/descendant::title[1]</str>
+        </lst>
 <!--          <str name="xmlFieldName">lux_xml</str> -->
        </processor>
        <processor class="solr.LogUpdateProcessorFactory" />
