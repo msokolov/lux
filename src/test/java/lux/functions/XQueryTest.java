@@ -16,7 +16,7 @@ import net.sf.saxon.s9api.XQueryExecutable;
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 
-public class XQueryTest {
+public abstract class XQueryTest {
 
     protected static Evaluator evaluator;
 
