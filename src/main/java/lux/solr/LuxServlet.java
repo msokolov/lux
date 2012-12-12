@@ -149,7 +149,7 @@ public class LuxServlet extends HttpServlet {
         private String buildHttpInfo(HttpServletRequest req) {
             StringBuilder buf = new StringBuilder();
             buf.append (String.format("<http method=\"%s\" uri=\"%s\">", req.getMethod(), xmlEscape(req.getRequestURI())));
-            buf.append ("<parameters>");
+            buf.append ("<params>");
             for (Object o : req.getParameterMap().entrySet()) {
                 @SuppressWarnings("unchecked")
                 Map.Entry<String, String[]> p = (Entry<String, String[]>) o;
@@ -159,7 +159,7 @@ public class LuxServlet extends HttpServlet {
                 }
                 buf.append("</param>");
             }
-            buf.append ("</parameters>");
+            buf.append ("</params>");
             int tail = req.getRequestURI().indexOf(".xqy");
             String pathExtra = req.getRequestURI().substring(tail + 4);
             buf.append("<path-extra>").append(xmlEscape(pathExtra)).append("</path-extra>");
