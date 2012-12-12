@@ -19,7 +19,7 @@ public class URIField extends FieldDefinition {
     }
     
     protected URIField () {
-        super ("lux_uri", new KeywordAnalyzer(), Store.YES, Type.STRING, TermVector.NO);
+        super ("lux_uri", new KeywordAnalyzer(), Store.YES, Type.STRING, TermVector.NO, true);
     }
     
     @Override

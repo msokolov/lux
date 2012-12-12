@@ -20,7 +20,7 @@ public class DocumentField extends FieldDefinition {
     }
     
     protected DocumentField () {
-        super ("lux_xml", null, Store.YES, Type.STRING, TermVector.NO);
+        super ("lux_xml", null, Store.YES, Type.STRING, TermVector.NO, true);
     }
     
     @Override
