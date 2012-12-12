@@ -17,14 +17,16 @@ let $files := file:list ($dir)
 let $body := 
 <div id="browse-list">
   <p><a href="{$parent}">{$parent}</a>/{$dirname}</p>
-  {
+  <form action="/lux/load.xqy" method="post">
+    <p><input type="submit" value="load" /></p>
+    {
     for $file in $files
       let $abs-file := concat($dir,'/',$file)
       let $is-dir := file:is-dir ($abs-file)
       where not (matches($file, "^\..*$"))
       return
       <div>
-        <input type="checkbox" name="selection" value="$abs-file" />
+        <input type="checkbox" name="selection" value="{$abs-file}" />
         <image src="/lux/img/{if ($is-dir) then 'folder' else 'document'}.png" />
         <span class="file">{
           if ($is-dir) then 
@@ -33,6 +35,6 @@ let $body :=
           $file
         }</span>
     </div>
-  }
+  }</form>
 </div>
-return layout:outer ($body)
+return layout:outer ($lux:http/http/@uri, $body)

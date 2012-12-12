@@ -1,0 +1,12 @@
+HTTP "servlet" API
+
+<http method="getMethod()" uri="{getRequestURI()}">
+  <params>{
+    for $name in getParameterNames() return
+    <param name="{$name}">{
+      for $value in getParameterValues($name) return
+        <value>{$value}</value>
+    </param>
+    <path-extra>{path after ".xqy"}</path-extra>
+  <params>
+</http>

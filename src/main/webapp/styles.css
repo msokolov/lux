@@ -1,12 +1,23 @@
 body { font-family: Arial, Helvetica, sans-serif; 
-       font-size: 14px; line-height: 1.6em; margin: 0; padding: 0;
+       font-size: small; line-height: 1.6em; margin: 0; padding: 0;
        background-color: #eeffdd;
        color: #210337;
      }
 
 /******** header, branding ********/
-h1 { font-family: "Candara Bold", Arial, Helvetica, sans-serif; margin: 0.5em; }
+h1, h2, h3 { font-family: "Candara Bold", Arial, Helvetica, sans-serif; margin: 0.5em; }
 img.logo { vertical-align: middle }
+
+ul.hlist { list-style-type: none; font-size: 0}
+ul.hlist li { display: inline; 
+              padding: 1em;
+              padding-top: 0.25em; padding-bottom: 0.25em;
+              padding-right: 1em; padding-left: 1em; 
+              border: 1px solid black;
+              background: #dddd88;
+              font-size: medium;
+            }
+ul.hlist li.selected { display: inline; background: #eeee22; }
 
 /******** browse page layout ******/
 #browse-list { margin-left: 3em; }

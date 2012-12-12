@@ -3,6 +3,8 @@ xquery version "1.0";
 declare namespace lux="http://luxproject.net";
 declare namespace demo="http://luxproject.net/demo";
 
+import module namespace layout="http://www.luxproject.net/layout" at "src/main/webapp/layout.xqy";
+
 declare variable $lux:http as document-node() external;
 
 (:
@@ -44,7 +46,7 @@ declare function demo:search ($query, $start, $page-size)
 };
 
 let $page-size := 20
-let $params := $lux:http/http/parameters/param 
+let $params := $lux:http/http/params/param 
 let $qname := $params[@name='qname']/value/string()
 let $term := $params[@name='term']/value/string()
 let $start := if (number($params[@name='start'])) then number($params[@name='start']) else 1
@@ -52,20 +54,15 @@ let $query := demo:query ($qname, $term)
 let $total := if ($query) then lux:count ($query) else 0
 let $results := if ($query) then demo:search ($query, $start, $page-size) else ()
 let $next := $start + count($results)
-return
-<html>
-  <head>
-    <title>Lux Demo</title>
-    <link href="styles.css" rel="stylesheet" />
-  </head>
+let $body := 
   <body>
-    <h1><img class="logo" src="img/sunflwor52.png" alt="Lux" height="40" /> Lux Demo</h1>
     <form action="index.xqy" id="search" name="search">
       <div class="container">
         <div>
           Context <input type="text" name="qname" id="qname" value="{$params[@name='qname']}"/>
           Text <input type="text" name="term" id="term" value="{$params[@name='term']}"/>
           <input type="submit" value="search" />
+          <input type="button" name="erase all" onclick="if(confirm('Are you sure?')) location.href=load.xqy?erase-all=yes" />
         </div>
         <div id="selection"></div>
       </div>
@@ -103,5 +100,6 @@ return
       }}
       </script>
     }
-  </body>
-</html>
+  </body>/*
+
+return layout:outer($lux:http/http/@uri, $body)

@@ -15,5 +15,5 @@ return
   if (doc-available ($stylesheet-name)) then
     lux:transform (doc($stylesheet-name), $doc)
   else
-    layout:outer (<textarea>{$doc}</textarea>)
+    layout:outer ($lux:http/http/@uri, <textarea cols="80" rows="12">{$doc}</textarea>)
 
