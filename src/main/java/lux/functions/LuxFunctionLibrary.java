@@ -18,16 +18,14 @@ public class LuxFunctionLibrary extends IntegratedFunctionLibrary {
     public Expression bind(StructuredQName functionName, Expression[] staticArgs, StaticContext env, Container container)
             throws XPathException {
         IntegratedFunctionCall ifc = (IntegratedFunctionCall) super.bind(functionName, staticArgs, env, container);
-        try {
-            ExtensionFunctionCall f = ifc.getFunction();
-            LuxFunctionCall fc = new LuxFunctionCall(f);
-            fc.setFunctionName(functionName);
-            fc.setArguments(staticArgs);
-            return fc;
-        } catch (Exception err) {
-            throw new XPathException("Failed to create call to extension function " + functionName.getDisplayName(),
-                    err);
+        if (ifc == null) {
+            return null;
         }
+        ExtensionFunctionCall f = ifc.getFunction();
+        LuxFunctionCall fc = new LuxFunctionCall(f);
+        fc.setFunctionName(functionName);
+        fc.setArguments(staticArgs);
+        return fc;
     }
 
 }
