@@ -74,7 +74,9 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             long facts=0;
             if (arguments.length >= 2) {
                 IntegerValue num  = (IntegerValue) arguments[1].next();
-                facts = num.longValue();
+                if (num != null) {
+                    facts = num.longValue();
+                }
             }
             String sortCriteria = null;
             if (arguments.length >= 3) {
