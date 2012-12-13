@@ -455,7 +455,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 searchArg = subs[0].getSubs()[0];
             }
         } else if (fname.equals(FunCall.LUX_SEARCH) && !(funcall instanceof SearchCall)) {
-            return new SearchCall (subs[0], ValueType.VALUE, null);
+            if (subs.length == 1) {
+                return new SearchCall (subs[0], ValueType.VALUE, null);
+            } else {
+                return funcall;
+            }
         }
         else if (subs.length == 1 && !subs[0].isAbsolute()) {
             return funcall;
