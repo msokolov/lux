@@ -1,6 +1,6 @@
 package lux.solr;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -49,7 +49,7 @@ public class LuxSolrTest {
         addSolrDocFromFile("src/test/resources/conf/schema.xml", docs);
         addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs);
         for (int i = 1; i <= 100; i++) {
-            addSolrDoc ("test" + i, "<doc><test id='" + i + "'>" + i + "</test><test>cat</test></doc>", docs);
+            addSolrDoc ("test" + i, "<doc><title id='" + i + "'>" + (101-i) + "</title><test>cat</test></doc>", docs);
         }
         solr.add (docs);
         solr.commit();
@@ -81,7 +81,7 @@ public class LuxSolrTest {
     @Test public void testAtomicResult () throws Exception {
         // This also tests lazy evaluation - like paging within xpath.  Because we only retrieve
         // the first value (in document order), we only need to retrieve one value.
-        assertXPathSearchCount (1, 1, "xs:double", "1", "number((/doc/test)[1])");
+        assertXPathSearchCount (1, 1, "xs:double", "100", "number((/doc/title)[1])");
     }
     
     @Test public void testLiteral () throws Exception {
@@ -98,7 +98,24 @@ public class LuxSolrTest {
     
     @Test public void testPaging () throws Exception {
         // make the searcher page past the first 10 documents to find 10 xpath matches
-        assertXPathSearchCount (10, 100, "element", "doc", "//doc[test[number(.) > 5]]");
+        assertXPathSearchCount (10, 100, "element", "doc", "//doc[title[number(.) < 95]]");
+    }
+    
+    /**
+     * This test confirms that fields declared in solrconfig.xml/schema.xml are indexed
+     * and made available for sorting, as well as exercising sorting optimization and the 
+     * string sorting implementations
+     */
+    @Test public void testSorting () throws Exception {
+        // should be 1, 10, 100, 11, 12, ..., 2, 21, 22, ...
+        // which is docs 101, 92, 2, (since there are 2 docs with no title that are loaded first)
+        assertXPathSearchCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[1]");
+        assertXPathSearchCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:field-values('title') descending return $doc/title/string())[1]");
+        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[2]");
+        // test providing the sort criteria directly to lux:search()
+        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in lux:search('<test:cat', (), 'title') return $doc/doc/title/string())[2]");
+        // TODO: implement wildcard element query to test for existence of some element
+        // assertXPathSearchCount(1, 2, "xs:string", "10", "lux:search('<doc:*', (), 'title')[2]");
     }
     
     @Test public void testDocFunction () throws Exception {
@@ -146,13 +163,14 @@ public class LuxSolrTest {
         q.setStart(0);
         QueryResponse rsp = solr.query (q, METHOD.POST);
         long docMatches = rsp.getResults().getNumFound();
-        assertEquals (docCount, docMatches);
         NamedList<?> results = (NamedList<?>) rsp.getResponse().get("xpath-results");
-        assertEquals (count, results.size());
+        String error = (String) rsp.getResponse().get("xpath-error");
         if (type.equals("error")) {
-            String error = (String) rsp.getResponse().get("xpath-error");
             assertEquals (value, error);
         } else {
+            assertNull ("got unexpected error: " + error, error);
+            assertEquals (docCount, docMatches);
+            assertEquals (count, results.size());
             assertEquals (type, results.getName(0));
             String returnValue = results.getVal(0).toString();
             if (returnValue.startsWith ("<")) {
