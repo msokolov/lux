@@ -46,6 +46,9 @@ public class SolrIndexConfig {
             if ("yes".equals(args.get("strip-namespaces"))) {
                 options |= IndexConfiguration.STRIP_NAMESPACES;
             }
+            if ("yes".equals(args.get("namespace-aware"))) {
+                options |= IndexConfiguration.NAMESPACE_AWARE;
+            }
         }
         SolrIndexConfig config = new SolrIndexConfig(IndexConfiguration.makeIndexConfiguration (options));
         if (args != null) {

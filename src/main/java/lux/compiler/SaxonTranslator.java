@@ -55,6 +55,7 @@ import net.sf.saxon.expr.BinaryExpression;
 import net.sf.saxon.expr.CastExpression;
 import net.sf.saxon.expr.CompareToIntegerConstant;
 import net.sf.saxon.expr.ContextItemExpression;
+import net.sf.saxon.expr.ErrorExpression;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.FilterExpression;
 import net.sf.saxon.expr.FirstItemExpression;
@@ -1105,6 +1106,8 @@ public class SaxonTranslator {
         //case LocalVariableReference:
         case VariableReference:
             return exprFor ((VariableReference) expr);
+        case ErrorExpression:
+           throw new LuxException (((ErrorExpression) expr).getException().getMessage());
         default:
             throw new UnsupportedOperationException("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
         }
@@ -1121,6 +1124,7 @@ public class SaxonTranslator {
         ComputedElement,
         ContextItemExpression,
         CopyOf,
+        ErrorExpression,
         Expression,
         FilterExpression,
         FirstItemExpression,

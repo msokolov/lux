@@ -21,11 +21,13 @@ import org.w3c.dom.Element;
 public class QNameQueryBuilder implements QueryBuilder {
 
     private final Map<String,String> nsMap;
-    private Analyzer analyzer;
+    private final Analyzer analyzer;
+    private final boolean namespaceAware;
     
-    public QNameQueryBuilder(Analyzer analyzer) {
+    public QNameQueryBuilder(Analyzer analyzer, boolean namespaceAware) {
         this.analyzer = analyzer;
         nsMap = new HashMap<String, String>();
+        this.namespaceAware = namespaceAware;
     }
 
     public Query getQuery(Element e) throws ParserException {
@@ -44,10 +46,14 @@ public class QNameQueryBuilder implements QueryBuilder {
         }
     }
     
+    void clearNamespaces () {
+        nsMap.clear();
+    }
+    
     Query parseQueryTerm(final String fieldName, final String qName, final String text, final float boost) throws ParserException {
         StringBuilder termText = new StringBuilder();
         if (StringUtils.isNotEmpty(qName)) {
-            if (qName.contains(":")) {
+            if (qName.contains(":") && namespaceAware) {
                 String[] parts = qName.split(":", 2);
                 String prefix = parts[0];
                 String name = parts[1];

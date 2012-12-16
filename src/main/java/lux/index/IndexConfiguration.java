@@ -28,7 +28,7 @@ public class IndexConfiguration {
 
     public final static int BUILD_DOCUMENT=     0x00000001;
     public final static int SERIALIZE_XML=      0x00000002;
-    public final static int NAMESPACE_UNAWARE=  0x00000004;
+    public final static int NAMESPACE_AWARE=  0x00000004;
     public final static int STORE_XML=          0x00000008;
     public final static int STORE_PTREE=        0x00000010;
     public final static int INDEX_QNAMES=       0x00000020;

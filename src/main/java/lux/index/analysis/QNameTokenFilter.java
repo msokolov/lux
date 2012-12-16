@@ -13,18 +13,22 @@ import org.apache.lucene.util.CharsRef;
 
 /**
  * Expand the input term by adding additional terms at the same position, prefixed by the node names (QNames)
- * found in the QNameAttribute.
+ * found in the QNameAttribute.  The node name is serialized in reverse-Clark format: localname{namespace-uri}
+ * if processing is namespace-aware.  Otherwise the node name is serialized as a lexical QName: prefix:localname
+ * without regard to any namespace uri binding.
  */
 final public class QNameTokenFilter extends TokenFilter {
 
     private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
     private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
     private final PositionIncrementAttribute posAtt = addAttribute(PositionIncrementAttribute.class);
+    private boolean namespaceAware;
     private CharsRef term;
 
     protected QNameTokenFilter(TokenStream input) {
         super(input);
         term = new CharsRef();
+        setNamespaceAware(true);
     }
     
     @Override
@@ -42,10 +46,28 @@ final public class QNameTokenFilter extends TokenFilter {
         // emit <qname>:<term>
         QName qname = qnameAtt.next();
         termAtt.setEmpty();
-        termAtt.append(qname.getEncodedName());
+        if (namespaceAware) {
+            termAtt.append(qname.getEncodedName());
+        } else {
+            if (qname.getPrefix() != null) {
+                termAtt.append(qname.getPrefix()).append(':');
+            }
+            termAtt.append(qname.getLocalPart());
+        }
         termAtt.append(':');
-        termAtt.append(term);            
+        termAtt.append(term);      
         return true;
+    }
+
+    /**
+     * @return if true, indexed QNames include the namespace URI; otherwise they include the prefix.
+     */
+    public boolean isNamespaceAware() {
+        return namespaceAware;
+    }
+
+    public void setNamespaceAware(boolean namespaceAware) {
+        this.namespaceAware = namespaceAware;
     }
 
 }

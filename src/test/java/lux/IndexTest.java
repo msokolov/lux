@@ -171,7 +171,7 @@ public class IndexTest {
         indexWriter.close();
         System.out.println 
              (String.format("indexed path-values for lux/reader-test.xml in %d bytes", dir.sizeInBytes()));
-        IndexTestSupport indexTestSupport = new IndexTestSupport (null, indexer, dir);
+        IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
         printAllTerms(indexTestSupport);
         assertFullTextQuery (indexTestSupport, "title", "TEST", 1);
     }
@@ -185,7 +185,7 @@ public class IndexTest {
         System.out.println 
              (String.format("indexed path-values for hamlet.xml in %d bytes", dir.sizeInBytes()));
         // hamlet.xml = 288815 bytes; indexed in 215040 bytes seems ok??
-        printAllTerms(new IndexTestSupport(null, indexer, dir));
+        printAllTerms(new IndexTestSupport(indexer, dir));
     }
 
     @Test
@@ -295,7 +295,7 @@ public class IndexTest {
 
     private IndexTestSupport buildIndex(String desc, XmlIndexer indexer) throws XMLStreamException, IOException, SaxonApiException {
         long t0 = System.currentTimeMillis();
-        IndexTestSupport indexTestSupport = new IndexTestSupport (indexer, dir);
+        IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
         System.out.println 
              (String.format("indexed %s in %d ms %d bytes", desc, 
                      (System.currentTimeMillis()-t0), dir.sizeInBytes()));

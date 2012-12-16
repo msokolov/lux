@@ -1226,6 +1226,7 @@
           <str name="title">/descendant::wp:title[1]</str>
         </lst>
         <str name="strip-namespaces">no</str>
+        <str name="namespace-aware">no</str>
        <processor class="lux.solr.LuxUpdateProcessorFactory" />
        <processor class="solr.LogUpdateProcessorFactory" />
        <processor class="solr.RunUpdateProcessorFactory" />

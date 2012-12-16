@@ -57,6 +57,13 @@ abstract class XmlTokenStreamBase extends TokenStream {
         return true;
     }
     
+    /**
+     * @return the underlying stream of text tokens to which additional xml-related attributes are added by this.
+     */
+    public TokenStream getWrappedTokenStream () {
+        return wrapped;
+    }
+    
     protected boolean incrementWrappedTokenStream() throws IOException {
         while (wrapped.incrementToken()) {
             if (termAtt.length() > 0) {

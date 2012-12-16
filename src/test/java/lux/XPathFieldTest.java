@@ -42,7 +42,7 @@ public class XPathFieldTest {
         indexer.getConfiguration().addField(new XPathField<String>("title", "/*/TITLE", null, Store.YES, Type.STRING));
         // TODO: test integer fields
         dir = new RAMDirectory();
-        indexTestSupport = new IndexTestSupport (indexer, dir);
+        indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
     }
 
     @AfterClass

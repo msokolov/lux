@@ -93,7 +93,7 @@ public class XmlIndexer {
             } else {
                 pathMapper = new XmlPathMapper();
             }
-            pathMapper.setNamespaceAware(! isOption(NAMESPACE_UNAWARE));        
+            pathMapper.setNamespaceAware(isOption(NAMESPACE_AWARE));        
             xmlReader.addHandler (pathMapper);
         }
         if (isOption (INDEX_FULLTEXT)) {

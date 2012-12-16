@@ -175,7 +175,8 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
             Query q;
             try {
                 // TODO: use a prebuilt parser, don't construct a new one for every query
-                q = getLuxQueryParser().parse(query);
+                LuxQueryParser luxQueryParser = getLuxQueryParser();
+                q = luxQueryParser.parse(query);
             } catch (ParseException e) {
                 throw new XPathException ("Failed to parse query: " + query, e);
             }

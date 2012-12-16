@@ -7,7 +7,7 @@ public class XmlQueryParser extends CoreParser {
 
     public XmlQueryParser (String fieldName, Analyzer analyzer) {
         super (fieldName, analyzer);
-        queryFactory.addBuilder("QNameTextQuery", new QNameQueryBuilder(analyzer));
+        queryFactory.addBuilder("QNameTextQuery", new QNameQueryBuilder(analyzer, true));
     }
     
 }

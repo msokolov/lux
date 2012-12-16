@@ -40,7 +40,7 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
             XdmNode e = (XdmNode) nodeAncestors.next();
             if (e.getNodeKind() == XdmNodeKind.ELEMENT) {
                 QName qname = e.getNodeName();
-                qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(),  qname.getLocalName()));
+                qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(),  qname.getLocalName(), qname.getPrefix()));
                 // if (! isTransparent (e))
                 // return;
             }

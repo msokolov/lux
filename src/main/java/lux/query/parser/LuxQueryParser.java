@@ -63,7 +63,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
 
     public static LuxQueryParser makeLuxQueryParser(IndexConfiguration config) {
         Analyzer elementTextAnalyzer = config.getField(FieldName.ELEMENT_TEXT).getAnalyzer();
-        QNameQueryBuilder queryBuilder = new QNameQueryBuilder(elementTextAnalyzer);
+        QNameQueryBuilder queryBuilder = new QNameQueryBuilder(elementTextAnalyzer, config.isOption(IndexConfiguration.NAMESPACE_AWARE));
         NodeParser nodeParser = new NodeParser(
                 config.getFieldName(FieldName.XML_TEXT),
                 config.getFieldName(FieldName.ELEMENT_TEXT),
@@ -186,4 +186,5 @@ public class LuxQueryParser extends ExtendableQueryParser {
         }
         return QueryParser.escape (s);
     }
+    
 }

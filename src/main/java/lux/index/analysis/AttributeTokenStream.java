@@ -33,7 +33,7 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
     private void getAttributeQName() {
         qnameAtt.clearQNames();
         QName qname = curNode.getNodeName();
-        qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(), qname.getLocalName()));
+        qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(), qname.getLocalName(), qname.getPrefix()));
     }
 
     /**

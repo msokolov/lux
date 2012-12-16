@@ -22,12 +22,14 @@ declare function demo:format-param ($p as element(param)) as xs:string
 declare function demo:query ($qname, $term)
   as xs:string
 {
+  let $eqname := replace ($qname, ":", "\\:")
+  return
   if ($qname and $term) then
-    concat ("node<", $qname, ":", $term)
+    concat ("node<", $eqname, ":", $term)
   else if ($term) then
     $term
   else if ($qname) then
-    concat ("node<", $qname, ":[* TO *]")
+    concat ("node<", $eqname, ":[* TO *]")
   else
     "*:*"
 };

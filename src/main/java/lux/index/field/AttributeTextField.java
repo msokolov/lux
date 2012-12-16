@@ -2,9 +2,11 @@ package lux.index.field;
 
 import java.util.Collections;
 
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.analysis.AttributeTokenStream;
 import lux.index.analysis.DefaultAnalyzer;
+import lux.index.analysis.QNameTokenFilter;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -33,6 +35,7 @@ public class AttributeTextField extends FieldDefinition {
         XdmNode doc = indexer.getXdmNode();
         SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
         AttributeTokenStream tokens = new AttributeTokenStream(doc, builder.getOffsets());
+        ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
         return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
                         new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
     }

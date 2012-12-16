@@ -50,22 +50,28 @@ public class IndexTestSupport {
         this ("lux/hamlet.xml");
     }
     
-    public IndexTestSupport(String xmlFileName) throws XMLStreamException, IOException, SaxonApiException {
-        this (xmlFileName,
+    public IndexTestSupport(String ... xmlFiles) throws XMLStreamException, IOException, SaxonApiException {
+        this (xmlFiles,
                 new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_XML|INDEX_FULLTEXT),
                 new RAMDirectory());
     }
     
     public IndexTestSupport(XmlIndexer indexer, Directory dir) throws XMLStreamException, IOException, SaxonApiException {
-        this ("lux/hamlet.xml", indexer, dir);
+        this (new String[] {}, indexer, dir);
+    }
+    
+    public IndexTestSupport(String xmlFile, XmlIndexer indexer, Directory dir) throws XMLStreamException, IOException, SaxonApiException {
+        this (new String[] { xmlFile }, indexer, dir);
     }
 
-    public IndexTestSupport(String xmlFileName, XmlIndexer indexer, Directory dir) throws XMLStreamException, IOException, SaxonApiException {
+    public IndexTestSupport(String [] xmlFiles, XmlIndexer indexer, Directory dir) throws XMLStreamException, IOException, SaxonApiException {
         // create an in-memory Lucene index, index some content
         this.indexer = indexer;
         this.dir = dir;
-        if (xmlFileName != null) {
-            indexAllElements (indexer, dir, xmlFileName);
+        if (xmlFiles != null) {
+            for (String file : xmlFiles) {
+                indexAllElements (file);
+            }
         } else {
             // initialize an empty index
             indexer.getIndexWriter(dir).close();
@@ -89,12 +95,12 @@ public class IndexTestSupport {
      * @throws IOException
      * @throws SaxonApiException 
      */
-    public void indexAllElements(XmlIndexer indexer, Directory dir, String filename) throws XMLStreamException, IOException, SaxonApiException {
-        indexAllElements(indexer, dir, filename, SearchTest.class.getClassLoader().getResourceAsStream(filename));
+    public void indexAllElements(String filename) throws XMLStreamException, IOException, SaxonApiException {
+        indexAllElements(filename, SearchTest.class.getClassLoader().getResourceAsStream(filename));
         System.out.println ("Indexed " + totalDocs + " documents from " + filename);
     }
     
-    public void indexAllElements(XmlIndexer indexer, Directory dir, String uri, InputStream in) throws XMLStreamException, IOException, SaxonApiException {
+    public void indexAllElements(String uri, InputStream in) throws XMLStreamException, IOException, SaxonApiException {
         IndexWriter indexWriter = indexer.getIndexWriter(dir);
         String xml = IOUtils.toString(in);
         indexer.indexDocument(indexWriter, '/' + uri, xml);
