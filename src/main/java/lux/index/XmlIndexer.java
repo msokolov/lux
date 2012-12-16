@@ -1,14 +1,6 @@
 package lux.index;
 
-import static lux.index.IndexConfiguration.BUILD_DOCUMENT;
-import static lux.index.IndexConfiguration.COMPUTE_OFFSETS;
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.INDEX_QNAMES;
-import static lux.index.IndexConfiguration.INDEX_VALUES;
-import static lux.index.IndexConfiguration.LUCENE_VERSION;
-import static lux.index.IndexConfiguration.NAMESPACE_UNAWARE;
-import static lux.index.IndexConfiguration.STORE_XML;
+import static lux.index.IndexConfiguration.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +8,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -113,22 +106,27 @@ public class XmlIndexer {
         if (isOption (BUILD_DOCUMENT) && saxonBuilder == null) {
             initDocBuilder();
         }
+        if (isOption (STRIP_NAMESPACES)) {
+            xmlReader.setStripNamespaces(true);
+        }
     }
     
-    private Processor getProcessor () {
+    public Processor getProcessor () {
         if (processor == null) {
             processor = new Processor(false);
         }
         return processor;
     }
     
-    private XPathCompiler getXPathCompiler () {
+    public XPathCompiler getXPathCompiler () {
         if (compiler == null) {
             compiler = getProcessor().newXPathCompiler();
+            for (Entry<String, String> nsmap : configuration.getNamespaceMap().entrySet()) {
+                compiler.declareNamespace(nsmap.getKey(), nsmap.getValue());
+            }
         }
         return compiler;
     }
-    
 
     public XdmValue evaluateXPath(String xpath) throws SaxonApiException {
         XPathExecutable xpathExec = xpathCache.get(xpath);

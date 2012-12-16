@@ -378,7 +378,7 @@
      default: a value that should be used if no value is specified
        when adding a document.
    -->
-
+   <field name="lux_uri" type="string" indexed="true" stored="true" />
    <field name="size_i" type="int" indexed="false" stored="true" />
    <field name="directory_b" type="boolean" indexed="true" stored="true" />
 
@@ -463,7 +463,7 @@
  <!-- Field to use to determine and enforce document uniqueness. 
       Unless this field is marked with required="false", it will be a required field
    -->
-<!--  <uniqueKey>uri</uniqueKey> -->
+ <uniqueKey>lux_uri</uniqueKey>
 
  <!-- field for the QueryParser to use when an explicit fieldname is absent -->
  <defaultSearchField>xml_text</defaultSearchField>

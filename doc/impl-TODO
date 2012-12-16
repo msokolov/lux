@@ -1,5 +1,6 @@
 * demo
 ** sorting by value
+** sorting by relevance
 ** query sandbox
 *** eval
 execute xquery from within xquery

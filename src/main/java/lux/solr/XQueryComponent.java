@@ -1,6 +1,8 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.*;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.STORE_XML;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +22,6 @@ import lux.QueryContext;
 import lux.XCompiler;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
-import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
@@ -40,13 +41,16 @@ import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.core.PluginInfo;
+import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.QueryComponent;
 import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
-import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
+import org.apache.solr.update.processor.UpdateRequestProcessorChain;
+import org.apache.solr.util.plugin.SolrCoreAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,14 +58,15 @@ import org.slf4j.LoggerFactory;
  *  Its queries will match documents that have been indexed using XmlIndexer 
  *  with the INDEX_PATHS option.
  */
-public class XQueryComponent extends QueryComponent {
+public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
     protected URL baseUri;
-    protected IndexSchema schema;
     protected Set<String> fields = new HashSet<String>();
     protected XCompiler compiler;
     protected XmlIndexer indexer;
+    protected SolrIndexConfig solrIndexConfig;
+    
     private Logger logger;
     
     public XQueryComponent() {
@@ -71,7 +76,7 @@ public class XQueryComponent extends QueryComponent {
     public void init(@SuppressWarnings("rawtypes") NamedList args) {
         String base;
         if (args.get("lux.base-uri") != null) {
-            base = args.get("lux.content-type").toString();
+            base = args.get("lux.base-uri").toString();
             try {
                 baseUri = new URL (base);
             } catch (MalformedURLException e) {
@@ -86,12 +91,18 @@ public class XQueryComponent extends QueryComponent {
                 throw new SolrException(ErrorCode.UNKNOWN, base + " is an invalid URL?", e);
             }
         }
-        IndexConfiguration config = LuxUpdateProcessorFactory.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_XML, args);
-        // FIXME: this requires duplicated config for field aliases - one for the update processor and one for this
-        indexer = new XmlIndexer (config);
+    }
+    
+    public void inform(SolrCore core) {
+        // Read the init args from the LuxUpdateProcessorFactory's configuration since we require
+        // this plugin to use compatible configuration
+        PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
+        solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_XML, info.initArgs);
+        solrIndexConfig.inform(core);
+        indexer = new XmlIndexer (solrIndexConfig.getIndexConfig());
         compiler = createXCompiler();
     }
-
+    
     @Override
     public void prepare(ResponseBuilder rb) throws IOException {
         SolrQueryRequest req = rb.req;
@@ -137,6 +148,7 @@ public class XQueryComponent extends QueryComponent {
             // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
             // of the query so error reporting will be able to report it
             // and so it can include modules with relative paths
+            // String queryPath = rb.req.getParams().get(LuxServlet.LUX_XQUERY);
         	expr = compiler.compile(query);
         } catch (LuxException ex) {
         	ex.printStackTrace();

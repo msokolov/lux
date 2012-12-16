@@ -18,6 +18,7 @@ import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.SaxonApiException;
 
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -151,14 +152,14 @@ public class IndexTest {
         assertEquals (1, count);
     }
     
-    private void assertXPathStringField (IndexTestSupport indexTestSupport) throws ParseException, IOException {
-        Query q = new TermQuery (new Term ("doctype", "ACT"));
+    private void assertXPathStringField (int expectedCount, String field, String term, IndexTestSupport indexTestSupport) throws ParseException, IOException {
+        Query q = new TermQuery (new Term (field, term));
         DocIdSetIterator iter = indexTestSupport.searcher.search(q);
         int count = 0;
         while (iter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
             ++ count;
         }
-        assertEquals (5, count);
+        assertEquals ("Wrong number of matches for " + q.toString(), expectedCount, count);
     }
 
     @Test
@@ -253,7 +254,18 @@ public class IndexTest {
         indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
         IndexTestSupport indexTestSupport = buildIndex("xpath", indexer);
         assertXPathIntField(indexTestSupport);
-        assertXPathStringField(indexTestSupport);
+        assertXPathStringField(5, "doctype", "ACT", indexTestSupport);
+    }
+
+    @Test
+    public void testXPathIndexNamespace () throws Exception {
+        IndexConfiguration indexConfig = IndexConfiguration.DEFAULT;
+        indexConfig.defineNamespaceMapping("", "");
+        indexConfig.defineNamespaceMapping("x", "http://lux.net{test}");
+        indexConfig.addField(new XPathField<String>("title", "//x:title", new KeywordAnalyzer(), Store.NO, Type.STRING));
+        XmlIndexer indexer = new XmlIndexer (indexConfig);
+        IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/reader-test-ns.xml", indexer, dir);
+        assertXPathStringField(2, "title", "TEST", indexTestSupport);
     }
     
     @Before

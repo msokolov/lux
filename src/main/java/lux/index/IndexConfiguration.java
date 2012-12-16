@@ -1,9 +1,11 @@
 package lux.index;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.field.AttributeQNameField;
@@ -34,6 +36,7 @@ public class IndexConfiguration {
     public final static int INDEX_FULLTEXT=     0x00000080;
     public final static int INDEX_VALUES=       0x00000100;
     public final static int COMPUTE_OFFSETS=    0x00000200;
+    public final static int STRIP_NAMESPACES=   0x00000400;
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
     public final static int DEFAULT_OPTIONS = STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
 
@@ -54,9 +57,10 @@ public class IndexConfiguration {
     
     private long options;
     
-    private final List<FieldDefinition> fields;
+    private final Set<FieldDefinition> fields;
     private final HashMap<FieldDefinition, String> fieldNames;
     private MultiFieldAnalyzer fieldAnalyzers;
+    private final HashMap<String,String> namespaceMap;
 
     public MultiFieldAnalyzer getFieldAnalyzers() {
         return fieldAnalyzers;
@@ -70,7 +74,8 @@ public class IndexConfiguration {
     }
 
     protected IndexConfiguration (long options) {
-        fields = new ArrayList<FieldDefinition>();
+        namespaceMap = new HashMap<String, String>();
+        fields = new HashSet<FieldDefinition>();
         fieldNames = new HashMap<FieldDefinition, String>();
         fieldAnalyzers = new MultiFieldAnalyzer();
         // TODO: configuration?  Inherit from XML_TEXT?
@@ -163,6 +168,14 @@ public class IndexConfiguration {
 
     public boolean isIndexingEnabled() {
         return (options & INDEXES) != 0;
+    }
+    
+    public Map<String,String> getNamespaceMap () {
+        return Collections.unmodifiableMap(namespaceMap);
+    }
+    
+    public void defineNamespaceMapping (String prefix, String namespaceURI) {
+        namespaceMap.put(prefix, namespaceURI);
     }
 
 }

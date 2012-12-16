@@ -65,6 +65,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                     throw new LuxException ("Invalid sort key: " + sortCriteria);
                 }
             }
+            // TODO: use or copy from org.apache.solr.Sorting to implement missing least/greatest
             sortFields[i] = new SortField(tokens[0], SortField.STRING, reverse);
         }
         return new Sort(sortFields);

@@ -37,7 +37,20 @@ public class SearchCall extends FunCall {
         generateArguments();
     }
 
-
+    /*
+    public static SearchCall makeSearchCall (AbstractExpression [] args) {
+        SortField[] sort;
+        if (args.length >= 3) {
+            AbstractExpression sortArg = args[2];
+            if (sortArg.getType() == Type.LITERAL) {
+                String sortExpr = ((LiteralExpression)sortArg).getValue().toString();
+                // TODO? parse sort expressions here?
+            }
+        }
+        return new SearchCall (args[0], ValueType.VALUE, sort);
+    }
+    */
+   
     public void combineQuery(XPathQuery query, IndexConfiguration config) {
         ElementConstructor additional = query.getParseableQuery().toXmlNode(config.getDefaultFieldName());
         if (! additional.getName().getLocalPart().equals("MatchAllDocsQuery")) {
