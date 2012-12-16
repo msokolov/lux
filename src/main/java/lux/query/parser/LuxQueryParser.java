@@ -46,8 +46,6 @@ import org.apache.lucene.util.Version;
  *  <math:equation:3.14159
  * </pre>
  * 
- * <p>TODO: supply a facility for looking up namespace prefixes (such as <code>math</code> in the last example).</p>
- *
  * AND
  * 
  * Boolean queries containing a marker term: lux_within:{slop} or lux_near:{slop} will be
@@ -56,19 +54,39 @@ import org.apache.lucene.util.Version;
  */
 public class LuxQueryParser extends ExtendableQueryParser {
     
-    public LuxQueryParser(Version matchVersion, String f, Analyzer a, Extensions ext) {
+    private final QNameQueryBuilder queryBuilder;
+    
+    public LuxQueryParser(Version matchVersion, String f, Analyzer a, Extensions ext, QNameQueryBuilder queryBuilder) {
         super(matchVersion, f, a, ext);
+        this.queryBuilder = queryBuilder;
     }
 
     public static LuxQueryParser makeLuxQueryParser(IndexConfiguration config) {
-        return new LuxQueryParser(IndexConfiguration.LUCENE_VERSION, 
+        Analyzer elementTextAnalyzer = config.getField(FieldName.ELEMENT_TEXT).getAnalyzer();
+        QNameQueryBuilder queryBuilder = new QNameQueryBuilder(elementTextAnalyzer);
+        NodeParser nodeParser = new NodeParser(
+                config.getFieldName(FieldName.XML_TEXT),
+                config.getFieldName(FieldName.ELEMENT_TEXT),
+                config.getFieldName(FieldName.ATTRIBUTE_TEXT),
+                queryBuilder);
+        NodeExtensions ext = new NodeExtensions (nodeParser);
+        LuxQueryParser parser = new LuxQueryParser(IndexConfiguration.LUCENE_VERSION, 
                 config.getFieldName(FieldName.XML_TEXT), 
                 config.getFieldAnalyzers(), 
-                new NodeExtensions (new NodeParser(
-                        config.getFieldName(FieldName.XML_TEXT),
-                        config.getFieldName(FieldName.ELEMENT_TEXT),
-                        config.getFieldName(FieldName.ATTRIBUTE_TEXT),
-                        config.getField(FieldName.ELEMENT_TEXT).getAnalyzer())));
+                ext,
+                queryBuilder);
+        return parser;
+    }
+    
+    /**
+     * declares a namespace binding.
+     * @param prefix The namespace prefix to bind.  No attempt is made to ensure that the prefix is syntactically valid.
+     * It is not possible to declare a default namespace using this API: the default namespace is always no namespace
+     * in this query syntax.  If this method is called with a null or empty prefix, the effect is undefined.
+     * @param namespaceURI The namespace "URI" to bind. If empty or null, any existing binding for the prefix is removed.
+     */
+    public void bindNamespacePrefix (String prefix, String namespaceURI) {
+        queryBuilder.bindNamespacePrefix(prefix, namespaceURI);
     }
     
     @Override

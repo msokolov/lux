@@ -108,9 +108,9 @@ public class XmlReaderTest {
         // attributes
         assertEquals (Integer.valueOf(2), pathMapper.getAttQNameCounts().get(new QName("id")));
         // paths
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} @id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} entities{%232} @id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http%3A%2F%2Flux.net%2F%23test} entities{http%3A%2F%2Flux.net%2F%23test}"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http://lux.net/#test} @id"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http://lux.net/#test} entities{#2} @id"));
+        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http://lux.net/#test} entities{http://lux.net/#test}"));
     }
     
     @Test 

@@ -4,9 +4,6 @@
 
 package lux.xml;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-
 import org.apache.commons.lang.StringUtils;
 
 public class QName extends javax.xml.namespace.QName {
@@ -38,8 +35,7 @@ public class QName extends javax.xml.namespace.QName {
 
     /**
      * The Clark name is named after James Clark. It has the namespace surrounded by {},
-     * followed by the local name.  In our case we omit the {} when the namespace is empty.
-     * Not sure if that's Clark standard?
+     * followed by the local name. We omit the {} when the namespace is empty.
      * @return the Clark name
      */
     public String getClarkName () {
@@ -52,7 +48,7 @@ public class QName extends javax.xml.namespace.QName {
     
     /**
      * @return the name encoded in a suitable form for indexing.  The namespace uri, if any,
-     * is URL-encoded, wrapped in {} and appended to the local-name.
+     * is wrapped in {} and appended to the local-name.
      */
     public String getEncodedName() {
         return encode (getLocalPart(), getNamespaceURI());
@@ -62,16 +58,14 @@ public class QName extends javax.xml.namespace.QName {
      * @param localPart the local part of the QName to encode
      * @param namespaceURI the namespace (URI) of the QName to encode (may be null)
      * @return the QName encoded in a suitable form for indexing.  The namespace uri, if any,
-     * is URL-encoded, wrapped in {} and appended to the local-name.
+     * is wrapped in {} and appended to the local-name.
      */
     public static String encode (String localPart, String namespaceURI) {
         if (StringUtils.isEmpty(namespaceURI)) {
             return localPart;
         }
         StringBuilder buf = new StringBuilder ();
-        try {
-            buf.append(localPart).append ('{').append(URLEncoder.encode(namespaceURI, "utf-8")).append("}");
-        } catch (UnsupportedEncodingException e) { }
+        buf.append(localPart).append ('{').append(namespaceURI).append("}");
         return buf.toString();
     }
 

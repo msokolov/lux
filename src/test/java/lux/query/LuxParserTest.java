@@ -7,13 +7,12 @@ import lux.query.parser.LuxQueryParser;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
@@ -35,7 +34,7 @@ public class LuxParserTest {
     private static final String LUX_TEXT = "lux_text";
     private static final String LUX_PATH = "lux_path";
     
-    private ExtendableQueryParser parser;
+    private LuxQueryParser parser;
     private IndexConfiguration indexConfig;
     
     @Before
@@ -73,10 +72,6 @@ public class LuxParserTest {
         assertParseQuery (makeTermQuery(LUX_ELT_TEXT, "element:term", 2), "<element:term^2");
         assertParseQuery (makeTermQuery(LUX_ELT_TEXT, "element:term", 3.5f), "node<element:term^3.5");
 
-        // TODO: namespaces
-        // assertQuery (makeTermQuery("lux_node", ":element{nsuri}\\:term"), ":ns:element:term");
-        // assertQuery (makeTermQuery("lux_node", "element{nsuri}\\:term"), "node:ns:element:term");
-    
         // attribute text query
         assertParseQuery (makeTermQuery(LUX_ATT_TEXT, "attribute:term"), "<@attribute:term");
         assertParseQuery (makeTermQuery(LUX_ATT_TEXT, "attribute:term"), "node<@attribute:term");
@@ -104,10 +99,6 @@ public class LuxParserTest {
 
         // element text query
         assertUnparseQuery ("lux_elt_text:element\\:term", makeTermPQuery(LUX_ELT_TEXT, "element:term"));
-
-        // TODO: namespaces
-        // assertQueryString (new TermPQuery(new Term("lux_node", ":element{nsuri}\\:term")), ":ns:element:term");
-        // assertQueryString (new TermPQuery(new Term("lux_node", "element{nsuri}\\:term")), "node:ns:element:term");
     
         // attribute text query
         assertUnparseQuery ("lux_att_text:attribute\\:term", makeTermPQuery(LUX_ATT_TEXT, "attribute:term"));
@@ -115,12 +106,27 @@ public class LuxParserTest {
     }
     
     @Test
+    public void testParseNamespace () throws Exception {
+        try {
+            assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}\\:term"), "<ns\\:element:term");
+            assertFalse ("expected exception not thrown", true);
+        } catch (ParseException e) {
+            assertEquals ("Cannot parse '<ns\\:element:term': unbound namespace prefix 'ns'", e.getMessage());
+        }
+        parser.bindNamespacePrefix("ns", "nsuri");
+        assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}:term"), "<ns\\:element:term");
+        assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}:term"), "node<ns\\:element:term");
+
+        assertUnparseQuery("lux_elt_text:element\\{nsuri\\}\\:term", makeTermPQuery(LUX_ELT_TEXT, "element{nsuri}:term"));
+    }
+    
+    @Test
     // Really just tests Lucene QueryParser, and our test code
     public void testParseBooleanQuery () throws Exception {
-                BooleanQuery bq = makeBooleanQuery (Occur.MUST, makeTermQuery("big"), makeTermQuery("dog"), 
+        BooleanQuery bq = makeBooleanQuery (Occur.MUST, makeTermQuery("big"), makeTermQuery("dog"), 
                 makePhraseQuery(LUX_TEXT, "barks", "loud"));
         assertParseQuery (bq, "big AND dog AND \"barks loud\"");
-        
+
         bq = makeBooleanQuery (Occur.MUST, 
                 makeBooleanQuery(Occur.SHOULD, makeTermQuery("small"), makeTermQuery("big")),
                 makeTermQuery("dog"), makePhraseQuery(LUX_TEXT, "barks", "loud"));

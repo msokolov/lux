@@ -1,9 +1,9 @@
 package lux.index;
 
-import static javax.xml.stream.XMLStreamConstants.*;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -112,29 +112,21 @@ public class XmlPathMapper implements StAXHandler {
     }
     
     /**
-     * encode a QName in a suitable form for indexing.  Escapes namespace uris URL-escaping
-     * so that no spaces occur, and space can be used as a separator.  
+     * encode a QName in a suitable form for indexing.
      * If namespace-aware, the encoding is: local-name{encoded-namespace}.  Otherwise,
      * if prefix is non-empty, it's local-name{prefix}, otherwise just local-name.
      * @param qname
      * @return the encoded qname
      */
     protected String encodeQName (QName qname) {
-        String encns = null;
         if (!isNamespaceAware()) {
             if (qname.getPrefix().isEmpty()) {
                 return qname.getLocalPart();
             }
-            encns = qname.getPrefix();
+            return lux.xml.QName.encode(qname.getLocalPart(), qname.getPrefix());
         } else {
-            if (qname.getNamespaceURI().isEmpty()) {
-                return qname.getLocalPart();
-            }
-            try {
-                encns = URLEncoder.encode(qname.getNamespaceURI(), "utf-8");
-            } catch (UnsupportedEncodingException e) { }
+            return lux.xml.QName.encode(qname.getLocalPart(), qname.getNamespaceURI());
         }
-        return qname.getLocalPart() + '{' + encns + '}';
     }
     
     public void reset() {
