@@ -6,17 +6,23 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.Arrays;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.stream.StreamSource;
 
 import lux.index.QNameTextMapper;
 import lux.index.XPathValueMapper;
 import lux.index.XmlPathMapper;
 import net.sf.saxon.s9api.Axis;
+import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
+import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmNodeKind;
+import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -197,6 +203,49 @@ public class XmlReaderTest {
         assertEquals ("test", mapper.getNames().get(6));
         assertEquals ("This is some markup <that> is escaped The end.", 
                 normalize (mapper.getValues().get(6)));
+    }
+    
+    public final String INPUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\r\n" +
+            "<!DOCTYPE test PUBLIC \"test\" \"no.dtd\">\r\n" +
+                    "<test xmlns=\"http://lux.net/#test\" id=\"test\">\r\n" +
+                    "<!-- this is a comment -->\r\n" +
+                    "<x:title xmlns:x=\"http://lux.net{test}\">TEST</x:title>\r\n" +
+                    "<entities>&amp;&gt;&#48;</entities>\r\n" +
+                    "<![CDATA[This is some markup <that> is escaped]]>\r\n" +
+                    "<?process this ?>\r\n" +
+                    "<entities xmlns=\"#2\" xmlns:y=\"#y\" y:y=\"y\" id=\"2\">&#x123;é</entities>" +
+                    "<y:y xmlns:y=\"#z\" />\r\n" +
+                    "<token>        12345678</token>\r\n" +
+                    "  The end.\r\n" +
+                    "</test>\r\n";
+
+    /**
+     * This test ensures that we correctly process namespace information when sending events
+     * to the Saxon XmlStreamWriter.  TODO: use the resource file instead of the embedded String.
+     * @throws SaxonApiException
+     * @throws XMLStreamException
+     */
+    @Test 
+    public void testSerialize() throws SaxonApiException, XMLStreamException {
+        Processor processor = new Processor (false);
+        DocumentBuilder builder = processor.newDocumentBuilder();
+        SaxonDocBuilder streamBuilder = new SaxonDocBuilder(processor);
+        XmlReader reader = new XmlReader();
+        reader.addHandler(streamBuilder);
+        reader.read (new StringReader(INPUT));
+        XdmNode doc = streamBuilder.getDocument();
+        net.sf.saxon.s9api.Serializer outputter = new net.sf.saxon.s9api.Serializer();
+        XdmSequenceIterator iter = doc.axisIterator(Axis.DESCENDANT);
+        iter.next(); // skip the root element
+        while (iter.hasNext()) {
+            XdmNode e = (XdmNode) iter.next();
+            if (e.getNodeKind() != XdmNodeKind.ELEMENT) {
+                continue;
+            }
+            String speech = outputter.serializeNodeToString(e);
+            System.out.println (speech);
+            builder.build(new StreamSource (new StringReader(speech)));
+        }
     }
 
     private void handleDocument(StAXHandler handler, String path) throws XMLStreamException {
