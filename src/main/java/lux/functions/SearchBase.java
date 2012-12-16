@@ -80,7 +80,10 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             }
             String sortCriteria = null;
             if (arguments.length >= 3) {
-                sortCriteria = arguments[2].next().getStringValue();
+                Item sortArg = arguments[2].next();
+                if (sortArg != null) {
+                    sortCriteria = sortArg.getStringValue();
+                }
             }
             Evaluator eval = (Evaluator) context.getConfiguration().getCollectionURIResolver();
             Query query;
