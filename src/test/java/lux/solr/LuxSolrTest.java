@@ -109,6 +109,7 @@ public class LuxSolrTest {
     @Test public void testSorting () throws Exception {
         // should be 1, 10, 100, 11, 12, ..., 2, 21, 22, ...
         // which is docs 101, 92, 2, (since there are 2 docs with no title that are loaded first)
+        assertXPathSearchCount(1, 5, "xs:string", "1,10,100,11,12", "string-join(subsequence((for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string()),1,5),',')");
         assertXPathSearchCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[1]");
         assertXPathSearchCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:field-values('title') descending return $doc/title/string())[1]");
         assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[2]");
@@ -162,12 +163,12 @@ public class LuxSolrTest {
         q.setRows(maxResults);
         q.setStart(0);
         QueryResponse rsp = solr.query (q, METHOD.POST);
-        long docMatches = rsp.getResults().getNumFound();
         NamedList<?> results = (NamedList<?>) rsp.getResponse().get("xpath-results");
         String error = (String) rsp.getResponse().get("xpath-error");
         if (type.equals("error")) {
             assertEquals (value, error);
         } else {
+            long docMatches = rsp.getResults().getNumFound();
             assertNull ("got unexpected error: " + error, error);
             assertEquals (docCount, docMatches);
             assertEquals (count, results.size());

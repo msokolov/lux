@@ -5,9 +5,6 @@ import java.util.Iterator;
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 import net.sf.saxon.s9api.SaxonApiException;
-import net.sf.saxon.s9api.XPathCompiler;
-import net.sf.saxon.s9api.XPathExecutable;
-import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XdmValue;
@@ -24,7 +21,6 @@ import org.apache.lucene.document.Field.TermVector;
 public class XPathField<T> extends FieldDefinition {
     
     private final String xpath;
-    private XPathExecutable xpathExec;
     
     public XPathField (String name, String xpath, Analyzer analyzer, Store isStored, Type type) {
         super (name, analyzer, isStored, type, TermVector.NO);
@@ -35,21 +31,11 @@ public class XPathField<T> extends FieldDefinition {
     public Iterable<T> getValues(XmlIndexer indexer) {
         XdmValue value;
         try {
-            value = evaluateXPath (indexer, xpath);
+            value = indexer.evaluateXPath (xpath);
         } catch (SaxonApiException e) {
             throw new LuxException("error getting values for field: " + getDefaultName(), e);
         }
         return new XPathValueIterator(value.iterator());
-    }
-    
-    private XdmValue evaluateXPath (XmlIndexer indexer, String xpath) throws SaxonApiException {
-        if (xpathExec == null) {
-            XPathCompiler compiler = indexer.getXPathCompiler();
-            xpathExec = compiler.compile(xpath);
-        }
-        XPathSelector xps  = xpathExec.load();
-        xps.setContextItem(indexer.getXdmNode());
-        return xps.evaluate();
     }
 
     class XPathValueIterator implements Iterator<T>, Iterable<T> {

@@ -258,6 +258,16 @@ public class IndexTest {
     }
 
     @Test
+    public void testMultipleXPathIndexes () throws Exception {
+        XmlIndexer indexer = new XmlIndexer (BUILD_DOCUMENT);
+        // SCENE comes in as ACT/*[2] - immediately following TITLE
+        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*/*[2])", null, Store.NO, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*)", null, Store.NO, Type.STRING));
+        IndexTestSupport indexTestSupport = buildIndex("xpath", indexer);
+        assertXPathStringField(25, "x", "SCENE", indexTestSupport);
+    }
+    
+    @Test
     public void testXPathIndexNamespace () throws Exception {
         IndexConfiguration indexConfig = IndexConfiguration.DEFAULT;
         indexConfig.defineNamespaceMapping("", "");

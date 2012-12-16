@@ -1,8 +1,14 @@
 package lux.solr;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
+import lux.index.analysis.WhitespaceGapAnalyzer;
+import lux.index.field.FieldDefinition;
+import lux.index.field.FieldDefinition.Type;
+import lux.index.field.XPathField;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
@@ -21,13 +27,6 @@ import org.apache.solr.schema.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import lux.index.FieldName;
-import lux.index.IndexConfiguration;
-import lux.index.analysis.WhitespaceGapAnalyzer;
-import lux.index.field.FieldDefinition;
-import lux.index.field.XPathField;
-import lux.index.field.FieldDefinition.Type;
-
 /**
  * Wraps a {@link IndexConfiguration}, adding field definitions from information in Solr's configuration files:
  * solrconfig.xml and schema.xml
@@ -35,7 +34,7 @@ import lux.index.field.FieldDefinition.Type;
  */
 public class SolrIndexConfig {
     private final IndexConfiguration indexConfig;
-    private Map<String,String> xpathFieldConfig;
+    private NamedList<String> xpathFieldConfig;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
@@ -67,9 +66,9 @@ public class SolrIndexConfig {
 
     public void applyFieldConfiguration (NamedList<String> fields) {
         if (fields != null) {
-            xpathFieldConfig = new HashMap<String, String>();
+            xpathFieldConfig = new NamedList<String>();
             for (Entry<String,String> f : fields) {
-                xpathFieldConfig.put(f.getKey(), f.getValue());
+                xpathFieldConfig.add(f.getKey(), f.getValue());
             }
         }
     }
@@ -138,7 +137,7 @@ public class SolrIndexConfig {
     
     /** Add the xpathFields to the indexConfig using information about the field drawn from the schema. */
     private void addXPathFields(IndexSchema schema) {
-        for (Entry<String,String> f : xpathFieldConfig.entrySet()) {
+        for (Entry<String,String> f : xpathFieldConfig) {
             SchemaField field = schema.getField(f.getKey());
             FieldType fieldType = field.getType();
             if (fieldType == null) {
