@@ -12,7 +12,6 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 
 /*
- * TODO: merge w/Saxon$SaxonBuilder
  */
 public class SaxonDocBuilder implements StAXHandler {
     
@@ -85,6 +84,9 @@ public class SaxonDocBuilder implements StAXHandler {
                 } else {
                     writer.writeStartElement(prefix, reader.getLocalName(), nsuri);
                 }
+            }
+            for (int i = 0; i < reader.getNamespaceCount(); i++) {
+                writer.writeNamespace(reader.getNamespacePrefix(i), reader.getNamespaceURI(i));
             }
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 nsuri = reader.getAttributeNamespace(i);
