@@ -53,15 +53,19 @@ public class QNameQueryBuilder implements QueryBuilder {
     Query parseQueryTerm(final String fieldName, final String qName, final String text, final float boost) throws ParserException {
         StringBuilder termText = new StringBuilder();
         if (StringUtils.isNotEmpty(qName)) {
-            if (qName.contains(":") && namespaceAware) {
+            if (qName.contains(":")) {
                 String[] parts = qName.split(":", 2);
                 String prefix = parts[0];
                 String name = parts[1];
                 String namespaceURI = nsMap.get(prefix);
                 if (namespaceURI == null) {
-                    throw new ParserException ("unbound namespace prefix '" + prefix + "'");
+                    if (namespaceAware) {
+                        throw new ParserException ("unbound namespace prefix '" + prefix + "'");
+                    }
+                    termText.append(qName).append(':');
+                } else {
+                    termText.append(name).append('{').append(namespaceURI).append("}:");
                 }
-                termText.append(name).append('{').append(namespaceURI).append("}:");
             } 
             else {
                 termText.append(qName).append(':');

@@ -49,7 +49,7 @@ final public class QNameTokenFilter extends TokenFilter {
         if (namespaceAware) {
             termAtt.append(qname.getEncodedName());
         } else {
-            if (qname.getPrefix() != null) {
+            if (qname.getPrefix().length() > 0) {
                 termAtt.append(qname.getPrefix()).append(':');
             }
             termAtt.append(qname.getLocalPart());

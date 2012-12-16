@@ -1,6 +1,7 @@
 package lux;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class SearchTestNS extends BaseSearchTest {
@@ -12,15 +13,29 @@ public class SearchTestNS extends BaseSearchTest {
     
     @Test
     public void testSearchNS () throws Exception {
-        // Ideally, search string could use prefixes declared in surrounding context
-        //  assertSearch ("1", "declare namespace x='http://lux.net{test}'; count(lux:search('<x\\:title:test'))", 1, 1);
-        
-        // namespace may be supplied explicitly
-        assertSearch ("1", "count(lux:search('<title\\{http://lux.net\\{test\\}\\}:test'))", 1, 1);
+        // namespace prefix may be supplied explicitly
+        assertSearch ("2", "count(lux:search('<x\\:title:test'))", null, 2);
         // no namespace
-        assertSearch ("1", "count(lux:search('<title:test'))", 1, 1);
+        assertSearch ("2", "count(lux:search('<title:test'))", null, 2);
+    }
+
+    @Test
+    public void testSearchNsUri () throws Exception {
+        // namespace may be supplied explicitly
+        assertSearch ("2", "count(lux:search('<title\\{http\\://lux.net\\{test\\}\\}:test'))", null, 2);
+    }
+    
+    @Test @Ignore
+    public void testSearchBoundNsPrefix() throws Exception {
+        // Ideally, search string could use prefixes declared in surrounding context
+        // This test should be run with a namespace-aware idnex
+        assertSearch ("2", "declare namespace x='http://lux.net{test}'; count(lux:search('<x\\:title:test'))", null, 2);
+    }
+    
+    @Test
+    public void testSearchWildcardNamespace () throws Exception {
         // wildcarded namespace
-        assertSearch ("1", "count(lux:search('<*:test'))", 2, 2);
+        assertSearch ("4", "count(lux:search('<*:test'))", null, 4);
     }
 
 }

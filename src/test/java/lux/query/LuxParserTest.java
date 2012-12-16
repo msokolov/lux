@@ -106,13 +106,32 @@ public class LuxParserTest {
     }
     
     @Test
-    public void testParseNamespace () throws Exception {
+    public void testParseNamespaceAware () throws Exception {
+        indexConfig = IndexConfiguration.makeIndexConfiguration(IndexConfiguration.NAMESPACE_AWARE);
+        parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
+        /*
+         * If no namespace mapping is found, throw an error
+         */
         try {
             assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}\\:term"), "<ns\\:element:term");
             assertFalse ("expected exception not thrown", true);
         } catch (ParseException e) {
             assertEquals ("Cannot parse '<ns\\:element:term': unbound namespace prefix 'ns'", e.getMessage());
         }
+        parser.bindNamespacePrefix("ns", "nsuri");
+        assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}:term"), "<ns\\:element:term");
+        assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}:term"), "node<ns\\:element:term");
+
+        assertUnparseQuery("lux_elt_text:element\\{nsuri\\}\\:term", makeTermPQuery(LUX_ELT_TEXT, "element{nsuri}:term"));
+    }
+    
+    @Test
+    public void testParseNamespaceUnaware () throws Exception {
+        /*
+         * Use the prefix when no mapping is found
+         */
+        assertParseQuery (makeTermQuery("lux_elt_text", "ns:element:term"), "<ns\\:element:term");
+
         parser.bindNamespacePrefix("ns", "nsuri");
         assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}:term"), "<ns\\:element:term");
         assertParseQuery (makeTermQuery("lux_elt_text", "element{nsuri}:term"), "node<ns\\:element:term");
