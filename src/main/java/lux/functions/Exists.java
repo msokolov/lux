@@ -3,30 +3,31 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
+import lux.compiler.XPathQuery;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
 import net.sf.saxon.tree.iter.UnfailingIterator;
-import net.sf.saxon.value.Int64Value;
+import net.sf.saxon.value.BooleanValue;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
-public class LuxCount extends SearchBase {
+public class Exists extends SearchBase {
     
-    public LuxCount() { }
-    
+    public Exists() { }
+
     @Override
     public StructuredQName getFunctionQName() {
-        return new StructuredQName("lux", FunCall.LUX_NAMESPACE, "count");
+        return new StructuredQName("lux", FunCall.LUX_NAMESPACE, "exists");
     }
 
     @Override
     public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
-        return SequenceType.SINGLE_INTEGER;
+        return SequenceType.SINGLE_BOOLEAN;
     }
     
     @Override
@@ -34,22 +35,24 @@ public class LuxCount extends SearchBase {
         return true;
     }
     
-    @Override public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
-        int count = 0;
+    @Override public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
         long t = System.currentTimeMillis();
+        boolean exists = false;
         try {
-            DocIdSetIterator counter = saxon.getSearcher().search(query);
-            while (counter.nextDoc() != Scorer.NO_MORE_DOCS) {
-                ++count;
-            }
+            DocIdSetIterator iter = saxon.getSearcher().search(query);
+            exists = (iter.nextDoc() != Scorer.NO_MORE_DOCS);
         } catch (IOException e) {
             throw new XPathException (e);
         }
         saxon.getQueryStats().totalTime = System.currentTimeMillis() - t;
-        saxon.getQueryStats().docCount += count;
-        return SingletonIterator.makeIterator(new Int64Value(count));
+        if (exists) {
+            ++ saxon.getQueryStats().docCount;
+        }
+        if ((facts & XPathQuery.BOOLEAN_FALSE) != 0) {
+            exists = !exists;
+        }
+        return SingletonIterator.makeIterator(BooleanValue.get(exists));
     }
-
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -19,9 +19,9 @@ import org.apache.lucene.search.Query;
  * Executes a Lucene search query and returns documents.
  * 
  */
-public class LuxSearch extends SearchBase {
+public class Search extends SearchBase {
     
-    public LuxSearch () {
+    public Search () {
     }
     
     @Override

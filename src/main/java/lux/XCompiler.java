@@ -11,9 +11,9 @@ import lux.functions.DeleteDocument;
 import lux.functions.FieldTerms;
 import lux.functions.FieldValues;
 import lux.functions.InsertDocument;
-import lux.functions.LuxCount;
-import lux.functions.LuxExists;
-import lux.functions.LuxSearch;
+import lux.functions.Count;
+import lux.functions.Exists;
+import lux.functions.Search;
 import lux.functions.Transform;
 import lux.functions.file.FileExtensions;
 import lux.index.FieldName;
@@ -124,9 +124,9 @@ public class XCompiler {
     
     private void registerExtensionFunctions(Processor processor) {
         // TODO: move this list into a single class in the lux.functions package
-        processor.registerExtensionFunction(new LuxSearch());
-        processor.registerExtensionFunction(new LuxCount());
-        processor.registerExtensionFunction(new LuxExists());
+        processor.registerExtensionFunction(new Search());
+        processor.registerExtensionFunction(new Count());
+        processor.registerExtensionFunction(new Exists());
         processor.registerExtensionFunction(new FieldTerms());
         processor.registerExtensionFunction(new FieldValues());
         processor.registerExtensionFunction(new Transform());
