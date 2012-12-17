@@ -40,7 +40,6 @@ public class BasicQueryTest {
     @Before public void setup () {
         compiler = new XCompiler(getIndexer().getConfiguration());
         compiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-        compiler.declareNamespace("ns", "http://namespace.org/#ns");
         eval = new Evaluator(compiler, null, null);
     }
     

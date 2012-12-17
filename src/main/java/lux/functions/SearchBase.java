@@ -1,11 +1,18 @@
 package lux.functions;
 
+import java.util.Iterator;
+
 import lux.Evaluator;
+import lux.query.parser.LuxQueryParser;
 import net.sf.saxon.dom.NodeOverNodeInfo;
+import net.sf.saxon.expr.Expression;
+import net.sf.saxon.expr.StaticContext;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
+import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
@@ -21,19 +28,6 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
 
     public SearchBase() {
         super();
-    }
-
-    protected Query parseQuery(Item<?> queryArg, Evaluator eval) throws org.apache.lucene.queryParser.ParseException, ParserException {
-        if (queryArg instanceof NodeInfo) {
-            NodeInfo queryNodeInfo = (NodeInfo) queryArg;
-            NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
-            if (queryDocument instanceof Element) {
-                return eval.getXmlQueryParser().getQuery((Element) queryDocument);
-            }
-            // maybe it was a text node?
-        }
-        // parse the string value using the Lux query parser
-        return eval.getLuxQueryParser().parse(queryArg.getStringValue());
     }
 
     @Override
@@ -56,13 +50,15 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
 
     @Override
     public ExtensionFunctionCall makeCallExpression() {
-        return new LuxSearchCall ();
+        return new SearchCall ();
     }
     
     @SuppressWarnings("rawtypes")
     protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, long facts, String sortCriteria) throws XPathException;
 
-    class LuxSearchCall extends ExtensionFunctionCall {
+    class SearchCall extends ExtensionFunctionCall {
+        
+        private NamespaceResolver namespaceResolver;
         
         @SuppressWarnings("rawtypes") @Override
         public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
@@ -90,7 +86,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             try {
                 query = parseQuery(queryArg, eval);
             } catch (org.apache.lucene.queryParser.ParseException e) {
-                throw new XPathException ("Failed to parse lucene query " + queryArg.getStringValue(), e);
+                throw new XPathException (e.getMessage(), e);
             } catch (ParserException e) {
                 throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
             }
@@ -98,6 +94,33 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             return iterate (query, eval, facts, sortCriteria);
         }
         
+        @Override
+        public void supplyStaticContext (StaticContext context, int locationId, Expression[] arguments) {
+            namespaceResolver = context.getNamespaceResolver();
+        }
+
+        private Query parseQuery(Item<?> queryArg, Evaluator eval) throws org.apache.lucene.queryParser.ParseException, ParserException {
+            if (queryArg instanceof NodeInfo) {
+                NodeInfo queryNodeInfo = (NodeInfo) queryArg;
+                NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
+                if (queryDocument instanceof Element) {
+                    return eval.getXmlQueryParser().getQuery((Element) queryDocument);
+                }
+                // maybe it was a text node?
+            }
+            // parse the string value using the Lux query parser
+            LuxQueryParser luxQueryParser = eval.getLuxQueryParser();
+            // declare all of the in-scope namespace bindings
+            Iterator<String> prefixes = namespaceResolver.iteratePrefixes();
+            while (prefixes.hasNext()) {
+                String prefix = prefixes.next();
+                String nsURI = namespaceResolver.getURIForPrefix(prefix, false);
+                if (! NamespaceConstant.isReservedInQuery(nsURI)) {
+                    luxQueryParser.bindNamespacePrefix(prefix, nsURI);
+                }
+            }
+            return luxQueryParser.parse(queryArg.getStringValue());
+        }
     }
   
 }

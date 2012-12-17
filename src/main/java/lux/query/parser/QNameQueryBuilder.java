@@ -13,6 +13,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.xmlparser.DOMUtils;
 import org.apache.lucene.xmlparser.ParserException;
 import org.apache.lucene.xmlparser.QueryBuilder;
@@ -52,19 +53,25 @@ public class QNameQueryBuilder implements QueryBuilder {
     
     Query parseQueryTerm(final String fieldName, final String qName, final String text, final float boost) throws ParserException {
         StringBuilder termText = new StringBuilder();
+        boolean isWild = false;
         if (StringUtils.isNotEmpty(qName)) {
-            if (qName.contains(":")) {
+            if (qName.matches("[^{:]+:.*")) {
                 String[] parts = qName.split(":", 2);
                 String prefix = parts[0];
                 String name = parts[1];
-                String namespaceURI = nsMap.get(prefix);
-                if (namespaceURI == null) {
-                    if (namespaceAware) {
-                        throw new ParserException ("unbound namespace prefix '" + prefix + "'");
-                    }
-                    termText.append(qName).append(':');
+                if ("*".equals(prefix)) {
+                    termText.append(name).append("*:");
+                    isWild = true;
                 } else {
-                    termText.append(name).append('{').append(namespaceURI).append("}:");
+                    String namespaceURI = nsMap.get(prefix);
+                    if (namespaceURI == null) {
+                        if (namespaceAware) {
+                            throw new ParserException ("unbound namespace prefix '" + prefix + "'");
+                        }
+                        termText.append(qName).append(':');
+                    } else {
+                        termText.append(name).append('{').append(namespaceURI).append("}:");
+                    }
                 }
             } 
             else {
@@ -98,9 +105,16 @@ public class QNameQueryBuilder implements QueryBuilder {
         catch (IOException ioe) { }
         Query q;
         if (pq.getTerms().length > 1) {
+            if (isWild) {
+                throw new ParserException("wildcarded namespace prefix cannot be combined with a multi-word phrase");
+            }
             q = pq;
         } else {
-            q = new TermQuery (term);
+            if (isWild) {
+                q = new WildcardQuery(term);
+            } else {
+                q = new TermQuery (term);
+            }
         }
         q.setBoost(boost);
         return q;

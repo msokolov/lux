@@ -89,6 +89,10 @@ public class LuxQueryParser extends ExtendableQueryParser {
         queryBuilder.bindNamespacePrefix(prefix, namespaceURI);
     }
     
+    public void clearNamespaces () {
+        queryBuilder.clearNamespaces();
+    }
+    
     @Override
     public Query parse (String queryString) throws ParseException {
         Query q = super.parse(queryString);        

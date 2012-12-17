@@ -28,7 +28,7 @@ public class IndexConfiguration {
 
     public final static int BUILD_DOCUMENT=     0x00000001;
     public final static int SERIALIZE_XML=      0x00000002;
-    public final static int NAMESPACE_AWARE=  0x00000004;
+    public final static int NAMESPACE_AWARE=    0x00000004; // this option cannot be disabled, currently
     public final static int STORE_XML=          0x00000008;
     public final static int STORE_PTREE=        0x00000010;
     public final static int INDEX_QNAMES=       0x00000020;
@@ -38,7 +38,7 @@ public class IndexConfiguration {
     public final static int COMPUTE_OFFSETS=    0x00000200;
     public final static int STRIP_NAMESPACES=   0x00000400;
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
-    public final static int DEFAULT_OPTIONS = STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT;
+    public final static int DEFAULT_OPTIONS = STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | NAMESPACE_AWARE;
 
     public static final FieldDefinition URI = URIField.getInstance();
     public static final FieldDefinition ELT_QNAME = ElementQNameField.getInstance();
@@ -67,10 +67,11 @@ public class IndexConfiguration {
     }
     
     public static IndexConfiguration makeIndexConfiguration (long options) {
-        if (options == DEFAULT_OPTIONS) {
+        long opt = options | NAMESPACE_AWARE;
+        if (opt == DEFAULT_OPTIONS) {
             return DEFAULT;
         }
-        return new IndexConfiguration(options);
+        return new IndexConfiguration(opt);
     }
 
     protected IndexConfiguration (long options) {
@@ -81,7 +82,7 @@ public class IndexConfiguration {
         // TODO: configuration?  Inherit from XML_TEXT?
         fieldAnalyzers.put(null, new DefaultAnalyzer());
         addField (URI);
-        this.options = options;
+        this.options = options | NAMESPACE_AWARE;
         init();
     }
     

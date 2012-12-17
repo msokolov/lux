@@ -175,7 +175,7 @@ public class SaxonTranslator {
         }
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
         // Namespace declarations are accumulated while walking the expression trees:
-        namespaceDeclarations.clear();
+        initializeNamespaces(saxonQuery);
         FunctionDefinition[] functionDefinitions = getFunctionDefinitions(queryModule);
         AbstractExpression body = exprFor (saxonQuery.getExpression());
         String defaultCollation = queryModule.getDefaultCollationName();
@@ -206,6 +206,24 @@ public class SaxonTranslator {
                 isPreserveNamespaces,
                 isInheritNamespaces,
                 queryModule.isEmptyLeast());
+    }
+
+    private void initializeNamespaces(XQueryExpression saxonQuery) {
+        namespaceDeclarations.clear();
+        NamespaceResolver ns = saxonQuery.getStaticContext().getNamespaceResolver();
+        Iterator<String> prefixes = ns.iteratePrefixes();
+        while (prefixes.hasNext()) {
+            String prefix = prefixes.next();
+            String nsURI = ns.getURIForPrefix(prefix, false);
+            if (!(NamespaceConstant.isReservedInQuery(nsURI) ||
+                    (prefix.equals("saxon") && nsURI.equals(NamespaceConstant.SAXON)) ||
+                    (prefix.equals("local") && nsURI.equals(NamespaceConstant.LOCAL)) ||
+                    (prefix.equals("err") && nsURI.equals(NamespaceConstant.ERR)) ||
+                    (prefix.equals("lux") && nsURI.equals(FunCall.LUX_NAMESPACE))))
+            {
+                namespaceDeclarations.put(prefix, nsURI);
+            }
+        }
     }
     
     public XQuery queryFor(AbstractExpression ex) {

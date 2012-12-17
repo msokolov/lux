@@ -18,6 +18,7 @@ import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -125,7 +126,7 @@ public class LuxParserTest {
         assertUnparseQuery("lux_elt_text:element\\{nsuri\\}\\:term", makeTermPQuery(LUX_ELT_TEXT, "element{nsuri}:term"));
     }
     
-    @Test
+    @Test @Ignore("disabled namespace unawareness")
     public void testParseNamespaceUnaware () throws Exception {
         /*
          * Use the prefix when no mapping is found

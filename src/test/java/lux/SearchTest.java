@@ -373,7 +373,7 @@ public class SearchTest extends BaseSearchTest {
             assertSearch (null, "lux:search(':::')", null, null, null);
             assertTrue ("expected exception not thrown", false);
         } catch (LuxException e) { 
-            assertEquals ("Failed to parse lucene query :::", e.getMessage());
+            assertTrue (e.getMessage(), e.getMessage().startsWith("Cannot parse ':::'"));
         }
         assertSearch ("65", "lux:count(text{'bernardo'})", null, 65, 0);
     }

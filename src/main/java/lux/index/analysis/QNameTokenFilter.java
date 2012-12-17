@@ -16,6 +16,7 @@ import org.apache.lucene.util.CharsRef;
  * found in the QNameAttribute.  The node name is serialized in reverse-Clark format: localname{namespace-uri}
  * if processing is namespace-aware.  Otherwise the node name is serialized as a lexical QName: prefix:localname
  * without regard to any namespace uri binding.
+ * TODO: remove the unused namespace-unaware processing, or put it in another class?
  */
 final public class QNameTokenFilter extends TokenFilter {
 

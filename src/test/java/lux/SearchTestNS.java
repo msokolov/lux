@@ -1,7 +1,9 @@
 package lux;
 
+import static org.junit.Assert.*;
+import lux.exception.LuxException;
+
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SearchTestNS extends BaseSearchTest {
@@ -12,22 +14,26 @@ public class SearchTestNS extends BaseSearchTest {
     }
     
     @Test
-    public void testSearchNS () throws Exception {
-        // namespace prefix may be supplied explicitly
-        assertSearch ("2", "count(lux:search('<x\\:title:test'))", null, 2);
+    public void testSearchUnboundNS () throws Exception {
+        try {
+            assertSearch ("2", "count(lux:search('<x\\:title:test'))", null, 2);
+            assertFalse ("Failed to raise exception", true);
+        } catch (LuxException e) {
+            assertEquals ("Cannot parse '<x\\:title:test': unbound namespace prefix 'x'", e.getMessage());
+        }
         // no namespace
         assertSearch ("2", "count(lux:search('<title:test'))", null, 2);
     }
 
     @Test
     public void testSearchNsUri () throws Exception {
-        // namespace may be supplied explicitly
+        // namespace uri may be supplied explicitly
         assertSearch ("2", "count(lux:search('<title\\{http\\://lux.net\\{test\\}\\}:test'))", null, 2);
     }
     
-    @Test @Ignore
+    @Test
     public void testSearchBoundNsPrefix() throws Exception {
-        // Ideally, search string could use prefixes declared in surrounding context
+        // Search string may use prefixes declared in surrounding context
         // This test should be run with a namespace-aware idnex
         assertSearch ("2", "declare namespace x='http://lux.net{test}'; count(lux:search('<x\\:title:test'))", null, 2);
     }
@@ -35,13 +41,12 @@ public class SearchTestNS extends BaseSearchTest {
     @Test
     public void testSearchWildcardNamespace () throws Exception {
         // wildcarded namespace
-        assertSearch ("4", "count(lux:search('<*:test'))", null, 4);
+        assertSearch ("4", "count(lux:search('<\\*\\:title:test'))", null, 4);
     }
     
     @Test
     public void testGeneratePathQuery () throws Exception {
-        // generates a query that matches a document that doesn't actually satisfy the query
-        assertSearch ("2", "count(/entities)", null, 4);
+        assertSearch ("2", "count(/entities)", null, 2);
         assertSearch ("0", "declare namespace x='x'; count(/x:title)", null, 0);
         // this actually has the correct namespace
         /* FIXME:
