@@ -1,6 +1,4 @@
 * demo
-** namespace-aware queries
-using clark names? using prefixes
 ** sorting by value
 *** empty least/greatest
 ** sorting by relevance

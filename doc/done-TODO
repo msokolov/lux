@@ -121,6 +121,8 @@ other thing that's in between?
 some color and a logo font
 *** pagination
 *** result display
+*** namespace-aware queries
+using reverse clark names? or using in-scope prefixes
 * query API
 lux:search now accepts queries formatted as node trees using the Lucene XML
 query parser scheme.  The indexes provided include node (QName) path

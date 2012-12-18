@@ -87,14 +87,14 @@ public class LuxParserTest {
         assertUnparseQuery ("lux_text:term^2.0", makeTermPQuery(LUX_TEXT, "term", 2));
         assertUnparseQuery ("field:term^3.5", makeTermPQuery("field", "term", 3.5f));
         
-        assertUnparseQuery ("<:term", new QNameTextQuery(new Term(LUX_TEXT, "term")));
+        assertUnparseQuery ("<:term", new NodeTextQuery(new Term(LUX_TEXT, "term")));
         // field name is simply ignored when no QName is present:
-        assertUnparseQuery ("<:term", new QNameTextQuery(new Term("field", "term")));
+        assertUnparseQuery ("<:term", new NodeTextQuery(new Term("field", "term")));
         try {
-            assertUnparseQuery ("<:term", new QNameTextQuery(new Term("field", "term"), "element"));
+            assertUnparseQuery ("<:term", new NodeTextQuery(new Term("field", "term"), "element"));
             assertFalse (true);
         }  catch (IllegalStateException e) { }
-        assertUnparseQuery ("<element:term", new QNameTextQuery(new Term(LUX_ELT_TEXT, "term"), "element"));
+        assertUnparseQuery ("<element:term", new NodeTextQuery(new Term(LUX_ELT_TEXT, "term"), "element"));
         // ERROR:?
         // assertUnparseQuery ("field:term", new QNameTextQuery(new Term("field", "term"), "element"));
 
@@ -103,7 +103,7 @@ public class LuxParserTest {
     
         // attribute text query
         assertUnparseQuery ("lux_att_text:attribute\\:term", makeTermPQuery(LUX_ATT_TEXT, "attribute:term"));
-        assertUnparseQuery ("<@attribute:term", new QNameTextQuery(new Term(LUX_ATT_TEXT, "term"), "attribute"));
+        assertUnparseQuery ("<@attribute:term", new NodeTextQuery(new Term(LUX_ATT_TEXT, "term"), "attribute"));
     }
     
     @Test
@@ -195,8 +195,8 @@ public class LuxParserTest {
     
     @Test
     public void testUnparsePhrase () throws Exception {
-        assertUnparseQuery ("<:\"big dog\"", new QNameTextQuery(new Term(LUX_TEXT, "big dog")));
-        assertUnparseQuery ("<element:\"big dog\"", new QNameTextQuery(new Term(LUX_ELT_TEXT, "big dog"), "element"));
+        assertUnparseQuery ("<:\"big dog\"", new NodeTextQuery(new Term(LUX_TEXT, "big dog")));
+        assertUnparseQuery ("<element:\"big dog\"", new NodeTextQuery(new Term(LUX_ELT_TEXT, "big dog"), "element"));
     }
     
     @Test

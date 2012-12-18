@@ -19,13 +19,13 @@ import org.apache.lucene.xmlparser.ParserException;
 import org.apache.lucene.xmlparser.QueryBuilder;
 import org.w3c.dom.Element;
 
-public class QNameQueryBuilder implements QueryBuilder {
+public class NodeQueryBuilder implements QueryBuilder {
 
     private final Map<String,String> nsMap;
     private final Analyzer analyzer;
     private final boolean namespaceAware;
     
-    public QNameQueryBuilder(Analyzer analyzer, boolean namespaceAware) {
+    public NodeQueryBuilder(Analyzer analyzer, boolean namespaceAware) {
         this.analyzer = analyzer;
         nsMap = new HashMap<String, String>();
         this.namespaceAware = namespaceAware;

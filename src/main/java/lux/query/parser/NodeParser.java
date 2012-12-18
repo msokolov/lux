@@ -11,9 +11,9 @@ class NodeParser extends ParserExtension {
     private final String textFieldName;
     private final String elementTextFieldName;
     private final String attributeTextFieldName;
-    QNameQueryBuilder queryBuilder;
+    NodeQueryBuilder queryBuilder;
     
-    NodeParser (String textFieldName, String elementTextFieldName, String attributeTextFieldName, QNameQueryBuilder queryBuilder) {
+    NodeParser (String textFieldName, String elementTextFieldName, String attributeTextFieldName, NodeQueryBuilder queryBuilder) {
         this.queryBuilder = queryBuilder;
         this.textFieldName = textFieldName;
         this.elementTextFieldName = elementTextFieldName;

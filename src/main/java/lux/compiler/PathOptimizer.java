@@ -12,7 +12,7 @@ import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.query.ParseableQuery;
-import lux.query.QNameTextQuery;
+import lux.query.NodeTextQuery;
 import lux.query.SpanTermPQuery;
 import lux.query.TermPQuery;
 import lux.xml.QName;
@@ -685,16 +685,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
     }
 
-    public static QNameTextQuery makeElementValueQuery (QName qname, String value, IndexConfiguration config) {
-        return new QNameTextQuery(new Term(config.getFieldName(IndexConfiguration.ELEMENT_TEXT), value), qname.getEncodedName());
+    public static NodeTextQuery makeElementValueQuery (QName qname, String value, IndexConfiguration config) {
+        return new NodeTextQuery(new Term(config.getFieldName(IndexConfiguration.ELEMENT_TEXT), value), qname.getEncodedName());
     }
 
     public static ParseableQuery makeAttributeValueQuery (QName qname, String value, IndexConfiguration config) {
-        return new QNameTextQuery(new Term(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT), value), qname.getEncodedName());
+        return new NodeTextQuery(new Term(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT), value), qname.getEncodedName());
     }
 
     public static ParseableQuery makeTextQuery (String value, IndexConfiguration config) {
-        return new QNameTextQuery(new Term(config.getFieldName(IndexConfiguration.XML_TEXT), value));
+        return new NodeTextQuery(new Term(config.getFieldName(IndexConfiguration.XML_TEXT), value));
     }
 
     @Override

@@ -13,7 +13,7 @@ import org.apache.lucene.index.Term;
 /**
  * A parseable query that generates a QNameTextQuery.
  */
-public class QNameTextQuery extends ParseableQuery {
+public class NodeTextQuery extends ParseableQuery {
 
     private static final LiteralExpression BOOST_ATTR_NAME = new LiteralExpression("boost");
 
@@ -29,17 +29,17 @@ public class QNameTextQuery extends ParseableQuery {
     
     private final String qName;
     
-    public QNameTextQuery(Term t, String qName, float boost) {
+    public NodeTextQuery(Term t, String qName, float boost) {
         this.term = t;
         this.boost = boost;
         this.qName = qName;
     }
     
-    public QNameTextQuery(Term t, String qName) {
+    public NodeTextQuery(Term t, String qName) {
         this (t, qName, 1.0f);
     }
     
-    public QNameTextQuery(Term t) {
+    public NodeTextQuery(Term t) {
         this (t, null, 1.0f);
     }
 

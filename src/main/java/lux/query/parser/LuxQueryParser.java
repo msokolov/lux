@@ -54,16 +54,16 @@ import org.apache.lucene.util.Version;
  */
 public class LuxQueryParser extends ExtendableQueryParser {
     
-    private final QNameQueryBuilder queryBuilder;
+    private final NodeQueryBuilder queryBuilder;
     
-    public LuxQueryParser(Version matchVersion, String f, Analyzer a, Extensions ext, QNameQueryBuilder queryBuilder) {
+    public LuxQueryParser(Version matchVersion, String f, Analyzer a, Extensions ext, NodeQueryBuilder queryBuilder) {
         super(matchVersion, f, a, ext);
         this.queryBuilder = queryBuilder;
     }
 
     public static LuxQueryParser makeLuxQueryParser(IndexConfiguration config) {
         Analyzer elementTextAnalyzer = config.getField(FieldName.ELEMENT_TEXT).getAnalyzer();
-        QNameQueryBuilder queryBuilder = new QNameQueryBuilder(elementTextAnalyzer, config.isOption(IndexConfiguration.NAMESPACE_AWARE));
+        NodeQueryBuilder queryBuilder = new NodeQueryBuilder(elementTextAnalyzer, config.isOption(IndexConfiguration.NAMESPACE_AWARE));
         NodeParser nodeParser = new NodeParser(
                 config.getFieldName(FieldName.XML_TEXT),
                 config.getFieldName(FieldName.ELEMENT_TEXT),

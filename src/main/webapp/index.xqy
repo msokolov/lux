@@ -22,7 +22,7 @@ declare function demo:format-param ($p as element(param)) as xs:string
 declare function demo:query ($qname, $term)
   as xs:string
 {
-  let $eqname := replace ($qname, ":", "\\:")
+  let $eqname := replace ($qname, "([:{}])", "\\$1")
   return
   if ($qname and $term) then
     concat ("node<", $eqname, ":", $term)
