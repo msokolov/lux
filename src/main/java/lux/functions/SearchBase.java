@@ -98,6 +98,11 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         public void supplyStaticContext (StaticContext context, int locationId, Expression[] arguments) {
             namespaceResolver = context.getNamespaceResolver();
         }
+        
+        @Override
+        public void copyLocalData (ExtensionFunctionCall destination) {
+            ((SearchCall) destination).namespaceResolver = namespaceResolver;
+        }
 
         private Query parseQuery(Item<?> queryArg, Evaluator eval) throws org.apache.lucene.queryParser.ParseException, ParserException {
             if (queryArg instanceof NodeInfo) {
