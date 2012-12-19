@@ -8,6 +8,7 @@ import net.sf.saxon.dom.NodeOverNodeInfo;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.StaticContext;
 import net.sf.saxon.expr.XPathContext;
+import net.sf.saxon.expr.instruct.SavedNamespaceContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.lib.NamespaceConstant;
@@ -97,6 +98,9 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         @Override
         public void supplyStaticContext (StaticContext context, int locationId, Expression[] arguments) {
             namespaceResolver = context.getNamespaceResolver();
+            if (!(namespaceResolver instanceof SavedNamespaceContext)) {
+                namespaceResolver = new SavedNamespaceContext(namespaceResolver);
+            }
         }
         
         @Override

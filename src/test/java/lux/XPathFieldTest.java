@@ -84,17 +84,15 @@ public class XPathFieldTest {
     }
     
     /**
-     * test to ensure that ordering by lux:key() works
+     * tests ordering by relevance and by lux:key()
      */
     @Test
     public void testOrderByKey () throws Exception {
         final String PITHY_QUOTE = "\"There are more things in heaven and earth, Horatio\""; // , than are dreamt of in your philosophy
 
         String xquery = "for $doc in lux:search('" + PITHY_QUOTE + "') return $doc/*/name()";
-        // should be ordered in document creation order, which corresponds
-        // to document order from the original hamlet.xml:
-        // PLAY, ACT, SCENE, SPEECH, LINE
-        assertResultSequence (xquery, "PLAY", "ACT", "SCENE", "SPEECH", "LINE");
+        // should be ordered in *relevance* order, which will basically be ordered by length:
+        assertResultSequence (xquery, "LINE", "SPEECH", "SCENE", "ACT", "PLAY");
 
         xquery = "for $doc in lux:search('" + PITHY_QUOTE + "')" + 
             " order by lux:field-values('doctype', $doc) return $doc/*/name()";

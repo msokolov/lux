@@ -34,7 +34,6 @@ import lux.xpath.Root;
 import lux.xpath.SearchCall;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
-import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
@@ -55,7 +54,7 @@ import org.apache.lucene.search.SortField;
  *
  * The general strategy here is to consider each expression in isolation,
  * determining whether it imposes any restriction on its context, and then
- * to compose such constraints into queries, to be executed by a searcher, and
+ * to compose such constraints into queries, to be executed by a searcher, with
  * the XPath/XQuery expressions evaluated against the resulting documents. 
  * 
  * Absolute expressions are targets for optimization; the optimizer attempts to form queries that 
@@ -107,7 +106,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     query.getModuleImports(), query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(),
                     main, query.getBaseURI(), query.isPreserveNamespaces(), query.isInheritNamespaces(), query.isEmptyLeast());
         }
-        // TODO optimize function definitions?  Could they possibly benefit from that?
+        // TODO optimize function definitions
         return query;
     }
     
@@ -142,18 +141,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // append any additional constraints from where clauses
             // and ordering criteria from order by clauses
             // to an existing search call
-            if (!(expr instanceof SearchCall)) {
-                AbstractExpression queryArg = expr.getSubs()[0];
-                if (queryArg instanceof LiteralExpression) {
-                    // TODO: parse into a ParseableQuery
-                    // which will later on be output as a string, then parsed into an xml node tree, and finally into a Lucene query????
-                    // getLuxQueryParser().p
-                } else if (! (queryArg instanceof ElementConstructor)) {
-                    // if it's some kind of dynamic expression resulting in a query, give up
-                    return expr;
-                }
-                expr = new SearchCall (queryArg, ValueType.VALUE, new SortField[0]);
-            }
             return mergeSearchCall ((SearchCall) expr, j);
         }
         if (! expr.isAbsolute()) {
@@ -174,7 +161,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // We can't assert that lux:search is document-ordered since saxon PE/EE doesn't allow it;
             // the next best thing is to produce an expression that is not expected to be 
             // *in* document order.  In some cases where the context requires ordering (like intersect)
-            // this leads to suboptimal evaluation (ie retrieving all of one of the sequences)
+            // this leads to suboptimal evaluation (ie retrieving all of one or both of the sequences)
             Variable var = new Variable (new QName("_lx" + nextVariableNumber++));
             expr = expr.replaceRoot(var);
             // for $var in lux:search(...) return $var op $expr
@@ -456,7 +443,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
         } else if (fname.equals(FunCall.LUX_SEARCH) && !(funcall instanceof SearchCall)) {
             if (subs.length == 1) {
-                return new SearchCall (subs[0], ValueType.VALUE, null);
+                return new SearchCall (subs[0]);
             } else {
                 return funcall;
             }

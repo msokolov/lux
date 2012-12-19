@@ -43,7 +43,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
             throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
         if (sortCriteria != null) {
-            docIter = searcher.search(query, makeSortFromCriteria(sortCriteria));
+            Sort sort = makeSortFromCriteria(sortCriteria);
+            docIter = searcher.search(query, sort);
         } else {
             docIter = searcher.searchOrdered(query);
         }
@@ -66,7 +67,15 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 }
             }
             // TODO: use or copy from org.apache.solr.Sorting to implement missing least/greatest
-            sortFields[i] = new SortField(tokens[0], SortField.STRING, reverse);
+            String field = tokens[0];
+            if (field.equals("lux:score")) {
+                if (! reverse) {
+                    throw new LuxException ("Not countenanced: attempt to sort by irrelevance");
+                }
+                sortFields[i] = SortField.FIELD_SCORE;
+            } else {
+                sortFields[i] = new SortField(field, SortField.STRING, reverse);
+            }
         }
         return new Sort(sortFields);
     }
