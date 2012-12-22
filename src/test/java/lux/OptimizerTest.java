@@ -32,7 +32,7 @@ public class OptimizerTest {
 
     private void assertQuery(Query expectedOpt, String query) throws ParserException {
         // TODO Auto-generated method stub
-        XCompiler compiler = eval.getCompiler();
+        Compiler compiler = eval.getCompiler();
         compiler.compile(query);
         XQuery optimizedQuery = compiler.getLastOptimized();
         AbstractExpression optimizedExpression = optimizedQuery.getBody();

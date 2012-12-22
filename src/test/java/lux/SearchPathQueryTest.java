@@ -130,7 +130,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
     private XdmValue evalBaseline(String xpath, Evaluator eval) {
         XdmValue baseResult;
         XQuery xq = null;
-        XCompiler compiler = eval.getCompiler();
+        Compiler compiler = eval.getCompiler();
         try {
             xq = compiler.makeTranslator().queryFor(compiler.compile(xpath));
             xq = new Expandifier().expandify(xq);
@@ -146,7 +146,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
     }
 
     private XdmResultSet evalQuery(String xpath, Evaluator eval) {
-        eval.invalidateCache();
+        eval.getDocReader().clear();
         eval.setQueryStats(new QueryStats());
         XQueryExecutable xquery = eval.getCompiler().compile(xpath);
         XdmResultSet results = eval.evaluate(xquery);

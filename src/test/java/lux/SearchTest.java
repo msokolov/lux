@@ -188,7 +188,7 @@ public class SearchTest extends BaseSearchTest {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR >= //PERSONA";
         Evaluator eval = index.makeEvaluator();
-        XCompiler compiler = eval.getCompiler();
+        Compiler compiler = eval.getCompiler();
         XQueryExecutable xquery = compiler.compile(xpath);
         XdmResultSet results = eval.evaluate(xquery);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " result");
@@ -204,7 +204,7 @@ public class SearchTest extends BaseSearchTest {
         long t = System.currentTimeMillis();
         String xpath = "//SCNDESCR[. >= //PERSONA]";
         Evaluator eval = index.makeEvaluator();
-        XCompiler compiler = eval.getCompiler();
+        Compiler compiler = eval.getCompiler();
         XQueryExecutable xquery = compiler.compile(xpath);
         XdmResultSet results = eval.evaluate(xquery);
         System.out.println ("query evaluated in " + (System.currentTimeMillis() - t) + " msec,  retrieved " + results.size() + " results");

@@ -2,7 +2,7 @@ package lux.saxon;
 
 import static org.junit.Assert.assertEquals;
 import lux.Evaluator;
-import lux.XCompiler;
+import lux.Compiler;
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
@@ -177,7 +177,7 @@ public class TranslatorTest {
     
     private void roundtrip (String xpath) {
         XQueryExecutable query;
-        XCompiler compiler = eval.getCompiler();
+        Compiler compiler = eval.getCompiler();
         try {
             query = compiler.getXQueryCompiler().compile(xpath);
         } catch (SaxonApiException e) {

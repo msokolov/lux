@@ -1,6 +1,6 @@
 package lux;
 
-import lux.XCompiler.SearchStrategy;
+import lux.Compiler.SearchStrategy;
 
 import org.junit.BeforeClass;
 import org.junit.Ignore;

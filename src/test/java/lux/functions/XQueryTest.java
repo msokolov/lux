@@ -1,6 +1,7 @@
 package lux.functions;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -9,7 +10,6 @@ import javax.xml.transform.TransformerException;
 
 import lux.Evaluator;
 import lux.QueryContext;
-import lux.XCompiler.Dialect;
 import lux.XdmResultSet;
 import net.sf.saxon.s9api.XQueryExecutable;
 
@@ -22,7 +22,7 @@ public abstract class XQueryTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        evaluator = new Evaluator(Dialect.XQUERY_1);
+        evaluator = new Evaluator();
     }
 
     protected void assertXQueryFile(String result, String queryFile) throws IOException {

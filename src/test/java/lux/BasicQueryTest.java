@@ -34,12 +34,11 @@ public class BasicQueryTest {
             LUX_FOO, LINE, TITLE, 
     };
     
-    protected XCompiler compiler;
+    protected Compiler compiler;
     protected Evaluator eval;
     
     @Before public void setup () {
-        compiler = new XCompiler(getIndexer().getConfiguration());
-        compiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
+        compiler = new Compiler(getIndexer().getConfiguration());
         eval = new Evaluator(compiler, null, null);
     }
     

@@ -38,7 +38,7 @@ public class IndexTestSupport {
     XmlIndexer indexer;
     IndexWriter indexWriter;
     int totalDocs;
-    XCompiler compiler;
+    Compiler compiler;
     HashMap<String,Integer> elementCounts = new HashMap<String,Integer>();
         
     public final static int QUERY_EXACT = 0x00000001;
@@ -78,7 +78,7 @@ public class IndexTestSupport {
         }
         indexWriter = indexer.getIndexWriter(dir);
         searcher = new LuxSearcher(IndexReader.open(indexWriter, true));
-        compiler = new XCompiler (indexer.getConfiguration());
+        compiler = new Compiler (indexer.getConfiguration());
     }
 
     public void close() throws Exception {
@@ -133,7 +133,6 @@ public class IndexTestSupport {
         DirectDocWriter docWriter = new DirectDocWriter(indexer, indexWriter);
         return new Evaluator(compiler, searcher, docWriter);
     }
-
 
 }
 
