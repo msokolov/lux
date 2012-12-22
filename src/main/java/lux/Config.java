@@ -26,7 +26,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Config provides an Optimizer and a FunctionLibrary to Saxon.  The Optimizer identifies certain
- * expressions as "already sorted", enabling Saxon to skip an expensive sorting operation.  The 
+ * expressions as "already sorted in document order", enabling Saxon to skip an expensive sorting operation.  The 
  * FunctionLibrary performs a similar function, allowing certain functions to be identified as returning
  * results in document order, so they won't need to be sorted again.  These optimizations do more than 
  * simply skip a (no-op) sorting step: they also enable Saxon to evaluate these sorted sequences 

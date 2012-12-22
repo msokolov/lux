@@ -7,17 +7,18 @@ import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
 import lux.functions.Commit;
+import lux.functions.Count;
 import lux.functions.DeleteDocument;
+import lux.functions.Exists;
 import lux.functions.FieldTerms;
 import lux.functions.FieldValues;
 import lux.functions.InsertDocument;
-import lux.functions.Count;
-import lux.functions.Exists;
 import lux.functions.Search;
 import lux.functions.Transform;
 import lux.functions.file.FileExtensions;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
 import lux.xquery.XQuery;
 import net.sf.saxon.Configuration;
@@ -37,10 +38,20 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class XCompiler {
+/**
+ * Compiles XQuery using Saxon's compiler and optimizes it for use with a Lucene index.
+ * This class is thread-safe, and should be re-used for multiple queries.  
+ */
+public class Compiler {
+
+    public enum Dialect {
+        XPATH_1,
+        XPATH_2,
+        XQUERY_1
+    }
+    
     private final Logger logger;
     private final Processor processor;
-    private final Dialect dialect;
     private final CollectionURIResolver defaultCollectionURIResolver;
     private final String uriFieldName;
     private final IndexConfiguration indexConfig;
@@ -52,6 +63,9 @@ public class XCompiler {
     private XQueryCompiler xqueryCompiler;
     private XPathCompiler xpathCompiler;
     private XsltCompiler xsltCompiler;
+
+    // for testing
+    private XQuery lastOptimized;
     
     public enum SearchStrategy {
         NONE, LUX_SEARCH, SAXON_LICENSE
@@ -62,16 +76,17 @@ public class XCompiler {
     // private final AtomicInteger indexGeneration;
     // private final IndexWriter indexWriter;
 
-    /** Creates a Compiler configured according to the capabilities of a wrapped instance of a Saxon Processor.
-     * Saxon-HE allows us to optimize result sorting and lazy evaluation.  Saxon-PE and -EE provide
-     * PTree storage mechanism, and their own optimizations.
+    /** Creates a Compiler configured according to the given {@link IndexConfiguration}. 
+     * A Saxon Processor is generated using the installed version of Saxon.  If a licensed version of Saxon 
+     * (PE or EE) is installed, the presence of a license is asserted so as to enable the use of licensed Saxon features.
      */
-    public XCompiler (IndexConfiguration indexConfig) {
+    public Compiler (IndexConfiguration indexConfig) {
         this (makeProcessor(), indexConfig);
     }
     
-    protected XCompiler(Processor processor, IndexConfiguration indexConfig) {
-        dialect = Dialect.XQUERY_1;
+    /** Creates a Compiler using the provided {@link Processor} and {@link IndexConfiguration}.
+     */
+    public Compiler(Processor processor, IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
         // indexGeneration = new AtomicInteger(0);
         
@@ -100,14 +115,42 @@ public class XCompiler {
         logger = LoggerFactory.getLogger(getClass());
         errorListener = new TransformErrorListener();
     }
-
-    public enum Dialect {
-        XPATH_1,
-        XPATH_2,
-        XQUERY_1
+    
+    /**
+     * Compiles the XQuery expression (main module) using a Saxon {@link XQueryCompiler}, then translates it into a mutable {@link AbstractExpression}
+     * tree using a {@link SaxonTranslator}, optimizes it with a {@link PathOptimizer}, and then re-serializes and re-compiles.
+     * @param exprString the XQuery source
+     * @return the compiled XQuery expression
+     * @throws LuxException if any error occurs while compiling, such as a static XQuery error or syntax error.
+     */
+    public XQueryExecutable compile(String exprString) throws LuxException {
+        XQueryExecutable xquery;
+        try {
+            xquery = getXQueryCompiler().compile(exprString);
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
+        if (searchStrategy == SearchStrategy.NONE) {
+            return xquery;
+        }
+        SaxonTranslator translator = makeTranslator();
+        XQuery abstractQuery = translator.queryFor (xquery);
+        PathOptimizer optimizer = new PathOptimizer(indexConfig);
+        optimizer.setSearchStrategy(searchStrategy);
+        XQuery optimizedQuery = optimizer.optimize(abstractQuery);
+        lastOptimized = optimizedQuery;
+        try {
+            xquery = getXQueryCompiler().compile(optimizedQuery.toString());
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("optimized xquery: " + optimizedQuery.toString());
+        }
+        return xquery;
     }
     
-    static Processor makeProcessor () {
+    private static Processor makeProcessor () {
         try {
             if (Class.forName("com.saxonica.config.EnterpriseConfiguration") != null) {
                 return new Processor (true);
@@ -137,70 +180,13 @@ public class XCompiler {
         FileExtensions.registerFunctions(processor);
     }
     
-    class EmptyEntityResolver implements EntityResolver {
+    private class EmptyEntityResolver implements EntityResolver {
         @Override
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
             return new InputSource(new StringReader(""));
         }
     }
     
-    public XQueryExecutable compile(String exprString) throws LuxException {
-        switch (dialect) {
-        /*
-            case XPATH_1: case XPATH_2:
-            return compileXPath(exprString);
-         */
-        case XQUERY_1:
-            return compileXQuery(exprString);
-        default:
-            throw new LuxException ("Unsupported query dialect: " + dialect);
-        }
-    }
-
-    // for testing
-    private XQuery lastOptimized;
-    XQuery getLastOptimized () { return lastOptimized; }
-    
-    private XQueryExecutable compileXQuery(String exprString) throws LuxException {
-        XQueryExecutable xquery;
-        try {
-            xquery = getXQueryCompiler().compile(exprString);
-        } catch (SaxonApiException e) {
-            throw new LuxException (e);
-        }
-        if (searchStrategy == SearchStrategy.NONE) {
-            return xquery;
-        }
-        SaxonTranslator translator = makeTranslator();
-        XQuery abstractQuery = translator.queryFor (xquery);
-        PathOptimizer optimizer = new PathOptimizer(indexConfig);
-        optimizer.setSearchStrategy(searchStrategy);
-        XQuery optimizedQuery = optimizer.optimize(abstractQuery);
-        lastOptimized = optimizedQuery;
-        try {
-            xquery = getXQueryCompiler().compile(optimizedQuery.toString());
-        } catch (SaxonApiException e) {
-            throw new LuxException (e);
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("optimized xquery: " + optimizedQuery.toString());
-        }
-        return xquery;
-    }
-
-    public void declareNamespace (String prefix, String namespace) {
-        switch (dialect) {
-        case XPATH_1: case XPATH_2:
-            getXPathCompiler().declareNamespace(prefix, namespace);
-            break;
-        case XQUERY_1:
-            getXQueryCompiler().declareNamespace(prefix, namespace);
-            break;
-        default:
-            break;
-        }
-    }
-        
     public XsltCompiler getXsltCompiler () {
         if (xsltCompiler == null) {
             xsltCompiler = processor.newXsltCompiler();
@@ -224,7 +210,6 @@ public class XCompiler {
         if (xpathCompiler == null) {
             xpathCompiler = processor.newXPathCompiler();
             xpathCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-            xpathCompiler.declareNamespace("fn", FunCall.FN_NAMESPACE);
         }
         return xpathCompiler;
     }
@@ -249,6 +234,10 @@ public class XCompiler {
         return uriFieldName;
     }
 
+    /**
+     * @return the strategy that defines the way in which optimizer-generated searches are to be encoded:
+     * either as calls to lux:search(), or as calls to collection() with a uri beginning "lux:".
+     */
     public SearchStrategy getSearchStrategy() {
         return searchStrategy;
     }
@@ -265,4 +254,12 @@ public class XCompiler {
         return isSaxonLicensed;
     }
     
+    XQuery getLastOptimized () { 
+        return lastOptimized; 
+    }
+    
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

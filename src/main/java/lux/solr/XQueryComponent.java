@@ -16,10 +16,10 @@ import java.util.Set;
 
 import javax.xml.transform.TransformerException;
 
+import lux.Compiler;
 import lux.DocWriter;
 import lux.Evaluator;
 import lux.QueryContext;
-import lux.XCompiler;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
@@ -54,8 +54,8 @@ import org.apache.solr.util.plugin.SolrCoreAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** This component executes searches expressed as XPath or XQuery.  
- *  Its queries will match documents that have been indexed using XmlIndexer 
+/** This component executes searches expressed as XPath or XQuery.
+ *  Its queries will match documents that have been indexed using XmlIndexer
  *  with the INDEX_PATHS option.
  */
 public class XQueryComponent extends QueryComponent implements SolrCoreAware {
@@ -63,7 +63,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
     protected URL baseUri;
     protected Set<String> fields = new HashSet<String>();
-    protected XCompiler compiler;
+    protected Compiler compiler;
     protected XmlIndexer indexer;
     protected SolrIndexConfig solrIndexConfig;
     
@@ -143,7 +143,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             Evaluator evaluator,
             int start, long timeAllowed, int len, String query) {
         XQueryExecutable expr;
-        XCompiler compiler = evaluator.getCompiler();
+        Compiler compiler = evaluator.getCompiler();
         try {
             // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
             // of the query so error reporting will be able to report it
@@ -174,7 +174,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     xqueryPath
                     ));
         }
-        XdmResultSet queryResults = evaluator.iterate(expr, context);
+        XdmResultSet queryResults = evaluator.evaluate(expr, context);
         for (Object xpathResult : queryResults) {
             if (++ count < start) {
                 continue;
@@ -203,11 +203,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
 
     private XdmNode buildHttpParams(Evaluator evaluator, String http, String path) {
-        return (XdmNode) evaluator.getBuilder().build(new StringReader(http), path);
+        return (XdmNode) evaluator.build(new StringReader(http), path);
     }
 
-    private XCompiler createXCompiler() {
-        return new XCompiler(indexer.getConfiguration());
+    private Compiler createXCompiler() {
+        return new Compiler(indexer.getConfiguration());
     }
     
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) {
@@ -265,3 +265,4 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+

@@ -12,6 +12,9 @@ import net.sf.saxon.om.NodeInfo;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 
+/**
+ * Writes documents directly to a Lucene index.
+ */
 public class DirectDocWriter implements DocWriter {
 
     private final XmlIndexer indexer;
@@ -55,3 +58,7 @@ public class DirectDocWriter implements DocWriter {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

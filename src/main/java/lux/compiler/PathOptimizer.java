@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import lux.XCompiler.SearchStrategy;
+import lux.Compiler.SearchStrategy;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;

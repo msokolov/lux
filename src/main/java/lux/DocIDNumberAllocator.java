@@ -22,9 +22,9 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
      * their results to be in document order have that assertion borne out.  The caller must also ensure
      * that a document will be allocated immediately after this method is called.  For this reason,
      * this entire class is *not* thread-safe.
-     * @param id the next id to allocate.
+     * @param id the next id to allocate, or null if the next id to allocate should be an internal id.
      */
-    public void setNextDocID (int id) {
+    public void setNextDocID (Integer id) {
         nextDocID = id;
     }
     
@@ -34,7 +34,7 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
             id = nextDocID;
             nextDocID = null;
         } else {
-            id = nextInternalID--;
+            id = nextInternalID++;
         }
         return id;
     }
