@@ -26,7 +26,7 @@ public class AppServer extends XQueryComponent {
         SolrQueryRequest req = rb.req;
         SolrParams params = req.getParams();            
         if (rb.getQueryString() == null) {
-            String path = (String) params.get(LuxServlet.LUX_XQUERY);
+            String path = (String) params.get(AppServerRequestFilter.LUX_XQUERY);
             if (! StringUtils.isBlank(path)) {
                 URL absolutePath = new URL (baseUri, path);
                 String scheme = absolutePath.getProtocol();

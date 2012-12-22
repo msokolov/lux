@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
  *  with the INDEX_PATHS option.
  */
 public class XQueryComponent extends QueryComponent implements SolrCoreAware {
-    
+
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
     protected URL baseUri;
     protected Set<String> fields = new HashSet<String>();
@@ -165,12 +165,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         long tstart = System.currentTimeMillis();
         int count = 0;
         QueryContext context = null;
-        String xqueryPath = rb.req.getParams().get(LuxServlet.LUX_XQUERY);
+        String xqueryPath = rb.req.getParams().get(AppServerRequestFilter.LUX_XQUERY);
         if (xqueryPath != null) {
             context = new QueryContext();
             context.bindVariable(LUX_HTTP, buildHttpParams(
                     evaluator,
-                    rb.req.getParams().get(LuxServlet.LUX_HTTPINFO), 
+                    rb.req.getParams().get(AppServerRequestFilter.LUX_HTTPINFO), 
                     xqueryPath
                     ));
         }
