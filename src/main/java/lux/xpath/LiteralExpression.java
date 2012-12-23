@@ -4,11 +4,11 @@ package lux.xpath;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import javax.xml.bind.DatatypeConverter;
+
 import lux.exception.LuxException;
 import lux.xml.QName;
 import lux.xml.ValueType;
-
-import javax.xml.bind.DatatypeConverter;
 
 public class LiteralExpression extends AbstractExpression {
     
@@ -219,6 +219,7 @@ public class LiteralExpression extends AbstractExpression {
         buf.append ('"');
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
     }

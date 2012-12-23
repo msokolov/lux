@@ -84,6 +84,7 @@ public class XPathFieldTest {
     
     /**
      * tests ordering by relevance and by lux:key()
+     * @throws Exception 
      */
     @Test
     public void testOrderByKey () throws Exception {

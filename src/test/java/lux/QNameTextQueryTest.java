@@ -11,6 +11,7 @@ public class QNameTextQueryTest extends BasicQueryTest {
         return new XmlIndexer(IndexConfiguration.INDEX_QNAMES | IndexConfiguration.INDEX_FULLTEXT);
     }
     
+    @Override
     public String getQueryXml (Q q) {
         switch (q) {
         case ACT_CONTENT:

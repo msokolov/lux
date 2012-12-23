@@ -69,6 +69,8 @@ public abstract class FieldDefinition {
      * analyzer is used only for queries.
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
+     * @param termVector whether to store term vectors for this field
+     * @param renameable whether the field is allowed to be renamed
      */
     public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type, TermVector termVector, boolean renameable) {
         this.name = name;
@@ -81,6 +83,14 @@ public abstract class FieldDefinition {
     
     /**
      * construct an non-renameable field
+     * @param name the name of the field
+     * @param analyzer the analyzer associated with the field.  This will
+     * be used to analyze string field values, and to analyze queries.  If
+     * the field values are not strings (eg if they are a TokenStream), the
+     * analyzer is used only for queries.
+     * @param isStored whether the field values are to be stored
+     * @param type the type of the field values: STRING, TOKENS, INT.
+     * @param termVector whether to store term vectors for this field
      */
     public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type, TermVector termVector) {
         this (name, analyzer, isStored, type, termVector, false);
@@ -176,6 +186,7 @@ public abstract class FieldDefinition {
         return options;
     }
     
+    @Override
     public String toString () {
         return name;
     }

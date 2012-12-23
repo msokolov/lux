@@ -19,6 +19,7 @@ public class Satisfies extends AbstractExpression {
         SOME, EVERY
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs (visitor);
         return visitor.visit (this);

@@ -8,6 +8,7 @@ public class Predicate extends AbstractExpression {
         subs = new AbstractExpression[] { base, filter };
     }
     
+    @Override
     public void toString (StringBuilder buf) {
         appendSub (buf, subs[0]);
         buf.append ('[');
@@ -27,6 +28,7 @@ public class Predicate extends AbstractExpression {
         subs[1] = filter;
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

@@ -68,6 +68,7 @@ public class FunCall extends AbstractExpression {
     // represent last() in Subsequence(foo, last()); ie foo[last()].
     public static final FunCall LastExpression = new FunCall (FN_LAST, ValueType.VALUE);
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

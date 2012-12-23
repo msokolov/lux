@@ -13,6 +13,7 @@ public class InstanceOf extends AbstractExpression {
         subs = new AbstractExpression [] { valueExpr };
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

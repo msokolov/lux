@@ -52,6 +52,7 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
             next = null;
         }
 
+        @Override
         public boolean hasNext() {
             if (next != null) {
                 return true;
@@ -74,6 +75,7 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
             }
         }
 
+        @Override
         public XdmNode next() {
             if (next != null) {
                 XdmNode node = next;
@@ -83,6 +85,7 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
             return getNext();
         }
 
+        @Override
         public void remove() {
         }
 

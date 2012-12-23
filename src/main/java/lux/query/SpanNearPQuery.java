@@ -33,9 +33,9 @@ public class SpanNearPQuery extends ParseableQuery {
     }
 
     // optimize? by simplifying nested queries
-    private ParseableQuery[] mergeSubClauses(ParseableQuery [] clauses) {
+    private ParseableQuery[] mergeSubClauses(ParseableQuery [] nested) {
         ArrayList<ParseableQuery> subclauses = new ArrayList<ParseableQuery>();
-        for (ParseableQuery clause : clauses) {
+        for (ParseableQuery clause : nested) {
             if (clause instanceof SpanNearPQuery) {
                 SpanNearPQuery subquery = (SpanNearPQuery) clause;
                 if (subquery.slop == 0 && subquery.inOrder) {
@@ -46,7 +46,6 @@ public class SpanNearPQuery extends ParseableQuery {
                 }
             }
             subclauses.add(clause);
-
         }
         return subclauses.toArray(new ParseableQuery[0]);
     }

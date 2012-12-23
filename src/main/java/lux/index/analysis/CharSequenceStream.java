@@ -13,8 +13,8 @@ public class CharSequenceStream extends CharStream {
         reset (csq);
     }
 
-    void reset (CharSequence csq) {
-        this.csq = csq;
+    void reset (CharSequence c) {
+        this.csq = c;
         pos = 0;
     }
     

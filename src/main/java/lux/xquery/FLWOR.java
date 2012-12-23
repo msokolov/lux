@@ -13,6 +13,7 @@ public class FLWOR extends AbstractExpression {
         subs = new AbstractExpression[] { returnExpression };
     }
     // (return (let (for sequence (where) (order by))))
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         for (int i = 0; i < clauses.length; i++) {
             // accept in forward order since queries get reversed on the stack, and
@@ -55,6 +56,7 @@ public class FLWOR extends AbstractExpression {
         return clauses;
     }
     
+    @Override
     public boolean isAbsolute () {
         return getReturnExpression().isAbsolute();
     }

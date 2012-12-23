@@ -195,6 +195,7 @@ public class SolrIndexConfig {
             setQueryAnalyzer(new WhitespaceGapAnalyzer());
         }
         
+        @Override
         protected Field.Index getFieldIndex(SchemaField field, String internalVal) {
             return Field.Index.ANALYZED;
         }
@@ -209,6 +210,7 @@ public class SolrIndexConfig {
             typeName = "fieldable";
         }
 
+        @Override
         public Field createField(SchemaField field, Object val, float boost) {
             return (Field) val;
         }

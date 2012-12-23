@@ -20,6 +20,7 @@ public class FieldValues implements Iterable<Fieldable> {
         this.fieldName = indexConfig.getFieldName(field);
     }
 
+    @Override
     public Iterator<Fieldable> iterator() {
         return new FieldIterator(values.iterator());
     }
@@ -31,10 +32,12 @@ public class FieldValues implements Iterable<Fieldable> {
             this.iter = iter;
         }
         
+        @Override
         public boolean hasNext() {
             return iter.hasNext();
         }
 
+        @Override
         public Fieldable next() {
             // FIXME: for best indexing performance, avoid GC and re-use these Field objects:
             // can also re-use Documents.  Can only use each field instance once per document
@@ -53,6 +56,7 @@ public class FieldValues implements Iterable<Fieldable> {
             }
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }

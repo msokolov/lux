@@ -38,6 +38,7 @@ public class LuxSearcher extends IndexSearcher {
   
   /**
    * @param query the Lucene query
+   * @param sort the sort criteria
    * @return the results of the query as a Lucene DocIdSetIterator, ordered using the sort criterion. 
    * Results are returned in batches, so deep paging is possible, but expensive.
    * @throws IOException

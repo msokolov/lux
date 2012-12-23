@@ -14,6 +14,7 @@ class NodeExtensions extends Extensions {
      * reverses the default order so that extension string comes first, followed by the extended field name.
      * Therefore ext::term indicates the default extended field, and :field:term yields an empty extension string.
      */
+    @Override
     public Pair<String,String> splitExtensionField(String defaultField, String field) {
         int indexOf = field.indexOf(getExtensionFieldDelimiter());
         if (indexOf < 0)

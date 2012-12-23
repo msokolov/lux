@@ -16,10 +16,12 @@ public class OrderByClause extends FLWORClause {
         Collections.addAll(this.sortKeys, sortKeys);
     }
     
+    @Override
     public AbstractExpression getSequence() {
         return LiteralExpression.EMPTY;
     }
     
+    @Override
     public void setSequence (AbstractExpression seq) {
     }
 
@@ -43,6 +45,7 @@ public class OrderByClause extends FLWORClause {
         }
     }
 
+    @Override
     public OrderByClause accept(ExpressionVisitor visitor) {
         for (int i = 0; i < sortKeys.size(); i++) {
             SortKey sk = sortKeys.get(i);

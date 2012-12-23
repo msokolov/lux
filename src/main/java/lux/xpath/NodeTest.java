@@ -64,6 +64,7 @@ public class NodeTest {
         return name == null || name.getLocalPart().equals("*"); // namespace wildcard?
     }
 
+    @Override
     public String toString () {
         StringBuilder buf = new StringBuilder ();
         toString (buf);

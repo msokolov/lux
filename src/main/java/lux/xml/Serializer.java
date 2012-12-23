@@ -39,6 +39,7 @@ public class Serializer implements StAXHandler {
      * @param r source of xml StAX events
      * @param evtType the type of StAX event
      */
+    @Override
     public void handleEvent (XMLStreamReader r, int evtType)
     {
         switch (evtType) {
@@ -198,6 +199,7 @@ public class Serializer implements StAXHandler {
         doc.append("\"");
     }
     
+    @Override
     public void reset () {
         doc = null;
         namespaceContexts = null;

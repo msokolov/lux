@@ -64,8 +64,8 @@ public class SearchCall extends FunCall {
     }
     */
    
-    public void combineQuery(XPathQuery query, IndexConfiguration config) {
-        ElementConstructor additional = query.getParseableQuery().toXmlNode(config.getDefaultFieldName());
+    public void combineQuery(XPathQuery additionalQuery, IndexConfiguration config) {
+        ElementConstructor additional = additionalQuery.getParseableQuery().toXmlNode(config.getDefaultFieldName());
         if (! additional.getName().getLocalPart().equals("MatchAllDocsQuery")) {
             if (queryArg.getType() == Type.ELEMENT) {
                 ElementConstructor addClause = new ElementConstructor(BooleanPQuery.CLAUSE_QNAME, additional, BooleanPQuery.MUST_OCCUR_ATT);
@@ -75,7 +75,7 @@ public class SearchCall extends FunCall {
             }
         }
         // TODO: combine optimizer constraints with user-defined (string) queries 
-        this.query = this.query.combineBooleanQueries(Occur.MUST, query, Occur.MUST, this.query.getResultType(), config);
+        this.query = this.query.combineBooleanQueries(Occur.MUST, additionalQuery, Occur.MUST, this.query.getResultType(), config);
         generateArguments();
     }
     

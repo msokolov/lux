@@ -103,7 +103,8 @@ public class XmlReader {
             inputFactory.setProperty 
                 (XMLInputFactory2.RESOLVER, 
                  new XMLResolver() {
-                     public Object resolveEntity
+                     @Override
+                    public Object resolveEntity
                          (String publicID,
                           String systemID,
                           String baseURI,

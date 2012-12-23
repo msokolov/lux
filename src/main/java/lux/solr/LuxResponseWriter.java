@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.Writer;
 
 import lux.exception.LuxException;
-
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XdmNode;
@@ -26,6 +25,7 @@ public class LuxResponseWriter implements QueryResponseWriter {
         serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
     }
     
+    @Override
     public void write(Writer writer, SolrQueryRequest request, SolrQueryResponse response) throws IOException {
         String error = (String) response.getValues().get("xpath-error");
         if (error != null) {
@@ -54,10 +54,12 @@ public class LuxResponseWriter implements QueryResponseWriter {
         writer.write(String.format("<html><head><title>ERROR</title></head><body>ERROR: %s</body></html>", error));
     }
 
+    @Override
     public String getContentType(SolrQueryRequest request, SolrQueryResponse response) {
         return contentType;
     }
 
+    @Override
     public void init(@SuppressWarnings("rawtypes") NamedList args) {
         if (args.get("lux.content-type") != null) {
             contentType = args.get("lux.content-type").toString();

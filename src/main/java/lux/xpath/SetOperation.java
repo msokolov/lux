@@ -12,6 +12,7 @@ public class SetOperation extends AbstractExpression {
         this.operator = operator;
     }
     
+    @Override
     public void toString (StringBuilder buf) {
         Sequence.appendSeqContents(buf, subs, ' ' + operator.toString() + ' ', operator.getPrecedence());
     }
@@ -32,6 +33,7 @@ public class SetOperation extends AbstractExpression {
         return operator.getPrecedence();
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

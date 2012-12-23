@@ -15,8 +15,8 @@ import org.apache.lucene.document.Field.TermVector;
 
 /**
  * Indexes the values of the XPath expression evaluated with the document as the context item
- * T is the type of the values returned and must correspond with the {@link FieldDefinition.Type}:
- * STRING =&gt; String, and INT =&gt; Integer.
+ * @param <T> the type of value stored in or indexed by the field; must correspond with the {@link FieldDefinition.Type}:
+ * STRING =&gt; String, and INT =&gt; Integer
  */
 public class XPathField<T> extends FieldDefinition {
     
@@ -45,10 +45,12 @@ public class XPathField<T> extends FieldDefinition {
             this.sequence = sequence;
         }
 
+        @Override
         public boolean hasNext() {
             return sequence.hasNext();
         }
 
+        @Override
         @SuppressWarnings("unchecked")
         public T next() {
             XdmItem item = sequence.next();

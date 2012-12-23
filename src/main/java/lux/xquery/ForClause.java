@@ -21,10 +21,12 @@ public class ForClause extends FLWORClause {
         this.seq = seq;
     }
     
+    @Override
     public AbstractExpression getSequence() {
         return seq;
     }
     
+    @Override
     public void setSequence (AbstractExpression seq) {
         this.seq = seq;
     }
@@ -41,6 +43,7 @@ public class ForClause extends FLWORClause {
         seq.toString(buf);
     }
 
+    @Override
     public ForClause accept(ExpressionVisitor visitor) {
         seq = seq.accept(visitor);
         return visitor.visit(this);

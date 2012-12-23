@@ -24,8 +24,8 @@ public class SaxonDocBuilder implements StAXHandler {
     private boolean fixupCRLF = false;
     
     /**
-     * creates its own Saxon processor and DocumentBuilder
-     * @throws SaxonApiException if there is an error instantiating the Saxon services.
+     * @param processor the Saxon processor
+     * @throws SaxonApiException
      */
     public SaxonDocBuilder (Processor processor) throws SaxonApiException {
         this (processor.newDocumentBuilder());
@@ -58,6 +58,7 @@ public class SaxonDocBuilder implements StAXHandler {
         return writer.getDocumentNode();
     }
 
+    @Override
     public void handleEvent(XMLStreamReader reader, int eventType) throws XMLStreamException {
         
         // System.out.println ("offset=" + reader.getLocation().getCharacterOffset() + " for event " + eventType + " at line " + reader.getLocation().getLineNumber() + ", column " + reader.getLocation().getColumnNumber());
@@ -225,6 +226,7 @@ public class SaxonDocBuilder implements StAXHandler {
         return offsets;
     }
     
+    @Override
     public void reset() {
         try {
             writer = builder.newBuildingStreamWriter();

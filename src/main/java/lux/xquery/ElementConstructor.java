@@ -45,6 +45,7 @@ public class ElementConstructor extends AbstractExpression {
         this.attributes = attributes;
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         acceptSubs(visitor);
         return visitor.visit(this);

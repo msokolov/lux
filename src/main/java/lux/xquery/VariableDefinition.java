@@ -30,6 +30,7 @@ public class VariableDefinition implements Comparable<VariableDefinition> {
         }
     }
 
+    @Override
     public int compareTo(VariableDefinition o) {
         return order - o.order;
     }

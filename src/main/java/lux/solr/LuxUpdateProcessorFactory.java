@@ -18,6 +18,7 @@ public class LuxUpdateProcessorFactory extends UpdateRequestProcessorFactory imp
 
     /** Called when each core is initialized; we ensure that Lux fields are configured.
      */
+    @Override
     public void inform(SolrCore core) {
         PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
         indexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS | INDEX_FULLTEXT, info.initArgs);

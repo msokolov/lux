@@ -16,6 +16,7 @@ public class SpanTermPQuery extends TermPQuery {
         super(t);
     }
     
+    @Override
     public ElementConstructor toXmlNode (String field) {
         return toXmlNode(field, SPAN_TERM_QNAME);
     }

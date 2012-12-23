@@ -31,6 +31,7 @@ public class NodeQueryBuilder implements QueryBuilder {
         this.namespaceAware = namespaceAware;
     }
 
+    @Override
     public Query getQuery(Element e) throws ParserException {
         String fieldName=DOMUtils.getAttributeWithInheritanceOrFail(e,"fieldName");
         String qName=DOMUtils.getAttributeWithInheritance(e,"qName");

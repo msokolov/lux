@@ -30,6 +30,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
         return new XmlIndexer(config);
     }
 
+    @Override
     public void processAdd (AddUpdateCommand cmd) throws IOException {
         XmlIndexer xmlIndexer = getIndexer(indexConfig);
         SolrInputDocument solrInputDocument = cmd.getSolrInputDocument();
@@ -74,6 +75,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
         }
     }
 
+    @Override
     public void processDelete (DeleteUpdateCommand cmd) throws IOException {
         if (next != null) {
             next.processDelete(cmd);

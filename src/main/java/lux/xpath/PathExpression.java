@@ -48,10 +48,12 @@ public class PathExpression extends AbstractExpression {
      * expressions are a possible target for optimizarion.
      * @return whether the lhs of this path is an expression returning Documents.
      */
+    @Override
     public boolean isAbsolute() {
        return subs[0].isAbsolute();
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         acceptSubs(visitor);
         return visitor.visit(this);
@@ -60,6 +62,7 @@ public class PathExpression extends AbstractExpression {
     /**
      * @return the expression remaining after removing the left-most sub-expression (the CDR).
      */
+    @Override
     public AbstractExpression getTail() {
         AbstractExpression left = subs[0].getTail();
         if (left == null) {
@@ -71,6 +74,7 @@ public class PathExpression extends AbstractExpression {
     /**
      * @return the rightmost step of this path expression
      */
+    @Override
     public AbstractExpression getLastContextStep() {
         AbstractExpression expr = subs[1].getLastContextStep();
         if (expr.getType() == Type.PATH_STEP) {

@@ -24,6 +24,7 @@ public class Subsequence extends AbstractExpression {
         subs = new AbstractExpression[] { sequence, start };
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         acceptSubs(visitor);
         return visitor.visit(this);

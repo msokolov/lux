@@ -18,6 +18,7 @@ public class Dot extends AbstractExpression {
         buf.append ('.');
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
     }

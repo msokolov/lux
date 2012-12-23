@@ -101,7 +101,6 @@ public class IndexTestSupport {
     }
     
     public void indexAllElements(String uri, InputStream in) throws XMLStreamException, IOException, SaxonApiException {
-        IndexWriter indexWriter = indexer.getIndexWriter(dir);
         String xml = IOUtils.toString(in);
         indexer.indexDocument(indexWriter, '/' + uri, xml);
         Serializer outputter = new Serializer();

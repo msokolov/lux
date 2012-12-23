@@ -3,8 +3,6 @@ package lux.index.analysis;
 import java.io.IOException;
 
 import lux.xml.Offsets;
-
-
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 
@@ -28,6 +26,7 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
         iDelta = 0;
     }
 
+    @Override
     protected boolean resetTokenizer(CharSequence text) {
         //charSequenceStream.reset(text);  can't reset a BaseCharFilter :(
         charSequenceStream = new CharSequenceStream(text);

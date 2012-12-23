@@ -19,6 +19,7 @@ public class PathStep extends AbstractExpression {
             this.isForward = forward;
         }
 
+        @Override
         public String toString() {
             return name;
         }
@@ -47,6 +48,7 @@ public class PathStep extends AbstractExpression {
         nodeTest.toString (buf);
     }
         
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
     }

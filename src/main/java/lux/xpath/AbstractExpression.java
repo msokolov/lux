@@ -25,10 +25,12 @@ public abstract class AbstractExpression implements Visitable {
         this.type = type;
     }
 
-    /** The type of this expression; most types will correspond one-one
-     * with a Java class which must be a subclass of AbstractExpression, but this
+    /** Most types will correspond one-one
+     * with a subclass of AbstractExpression, but this
      * enumerated value provides an integer equivalent that should be
      * useful for efficient switch operations, encoding and the like.
+     * TODO: determine if this is just a waste of time; we could be using instanceof?
+     * @return the type of this expression
      */
     public Type getType () {
         return type;
@@ -45,8 +47,7 @@ public abstract class AbstractExpression implements Visitable {
     }
 
     /**
-     * The sub-expressions of this expression. Most have 0, 1, or 2.  Only
-     * functions can have variable numbers of sub-expressions (arguments).
+     * @return the sub-expressions of this expression.
      */
     public AbstractExpression [] getSubs() {
         return subs;

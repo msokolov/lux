@@ -39,6 +39,7 @@ public class FileExtensions {
                 SequenceType.makeSequenceType(ItemType.BOOLEAN, OccurrenceIndicator.ONE),
                 new SequenceType[] { SequenceType.makeSequenceType(ItemType.STRING, OccurrenceIndicator.ONE)})
         {
+            @Override
             public XdmValue call(XdmValue[] arguments) throws SaxonApiException {
                 String path = arguments[0].itemAt(0).getStringValue();
                 boolean result = new File(path).isDirectory();

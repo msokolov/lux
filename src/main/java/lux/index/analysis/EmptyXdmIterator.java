@@ -10,10 +10,12 @@ class EmptyXdmIterator extends XdmSequenceIterator {
       super(base);
     }
         
+    @Override
     public boolean hasNext () {
       return false;
     }
         
+    @Override
     public XdmItem next () {
       return null;
     }

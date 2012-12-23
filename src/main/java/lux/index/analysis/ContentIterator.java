@@ -19,6 +19,7 @@ public class ContentIterator implements Iterator<XdmNode> {
         descendants = node.axisIterator(Axis.DESCENDANT_OR_SELF);
     }
 
+    @Override
     public boolean hasNext () {
         if (next != null) {
             return true;
@@ -27,6 +28,7 @@ public class ContentIterator implements Iterator<XdmNode> {
         return next != null;
     }
         
+    @Override
     public XdmNode next () {
         if (next != null) {
             XdmNode node = next;
@@ -46,6 +48,7 @@ public class ContentIterator implements Iterator<XdmNode> {
         return null;
     }
 
+    @Override
     public void remove() {
     }
         

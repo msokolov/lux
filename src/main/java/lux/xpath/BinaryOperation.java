@@ -35,6 +35,7 @@ public class BinaryOperation extends AbstractExpression {
             this.precedence = precedence;
         }
         
+        @Override
         public String toString () {
             return token;
         }
@@ -74,6 +75,7 @@ public class BinaryOperation extends AbstractExpression {
         return operator;
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

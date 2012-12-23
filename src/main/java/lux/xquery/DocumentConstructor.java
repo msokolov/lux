@@ -10,6 +10,7 @@ public class DocumentConstructor extends AbstractExpression {
         subs = new AbstractExpression[] { content };
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

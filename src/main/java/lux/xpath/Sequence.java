@@ -52,6 +52,7 @@ public class Sequence extends AbstractExpression {
         }
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         super.acceptSubs(visitor);
         return visitor.visit(this);

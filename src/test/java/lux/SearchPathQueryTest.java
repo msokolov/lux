@@ -77,6 +77,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
      * @throws LockObtainFailedException 
      * @throws CorruptIndexException 
      */
+    @Override
     public void assertQuery (String xpath, int facts, ValueType type, Q ... queries) throws IOException {
         if (repeatCount > 1) {
             benchmark (xpath);
@@ -97,28 +98,28 @@ public class SearchPathQueryTest extends BasicQueryTest {
     }
 
     private void benchmark (String query) throws CorruptIndexException, LockObtainFailedException, IOException {
-        Evaluator eval = index.makeEvaluator();
-        XdmResultSet results = evalQuery(query, eval);
-        XdmValue baselineResult = evalBaseline(query, eval);
+        Evaluator eval2 = index.makeEvaluator();
+        XdmResultSet results = evalQuery(query, eval2);
+        XdmValue baselineResult = evalBaseline(query, eval2);
         for (int i = 0; i < repeatCount; i++) {
             long t0 = System.nanoTime();
-            evalQuery(query, eval);
+            evalQuery(query, eval2);
             long t = System.nanoTime() - t0;
             elapsed += t;
             t0 = System.nanoTime();
-            evalBaseline(query, eval);
+            evalBaseline(query, eval2);
             t = System.nanoTime() - t0;
             elapsedBaseline += t;
         }
         // TODO: also assert facts about query optimizations
         System.out.println (String.format("%dms using lux; %dms w/o lux", elapsed/1000000, elapsedBaseline/1000000));
         
-        results = evalQuery(query, eval);
-        System.out.println ("lux retrieved " + results.size() + " results from " + eval.getQueryStats());
-        printDocReaderStats(eval);
-        baselineResult = evalBaseline(query, eval);
-        System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + eval.getQueryStats());
-        printDocReaderStats(eval);
+        results = evalQuery(query, eval2);
+        System.out.println ("lux retrieved " + results.size() + " results from " + eval2.getQueryStats());
+        printDocReaderStats(eval2);
+        baselineResult = evalBaseline(query, eval2);
+        System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + eval2.getQueryStats());
+        printDocReaderStats(eval2);
     }
 
     private void printDocReaderStats(Evaluator saxon) {
@@ -127,16 +128,16 @@ public class SearchPathQueryTest extends BasicQueryTest {
                 saxon.getDocReader().getBuildTime()/1000000));
     }
 
-    private XdmValue evalBaseline(String xpath, Evaluator eval) {
+    private XdmValue evalBaseline(String xpath, Evaluator eval2) {
         XdmValue baseResult;
         XQuery xq = null;
-        Compiler compiler = eval.getCompiler();
+        Compiler compiler2 = eval2.getCompiler();
         try {
-            xq = compiler.makeTranslator().queryFor(compiler.compile(xpath));
+            xq = compiler2.makeTranslator().queryFor(compiler2.compile(xpath));
             xq = new Expandifier().expandify(xq);
             String expanded = xq.toString();
             XQueryExecutable baseline;
-            baseline = compiler.compile(expanded);
+            baseline = compiler2.compile(expanded);
             XQueryEvaluator baselineEval = baseline.load();
             baseResult = baselineEval.evaluate();
         } catch (SaxonApiException e) {
@@ -145,11 +146,11 @@ public class SearchPathQueryTest extends BasicQueryTest {
         return baseResult;
     }
 
-    private XdmResultSet evalQuery(String xpath, Evaluator eval) {
-        eval.getDocReader().clear();
-        eval.setQueryStats(new QueryStats());
-        XQueryExecutable xquery = eval.getCompiler().compile(xpath);
-        XdmResultSet results = eval.evaluate(xquery);
+    private XdmResultSet evalQuery(String xpath, Evaluator eval2) {
+        eval2.getDocReader().clear();
+        eval2.setQueryStats(new QueryStats());
+        XQueryExecutable xquery = eval2.getCompiler().compile(xpath);
+        XdmResultSet results = eval2.evaluate(xquery);
         if (!results.getErrors().isEmpty()) {
             throw new LuxException(results.getErrors().iterator().next());
         }

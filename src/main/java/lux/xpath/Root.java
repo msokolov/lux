@@ -18,6 +18,7 @@ public class Root extends AbstractExpression {
         return true;
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
     }
@@ -34,6 +35,7 @@ public class Root extends AbstractExpression {
      * @param replacement the expression to use in place of this
      * @return the same expression
      */
+    @Override
     public AbstractExpression replaceRoot(AbstractExpression replacement) {        
         return replacement;
     }

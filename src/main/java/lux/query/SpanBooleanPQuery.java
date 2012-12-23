@@ -20,6 +20,7 @@ public class SpanBooleanPQuery extends BooleanPQuery {
         super (occur, queries);
     }
     
+    @Override
     public ElementConstructor toXmlNode(String field) {
         if (getOccur().equals(Occur.MUST)) {
             return super.toXmlNode(field);

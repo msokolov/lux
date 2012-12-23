@@ -1,6 +1,7 @@
 package lux.solr;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -105,6 +106,7 @@ public class LuxSolrTest {
      * This test confirms that fields declared in solrconfig.xml/schema.xml are indexed
      * and made available for sorting, as well as exercising sorting optimization and the 
      * string sorting implementations
+     * @throws Exception 
      */
     @Test public void testSorting () throws Exception {
         // should be 1, 10, 100, 11, 12, ..., 2, 21, 22, ...

@@ -10,6 +10,7 @@ public class CommentConstructor extends AbstractExpression {
         this.subs = new AbstractExpression[] { abstractExpression };
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
     }

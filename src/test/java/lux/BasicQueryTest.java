@@ -355,13 +355,20 @@ public class BasicQueryTest {
      * that the asserted facts are passed to lux:search
      * 
      * @param xpath the expression to be tested
+     * @param expectedOptimized the expected optimized query expression
      * @param facts facts expected for the first query
      * @param type return type expected for the first query
      * @param queries the expected lucene query strings
+     * @throws Exception 
      */
 
-    public void assertQuery (String xpath, String optimized, int facts, ValueType type, Evaluator eval, Q ... queries) throws Exception {
-        assertQuery(xpath, optimized, facts, type, queries);
+    public void assertQuery (String xpath, String expectedOptimized, int facts, ValueType type, Q ... queries) throws Exception {
+        String[] qs = new String[queries.length];
+        int i = 0;
+        for (Q q : queries) {
+            qs[i++] = getQueryXml(q);
+        }
+        assertQuery (xpath, expectedOptimized, facts, type, qs);
     }
 
     private void assertSortKeys(String xpath, String ... sortFields) {
@@ -374,16 +381,6 @@ public class BasicQueryTest {
         for (int i = 0; i < sortFields.length; i++) {
             assertEquals (sortFields[i], extractor.sorts.get(i));
         }
-    }
-
-    private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, 
-            Q ... queries) {
-        String[] qs = new String[queries.length];
-        int i = 0;
-        for (Q q : queries) {
-            qs[i++] = getQueryXml(q);
-        }
-        assertQuery (xpath, expectedOptimized, facts, type, qs);
     }
 
     private void assertQuery(String xpath, String expectedOptimized, int facts, ValueType type, 
@@ -560,6 +557,7 @@ public class BasicQueryTest {
             this.queryString = queryString;
         }
 
+        @Override
         public String toString() {
             return queryString;
         }
@@ -579,6 +577,7 @@ public class BasicQueryTest {
     static class SearchExtractor extends ExpressionVisitorBase {
         ArrayList<XPathQuery> queries = new ArrayList<XPathQuery>();
         
+        @Override
         public FunCall visit (FunCall funcall) {
             if (funcall.getName().equals (FunCall.LUX_SEARCH)
                     || funcall.getName().equals (FunCall.LUX_COUNT) 
@@ -601,6 +600,7 @@ public class BasicQueryTest {
     static class SortExtractor extends ExpressionVisitorBase {
         ArrayList<String> sorts = new ArrayList<String>();
         
+        @Override
         public FunCall visit (FunCall funcall) {
             if (funcall.getName().equals (FunCall.LUX_SEARCH)) {
                 if (funcall.getSubs().length >= 3) {

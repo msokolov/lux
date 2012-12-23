@@ -17,10 +17,12 @@ public abstract class ParseableQuery {
 
     /** 
      * @param field the prevailing field in the query's surrounding context.
+     * @param config the index configuration
      * @return a String representation of the query, in the Surround Query Parser dialect
      */
     public abstract String toQueryString(String field, IndexConfiguration config);
     
+    @Override
     public String toString () {
         return toQueryString ("", IndexConfiguration.DEFAULT);
     }

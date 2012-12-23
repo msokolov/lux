@@ -29,6 +29,7 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
         contentIter = new ContentIterator(doc);
     }
     
+    @Override
     protected void updateNodeAtts () {
         getAncestorQNames();        
     }
