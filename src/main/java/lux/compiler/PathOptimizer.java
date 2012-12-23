@@ -11,8 +11,8 @@ import lux.Compiler.SearchStrategy;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
-import lux.query.ParseableQuery;
 import lux.query.NodeTextQuery;
+import lux.query.ParseableQuery;
 import lux.query.SpanTermPQuery;
 import lux.query.TermPQuery;
 import lux.xml.QName;
@@ -51,6 +51,8 @@ import org.apache.lucene.search.SortField;
 /**
  * Prepares an XPath expression tree for indexed execution against a
  * Lux data store.
+ * 
+ * This class is part of the Lux internal API and is not intended to be called by consumers of the API.
  *
  * The general strategy here is to consider each expression in isolation,
  * determining whether it imposes any restriction on its context, and then
