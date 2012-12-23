@@ -10,11 +10,17 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 
+/**
+ * Executes a Lucene search and provides the results as a Saxon {@link SequenceIterator}.
+ * Sort criteria are translated into Lucene SortFields: relevance score, intrinsic document order, and
+ * field-value orderings are supported.
+ */
 public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     
     private final DocIdSetIterator docIter;
@@ -26,6 +32,16 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     private NodeInfo current = null;
     private int position = 0;
     
+    /**
+     * Executes a Lucene search.
+     * @param eval provides the link to the index via its {@link IndexSearcher}.
+     * @param query the query to execute
+     * @param sortCriteria sort criteria, formatted as a comma-separated list of sort field names;
+     * each name may be followed by ascending|descending.  The sort criteria are Lucene field names, or
+     * may be the special name "lux:score", which selects relevance score ranking. If null, results
+     * are returned in intrinsic document order.
+     * @throws IOException
+     */
     public SearchResultIterator (Evaluator eval, Query query, String sortCriteria) throws IOException {
         this (eval.getSearcher(), eval.getDocReader(), eval.getQueryStats(), query, sortCriteria);
     }
@@ -80,6 +96,12 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         return new Sort(sortFields);
     }
 
+    /**
+     * @return the next result.  Returns null when there are no more results.
+     * Calling this function after null has been returned may result
+     * in an error.
+     * @throws XPathException if there is an error while searching
+     */
     public NodeInfo next() throws XPathException {
         long t = System.nanoTime();
         int startPosition = position;
@@ -114,18 +136,32 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         return current;
     }
 
+    /**
+     * @return the current result.  This is the last result returned by next(), and will be null if there
+     * are no more results.
+     */
     public NodeInfo current() {
         return current;
     }
 
+    /**
+     * @return the (0-based) index of the next result: this will be 0 before any calls to next(), and -1 after the last
+     * result has been retrieved.
+     */
     public int position() {
         return position;
     }
 
+    /**
+     * does nothing
+     */
     public void close() {
         // Saxon doesn't call this reliably
     }
 
+    /**
+     * @return a clone of this iterator, reset to the initial position.
+     */
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
             return new SearchResultIterator (searcher, docCache, stats, query, sortCriteria);
@@ -134,6 +170,10 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         }
     }
 
+    /**
+     *  This iterator has no special properties
+     * @return 0
+     */
     public int getProperties() {
         return 0;
     }

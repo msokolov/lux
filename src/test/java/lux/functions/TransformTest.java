@@ -1,15 +1,13 @@
 package lux.functions;
 
+import static org.junit.Assert.assertEquals;
 import lux.QueryContext;
 import lux.XdmResultSet;
 import lux.xml.QName;
-
 import net.sf.saxon.s9api.XdmAtomicValue;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class TransformTest extends XQueryTest {
     
@@ -40,7 +38,7 @@ public class TransformTest extends XQueryTest {
         QueryContext context = new QueryContext();
         context.bindVariable(new QName("external-var"), new XdmAtomicValue(10));
         XdmResultSet results = evaluator.evaluate(evaluator.getCompiler().compile(query), context);
-        assertNull ("got an unexpected error", results.getErrors());
+        assertEquals ("got an unexpected error", 0, results.getErrors().size());
         assertEquals ("undefined", results.iterator().next().toString());
     }
 }

@@ -6,6 +6,9 @@ import java.util.Map;
 
 import lux.xml.QName;
 
+/**
+ * Holds external query context: variable bindings and the context item.
+ */
 public class QueryContext {
     
     private HashMap<QName, Object> variables;

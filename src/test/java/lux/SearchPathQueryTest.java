@@ -150,7 +150,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
         eval.setQueryStats(new QueryStats());
         XQueryExecutable xquery = eval.getCompiler().compile(xpath);
         XdmResultSet results = eval.evaluate(xquery);
-        if (results.getErrors() != null) {
+        if (!results.getErrors().isEmpty()) {
             throw new LuxException(results.getErrors().iterator().next());
         }
         return results;

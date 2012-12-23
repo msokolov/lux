@@ -1,7 +1,7 @@
 package lux;
 
 /**
- * A class that holds statistics about the last query execution
+ * Holds statistics about a single query execution
  */
 public class QueryStats {
     /**

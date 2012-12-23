@@ -1,24 +1,23 @@
 package lux;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Iterator;
 
 import javax.xml.transform.TransformerException;
 
-import org.apache.lucene.store.LockObtainFailedException;
-import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.index.CorruptIndexException;
-
-import lux.XdmResultSet;
 import lux.index.XmlIndexer;
-import lux.index.field.XPathField;
 import lux.index.field.FieldDefinition.Type;
-
+import lux.index.field.XPathField;
 import net.sf.saxon.s9api.XdmItem;
 
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.store.LockObtainFailedException;
+import org.apache.lucene.store.RAMDirectory;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -161,7 +160,7 @@ public class XPathFieldTest {
     
     private void assertResultSequence (String query, String ... results) throws TransformerException {
         XdmResultSet resultSet = eval.evaluate(query);
-        if (resultSet.getErrors() != null) {
+        if (! resultSet.getErrors().isEmpty()) {
             throw resultSet.getErrors().get(0);
         }
         Iterator<XdmItem> iter = resultSet.iterator();

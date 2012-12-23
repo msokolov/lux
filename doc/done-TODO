@@ -99,6 +99,10 @@ This works OK but requires some minor damage to solr. Might be better as a
 separate lightweight app??
 ** Need to create a mini-app
 map /*.xqy to XQueryServlet -- can we do this in jetty webdefault
+*** LuxSolrFilter
+We need to build a Filter rather than (or in addition to a Servlet)
+so we can siphon off xquery webapp requests before handing off to solr
+This filter could also be used to shut off external access to Solr...
 ** solr QueryResponseWriter
 that serializes the output of XQuery evaluation as HTML (and/or XML or
 text).  Can configure a path should map to either a folder on the

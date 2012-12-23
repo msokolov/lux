@@ -175,19 +175,19 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     ));
         }
         XdmResultSet queryResults = evaluator.evaluate(expr, context);
-        for (Object xpathResult : queryResults) {
-            if (++ count < start) {
-                continue;
-            }
-            addResult (xpathResults, (XdmItem) xpathResult);
-            if ((len > 0 && xpathResults.size() >= len) || 
-                    (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
-                break;
+        if (queryResults.getErrors().isEmpty()) {
+            for (Object xpathResult : queryResults) {
+                if (++ count < start) {
+                    continue;
+                }
+                addResult (xpathResults, (XdmItem) xpathResult);
+                if ((len > 0 && xpathResults.size() >= len) || 
+                        (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
+                    break;
+                }
             }
         }
-        rsp.add("xpath-results", xpathResults);
-        result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
-        if (queryResults.getErrors() != null) {
+        else {
             for (TransformerException te : queryResults.getErrors()) {
                 if (te.getLocator() != null) {
                     rsp.add("xpath-error", te.getMessage() + " on line " + te.getLocator().getLineNumber() + " at column " + te.getLocator().getColumnNumber());
@@ -196,6 +196,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 }
             }
         }
+        rsp.add("xpath-results", xpathResults);
+        result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);
         logger.debug ("retrieved: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +

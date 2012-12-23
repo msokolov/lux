@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 
+/**
+ * Captures errors produced by Saxon during compilation and evaluation of queries.
+ * Maintains a list of TransformerExceptions.
+ */
 public class TransformErrorListener implements ErrorListener {
     
     public TransformErrorListener () {
@@ -41,3 +45,7 @@ public class TransformErrorListener implements ErrorListener {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

@@ -6,6 +6,11 @@ import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.SlashExpression;
 import net.sf.saxon.expr.sort.DocumentSorter;
 
+/** This Optimizer provides asserts that search results are sorted in document order (when they are), so they don't
+ * have to be re-sorted by Saxon. For use with Saxon HE only: PE/EE provide their own, and the optimization provided here is not compatible 
+ * with those.  There is no need for users of these classes to create this explicitly - it is managed by Evaluator.
+ * 
+ */
 public class Optimizer extends net.sf.saxon.expr.parser.Optimizer {
     
     private SaxonTranslator translator;    

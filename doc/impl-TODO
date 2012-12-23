@@ -1,10 +1,6 @@
 * demo
 ** standalone webapp 
 so you can build prototypes/reports, etc using xquery/html
-*** LuxSolrFilter
-We need to build a Filter rather than (or in addition to a Servlet)
-so we can siphon off xquery webapp requests before handing off to solr
-This filter could also be used to shut off external access to Solr...
 ** query sandbox
 *** create an xquery-based one?
 would require eval

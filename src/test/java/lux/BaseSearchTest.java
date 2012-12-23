@@ -70,7 +70,7 @@ public abstract class BaseSearchTest {
 
     protected XdmResultSet assertSearch(String expectedResult, String query, Integer props, Integer docCount, Integer cacheMisses) throws Exception {
         XdmResultSet results = assertSearch (query, props, docCount, cacheMisses);
-        if (results.getErrors() != null) {
+        if (! results.getErrors().isEmpty()) {
             throw results.getErrors().iterator().next();
         }
         boolean hasResults = results.iterator().hasNext();
@@ -101,7 +101,7 @@ public abstract class BaseSearchTest {
         Evaluator eval = index.makeEvaluator();
         XQueryExecutable expr = eval.getCompiler().compile(query);
         XdmResultSet results = (XdmResultSet) eval.evaluate(expr);
-        if (results.getErrors() != null) {
+        if (! results.getErrors().isEmpty()) {
             throw new LuxException (results.getErrors().get(0).getMessage());
         }
         QueryStats stats = eval.getQueryStats();

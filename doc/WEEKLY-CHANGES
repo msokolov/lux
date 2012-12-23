@@ -70,9 +70,11 @@ PE/EE.  Where we can prove that document order is not required we now
 generate a flwor expression rather than an xpath, so that we are not
 imposing a requirement to sort results in document order.
 
-Implemented xpath indexes, and order by optimizations that can use them via
-lux:field-values().  Fixed a longstanding bug where we would optimize too
-many functions by default: we are now conservative - we don't use a
+Sorting!
+
+Implemented xpath indexes, and "order by" optimizations that can use them
+via lux:field-values().  Fixed a longstanding bug where we would optimize
+too many functions by default: we are now conservative - we don't use a
 function's arguments to limit the query unless we can prove that it
 preserves sequences.
 
@@ -84,4 +86,14 @@ that we didn;t get in Saxon's way.
 UPCOMING
 
 ****** package and RELEASE 0.4 to ifactory
+
+12/22/2012
+
+Enhancements to demo: includes content loading
+
+Servlet Filter enables cleaner integration w/Solr
+
+Namespace-aware searching (handle prefix mappings to resolve prefixes in queries)
+
+Relevance ordering!
 
