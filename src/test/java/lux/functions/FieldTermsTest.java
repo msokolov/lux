@@ -1,7 +1,6 @@
 package lux.functions;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,10 +41,8 @@ public class FieldTermsTest {
     @Test
     public void testAllTerms () throws Exception {
         ArrayList<String> terms = getFieldTerms("lux:field-terms()");
-        // make the condition a bit loose so that if we add fields or more
-        // text, the test will still pass OK.  We basically want to make sure that
-        // argument passing works when there is no field or start position specified
-        assertTrue (terms.size() > 50);
+        assertArrayEquals(new String[] { "0", "12345678", "end", "escaped", "is", "markup", "some", "test", "that", "the", "this", "ģé"}, 
+                terms.toArray(new String[0]));
     }
     
     @Test

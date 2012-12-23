@@ -1,6 +1,8 @@
 package lux.functions;
 
-import static lux.index.IndexConfiguration.*;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.STORE_XML;
 import lux.IndexTestSupport;
 import lux.index.XmlIndexer;
 

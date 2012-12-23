@@ -68,10 +68,12 @@ public class IndexTestSupport {
         // create an in-memory Lucene index, index some content
         this.indexer = indexer;
         this.dir = dir;
+        indexWriter = indexer.getIndexWriter(dir);
         if (xmlFiles != null) {
             for (String file : xmlFiles) {
                 indexAllElements (file);
             }
+            indexWriter.close(true);
         } else {
             // initialize an empty index
             indexer.getIndexWriter(dir).close();
@@ -125,7 +127,6 @@ public class IndexTestSupport {
             ++totalDocs;
         }
         indexWriter.commit();
-        indexWriter.close(true);
     }
     
     public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {

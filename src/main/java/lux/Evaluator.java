@@ -53,7 +53,8 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
     private LuxSearcher searcher;
     private LuxQueryParser queryParser;
     private XmlQueryParser xmlQueryParser;
-    private QueryStats queryStats;    
+    private QueryStats queryStats;
+    private URIResolver defaultURIResolver;
 
     /**
      * Creates an evaluator that uses the provided objects to evaluate queries.
@@ -66,6 +67,7 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
         this.compiler = compiler;
         this.searcher = searcher;
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
+        defaultURIResolver = config.getURIResolver();
         config.setURIResolver(this);
         config.setCollectionURIResolver(this);
         builder = compiler.getProcessor().newDocumentBuilder();
@@ -174,6 +176,10 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
     public Source resolve(String href, String base) throws TransformerException {
         if (href.startsWith("file:")) {
             // let the default resolver do its thing
+            if (defaultURIResolver != null) {
+                return defaultURIResolver.resolve(href, base);
+            }
+            // shouldn't happen, as I read the Saxon source...
             return null;
         }
         if (searcher == null) {

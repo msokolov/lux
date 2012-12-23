@@ -32,6 +32,7 @@ import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XsltCompiler;
 
+import org.expath.pkg.saxon.PkgInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.EntityResolver;
@@ -159,7 +160,10 @@ public class Compiler {
                 return new Processor (true);
             }
         } catch (ClassNotFoundException e) { }
-        return new Processor (new Config());
+        Processor p = new Processor (new Config());
+        // initialize the EXPath package manager
+        new PkgInitializer().initialize(p.getUnderlyingConfiguration());
+        return p;
     }
     
     private void registerExtensionFunctions() {

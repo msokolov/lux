@@ -92,7 +92,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             } catch (org.apache.lucene.queryParser.ParseException e) {
                 throw new XPathException (e.getMessage(), e);
             } catch (ParserException e) {
-                throw new XPathException ("Failed to parse xml query " + queryArg.toString(), e);
+                throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
             return iterate (query, eval, facts, sortCriteria);

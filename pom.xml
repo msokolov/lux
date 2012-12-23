@@ -12,6 +12,20 @@
         <systemPath>${project.basedir}/lib/saxon9he.jar</systemPath>
     </dependency>
     <dependency>
+      <groupId>expath</groupId>
+      <artifactId>expath-repo</artifactId>
+      <version>0.11</version>
+        <scope>system</scope>
+      <systemPath>${project.basedir}/lib/pkg-repo.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>expath</groupId>
+      <artifactId>expath-saxon</artifactId>
+      <version>0.11</version>
+        <scope>system</scope>
+      <systemPath>${project.basedir}/lib/pkg-saxon.jar</systemPath>
+    </dependency>
+    <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
         <version>1.6.2</version>

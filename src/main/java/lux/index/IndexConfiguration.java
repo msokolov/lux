@@ -232,9 +232,7 @@ public class IndexConfiguration {
     }
     
     public String getDefaultFieldName () {
-        return isOption(INDEX_PATHS) ? 
-                getFieldName(FieldName.PATH) : 
-                    getFieldName(FieldName.ELT_QNAME);
+        return getFieldName (XML_TEXT);
     }
     
     /**
