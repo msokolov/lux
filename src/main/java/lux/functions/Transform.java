@@ -19,7 +19,9 @@ import net.sf.saxon.tree.iter.UnfailingIterator;
 import net.sf.saxon.value.SequenceType;
 
 /**
- * This function transforms a node with an XSLT stylesheet.
+ * <code>lux:transform($stylesheet as node(), $context as node()) as node()
+ * <p>This function transforms a node with an XSLT stylesheet.  If the stylesheet produces
+ * a result that is not a single node, an error will be thrown.</p>
  */
 public class Transform extends ExtensionFunctionDefinition {
 
@@ -72,3 +74,8 @@ public class Transform extends ExtensionFunctionDefinition {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+

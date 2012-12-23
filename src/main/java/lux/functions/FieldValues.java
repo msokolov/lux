@@ -19,16 +19,22 @@ import net.sf.saxon.value.StringValue;
 import org.apache.lucene.document.Document;
 
 /**
-* <code>function lux:field($name as xs:string) returning xs:anyAtomicItem*</code>
+* <code>function lux:field-values($field-name as xs:string, $node as node()) as xs:anyAtomicItem*</code>
 * 
-* accepts the name of a lucene field and optionally, a node, and returns
+* <p>Accepts the name of a lucene field and optionally, a node, and returns
 * any stored value(s) of the field for the document containing
-* the node, or the context item if no node is specified.  
+* the node, or the context item if no node is specified.</p>
+* 
+* <p>
 * If the node (or context item) is not a node drawn from the index, lux:field will return the
-* empty sequence.  
-* Order by expressions containing lux:key calls are subject to special optimization and are able to be
-* implemented by index-optimized sorting in Lucene where possible.  An error results if an attempt is made
+* empty sequence.
+* </p>
+* 
+* <p>
+* Order by expressions containing lux:field-values calls are subject to special optimization and are often able to be
+* implemented by index-optimized sorting in Lucene.  An error results if an attempt is made
 * to sort by a field that has multiple values for any of the documents in the sequence.
+* </p>
 */
 public class FieldValues extends ExtensionFunctionDefinition {
 
@@ -110,5 +116,8 @@ public class FieldValues extends ExtensionFunctionDefinition {
         
     }
 
-
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

@@ -14,7 +14,9 @@ import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
 /**
- * This function inserts a document to the index at the given uri.  
+ * <code>function lux:insert-document($uri as xs:string, $node as node()) as empty-sequence()</code>
+ * <p>inserts a document to the index at the given uri.  lux:commit() must be called for the result
+ * to become visible.</p>
  */
 public class InsertDocument extends ExtensionFunctionDefinition {
 
@@ -66,3 +68,7 @@ public class InsertDocument extends ExtensionFunctionDefinition {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

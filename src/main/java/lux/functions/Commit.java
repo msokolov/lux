@@ -13,7 +13,8 @@ import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
 /**
- * This function inserts a document to the index at the given uri.  
+ * <code>function lux:commit() as empty-sequence()</code>
+ * <p>Commits pending updates to the index and blocks until the operation is complete.</p>
  */
 public class Commit extends ExtensionFunctionDefinition {
 
@@ -61,3 +62,8 @@ public class Commit extends ExtensionFunctionDefinition {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+

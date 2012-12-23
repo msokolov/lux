@@ -15,6 +15,15 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
+/**
+ * <code>function lux:count($query as item(), $hints as xs:int?) as xs:integer</code>
+ * <p>
+ * This function counts the number of results of a search.  It is faster and uses less memory 
+ * than calling fn:count() on the search results themselves because it does not need to load
+ * the result documents in memory.  See {@link Search} for an explanation of the supported
+ * $query formats.
+ * </p>
+ */
 public class Count extends SearchBase {
     
     public Count() { }
@@ -34,7 +43,8 @@ public class Count extends SearchBase {
         return true;
     }
     
-    @Override public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
+    @Override 
+    public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {

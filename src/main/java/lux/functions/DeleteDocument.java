@@ -12,8 +12,11 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
-/**
- * This function inserts a document to the index at the given uri.  
+/** 
+ * <code>function lux:delete-document($uri as xs:string) as empty-sequence()</code>
+ * <p>
+ * This function deletes a document from the index at the given uri.
+ * </p>
  */
 public class DeleteDocument extends ExtensionFunctionDefinition {
 
@@ -46,10 +49,10 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
 
     @Override
     public ExtensionFunctionCall makeCallExpression() {
-        return new InsertDocumentCall ();
+        return new DeleteDocumentCall ();
     }
     
-    class InsertDocumentCall extends ExtensionFunctionCall {
+    class DeleteDocumentCall extends ExtensionFunctionCall {
 
         @Override
         public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
@@ -63,3 +66,8 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+

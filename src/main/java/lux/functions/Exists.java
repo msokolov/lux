@@ -16,6 +16,15 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
+/**
+ * <code>function lux:count($query as item(), $hints as xs:int?) as xs:integer</code>
+ *<p>
+ * This function tests whether a search has any results.  It is faster and uses less memory 
+ * than calling fn:exists() on the search results themselves because it does not need to load
+ * any result documents in memory.  See {@link Search} for an explanation of the supported
+ * $query formats.
+ * </p>
+ */
 public class Exists extends SearchBase {
     
     public Exists() { }
@@ -35,7 +44,8 @@ public class Exists extends SearchBase {
         return true;
     }
     
-    @Override public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
+    @Override 
+    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {

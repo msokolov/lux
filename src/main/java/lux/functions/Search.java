@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import lux.Evaluator;
 import lux.SearchResultIterator;
+import lux.query.parser.LuxQueryParser;
+import lux.query.parser.XmlQueryParser;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.om.NodeInfo;
@@ -16,8 +18,10 @@ import net.sf.saxon.value.SequenceType;
 import org.apache.lucene.search.Query;
 
 /**
- * Executes a Lucene search query and returns documents.
- * 
+ * <code>function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?) as document-node()*</code>
+ * <p>Executes a Lucene search query and returns documents.  If the query argument is an element or document 
+ * node, it is parsed using the {@link XmlQueryParser}; otherwise its string value is parsed using the {@link LuxQueryParser}.
+ * For details about the query syntaxes, see the parser documentation.</p>
  */
 public class Search extends SearchBase {
     

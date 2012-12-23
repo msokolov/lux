@@ -6,7 +6,9 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.SequenceType;
 import net.sf.saxon.s9api.XdmValue;
 
-
+/**
+ * Convenience class for defining extension functions
+ */
 public abstract class Function implements ExtensionFunction {
     
     private final QName qname;
@@ -37,3 +39,7 @@ public abstract class Function implements ExtensionFunction {
     public abstract XdmValue call(XdmValue[] arguments) throws SaxonApiException;
     
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

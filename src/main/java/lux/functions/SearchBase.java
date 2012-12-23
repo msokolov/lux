@@ -25,6 +25,9 @@ import org.apache.lucene.xmlparser.ParserException;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
+/**
+ * A base class for functions that execute search queries.
+ */
 public abstract class SearchBase extends ExtensionFunctionDefinition {
 
     public SearchBase() {
@@ -130,6 +133,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             }
             return luxQueryParser.parse(queryArg.getStringValue());
         }
+        
     }
   
 }

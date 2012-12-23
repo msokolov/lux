@@ -2,10 +2,9 @@ package lux.functions;
 
 import java.io.IOException;
 
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
-
 import lux.Evaluator;
+import lux.index.IndexConfiguration;
+import lux.index.field.XmlTextField;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -17,12 +16,21 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.SequenceType;
 
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermEnum;
+
 
 /**
+ * <code>function lux:field-terms($field-name as xs:string?, $start as xs:string?) as xs:anyAtomicItem*</code>
+ * <p>
  * This function accepts the name of a Lucene field, and a starting value,
  * and returns the sequence of terms drawn from the field, ordered according
  * to its natural order, starting with the first term that is >= the starting value.
- * 
+ * </p>
+ * <p>
+ * If the $field-name argument is empty, the terms are drawn from the default field defined by the {@link IndexConfiguration},
+ * generally the {@link XmlTextField}.
+ * </p>
  */
 public class FieldTerms extends ExtensionFunctionDefinition {
 
@@ -81,10 +89,9 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             Evaluator saxon = (Evaluator) context.getConfiguration().getCollectionURIResolver();
             try {
                 if (fieldName == null) {
-                    return new TermsIterator (saxon, null);
-                } else {
-                    return new TermsIterator (saxon, new Term(fieldName, start));
+                    fieldName = saxon.getCompiler().getIndexConfiguration().getDefaultFieldName();
                 }
+                return new TermsIterator (saxon, new Term(fieldName, start));
             } catch (IOException e) {
                 throw new XPathException ("failed getting terms from field " + fieldName, e);
             }
@@ -165,3 +172,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
