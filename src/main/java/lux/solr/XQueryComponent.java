@@ -73,6 +73,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
     }
     
+    @Override
     public void init(@SuppressWarnings("rawtypes") NamedList args) {
         String base;
         if (args.get("lux.base-uri") != null) {
@@ -93,6 +94,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
     }
     
+    @Override
     public void inform(SolrCore core) {
         // Read the init args from the LuxUpdateProcessorFactory's configuration since we require
         // this plugin to use compatible configuration
@@ -116,34 +118,34 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     public void process(ResponseBuilder rb) throws IOException {
 
         SolrQueryRequest req = rb.req;
-        SolrQueryResponse rsp = rb.rsp;
         SolrParams params = req.getParams();
-        if (!params.getBool(COMPONENT_NAME, true)) {
+        if (!params.getBool(XQUERY_COMPONENT_NAME, true)) {
           return;
         }
-        //req.getCore().getUpdateHandler().
-        SolrIndexSearcher searcher = req.getSearcher();
-        SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
-        // ignored for now
         int start = params.getInt( CommonParams.START, 1 );
-        long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
         // multiple shards not implemented
-        DocWriter docWriter = new SolrDocWriter (indexer, req.getCore().getUpdateHandler());
-        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
-        String query = rb.getQueryString();
-        if (StringUtils.isBlank(query)) {
-            rsp.add("xpath-error", "query was blank");
-        } else {
-            evaluateQuery(rb, rsp, result, evaluator, start, timeAllowed, len, query);
-        }
+        evaluateQuery(rb, start, len);
     }
 
-    protected void evaluateQuery(ResponseBuilder rb, SolrQueryResponse rsp, SolrIndexSearcher.QueryResult result, 
-            Evaluator evaluator,
-            int start, long timeAllowed, int len, String query) {
+    protected void evaluateQuery(ResponseBuilder rb, int start, int len) {
+        String query = rb.getQueryString();
+        SolrQueryRequest req = rb.req;
+        SolrQueryResponse rsp = rb.rsp;
+        if (StringUtils.isBlank(query)) {
+            rsp.add("xpath-error", "query was blank");
+            return;
+        }
+        SolrParams params = req.getParams();
+        long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
+        if (!params.getBool(XQUERY_COMPONENT_NAME, true)) {
+            return;
+        }
         XQueryExecutable expr;
-        Compiler compiler = evaluator.getCompiler();
+        SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
+        SolrIndexSearcher searcher = rb.req.getSearcher();
+        DocWriter docWriter = new SolrDocWriter (indexer, rb.req.getCore().getUpdateHandler());
+        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         try {
             // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
             // of the query so error reporting will be able to report it
@@ -240,16 +242,16 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             xpathResults.add(nodeKind.toString().toLowerCase(), node.toString());
         }
     }
-	public static final String COMPONENT_NAME = "xpath";
+	public static final String XQUERY_COMPONENT_NAME = "xquery";
 
     @Override
     public String getDescription() {
-        return "XPath";
+        return "XQuery";
     }
 
     @Override
     public String getSourceId() {
-        return "lux.XPathSearchComponent";
+        return "lux.XQueryComponent";
     }
 
     @Override
@@ -259,7 +261,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     @Override
     public String getVersion() {
-        return "0.4";
+        return "0.5";
     }
     
 }

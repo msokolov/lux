@@ -1,10 +1,9 @@
 package lux.functions.file;
 
-import lux.functions.Function;
-
 import java.io.File;
 import java.util.Arrays;
 
+import lux.functions.Function;
 import net.sf.saxon.s9api.ExtensionFunction;
 import net.sf.saxon.s9api.ItemType;
 import net.sf.saxon.s9api.OccurrenceIndicator;
@@ -18,7 +17,12 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
 
 /**
- * Provides a (very incomplete, noncompliant) implementation of http://www.expath.org/spec/file
+ * <p>Provides a (very incomplete, noncompliant) implementation of http://www.expath.org/spec/file</p>
+ * <code>file:is-dir($path as xs:string) as xs:boolean</code>
+ * <p>returns true iff the file at the given path exists and is a directory.</p>
+ * <code>file:list($path as xs:string) as xs:string*</code>
+ * <p>If $path is a directory, returns the names of files (and directories) in the directory in a system-dependent order.
+ * The directory itself and its parent are not included in the list</p>
  */
 public class FileExtensions {
     
@@ -67,3 +71,7 @@ public class FileExtensions {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

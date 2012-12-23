@@ -1,6 +1,12 @@
 package lux.index;
 
-import static javax.xml.stream.XMLStreamConstants.*;
+import static javax.xml.stream.XMLStreamConstants.CDATA;
+import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.ENTITY_REFERENCE;
+import static javax.xml.stream.XMLStreamConstants.SPACE;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +41,7 @@ public class QNameTextMapper extends XmlPathMapper {
         return names;
     }
     
+    @Override
     public void reset () {
         super.reset();
         depth = -1;
@@ -42,6 +49,7 @@ public class QNameTextMapper extends XmlPathMapper {
         values.clear();
     }
     
+    @Override
     public void handleEvent(XMLStreamReader reader, int eventType) {
         StringBuilder buf;
         switch (eventType) {

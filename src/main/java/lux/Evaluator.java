@@ -102,24 +102,25 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
     
     /**
      * Evaluate the already-compiled query, with no context defined.
-     * @param query a compiled XQuery expression
+     * @param xquery a compiled XQuery expression
      * @return the results of the evaluation; any errors are encapsulated in the result set.
      */
-    public XdmResultSet evaluate(XQueryExecutable exec) {
-        return evaluate (exec, null);
+    public XdmResultSet evaluate(XQueryExecutable xquery) {
+        return evaluate (xquery, null);
     }
 
     /**
      * Evaluate the already-compiled query, with the given context (external variable bindings, context item) defined.
-     * @param query a compiled XQuery expression
+     * @param xquery a compiled XQuery expression
+     * @param context the query context holds external variable bindings and the context item
      * @return the results of the evaluation; any errors are encapsulated in the result set.
      */
-    public XdmResultSet evaluate(XQueryExecutable xqueryExec, QueryContext context) { 
+    public XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context) { 
         if (context == null) {
             context = new QueryContext();
         }
         try {
-            XQueryEvaluator eval = xqueryExec.load();
+            XQueryEvaluator eval = xquery.load();
             eval.setErrorListener(compiler.getErrorListener());
             if (context != null) {
                 eval.setContextItem((XdmItem) context.getContextItem());
@@ -169,6 +170,7 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
      * @throws TransformerException if the document is not found in the index, or there was an IOException
      * thrown by Lucene.
      */
+    @Override
     public Source resolve(String href, String base) throws TransformerException {
         if (href.startsWith("file:")) {
             // let the default resolver do its thing
@@ -199,6 +201,7 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
      * are resolved using the default resolver.
      * @param base the base uri of the calling context (see {@link CollectionURIResolver}).  This is ignored for lux queries.
      */
+    @Override
     public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
         if (StringUtils.isEmpty(href)) {
             return new Search().iterate(new MatchAllDocsQuery(), this, 0, null);

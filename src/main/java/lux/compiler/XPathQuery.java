@@ -203,8 +203,13 @@ public class XPathQuery {
     }
 
     /**
-     * Combines this query with another, while specifying a valueType
-     * restriction for the resultant query's results.
+     * Combines this query with another.
+     * @param occur the occurrence specifier for this query
+     * @param precursor the other query
+     * @param precursorOccur the occurrence specifier for the precursor query
+     * @param type the return type of the combined query
+     * @param config the index configuration
+     * @return the combined query
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
         long resultFacts = combineQueryFacts (this, precursor);
@@ -231,10 +236,13 @@ public class XPathQuery {
     }
 
     /**
-     * Combines this query with another, while specifying a valueType
-     * restriction for the resultant query's results, and an allowable
-     * distance between the two queries.  Generates Lucene SpanQuerys, and
+     * Combines this query with another, separated by the given distance.  Generates Lucene SpanQuerys, and
      * the constituent queries must be span queries as well.
+     * @param precursor the other query
+     * @param occur the boolean operator used to combine
+     * @param type the return type of the combined query
+     * @param distance the distance between the queries
+     * @return the combined query
      */
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance) {
         long resultFacts = combineQueryFacts (this, precursor);
@@ -318,6 +326,7 @@ public class XPathQuery {
         return this == MATCH_ALL || this == UNINDEXED || this == MATCH_ALL_NODE;
     }
     
+    @Override
     public String toString () {
         return query == null ? "" : query.toString();
     }

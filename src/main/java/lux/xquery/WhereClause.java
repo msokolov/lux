@@ -11,10 +11,12 @@ public class WhereClause extends FLWORClause {
         this.predicate = predicate;
     }
     
+    @Override
     public AbstractExpression getSequence() {
         return predicate;
     }
     
+    @Override
     public void setSequence (AbstractExpression seq) {
         this.predicate = seq;
     }
@@ -25,6 +27,7 @@ public class WhereClause extends FLWORClause {
         predicate.toString(buf);
     }
 
+    @Override
     public WhereClause accept(ExpressionVisitor visitor) {
         predicate = predicate.accept(visitor);
         return visitor.visit(this);

@@ -35,22 +35,27 @@ public class QNameAttributeImpl extends AttributeImpl implements QNameAttribute 
         ((QNameAttributeImpl) target).qnames.addAll (qnames);
     }
 
+    @Override
     public boolean hasNext() {
         return iQName >= 0 && iQName < qnames.size();
     }
     
+    @Override
     public QName next() {
         return qnames.get(iQName++);
     }
 
+    @Override
     public void addQName(QName qname) {
         qnames.add(qname);
     }
     
+    @Override
     public void clearQNames () {
         qnames.clear();
     }
 
+    @Override
     public boolean onFirst() {
         return iQName == 0;
     }

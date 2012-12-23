@@ -41,6 +41,7 @@ public class XdmResultSet implements Iterable<XdmItem> {
     /**
      * @return the result of the query evaluation, as an {@link XdmItem} iterator.
      */
+    @Override
     public Iterator<XdmItem> iterator() {
         return value.iterator();
     }

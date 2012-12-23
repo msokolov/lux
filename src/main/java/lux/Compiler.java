@@ -43,12 +43,6 @@ import org.xml.sax.SAXException;
  * This class is thread-safe, and should be re-used for multiple queries.  
  */
 public class Compiler {
-
-    public enum Dialect {
-        XPATH_1,
-        XPATH_2,
-        XQUERY_1
-    }
     
     private final Logger logger;
     private final Processor processor;
@@ -79,12 +73,15 @@ public class Compiler {
     /** Creates a Compiler configured according to the given {@link IndexConfiguration}. 
      * A Saxon Processor is generated using the installed version of Saxon.  If a licensed version of Saxon 
      * (PE or EE) is installed, the presence of a license is asserted so as to enable the use of licensed Saxon features.
+     * @param config the index configuration
      */
-    public Compiler (IndexConfiguration indexConfig) {
-        this (makeProcessor(), indexConfig);
+    public Compiler (IndexConfiguration config) {
+        this (makeProcessor(), config);
     }
     
     /** Creates a Compiler using the provided {@link Processor} and {@link IndexConfiguration}.
+     * @param processor the Saxon Processor
+     * @param indexConfig the index configuration
      */
     public Compiler(Processor processor, IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
@@ -105,7 +102,7 @@ public class Compiler {
             searchStrategy = SearchStrategy.LUX_SEARCH;
         }
         defaultCollectionURIResolver = config.getCollectionURIResolver();
-        registerExtensionFunctions(processor);
+        registerExtensionFunctions();
         if (indexConfig != null && indexConfig.isIndexingEnabled()) {
             uriFieldName = indexConfig.getFieldName(FieldName.URI);
         } else {
@@ -165,7 +162,7 @@ public class Compiler {
         return new Processor (new Config());
     }
     
-    private void registerExtensionFunctions(Processor processor) {
+    private void registerExtensionFunctions() {
         // TODO: move this list into a single class in the lux.functions package
         processor.registerExtensionFunction(new Search());
         processor.registerExtensionFunction(new Count());

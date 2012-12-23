@@ -28,6 +28,7 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
         nextDocID = id;
     }
     
+    @Override
     public long allocateDocumentNumber() {
         long id;
         if (nextDocID != null) {

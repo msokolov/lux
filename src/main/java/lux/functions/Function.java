@@ -36,6 +36,7 @@ public abstract class Function implements ExtensionFunction {
        return argumentTypes;
     }
     
+    @Override
     public abstract XdmValue call(XdmValue[] arguments) throws SaxonApiException;
     
 }

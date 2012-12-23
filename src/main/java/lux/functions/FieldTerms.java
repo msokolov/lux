@@ -112,13 +112,13 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             pos = 0;
         }
 
-        private TermEnum createTerms(Term term) throws IOException {
-            if (term != null) {
-                return eval.getSearcher().getIndexReader().terms (term);
+        private TermEnum createTerms(Term t) throws IOException {
+            if (t != null) {
+                return eval.getSearcher().getIndexReader().terms (t);
             } else {
-                TermEnum terms = eval.getSearcher().getIndexReader().terms ();
-                terms.next(); // position on first term as we do when a term start position is given
-                return terms;
+                TermEnum tenum = eval.getSearcher().getIndexReader().terms ();
+                tenum.next(); // position on first term as we do when a term start position is given
+                return tenum;
             }
         }
 

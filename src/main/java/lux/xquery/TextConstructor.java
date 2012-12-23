@@ -10,6 +10,7 @@ public class TextConstructor extends AbstractExpression {
         subs = new AbstractExpression [] { expression };
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         acceptSubs(visitor);
         return visitor.visit(this);

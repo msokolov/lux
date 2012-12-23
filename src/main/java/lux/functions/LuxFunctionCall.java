@@ -19,6 +19,7 @@ public class LuxFunctionCall extends IntegratedFunctionCall {
     /**
      * @return any existing special properties, joined by ORDER_NODESET and PEER_NODESET
      */
+    @Override
     protected int computeSpecialProperties() {
       int props = super.computeSpecialProperties();
       return props | StaticProperty.ORDERED_NODESET | StaticProperty.PEER_NODESET;

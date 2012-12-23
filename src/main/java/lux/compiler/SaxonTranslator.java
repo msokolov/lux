@@ -176,7 +176,7 @@ public class SaxonTranslator {
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
         // Namespace declarations are accumulated while walking the expression trees:
         initializeNamespaces(saxonQuery);
-        FunctionDefinition[] functionDefinitions = getFunctionDefinitions(queryModule);
+        FunctionDefinition[] functionDefinitions = getFunctionDefinitions();
         AbstractExpression body = exprFor (saxonQuery.getExpression());
         String defaultCollation = queryModule.getDefaultCollationName();
         if (defaultCollation.equals (CODEPOINT_COLLATION)) {
@@ -198,7 +198,7 @@ public class SaxonTranslator {
                 queryModule.getDefaultFunctionNamespace(),
                 defaultCollation,
                 importedModules.toArray(new ModuleImport[importedModules.size()]),
-                getNamespaceDeclarations(queryModule), 
+                getNamespaceDeclarations(), 
                 variableDefinitions, 
                 functionDefinitions, 
                 body,
@@ -230,7 +230,7 @@ public class SaxonTranslator {
         return new XQuery(ex);
     }
 
-    private Namespace[] getNamespaceDeclarations(QueryModule queryModule) {
+    private Namespace[] getNamespaceDeclarations() {
         // String defElementNS = queryModule.getDefaultElementNamespace();
         // String defFunctionNS = queryModule.getDefaultFunctionNamespace();
         // We'd like to get our hands on queryModule.explicitPrologNamespaces :(
@@ -290,7 +290,7 @@ public class SaxonTranslator {
         }
     }
 
-    private FunctionDefinition[] getFunctionDefinitions(QueryModule queryModule) {
+    private FunctionDefinition[] getFunctionDefinitions() {
         ArrayList<FunctionDefinition> functionDefinitions = new ArrayList<FunctionDefinition>();
         Iterator<XQueryFunction> functions = queryModule.getLocalFunctionLibrary().getFunctionDefinitions();
         while (functions.hasNext()) {

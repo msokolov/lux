@@ -59,14 +59,14 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
             throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
         if (sortCriteria != null) {
-            Sort sort = makeSortFromCriteria(sortCriteria);
+            Sort sort = makeSortFromCriteria();
             docIter = searcher.search(query, sort);
         } else {
             docIter = searcher.searchOrdered(query);
         }
     }
 
-    private Sort makeSortFromCriteria(String sortCriteria) {
+    private Sort makeSortFromCriteria() {
         String[] fields = sortCriteria.split(",");
         SortField[] sortFields = new SortField [fields.length];
         for (int i = 0; i < fields.length; i++) {
@@ -102,6 +102,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
      * in an error.
      * @throws XPathException if there is an error while searching
      */
+    @Override
     public NodeInfo next() throws XPathException {
         long t = System.nanoTime();
         int startPosition = position;
@@ -140,6 +141,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
      * @return the current result.  This is the last result returned by next(), and will be null if there
      * are no more results.
      */
+    @Override
     public NodeInfo current() {
         return current;
     }
@@ -148,6 +150,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
      * @return the (0-based) index of the next result: this will be 0 before any calls to next(), and -1 after the last
      * result has been retrieved.
      */
+    @Override
     public int position() {
         return position;
     }
@@ -155,6 +158,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     /**
      * does nothing
      */
+    @Override
     public void close() {
         // Saxon doesn't call this reliably
     }
@@ -162,6 +166,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     /**
      * @return a clone of this iterator, reset to the initial position.
      */
+    @Override
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
             return new SearchResultIterator (searcher, docCache, stats, query, sortCriteria);
@@ -174,6 +179,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
      *  This iterator has no special properties
      * @return 0
      */
+    @Override
     public int getProperties() {
         return 0;
     }

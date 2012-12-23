@@ -15,6 +15,7 @@ public final class QNameValueTokenStream extends ValueTokenStream {
         buf = new char[HASH_SIZE];
     }
         
+    @Override
     protected boolean advanceValue () {
         if (!super.advanceValue())
             return false;

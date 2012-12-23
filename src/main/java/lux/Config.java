@@ -44,6 +44,7 @@ public class Config extends Configuration implements EntityResolver {
 
     /** This resolver effectively ignores DOCTYPE declarations by returning an empty stream for every entity.
      */
+    @Override
     public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
         return new InputSource (new ByteArrayInputStream (new byte[0]));
     }

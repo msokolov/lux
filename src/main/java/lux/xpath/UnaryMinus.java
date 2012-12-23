@@ -18,6 +18,7 @@ public class UnaryMinus extends AbstractExpression {
         appendSub(buf, subs[0]);
     }
 
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         subs[0].accept(visitor);
         return visitor.visit(this);

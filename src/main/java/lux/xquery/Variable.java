@@ -13,6 +13,7 @@ public class Variable extends AbstractExpression {
         name = qname;
     }
     
+    @Override
     public AbstractExpression accept(ExpressionVisitor visitor) {
         return visitor.visit(this);
     }

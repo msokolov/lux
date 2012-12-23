@@ -40,6 +40,7 @@ public class QueryStats {
 
     public String optimizedQuery;
     
+    @Override
     public String toString () {
         return String.format("%s: %dms %d docs, %dms docread", 
                 query == null ? "" : query.substring(0, Math.min(20,query.length())),

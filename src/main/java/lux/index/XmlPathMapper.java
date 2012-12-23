@@ -59,6 +59,7 @@ public class XmlPathMapper implements StAXHandler {
         this.namespaceAware = namespaceAware;
     }
 
+    @Override
     public void handleEvent(XMLStreamReader reader, int eventType) {
         if (eventType == START_ELEMENT) {
             currentQName = getEventQName(reader);
@@ -129,6 +130,7 @@ public class XmlPathMapper implements StAXHandler {
         }
     }
     
+    @Override
     public void reset() {
         eltQNameCounts.clear();
         attQNameCounts.clear();

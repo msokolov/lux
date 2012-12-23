@@ -1,6 +1,15 @@
 package lux.index;
 
-import static lux.index.IndexConfiguration.*;
+import static lux.index.IndexConfiguration.BUILD_DOCUMENT;
+import static lux.index.IndexConfiguration.COMPUTE_OFFSETS;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.INDEX_QNAMES;
+import static lux.index.IndexConfiguration.INDEX_VALUES;
+import static lux.index.IndexConfiguration.LUCENE_VERSION;
+import static lux.index.IndexConfiguration.NAMESPACE_AWARE;
+import static lux.index.IndexConfiguration.STORE_XML;
+import static lux.index.IndexConfiguration.STRIP_NAMESPACES;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -152,9 +161,9 @@ public class XmlIndexer {
         }
     }
     
-    public void read (InputStream xml, String uri) throws XMLStreamException {
+    public void read (InputStream xml, String inputUri) throws XMLStreamException {
         reset();
-        this.uri = uri;
+        this.uri = inputUri;
         xmlReader.read (xml);
     }
 
@@ -167,15 +176,15 @@ public class XmlIndexer {
         return configuration.isOption(option);
     }
     
-    public void read (Reader xml, String uri) throws XMLStreamException {
+    public void read (Reader xml, String inputUri) throws XMLStreamException {
         reset();
-        this.uri = uri;
+        this.uri = inputUri;
         xmlReader.read (xml);
     }
 
-    public void read(NodeInfo doc, String uri) throws XMLStreamException {
+    public void read(NodeInfo doc, String inputUri) throws XMLStreamException {
         reset();
-        this.uri = uri;
+        this.uri = inputUri;
         getXmlReader().read(doc);
     }
 
@@ -204,20 +213,20 @@ public class XmlIndexer {
     }
 
     // FIXME: why does this method prefix the uri w/lux but the next one strip it off?
-    public void indexDocument(IndexWriter indexWriter, String uri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
+    public void indexDocument(IndexWriter indexWriter, String inputUri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
         /*
         String path = uri.startsWith("lux:/") ? uri.substring(5) : uri;
         path = path.replace('\\', '/');
         */
-        uri = "lux:/" + uri;
-        read(new StringReader(xml), uri);
+        inputUri = "lux:/" + inputUri;
+        read(new StringReader(xml), inputUri);
         addLuceneDocument(indexWriter);
     }
     
-    public void indexDocument(IndexWriter indexWriter, String uri, InputStream xmlStream) throws XMLStreamException, CorruptIndexException, IOException {
+    public void indexDocument(IndexWriter indexWriter, String inputUri, InputStream xmlStream) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
-        String path = uri.startsWith("lux:/") ? uri.substring(5) : uri;
+        String path = inputUri.startsWith("lux:/") ? inputUri.substring(5) : inputUri;
         path = path.replace('\\', '/');
         read(xmlStream, path);
         addLuceneDocument(indexWriter);
@@ -273,7 +282,6 @@ public class XmlIndexer {
     public IndexConfiguration getConfiguration() {
         return configuration;
     }
-
 
 }
 

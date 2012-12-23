@@ -5,11 +5,11 @@ import lux.index.field.AttributeTextField;
 import lux.index.field.DocumentField;
 import lux.index.field.ElementQNameField;
 import lux.index.field.ElementTextField;
+import lux.index.field.FieldDefinition;
 import lux.index.field.PathField;
 import lux.index.field.PathValueField;
 import lux.index.field.QNameValueField;
 import lux.index.field.URIField;
-import lux.index.field.FieldDefinition;
 import lux.index.field.XmlTextField;
 
 public enum FieldName {
@@ -35,3 +35,8 @@ public enum FieldName {
         return field;
     }
 }
+
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

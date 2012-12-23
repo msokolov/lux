@@ -229,7 +229,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return queryStack.remove(queryStack.size()-1);
     }
 
-
+    @Override
     public AbstractExpression visit (Root expr) {
         push (MATCH_ALL);
         return expr;
@@ -307,6 +307,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return query;
     }
     
+    @Override
     public AbstractExpression visit(PathStep step) {
         QName name = step.getNodeTest().getQName();
         Axis axis = step.getAxis();
@@ -359,6 +360,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @return the same function call expression, after having possibly optimized its arguments
      */
 
+    @Override
     public AbstractExpression visit(FunCall funcall) {
         QName name = funcall.getName();
         // Try special function optimizations, like count(), exists(), etc.
@@ -769,6 +771,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         push (MATCH_ALL);
     }
     
+    @Override
     public AbstractExpression visitDefault (AbstractExpression expr) {
         popChildQueries (expr);
         return expr;
