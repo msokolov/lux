@@ -152,6 +152,7 @@ public class SaxonTranslator {
         } 
     }
     private QueryModule queryModule;
+    private ItemType lastTypeSeen;
     
     public SaxonTranslator (Configuration config) {
         this.config = config;
@@ -314,12 +315,16 @@ public class SaxonTranslator {
     }
     
     public AbstractExpression exprFor (AtomicSequenceConverter atomizer) {
-        ItemType type = atomizer.getItemType(config.getTypeHierarchy());
+        // This is a painful hack - we can't tell for sure in some cases which type is intended
+        // because the ASC doesn't expose it, so in those cases we rely on a type we may
+        // have just seen in an ItemChecker
+        ItemType type = (atomizer.isAllItemsConverted() || lastTypeSeen == null) ?
+                atomizer.getItemType(config.getTypeHierarchy()) : lastTypeSeen;
         if (!type.isAtomicType()) {
             throw new LuxException ("AtomicSequenceConverter converting to non-atomic type: " + type);
         }
         AtomicType atomicType = (AtomicType) type;
-        Variable var = new Variable(new QName("x"));        
+        Variable var = new Variable(new QName("x"));
         return new FLWOR(castExprFor(var, atomicType), 
                 new ForClause (var, null, exprFor(atomizer.getBaseExpression())));        
         // this often works, doesn't provide the type conversion:
@@ -562,15 +567,19 @@ public class SaxonTranslator {
     public AbstractExpression exprFor (ItemChecker checker) {
         Expression base = checker.getBaseExpression();
         ItemType type = checker.getRequiredType();
+        ItemType previousLastTypeSeen = lastTypeSeen;
+        lastTypeSeen = type; // record the type of this expression
         ValueType valueType = valueTypeForItemType(type);
         
         int cardinality = checker.getCardinality();
         String occurrence = cardinality == StaticProperty.EMPTY ? "" :
             Cardinality.getOccurrenceIndicator(cardinality);
+        AbstractExpression baseExpr = exprFor(base);
+        lastTypeSeen = previousLastTypeSeen;  // restore the previous type context
         if (valueType.isNode) {
-            return new TreatAs (exprFor(base), nodeTestFor((NodeTest) type), occurrence);            
+            return new TreatAs (baseExpr, nodeTestFor((NodeTest) type), occurrence);            
         }
-        return new TreatAs (exprFor(base), valueType, occurrence);
+        return new TreatAs (baseExpr, valueType, occurrence);
     }
 
     private Sequence exprFor (Expression[] exprs) {
