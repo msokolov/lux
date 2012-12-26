@@ -1,10 +1,11 @@
-module namespace layout = "http://www.luxproject.net/layout";
+module namespace layout = "http://luxproject.net/layout";
 
 declare function layout:render-nav ($current-url as xs:string)
 {
 let $nav := (
   <item url="/lux/browse.xqy">source</item>,
-  <item url="/lux/index.xqy">search</item>
+  <item url="/lux/index.xqy">search</item>,
+  <item url="/lux/maven-get.xqy">maven</item>
 )
 return <div><ul class="hlist">{
   for $item in $nav 
