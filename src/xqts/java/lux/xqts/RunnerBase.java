@@ -9,19 +9,21 @@ import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.api.QueryContext;
+import lux.Compiler;
+import lux.Evaluator;
+import lux.QueryContext;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
-import lux.saxon.Saxon;
-import lux.saxon.Saxon.Dialect;
-import lux.saxon.SaxonExpr;
 import lux.search.LuxSearcher;
-import lux.xpath.QName;
+import lux.xml.QName;
 import lux.xqts.TestCase.VariableBinding;
+import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.FeatureKeys;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
-import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.IndexWriter;
@@ -33,7 +35,9 @@ public class RunnerBase {
     protected static Catalog catalog;
     private static RAMDirectory dir;
     private static LuxSearcher searcher;
-    protected static Saxon eval;
+    protected static Evaluator eval;
+    protected static Configuration saxonConfig;
+    protected static Processor processor;
     protected static int collectionSize;
     protected static int numtests;
     protected static int numfailed;
@@ -44,23 +48,22 @@ public class RunnerBase {
     protected boolean benchmark = false;
     // use Saxon without any Lux optimization
     protected boolean benchmarkSaxon = false;
+    
     protected static void setup(int indexOptions, String sourceDirectory) throws Exception {
-        eval = new Saxon(Dialect.XQUERY_1);
-        eval.getConfig().getParseOptions().setEntityResolver(null);
         dir = new RAMDirectory();
-        // This indexer does nothing, the effect of which is to disable Lux search optimizations for
-        // absolute expressions depending on the context. This makes it possible to evaluate tests that
-        // make use of the dynamic context.  Thus we're only really testing the Translator here, and not
-        // the Optimizer or Query components of Lux.
-        XmlIndexer indexer = new XmlIndexer (indexOptions);
-        catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", eval.getProcessor());
-        indexDirectory (indexer, catalog, sourceDirectory);
+        IndexConfiguration indexConfig = IndexConfiguration.makeIndexConfiguration(indexOptions);
+        Compiler compiler = new Compiler (indexConfig);
         searcher = new LuxSearcher(dir);
-        eval.setIndexer (indexer);
-        eval.setSearcher(searcher);
-        eval.getConfig().setErrorListener(new ErrorIgnorer ());
-        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, true);
-        eval.getConfig().setConfigurationProperty(FeatureKeys.XQUERY_INHERIT_NAMESPACES, true);
+        eval = new Evaluator(compiler, searcher, null);
+        processor = eval.getCompiler().getProcessor();
+        saxonConfig = processor.getUnderlyingConfiguration();
+        saxonConfig.getParseOptions().setEntityResolver(null);
+        catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", processor);
+        XmlIndexer indexer = new XmlIndexer (indexConfig);
+        indexDirectory (indexer, catalog, sourceDirectory);
+        saxonConfig.setErrorListener(new ErrorIgnorer ());
+        saxonConfig.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, true);
+        saxonConfig.setConfigurationProperty(FeatureKeys.XQUERY_INHERIT_NAMESPACES, true);
         numtests = 0;
         numignored = 0;
         numfailed = 0;
@@ -68,10 +71,10 @@ public class RunnerBase {
 
     private static void indexDirectory(XmlIndexer indexer, Catalog catalog2, String sourceDirectory) throws IOException {
         IndexWriter indexWriter = indexer.getIndexWriter(dir);
-        File dir = new File(catalog.getDirectory() + '/' + sourceDirectory);
+        File catalogSourceDir = new File(catalog.getDirectory() + '/' + sourceDirectory);
         int count = 0;
         System.out.println ("indexing test sources...");
-        File[] listing = dir.listFiles();
+        File[] listing = catalogSourceDir.listFiles();
         // swap the order - Saxon iterates over directories in descending alpha order? and we need to match that
         // so the results will be comparable
         /*for (int i = 0; i < listing.length/2; i++) {
@@ -113,10 +116,10 @@ public class RunnerBase {
                 if (binding.getValue().type == VariableBinding.Type.FILE) {
                     if (filename.endsWith(".xq")) {
                         String text = IOUtils.toString (new FileInputStream(filename));
-                        SaxonExpr expr = (SaxonExpr) eval.compile(text);
-                        item = (XdmItem) expr.evaluate(null).iterator().next();
+                        XdmValue result = eval.evaluate(text).getXdmValue();
+                        item = (XdmItem) result.iterator().next();
                     } else if (filename.endsWith(".xml")) {
-                        item = (XdmNode) eval.getBuilder().build(new InputStreamReader(new FileInputStream (filename)), filename);
+                        item = eval.build(new InputStreamReader(new FileInputStream (filename)), filename);
                     } else {
                         item = new XdmAtomicValue(IOUtils.toString(new FileInputStream (filename)));
                     }

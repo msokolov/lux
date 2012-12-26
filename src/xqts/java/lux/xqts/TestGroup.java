@@ -50,12 +50,12 @@ public class TestGroup {
         return depth;
     }
 
-    public TestGroup getTestGroupByName(String name) {
-        if (this.name.equals(name)) {
+    public TestGroup getTestGroupByName(String groupName) {
+        if (this.name.equals(groupName)) {
             return this;
         }
         for (TestGroup testGroup : subgroups) {
-            TestGroup group = testGroup.getTestGroupByName (name);
+            TestGroup group = testGroup.getTestGroupByName (groupName);
             if (group != null)
                 return group;
         }

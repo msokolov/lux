@@ -5,17 +5,18 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
-import lux.api.LuxException;
-import lux.api.QueryContext;
-import lux.api.QueryStats;
-import lux.api.ResultSet;
+import lux.Compiler;
+import lux.Compiler.SearchStrategy;
+import lux.QueryContext;
+import lux.QueryStats;
+import lux.XdmResultSet;
 import lux.compiler.PathOptimizer;
-import lux.index.XmlIndexer;
-import lux.saxon.SaxonExpr;
-import lux.xpath.QName;
+import lux.compiler.SaxonTranslator;
+import lux.exception.LuxException;
+import lux.index.IndexConfiguration;
+import lux.xml.QName;
 import lux.xqts.TestCase.ComparisonMode;
 import lux.xquery.XQuery;
-import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
@@ -38,7 +39,8 @@ public class TestRunner extends RunnerBase {
     @BeforeClass
     public static void setup() throws Exception {
         // By default, no indexes are created, and no Lux query optimizations are performed.
-        setup(XmlIndexer.STORE_XML, "TestSources");
+        // This has the effect of testing the query translator only
+        setup(IndexConfiguration.STORE_XML, "TestSources");
     }
 
     private boolean runTest (String caseName) throws Exception {
@@ -54,7 +56,7 @@ public class TestRunner extends RunnerBase {
             long t00 = System.nanoTime();
             bindExternalVariables(test1, context);
             long t0 = System.nanoTime();
-            SaxonExpr expr = compileXQuery(test1.getQueryText());
+            XQueryExecutable expr = compileXQuery(test1.getQueryText());
             context.setContextItem(test1.getContextItem());
             if (printDetailedDiagnostics) {
                 eval.setQueryStats(new QueryStats());
@@ -69,8 +71,8 @@ public class TestRunner extends RunnerBase {
             if (benchmark) {
                 return true;
             }
-            if (results.getException() != null) {
-                throw results.getException();
+            if (!results.getErrors().isEmpty()) {
+                throw results.getErrors().get(0);
             }
             Boolean comparedEqual = test1.compareResult (results);
             if (comparedEqual == null || comparedEqual) {
@@ -81,12 +83,12 @@ public class TestRunner extends RunnerBase {
                 ++numfailed;
                 // debugging diagnostics:
                 if (printDetailedDiagnostics) {
-                    XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
+                    XQueryExecutable xq = eval.getCompiler().getXQueryCompiler().compile(test1.getQueryText());
                     XdmItem item = xq.load().evaluateSingle();
                     if (! test1.compareResult(item)) {
                         System.err.println (test1.getName() + " Saxon fails too?");
                     } else {
-                        System.err.println (eval.getTranslator().queryFor(xq));
+                        System.err.println (new SaxonTranslator(saxonConfig).queryFor(xq));
                     }
                 }
                 return false;
@@ -102,7 +104,7 @@ public class TestRunner extends RunnerBase {
                 System.err.println (test1.getName() + " at " + test1.getPath() + " Unexpected Error: " + error);
                 // diagnostics:
                 if (printDetailedDiagnostics ) {
-                    XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getQueryText());
+                    XQueryExecutable xq = eval.getCompiler().getXQueryCompiler().compile(test1.getQueryText());
                     XQueryEvaluator xqeval = xq.load();
                     if (context.getVariableBindings() != null) {
                         for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
@@ -124,33 +126,25 @@ public class TestRunner extends RunnerBase {
         }
     }
     
-    private SaxonExpr compileXQuery(String exprString) throws LuxException {
+    private XQueryExecutable compileXQuery(String exprString) throws LuxException {
         XQueryExecutable xquery;
         long t0 = System.nanoTime();
-        try {
-            xquery = eval.getXQueryCompiler().compile(exprString);
-        } catch (SaxonApiException e) {
-            throw new LuxException (e);
-        }
+        xquery = eval.getCompiler().compile(exprString);
         long t1 = System.nanoTime();
         compile0 += (t1 - t0);
         compileTime += (t1 - t0);
-        if (! eval.isEnableLuxOptimization()) {
-            return new SaxonExpr (xquery, null);
+        if (eval.getCompiler().getSearchStrategy() == SearchStrategy.NONE) {
+           return xquery;
         }
-        XQuery abstractQuery = eval.getTranslator().queryFor (xquery);
+        XQuery abstractQuery = eval.getCompiler().makeTranslator().queryFor (xquery);
         long t2 = System.nanoTime();
         translateTime += (t2 - t1);
-        PathOptimizer optimizer = eval.getOptimizer();
+        PathOptimizer optimizer = new PathOptimizer(eval.getCompiler().getIndexConfiguration());
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         String queryString = optimizedQuery.toString();
         long t3 = System.nanoTime();
         optimizeTime += (t3 - t2);
-        try {
-            xquery = eval.getXQueryCompiler().compile(queryString);
-        } catch (SaxonApiException e) {
-            throw new LuxException (e);
-        }
+        xquery = eval.getCompiler().compile(queryString);
         float compileTimeRatio = (t3 - t2) / (float) (t1 - t0);
         if (t3 - t2 > 2 * (t1 - t0)) {
             System.out.println ("Query got " + compileTimeRatio + " times harder to compile after optimization");
@@ -158,12 +152,12 @@ public class TestRunner extends RunnerBase {
         long t4 = System.nanoTime();
         compileTime += (t4 - t3);
         compile1 += (t4 - t3);
-        return new SaxonExpr(xquery, optimizedQuery);
+        return xquery;
     }
 
 
     private void runTestGroup (String groupName) throws Exception {
-        ErrorIgnorer ignorer = (ErrorIgnorer) eval.getConfig().getErrorListener();
+        ErrorIgnorer ignorer = (ErrorIgnorer) saxonConfig.getErrorListener();
         if (printDetailedDiagnostics) {
             ignorer.setShowErrors(true);
         } else {
@@ -225,14 +219,15 @@ public class TestRunner extends RunnerBase {
     private void benchmarkComparison (int runs, String testGroup) throws Exception {
         terminateOnException = false;
         benchmark = true;
-        eval.setEnableLuxOptimization(true);
+        Compiler compiler = eval.getCompiler();
+        compiler.setSearchStrategy(SearchStrategy.LUX_SEARCH);
         runTestGroup (testGroup);
-        eval.setEnableLuxOptimization(false);
+        compiler.setSearchStrategy(SearchStrategy.NONE);
         runTestGroup (testGroup);
         System.out.println ("Benchmark Saxon alone");
         benchmark(runs, testGroup);
         System.out.println ("Benchmark including Lux optimize");
-        eval.setEnableLuxOptimization(true);
+        compiler.setSearchStrategy(SearchStrategy.LUX_SEARCH);
         benchmark(runs, testGroup);
     }
 
@@ -270,7 +265,7 @@ public class TestRunner extends RunnerBase {
     @Test public void testBenchmark () throws Exception {
         terminateOnException = false;
         benchmark = true;
-        eval.setEnableLuxOptimization(true);
+        eval.getCompiler().setSearchStrategy(SearchStrategy.LUX_SEARCH);
         //benchmarkComparison (100, "Basics");
         benchmarkComparison (50, "PathExpr");
     }

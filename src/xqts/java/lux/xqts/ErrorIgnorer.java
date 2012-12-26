@@ -11,23 +11,26 @@ import javax.xml.transform.TransformerException;
 class ErrorIgnorer implements ErrorListener {
     
     private boolean showErrors = false;
+
+    public void setShowErrors(boolean b) {
+        this.showErrors = b;    
+    }
     
+    @Override
     public void warning(TransformerException exception) throws TransformerException {
         if (showErrors) {
             System.err.println (exception.getMessageAndLocation());
         }
     }
 
-    public void setShowErrors(boolean b) {
-        this.showErrors = b;    
-    }
-
+    @Override
     public void error(TransformerException exception) throws TransformerException {
         if (showErrors) {
             System.err.println (exception.getMessageAndLocation());
         }
     }
 
+    @Override
     public void fatalError(TransformerException exception) throws TransformerException {
         if (showErrors) {
             System.err.println (exception.getMessageAndLocation());

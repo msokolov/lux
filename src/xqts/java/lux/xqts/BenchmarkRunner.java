@@ -5,11 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import lux.api.QueryContext;
-import lux.api.QueryStats;
-import lux.api.ResultSet;
-import lux.index.XmlIndexer;
-import lux.saxon.SaxonExpr;
+import lux.QueryContext;
+import lux.QueryStats;
+import lux.XdmResultSet;
+import lux.compiler.SaxonTranslator;
+import lux.index.IndexConfiguration;
 import lux.xqts.TestCase.ComparisonMode;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.CollectionURIResolver;
@@ -29,7 +29,7 @@ public class BenchmarkRunner extends RunnerBase {
     @BeforeClass
     public static void setup() throws Exception {
         // Create path indexes and optimize queries to use them
-        setup(XmlIndexer.INDEX_PATHS | XmlIndexer.STORE_XML, "TestSourcesTiny");
+        setup(IndexConfiguration.INDEX_PATHS | IndexConfiguration.STORE_XML, "TestSourcesTiny");
     }
 
     private boolean runTest (String caseName) throws Exception {
@@ -43,9 +43,9 @@ public class BenchmarkRunner extends RunnerBase {
         QueryContext context = new QueryContext();
         bindExternalVariables(test1, context);
         // TODO: later try TestSourcesClean which includes some larger XML files
-        eval.getConfig().setCollectionURIResolver(new BenchmarkURIResolver());
-        eval.getConfig().setDefaultCollection(catalog.getDirectory() + "/TestSourcesTiny");
-        XQueryExecutable xq = eval.getProcessor().newXQueryCompiler().compile(test1.getBenchmarkQueryText());
+        saxonConfig.setCollectionURIResolver(new BenchmarkURIResolver());
+        saxonConfig.setDefaultCollection(catalog.getDirectory() + "/TestSourcesTiny");
+        XQueryExecutable xq = eval.getCompiler().getXQueryCompiler().compile(test1.getBenchmarkQueryText());
         xq.load().evaluate();
     }
     
@@ -53,9 +53,9 @@ public class BenchmarkRunner extends RunnerBase {
         ++numtests;
         QueryContext context = new QueryContext();
         bindExternalVariables(test1, context);
-        eval.getConfig().setCollectionURIResolver(eval);
-        eval.getConfig().setDefaultCollection("lux:/");
-        SaxonExpr expr = (SaxonExpr) eval.compile(test1.getBenchmarkQueryText());
+        saxonConfig.setCollectionURIResolver(eval);
+        saxonConfig.setDefaultCollection("lux:/");
+        XQueryExecutable expr = eval.getCompiler().compile(test1.getBenchmarkQueryText());
         context.setContextItem(test1.getContextItem());
         QueryStats stats = new QueryStats();
         eval.setQueryStats(stats);
@@ -65,35 +65,35 @@ public class BenchmarkRunner extends RunnerBase {
     private boolean runComparison (TestCase test1) throws Exception {
         ++numtests;
         if (printDetailedDiagnostics) {
-            ErrorIgnorer ignorer = (ErrorIgnorer) eval.getConfig().getErrorListener();
+            ErrorIgnorer ignorer = (ErrorIgnorer) saxonConfig.getErrorListener();
             ignorer.setShowErrors(true);
         }
         QueryContext context = new QueryContext();
         bindExternalVariables(test1, context);
 
-        eval.getConfig().setDefaultCollection(catalog.getDirectory() + "/TestSourcesTiny");
-        eval.getConfig().setCollectionURIResolver(new BenchmarkURIResolver());
+        saxonConfig.setDefaultCollection(catalog.getDirectory() + "/TestSourcesTiny");
+        saxonConfig.setCollectionURIResolver(new BenchmarkURIResolver());
         boolean threwException = false;
         XQueryExecutable xq = null;
         XdmValue value = null;
         try {
-            xq = eval.getProcessor().newXQueryCompiler().compile(test1.getBenchmarkQueryText());
+            xq = eval.getCompiler().getXQueryCompiler().compile(test1.getBenchmarkQueryText());
             value= xq.load().evaluate();
         } catch (Exception e) {
             threwException = true;
         }
-        eval.getConfig().setDefaultCollection("lux:/");
-        eval.getConfig().setCollectionURIResolver(eval);
-        SaxonExpr expr = (SaxonExpr) eval.compile(test1.getBenchmarkQueryText());
+        saxonConfig.setDefaultCollection("lux:/");
+        saxonConfig.setCollectionURIResolver(eval);
+        XQueryExecutable expr = eval.getCompiler().compile(test1.getBenchmarkQueryText());
         context.setContextItem(test1.getContextItem());
         //System.out.println (expr);
         QueryStats stats = new QueryStats();
         eval.setQueryStats(stats);
         XdmResultSet results = (XdmResultSet) eval.evaluate(expr, context);
-        if (results.getException() != null) {
+        if (! results.getErrors().isEmpty()) {
             if (! threwException) {
                 ++numfailed;
-                System.err.println ("test failed with unexpected exception: "+ results.getException());
+                System.err.println ("test failed with unexpected exception: "+ results.getErrors().get(0));
             }
             // both base and optimized processes threw exceptions
             return true;
@@ -108,7 +108,7 @@ public class BenchmarkRunner extends RunnerBase {
             if (printDetailedDiagnostics) {
                 System.err.println ("base impl returned: " + value.toString());
                 System.err.println ("lux impl returned: " + results.iterator().next().toString());
-                System.err.println (eval.getTranslator().queryFor(xq));
+                System.err.println (new SaxonTranslator(saxonConfig).queryFor(xq));
             }
             return false;
         }
@@ -222,6 +222,7 @@ public class BenchmarkRunner extends RunnerBase {
          * read a directory and return a list of uris; this is the way to get Saxon to maintain
          * a document cache so that collection() is stable
          */
+        @Override
         public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
             File dir = new File(href);
             String[] listing = dir.list();

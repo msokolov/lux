@@ -14,9 +14,8 @@ import java.util.Properties;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import lux.api.ResultSet;
+import lux.XdmResultSet;
 import lux.xqts.TestCase.VariableBinding.Type;
-
 import net.sf.saxon.expr.sort.CodepointCollator;
 import net.sf.saxon.expr.sort.GenericAtomicComparer;
 import net.sf.saxon.functions.DeepEqual;
@@ -98,12 +97,12 @@ public class TestCase {
         }
         comparisonMode = readOutputText(testCase);
         
-        File queryFile = new File (getQueryPath(queryName, catalog));
+        File queryFile = new File (getQueryPath(queryName));
         String text = IOUtils.toString (new FileInputStream(queryFile));
         queryText = text;
         
-        bindExternalVariables(testCase, catalog, INPUT_FILE, VariableBinding.Type.FILE);
-        bindExternalVariables(testCase, catalog, INPUT_URI, VariableBinding.Type.URI);
+        bindExternalVariables(testCase, INPUT_FILE, VariableBinding.Type.FILE);
+        bindExternalVariables(testCase, INPUT_URI, VariableBinding.Type.URI);
         
         // Are there input queries? If so, record the bindings for later evaluation
         XdmSequenceIterator inputQuery = testCase.axisIterator(Axis.CHILD, INPUT_QUERY);
@@ -112,7 +111,7 @@ public class TestCase {
             String filename = q.getAttributeValue(NAME);
             VariableBinding binding = new VariableBinding();
             binding.type = Type.FILE;
-            binding.value = getQueryPath(filename, catalog);
+            binding.value = getQueryPath(filename);
             externalVariables.put(q.getAttributeValue(VARIABLE), binding);
         }
         
@@ -122,7 +121,7 @@ public class TestCase {
         catalog.putTestCase(name, this);
     }
 
-    private void bindExternalVariables(XdmNode testCase, Catalog catalog, QName elementName, Type type) {
+    private void bindExternalVariables(XdmNode testCase, QName elementName, Type type) {
         XdmSequenceIterator input = testCase.axisIterator(Axis.CHILD, elementName);
         XdmNode inputFileNode = null;
         while (input.hasNext()) {
@@ -141,7 +140,7 @@ public class TestCase {
         }
     }
 
-    private String getQueryPath(String filename, Catalog catalog) {
+    private String getQueryPath(String filename) {
         return catalog.getDirectory() + "/Queries/XQuery/" + path + '/' + filename + ".xq";
     }
 
@@ -201,11 +200,11 @@ public class TestCase {
         String benchQueryText = queryText;
         for (Map.Entry<String,VariableBinding> entry : externalVariables.entrySet()) {
             VariableBinding binding = entry.getValue();
-            String name = entry.getKey();
+            String varName = entry.getKey();
             if ("principal-data".equals (binding.role)) {
                 benchQueryText = benchQueryText.replace
-                    ("declare variable $" + name + " external;",
-                     "declare variable $" + name + " := collection();");
+                    ("declare variable $" + varName + " external;",
+                     "declare variable $" + varName + " := collection();");
             }
         }
         return benchQueryText;
@@ -347,6 +346,7 @@ public class TestCase {
         return contextItem;
     }
     
+    @Override
     public String toString () {
         return "XQueryTestCase{" + name + "}";
     }

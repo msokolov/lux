@@ -98,8 +98,8 @@ class Catalog {
         return testGroups;
     }
     
-    public String getSourceFileByID (String ID) {
-        return sourceFiles.get(ID);
+    public String getSourceFileByID (String id) {
+        return sourceFiles.get(id);
     }
     
     public String getDirectory () {
