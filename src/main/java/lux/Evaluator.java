@@ -98,7 +98,9 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
      */
     public XdmResultSet evaluate(String query) {
         XQueryExecutable compiledQuery = compiler.compile(query);
-        queryStats.optimizedQuery = compiler.getLastOptimized().toString();
+        if (queryStats != null && compiler.getLastOptimized() != null) {
+            queryStats.optimizedQuery = compiler.getLastOptimized().toString();
+        }
         return evaluate (compiledQuery, null);
     }
     

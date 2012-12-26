@@ -1,13 +1,12 @@
 package lux.saxon;
 
 import static org.junit.Assert.assertEquals;
-import lux.Evaluator;
 import lux.Compiler;
+import lux.Evaluator;
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
 import lux.xquery.XQuery;
-
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryExecutable;
 

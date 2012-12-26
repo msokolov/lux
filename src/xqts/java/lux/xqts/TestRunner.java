@@ -45,7 +45,7 @@ public class TestRunner extends RunnerBase {
 
     private boolean runTest (String caseName) throws Exception {
         TestCase test1 = catalog.getTestCaseByName(caseName);
-        assertNotNull (caseName, test1);
+        assertNotNull ("test case not found in catalog: " + caseName, test1);
         return runTest (test1);
     }
     
@@ -83,13 +83,17 @@ public class TestRunner extends RunnerBase {
                 ++numfailed;
                 // debugging diagnostics:
                 if (printDetailedDiagnostics) {
+                    SearchStrategy currentStrategy = eval.getCompiler().getSearchStrategy();
+                    eval.getCompiler().setSearchStrategy(SearchStrategy.NONE);
                     XQueryExecutable xq = eval.getCompiler().getXQueryCompiler().compile(test1.getQueryText());
-                    XdmItem item = xq.load().evaluateSingle();
+                    results = (XdmResultSet) eval.evaluate(xq, context);
+                    XdmItem item = results.getXdmValue().itemAt(0);
                     if (! test1.compareResult(item)) {
                         System.err.println (test1.getName() + " Saxon fails too?");
                     } else {
                         System.err.println (new SaxonTranslator(saxonConfig).queryFor(xq));
                     }
+                    eval.getCompiler().setSearchStrategy(currentStrategy);
                 }
                 return false;
             }
@@ -112,10 +116,15 @@ public class TestRunner extends RunnerBase {
                             xqeval.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
                         }
                     }
-                    XdmItem item = xqeval.evaluateSingle();
-                    System.err.println (test1.getQueryText() + " returns " + item);
+                    try {
+                        XdmItem item = xqeval.evaluateSingle();
+                        System.err.println (test1.getQueryText() + " returns " + item);
+                    } catch (Exception e1) {
+                        System.err.println (test1.getQueryText() + "\n\n failed while trying to print diagnostics");
+                        e1.printStackTrace();
+                    }
                 }
-                if (terminateOnException) {
+                if (terminateOnException) { 
                     throw (e); 
                 } else {
                     return false;
@@ -180,15 +189,17 @@ public class TestRunner extends RunnerBase {
     
     @Test public void testOneTest() throws Exception {
         printDetailedDiagnostics = true;
-        // assertTrue (runTest ("K2-NameTest-68"));  // fails since we don't handle specialized node types
         // Constr-cont-nsmode-11 requires schema-aware processing
-        // K2-DirectConElemContent-35 Mismatch: true is not false // requires typed elements
-        // K2-ComputeConElem-9 Mismatch: true is not false // requires typed elements
+        
+        // K2-DirectConElemContent-35 Mismatch: true is not false 
+        // K2-ComputeConElem-9 Mismatch: true is not false
+        // do these require schema-awarenes???
+        // assertTrue (runTest ("K2-DirectConElemContent-35"));  
+        
         // These two I don't understand what's wrong with the generated expression - maybe a Saxon bug?
         // K2-sequenceExprTypeswitch-14: The context item for axis step self::node() is undefined 
         // K2-ExternalVariablesWithout-11: The context item is absent, so position() is undefined
         // K2-SeqExprCast-209 Mismatch: 〜 is not &#12316; // count as pass
-        
         //<e/>/(typeswitch (self::node())
         //        case $i as node() return .
         // becomes:
@@ -196,12 +207,12 @@ public class TestRunner extends RunnerBase {
         //        (<e >{() }</e>)/(let $zz:zz_typeswitchVar := self::node() return if ($zz:zz_typeswitchVar instance of node()) then (.) else (1))
         //assertTrue (runTest ("K2-sequenceExprTypeswitch-14"));
         // assertTrue (runTest ("fn-id-dtd-5"));
-        assertTrue (runTest ("fn-collection-10d"));
+        assertTrue (runTest ("fn-collection-4"));
     }
     
     @Test public void testGroup () throws Exception {
         terminateOnException = false;
-        runTestGroup ("MinimalConformance");
+        runTestGroup ("MinimalConformance"); // 2012-12-26: 19/19426 tests fail - 5 are surrogate-related; 10 are collection-related
         //runTestGroup ("FunctX");
         //runTestGroup ("Basics");
         //runTestGroup ("Expressions");

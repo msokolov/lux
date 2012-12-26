@@ -1,7 +1,7 @@
 declare namespace file="http://expath.org/ns/file";
 declare namespace demo="http://luxproject.net/demo";
 
-import module namespace layout="http://www.luxproject.net/layout" at "src/main/webapp/layout.xqy";
+import module namespace layout="http://luxproject.net/layout" at "src/main/webapp/layout.xqy";
 
 declare variable $lux:http as document-node() external;
 
@@ -16,15 +16,22 @@ as node()*
 declare function demo:load-file ($file as xs:string)
 as xs:string*
 {
-    let $basename := replace($file, "^.*/(.*)\.xml", "$1")
     let $doc := doc (concat("file:", $file))
-    (: TODO - recurse through directories :)
     let $doctype := name($doc/*)
-    (: TODO: switch on $doctype, loading scripts by name :)
+    let $load-xsl := concat ($doctype, "-load.xsl")
+    return if (doc-available ($load-xsl)) then
+      lux:transform (doc($load-xsl), $doc)
+    else
+      demo:default-load ($doc)
+};
+
+declare function demo:default-load ($doc as document-node())
+{
+    let $basename := replace($doc/base-uri(), "^.*/(.*)\.xml", "$1")
     return
-        for $e at $i in $doc/*/* 
-        let $uri := concat ($basename, "-", $i, ".xml")
-        return (lux:insert ($uri, $e), $uri)
+    for $e at $i in $doc/*/* 
+    let $uri := concat ($basename, "-", $i, ".xml")
+    return (lux:insert ($uri, $e), $uri)
 };
 
 declare function demo:load-files ($files as xs:string*)

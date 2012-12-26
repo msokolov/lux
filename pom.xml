@@ -22,10 +22,19 @@
       <groupId>expath</groupId>
       <artifactId>expath-saxon</artifactId>
       <version>0.11</version>
-        <scope>system</scope>
+      <scope>system</scope>
       <systemPath>${project.basedir}/lib/pkg-saxon.jar</systemPath>
     </dependency>
+    <!-- 
     <dependency>
+      <groupId>expath</groupId>
+      <artifactId>expath-httpclient-saxon</artifactId>
+      <version>0.6</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/expath-http-client-java.jar</systemPath>
+    </dependency>
+     -->
+     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
         <version>1.6.2</version>
@@ -140,6 +149,12 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
+          <systemProperties>
+            <systemProperty>
+              <name>org.expath.pkg.saxon.repo</name>
+              <value>c:\users\sokolov\workspace\xrepos</value>
+            </systemProperty>
+          </systemProperties>
         </configuration>
         <executions>
           <execution>

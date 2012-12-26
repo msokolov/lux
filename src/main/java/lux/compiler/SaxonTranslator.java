@@ -142,22 +142,19 @@ public class SaxonTranslator {
 
     private Configuration config;
     private HashMap<String,String> namespaceDeclarations;
-    private HashMap<String,ExprClass> dispatcher;
+    private static final HashMap<String,ExprClass> dispatcher = new HashMap<String,ExprClass>();
+    static {
+        for (ExprClass eclass : ExprClass.values()) {
+            dispatcher.put (eclass.toString(), eclass);            
+        } 
+    }
     private QueryModule queryModule;
     
     public SaxonTranslator (Configuration config) {
         this.config = config;
         namespaceDeclarations = new HashMap<String, String>();
-        createDispatcher ();
     }
     
-    private void createDispatcher() {
-        dispatcher = new HashMap<String, ExprClass>();
-        for (ExprClass eclass : ExprClass.values()) {
-            dispatcher.put (eclass.toString(), eclass);            
-        }
-    }
-
     /** Converts from a Saxon to a lux xquery representation.
      * @param xquery a Saxon representation of an XQuery module
      * @return a lux representation of an equivalent XQuery module

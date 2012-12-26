@@ -1,3 +1,32 @@
+* dochaus.org
+Maintain a searchable archive of software documentation.
+Support multiple catalogs.  Support multiple software versions.
+** specs
+*** javadoc
+POC using maven javadocs; hmm this is exactly jarvana
+*** online docs
+python, perl, php, mysql, etc etc etc. Well, these already have their own
+sites.  Is there any advantage to something other than Google?
+*** review of random REST APIs:
+Since all of these services host their own data, and allow you to access
+it, why, as an application developer, would you ever want to copy their
+data and store a massive index of your own?  It doesn't make any sense.  If
+you *own* the data, OK, you own the data.
+**** Netflix
+**** Twitter
+**** FB
+**** LinkedIn
+**** Amazon
+**** DropBox
+**** EBay
+** impl
+*** Jarvana clone um no
+**** download javadocs from search.maven.org; 
+**** enhance with metadata
+**** index and serve
+**** search page
+**** display page
+**** browse page for discoverability
 * demo
 ** standalone webapp 
 so you can build prototypes/reports, etc using xquery/html

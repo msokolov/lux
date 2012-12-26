@@ -104,11 +104,7 @@ public class Compiler {
         }
         defaultCollectionURIResolver = config.getCollectionURIResolver();
         registerExtensionFunctions();
-        if (indexConfig != null && indexConfig.isIndexingEnabled()) {
-            uriFieldName = indexConfig.getFieldName(FieldName.URI);
-        } else {
-            uriFieldName = null;
-        }
+        uriFieldName = indexConfig.getFieldName(FieldName.URI);
         //this.dialect = dialect;
         logger = LoggerFactory.getLogger(getClass());
         errorListener = new TransformErrorListener();

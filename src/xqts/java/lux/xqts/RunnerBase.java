@@ -52,21 +52,21 @@ public class RunnerBase {
     protected static void setup(int indexOptions, String sourceDirectory) throws Exception {
         dir = new RAMDirectory();
         IndexConfiguration indexConfig = IndexConfiguration.makeIndexConfiguration(indexOptions);
+        XmlIndexer indexer = new XmlIndexer (indexConfig);
         Compiler compiler = new Compiler (indexConfig);
-        searcher = new LuxSearcher(dir);
-        eval = new Evaluator(compiler, searcher, null);
-        processor = eval.getCompiler().getProcessor();
+        processor = compiler.getProcessor();
         saxonConfig = processor.getUnderlyingConfiguration();
         saxonConfig.getParseOptions().setEntityResolver(null);
-        catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", processor);
-        XmlIndexer indexer = new XmlIndexer (indexConfig);
-        indexDirectory (indexer, catalog, sourceDirectory);
         saxonConfig.setErrorListener(new ErrorIgnorer ());
         saxonConfig.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, true);
         saxonConfig.setConfigurationProperty(FeatureKeys.XQUERY_INHERIT_NAMESPACES, true);
+        catalog = new Catalog ("/users/sokolov/workspace/XQTS_1_0_3", processor);
+        indexDirectory (indexer, catalog, sourceDirectory);
         numtests = 0;
         numignored = 0;
         numfailed = 0;
+        searcher = new LuxSearcher(dir);
+        eval = new Evaluator(compiler, searcher, null);
     }
 
     private static void indexDirectory(XmlIndexer indexer, Catalog catalog2, String sourceDirectory) throws IOException {
