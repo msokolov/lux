@@ -1,6 +1,7 @@
 package lux.xpath;
 
 import lux.xquery.AttributeConstructor;
+import lux.xquery.CastableExpression;
 import lux.xquery.CommentConstructor;
 import lux.xquery.ComputedElementConstructor;
 import lux.xquery.Conditional;
@@ -15,6 +16,7 @@ import lux.xquery.OrderByClause;
 import lux.xquery.ProcessingInstructionConstructor;
 import lux.xquery.Satisfies;
 import lux.xquery.TextConstructor;
+import lux.xquery.TreatAs;
 import lux.xquery.Variable;
 import lux.xquery.WhereClause;
 
@@ -42,6 +44,7 @@ public abstract class ExpressionVisitor {
 
     public abstract AbstractExpression visit (AttributeConstructor attributeConstructor);
     public abstract AbstractExpression visit (BinaryOperation op);
+    public abstract AbstractExpression visit (CastableExpression castable);
     public abstract AbstractExpression visit (CommentConstructor commentConstructor);
     public abstract AbstractExpression visit (ComputedElementConstructor computedElementConstructor);
     public abstract AbstractExpression visit (Conditional conditional);
@@ -66,6 +69,7 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (SetOperation setOperation);
     public abstract AbstractExpression visit (Subsequence subsequence);
     public abstract AbstractExpression visit (TextConstructor textConstructor);
+    public abstract AbstractExpression visit (TreatAs treat);
     public abstract AbstractExpression visit (UnaryMinus predicate);
     public abstract AbstractExpression visit (Variable variable);
     public abstract WhereClause visit (WhereClause whereClause);

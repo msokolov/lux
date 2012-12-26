@@ -6,7 +6,7 @@ import lux.xpath.ExpressionVisitor;
 public class ComputedElementConstructor extends AbstractExpression {
     
     public ComputedElementConstructor(AbstractExpression name, AbstractExpression content) {
-        super(Type.ELEMENT);
+        super(Type.COMPUTED_ELEMENT);
         this.subs = new AbstractExpression[] { name, content };
     }
 

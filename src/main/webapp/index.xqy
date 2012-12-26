@@ -43,7 +43,7 @@ return
 declare function demo:search () {
 let $page-size := 20
 let $params := $lux:http/http/params/param 
-let $start := if (number($params[@name='start'])) then number($params[@name='start']) else 1
+let $start as xs:integer := if (number($params[@name='start'])) then number($params[@name='start']) else 1
 let $results := demo:search ($params, $start, $page-size)
 let $next := $start + count($results/*)
 let $body := 

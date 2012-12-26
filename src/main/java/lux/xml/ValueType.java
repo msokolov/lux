@@ -7,7 +7,7 @@ package lux.xml;
  */
 public enum ValueType {
     
-    VALUE("value", false, false), 
+    VALUE("item", false, false), 
     DOCUMENT("document-node"), 
     NODE("node"), 
     ELEMENT("element"), 
@@ -105,6 +105,15 @@ public enum ValueType {
         if (isAtomic && type.isAtomic)
             return ValueType.ATOMIC;
         return ValueType.VALUE;
+    }
+    
+    @Override
+    public String toString () {
+        // FIXME: QName qualification, and occurrence specifiers
+        if (!isAtomic) {
+            return name + "()";
+        }
+        return name;
     }
 
 }

@@ -3,6 +3,8 @@ package lux.xqts;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.Map;
 
 import lux.Compiler;
@@ -17,6 +19,7 @@ import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xqts.TestCase.ComparisonMode;
 import lux.xquery.XQuery;
+import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
@@ -41,6 +44,7 @@ public class TestRunner extends RunnerBase {
         // By default, no indexes are created, and no Lux query optimizations are performed.
         // This has the effect of testing the query translator only
         setup(IndexConfiguration.STORE_XML, "TestSources");
+        // setup(IndexConfiguration.DEFAULT_OPTIONS, "TestSources");
     }
 
     private boolean runTest (String caseName) throws Exception {
@@ -74,6 +78,10 @@ public class TestRunner extends RunnerBase {
             if (!results.getErrors().isEmpty()) {
                 throw results.getErrors().get(0);
             }
+            if (test1.isExpectError()) {
+                System.err.println (test1.getName() + " did not cause expected error");
+                return false;
+            }
             Boolean comparedEqual = test1.compareResult (results);
             if (comparedEqual == null || comparedEqual) {
                 //System.out.println (test1.getName() + " OK in " + stats.totalTime + "ms");
@@ -85,6 +93,7 @@ public class TestRunner extends RunnerBase {
                 if (printDetailedDiagnostics) {
                     SearchStrategy currentStrategy = eval.getCompiler().getSearchStrategy();
                     eval.getCompiler().setSearchStrategy(SearchStrategy.NONE);
+                    System.err.print (test1.getQueryText());
                     XQueryExecutable xq = eval.getCompiler().getXQueryCompiler().compile(test1.getQueryText());
                     results = (XdmResultSet) eval.evaluate(xq, context);
                     XdmItem item = results.getXdmValue().itemAt(0);
@@ -130,30 +139,46 @@ public class TestRunner extends RunnerBase {
                     return false;
                 }
             }
+            //e.printStackTrace();
             //System.out.println (test1.getName() + " OK (expected error)");
             return true;
         }
     }
     
+    // break out some internals of the lux optimizer so we can measure timings
     private XQueryExecutable compileXQuery(String exprString) throws LuxException {
         XQueryExecutable xquery;
         long t0 = System.nanoTime();
-        xquery = eval.getCompiler().compile(exprString);
+        try {
+            xquery = eval.getCompiler().getXQueryCompiler().compile(new StringReader(exprString));
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        } catch (IOException e) {
+            throw new LuxException (e);
+        }
         long t1 = System.nanoTime();
         compile0 += (t1 - t0);
         compileTime += (t1 - t0);
-        if (eval.getCompiler().getSearchStrategy() == SearchStrategy.NONE) {
-           return xquery;
-        }
         XQuery abstractQuery = eval.getCompiler().makeTranslator().queryFor (xquery);
         long t2 = System.nanoTime();
         translateTime += (t2 - t1);
-        PathOptimizer optimizer = new PathOptimizer(eval.getCompiler().getIndexConfiguration());
-        XQuery optimizedQuery = optimizer.optimize(abstractQuery);
-        String queryString = optimizedQuery.toString();
+        String queryString;
+        if (eval.getCompiler().getSearchStrategy() != SearchStrategy.NONE) {
+            PathOptimizer optimizer = new PathOptimizer(eval.getCompiler().getIndexConfiguration());
+            XQuery optimizedQuery = optimizer.optimize(abstractQuery);
+            queryString = optimizedQuery.toString();
+        } else {
+            queryString = abstractQuery.toString();
+        }
         long t3 = System.nanoTime();
         optimizeTime += (t3 - t2);
-        xquery = eval.getCompiler().compile(queryString);
+        try {
+            xquery = eval.getCompiler().getXQueryCompiler().compile(new StringReader(queryString));
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        } catch (IOException e) {
+            throw new LuxException (e);
+        }
         float compileTimeRatio = (t3 - t2) / (float) (t1 - t0);
         if (t3 - t2 > 2 * (t1 - t0)) {
             System.out.println ("Query got " + compileTimeRatio + " times harder to compile after optimization");
@@ -207,12 +232,34 @@ public class TestRunner extends RunnerBase {
         //        (<e >{() }</e>)/(let $zz:zz_typeswitchVar := self::node() return if ($zz:zz_typeswitchVar instance of node()) then (.) else (1))
         //assertTrue (runTest ("K2-sequenceExprTypeswitch-14"));
         // assertTrue (runTest ("fn-id-dtd-5"));
-        assertTrue (runTest ("fn-collection-4"));
+        //assertTrue (runTest ("fn-collection-4"));
+        
+        // These tests fail when we add the SaxonTranslator into the mix
+        // we are dropping the types from name tests:
+        // assertTrue (runTest ("K2-NameTest-68"));
+        
+        // I have no idea why this is failing?
+        // assertTrue (runTest ("K2-sequenceExprTypeswitch-14"));
+        //
+        // and this as well:
+        // assertTrue (runTest ("K2-ExternalVariablesWithout-11"));
+        //
+        // if subsequence($b,$p,1) below is changed to $b[$p] then the expression compiles,
+        // otherwise you get an error about no context item being defined
+        //
+        // declare variable $a as attribute()* := ((attribute { "name1" } { "" }),(attribute { "name2" } { "" }),(attribute { "name3" } { "" }));
+        // declare variable $b as attribute()* := ((attribute { "name1" } { "" }),(attribute { "name2" } { "" }),(attribute { "name3" } { "" }));
+        // ($a)/(let $p := position() return . is subsequence($b,$p,1))
+        
+        assertTrue (runTest ("TypedArguments-1"));
     }
     
     @Test public void testGroup () throws Exception {
         terminateOnException = false;
-        runTestGroup ("MinimalConformance"); // 2012-12-26: 19/19426 tests fail - 5 are surrogate-related; 10 are collection-related
+        // 2012-12-26: 19/19426 tests fail - 5 are surrogate-related; 10 are collection-related
+        //             22/17497 fail w/lux translation and no optimization
+        //             64/19426 fail w/lux optimization - we have changed the default context item
+        runTestGroup ("MinimalConformance"); 
         //runTestGroup ("FunctX");
         //runTestGroup ("Basics");
         //runTestGroup ("Expressions");

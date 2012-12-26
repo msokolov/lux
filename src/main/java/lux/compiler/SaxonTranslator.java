@@ -43,6 +43,7 @@ import lux.xquery.Satisfies;
 import lux.xquery.Satisfies.Quantifier;
 import lux.xquery.SortKey;
 import lux.xquery.TextConstructor;
+import lux.xquery.TreatAs;
 import lux.xquery.Variable;
 import lux.xquery.VariableDefinition;
 import lux.xquery.WhereClause;
@@ -53,6 +54,7 @@ import net.sf.saxon.expr.Atomizer;
 import net.sf.saxon.expr.AxisExpression;
 import net.sf.saxon.expr.BinaryExpression;
 import net.sf.saxon.expr.CastExpression;
+import net.sf.saxon.expr.CastableExpression;
 import net.sf.saxon.expr.CompareToIntegerConstant;
 import net.sf.saxon.expr.ContextItemExpression;
 import net.sf.saxon.expr.ErrorExpression;
@@ -63,6 +65,7 @@ import net.sf.saxon.expr.ForExpression;
 import net.sf.saxon.expr.FunctionCall;
 import net.sf.saxon.expr.InstanceOfExpression;
 import net.sf.saxon.expr.IntegerRangeTest;
+import net.sf.saxon.expr.ItemChecker;
 import net.sf.saxon.expr.LastItemExpression;
 import net.sf.saxon.expr.LetExpression;
 import net.sf.saxon.expr.Literal;
@@ -543,11 +546,31 @@ public class SaxonTranslator {
         return castExprFor(exprFor(base), type);
     }
     
+    public AbstractExpression exprFor (CastableExpression expr) {
+        Expression base = expr.getBaseExpression();
+        AtomicType type = expr.getTargetType();
+        return new lux.xquery.CastableExpression(exprFor(base), type.toString());
+    }
+    
     private AbstractExpression castExprFor (AbstractExpression ae, AtomicType type) {
         if (type.isAbstract()) {
             return ae;
         }
         return new FunCall (qnameFor(type), valueTypeForItemType(type), ae);        
+    }
+    
+    public AbstractExpression exprFor (ItemChecker checker) {
+        Expression base = checker.getBaseExpression();
+        ItemType type = checker.getRequiredType();
+        ValueType valueType = valueTypeForItemType(type);
+        
+        int cardinality = checker.getCardinality();
+        String occurrence = cardinality == StaticProperty.EMPTY ? "" :
+            Cardinality.getOccurrenceIndicator(cardinality);
+        if (valueType.isNode) {
+            return new TreatAs (exprFor(base), nodeTestFor((NodeTest) type), occurrence);            
+        }
+        return new TreatAs (exprFor(base), valueType, occurrence);
     }
 
     private Sequence exprFor (Expression[] exprs) {
@@ -803,7 +826,6 @@ public class SaxonTranslator {
     }
 
     public AbstractExpression exprFor (LetExpression let) {
-        // TODO: get rid of Let and use a FLWOR
         StructuredQName var = let.getVariableQName();
         Expression seq = let.getSequence();
         Expression returns = let.getAction();
@@ -1060,6 +1082,8 @@ public class SaxonTranslator {
             return exprFor ((Block) expr);
         case CastExpression:
             return exprFor ((CastExpression) expr);
+        case CastableExpression:
+            return exprFor ((CastableExpression) expr);
         case Choose:
             return exprFor ((Choose) expr);
         case Comment:
@@ -1094,6 +1118,8 @@ public class SaxonTranslator {
             return exprFor ((InstanceOfExpression) expr);
         case IntegerRangeTest:
             return exprFor ((IntegerRangeTest) expr);
+        case ItemChecker:
+            return exprFor ((ItemChecker) expr);
         case LastItemExpression:
             return exprFor ((LastItemExpression) expr);
         case LetExpression:
@@ -1114,6 +1140,8 @@ public class SaxonTranslator {
             return exprFor ((SlashExpression) expr);
         case TailExpression:
             return exprFor ((TailExpression) expr);
+        case TreatAs:
+            return exprFor ((ItemChecker) expr);
         case UnaryExpression:
             return exprFor ((UnaryExpression) expr);
         case ValueOf:
@@ -1128,12 +1156,17 @@ public class SaxonTranslator {
         }
     }
     
+    // list the names of all the classes
+    // for which we have defined overrides of exprFor
+    // - probably should do this by introspection
+    
     private enum ExprClass {
         AtomicSequenceConverter,
         Atomizer,
         AxisExpression,
         BinaryExpression,
-        CastExpression,
+        CastExpression, 
+        CastableExpression,
         CompareToIntegerConstant,
         ComputedAttribute,
         ComputedElement,
@@ -1147,6 +1180,7 @@ public class SaxonTranslator {
         FunctionCall,
         InstanceOfExpression,
         IntegerRangeTest,
+        ItemChecker,
         LastItemExpression,
         LetExpression,
         Literal,
@@ -1157,6 +1191,7 @@ public class SaxonTranslator {
         RootExpression,
         SlashExpression,
         TailExpression,
+        TreatAs,
         UnaryExpression,
         VariableReference,
         FLWORExpression,
