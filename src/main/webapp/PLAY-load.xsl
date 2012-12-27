@@ -47,7 +47,14 @@
       <xsl:number count="SCENE" />
     </xsl:variable>
     <xsl:variable name="speech">
-      <xsl:number />
+      <xsl:choose>
+        <xsl:when test="$scene">
+          <xsl:number />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:number count="LINE[not(ancestor::SPEECH)]" from="ancestor::ACT" level="any">
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:variable>
     <xsl:variable name="uri" select="concat('/',$uri-base,'/act',$act,'/scene',$scene,'/speech',$speech)" />
     <xsl:variable name="speech">
