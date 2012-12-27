@@ -30,6 +30,7 @@ import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
+import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.BooleanValue;
 import net.sf.saxon.value.DoubleValue;
 import net.sf.saxon.value.FloatValue;
@@ -156,10 +157,23 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         	ex.printStackTrace();
         	StringBuilder buf = new StringBuilder ();
         	for (TransformerException te : compiler.getErrorListener().getErrors()) {
+        	    if (te instanceof XPathException) {
+        	        buf.append(((XPathException)te).getAdditionalLocationText());
+        	    }
         	    buf.append (te.getMessageAndLocation());
         	    buf.append ("\n");
+        	    if (te.getLocator() != null) {
+        	        int lineNumber = te.getLocator().getLineNumber();
+        	        int column = te.getLocator().getColumnNumber();
+        	        if (compiler.getLastOptimized() != null) {
+        	            query = compiler.getLastOptimized().toString();
+        	        }
+                    String line = query.split("\r?\n")[lineNumber-1];
+                    buf.append (line, Math.max(0, column - 60), Math.min(line.length(), column + 60));
+        	    }
         	}
         	rsp.add("xpath-error", buf.toString());
+        	evaluator.close();
         	return;
         }
         //SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
@@ -177,6 +191,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     ));
         }
         XdmResultSet queryResults = evaluator.evaluate(expr, context);
+        evaluator.close();
         if (queryResults.getErrors().isEmpty()) {
             for (Object xpathResult : queryResults) {
                 if (++ count < start) {
@@ -191,11 +206,13 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         else {
             for (TransformerException te : queryResults.getErrors()) {
-                if (te.getLocator() != null) {
-                    rsp.add("xpath-error", te.getMessage() + " on line " + te.getLocator().getLineNumber() + " at column " + te.getLocator().getColumnNumber());
-                } else {
-                    rsp.add("xpath-error", te.getMessage());
+                if (te instanceof XPathException) {
+                    XPathException xpe = (XPathException) te;
+                    if (((XPathException) te).getAdditionalLocationText() != null) {
+                        rsp.add ("xpath-error", xpe.getAdditionalLocationText());
+                    }
                 }
+                rsp.add("xpath-error", te.getMessageAndLocation());
             }
         }
         rsp.add("xpath-results", xpathResults);
