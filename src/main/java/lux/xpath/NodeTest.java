@@ -80,12 +80,18 @@ public class NodeTest {
         case ELEMENT: 
             if ("*".equals(name.getLocalPart())) {
                 if (name.getPrefix().isEmpty()) {
-                    buf.append('*');
+                    buf.append (type.name).append ("()");
                 } else {
                     buf.append(name.getPrefix()).append(":*");
                 }
             } else {
-                name.toString(buf);
+                if ("*".equals(name.getPrefix())) {
+                    name.toString(buf);
+                } else {
+                    buf.append (type.name).append ("(");
+                    name.toString(buf);
+                    buf.append(')');
+                }
             }
             break;
         case DOCUMENT:
