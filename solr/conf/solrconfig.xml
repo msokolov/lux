@@ -1224,6 +1224,7 @@
           <!--  define additional fields using XPath-->
           <str name="title">/descendant::title[1]</str>
           <str name="title">/descendant::wp:title[1]</str>
+          <str name="title">/SPEECH/LINE[1]</str>
         </lst>
         <str name="strip-namespaces">no</str>
         <str name="namespace-aware">no</str>
