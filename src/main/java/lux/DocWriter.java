@@ -23,6 +23,11 @@ public interface DocWriter {
     void delete (String uri);
     
     /**
+     * Deletes all documents in the index.
+     */
+    void deleteAll ();
+    
+    /**
      * Commits all changes to the index, making them visible to readers.  As this may be a relatively expensive operation,
      * it is best to delay until truly necessary.
      */

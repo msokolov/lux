@@ -61,6 +61,19 @@ public class SolrDocWriter implements DocWriter {
     }
 
     @Override
+    public void deleteAll() {
+        DeleteUpdateCommand cmd = new DeleteUpdateCommand();
+        cmd.fromCommitted = true;
+        cmd.fromPending = true;
+        cmd.query = "*:*";
+        try {
+            updateHandler.deleteByQuery(cmd);
+        } catch (IOException e) {
+            throw new LuxException(e);
+        }
+    }
+
+    @Override
     public void commit() {
         CommitUpdateCommand cmd = new CommitUpdateCommand(false);
         cmd.expungeDeletes = false;
