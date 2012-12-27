@@ -168,8 +168,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         	        if (compiler.getLastOptimized() != null) {
         	            query = compiler.getLastOptimized().toString();
         	        }
-                    String line = query.split("\r?\n")[lineNumber-1];
-                    buf.append (line, Math.max(0, column - 60), Math.min(line.length(), column + 60));
+        	        String[] lines = query.split("\r?\n");
+        	        if (lineNumber <= lines.length) {
+        	            String line = lines[lineNumber-1];
+        	            buf.append (line, Math.max(0, column - 60), Math.min(line.length(), column + 60));
+        	        }
         	    }
         	}
         	rsp.add("xpath-error", buf.toString());
