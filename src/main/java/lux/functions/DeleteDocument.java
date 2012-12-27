@@ -1,6 +1,7 @@
 package lux.functions;
 
 import lux.Evaluator;
+import lux.Evaluator.LuxCollectionURIResolver;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -28,10 +29,20 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
     @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] {
-                SequenceType.SINGLE_STRING
+                SequenceType.OPTIONAL_STRING
         };
     }
 
+    @Override
+    public int getMinimumNumberOfArguments() {
+        return 0;
+    }
+
+    @Override
+    public int getMaximumNumberOfArguments() {
+        return 1;
+    }
+    
     @Override
     public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
         return SequenceType.EMPTY_SEQUENCE;
@@ -57,9 +68,17 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
         @Override
         public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
                 throws XPathException {
-            String uri = arguments[0].next().getStringValue();
-            Evaluator eval = (Evaluator) context.getConfiguration().getCollectionURIResolver();
-            eval.getDocWriter().delete(uri);
+            String uri = null;
+            if (arguments.length > 0) {
+                uri = arguments[0].next().getStringValue();
+            }
+            LuxCollectionURIResolver resolver = (Evaluator.LuxCollectionURIResolver) context.getConfiguration().getCollectionURIResolver();
+            Evaluator eval = resolver.getEvaluator();
+            if (uri == null) {
+                eval.getDocWriter().deleteAll();
+            } else {
+                eval.getDocWriter().delete(uri);
+            }
             return EmptySequence.asIterator(EmptySequence.getInstance());
         }
         
