@@ -53,7 +53,6 @@ public class BenchmarkRunner extends RunnerBase {
         ++numtests;
         QueryContext context = new QueryContext();
         bindExternalVariables(test1, context);
-        saxonConfig.setCollectionURIResolver(eval);
         saxonConfig.setDefaultCollection("lux:/");
         XQueryExecutable expr = eval.getCompiler().compile(test1.getBenchmarkQueryText());
         context.setContextItem(test1.getContextItem());
@@ -83,7 +82,6 @@ public class BenchmarkRunner extends RunnerBase {
             threwException = true;
         }
         saxonConfig.setDefaultCollection("lux:/");
-        saxonConfig.setCollectionURIResolver(eval);
         XQueryExecutable expr = eval.getCompiler().compile(test1.getBenchmarkQueryText());
         context.setContextItem(test1.getContextItem());
         //System.out.println (expr);
