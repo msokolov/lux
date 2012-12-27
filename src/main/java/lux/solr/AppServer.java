@@ -13,6 +13,11 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.request.SolrQueryRequest;
 
+/**
+ * TODO: add support for controlling HTTP response via xquery;
+ * eg for redirects, binary responses, etc.
+ * TODO: file upload support
+ */
 public class AppServer extends XQueryComponent {
 
     @Override
