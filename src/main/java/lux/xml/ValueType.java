@@ -1,9 +1,7 @@
 package lux.xml;
 
-/** A lux-specific type system.  These types correspond roughly to the XDM / XML Schema types
- * but only include types that are (or may) be useful for optimiization, and there are some extensions,
+/** These types correspond roughly to the XDM / XML Schema types, and there are some extensions,
  * like BOOLEAN_FALSE, which is just like boolean, but takes on the opposite sense: BOOLEAN_FALSE.true==!BOOLEAN.true.
- *
  */
 public enum ValueType {
     
@@ -19,7 +17,7 @@ public enum ValueType {
     ATOMIC("xs:untypedAtomic", true), 
     STRING("xs:string", true), 
     INT("xs:int", true), 
-    // NUMBER("xs:integer", true), 
+    INTEGER("xs:integer", true), 
     BOOLEAN("xs:boolean", true), 
     BOOLEAN_FALSE("xs:boolean", true), 
     DATE("xs:date", true), 
