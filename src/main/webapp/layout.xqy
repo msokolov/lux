@@ -4,7 +4,7 @@ declare function layout:render-nav ($current-url as xs:string)
 {
 let $nav := (
   <item url="/lux/browse.xqy">source</item>,
-  <item url="/lux/index.xqy">search</item>,
+(:  <item url="/lux/index.xqy">search</item>, :)
   <item url="/lux/maven-get.xqy">maven</item>
 )
 return <div><ul class="hlist">{
@@ -23,11 +23,17 @@ declare function layout:outer ($current-url as xs:string, $body as node()*)
     <link href="/lux/styles.css" rel="stylesheet" />
   </head>
   <body>
-    <h1><img class="logo" src="/lux/img/sunflwor52.png" alt="Lux" height="40" /> Lux Demo</h1>
+    <h1>
+      <a href="/lux/index.xqy">
+        <img class="logo" src="/lux/img/sunflwor52.png" alt="Lux" height="40" /> Lux Demo
+      </a>
+    </h1>
     {
-      layout:render-nav ($current-url),
-      $body
+      layout:render-nav ($current-url)
     }
+    <div id="main">{
+      $body
+    }</div>
   </body>
 </html>
 };

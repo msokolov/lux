@@ -74,7 +74,6 @@ declare function maven:search-maven ()
         return <li>{$r}</li>
     }</ul>
     { search:search-pagination ($start, $results/@total, $next, $page-size) }
-    <p>titles: { subsequence (lux:field-terms ("title", "a"), 1, 10) }</p>
     { search:javascript-postamble () }
     </body>/*
 

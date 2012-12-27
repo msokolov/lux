@@ -7,19 +7,40 @@ declare function search:format-param ($p as element(param)) as xs:string
   fn:concat ($p/@name, "=", fn:string-join ($p/value, ","))
 };
 
-declare function search:query ($qname, $term)
+declare function search:query ($params as element(param)*)
   as xs:string
 {
+  let $qname := $params[@name='qname']/value/string()
+  let $term := $params[@name='term']/value/string()
+  let $type := $params[@name='type']/value/string()
   let $eqname := replace ($qname, "([:{}])", "\\$1")
-  return
-  if ($qname and $term) then
-    concat ("node<", $eqname, ":", $term)
-  else if ($term) then
-    $term
-  else if ($qname) then
-    concat ("node<", $eqname, ":[* TO *]")
-  else
-    "*:*"
+  let $type-term := if ($type) then concat("doctype_s:", $type) else ()
+  let $text-term :=
+    if ($qname and $term) then
+      concat ("node<", $eqname, ":", $term)
+    else if ($term) then
+      $term
+    else if ($qname) then
+      concat ("node<", $eqname, ":[* TO *]")
+    else
+      "*:*"
+
+      return string-join (($text-term, $type-term), " AND ")
+};
+
+declare function search:select-control ($name as xs:string, $label as xs:string, $options as element(option)*, $selected-value as xs:string?)
+  as element (span)
+{
+    <span class="control">
+      <span class="label">{$label}</span>
+      <select name="{$name}">{
+        for $option in $options return
+          if ($selected-value eq $option/@value) then
+          <option selected="selected">{$option/@*, $option/node()}</option>
+        else
+          $option
+      }</select>
+    </span>
 };
 
 declare function search:sort-control ($params as element(param)*)
@@ -29,23 +50,26 @@ declare function search:sort-control ($params as element(param)*)
       <option value="">in document order</option>,
       <option value="title">by title</option>,
       <option value="title descending">by title, reversed</option> )
-  return
-  <select name="sort">{
-    for $option in $options return
-      if ($sort eq $option/@value) then
-        <option selected="selected">{$option/@*, $option/node()}</option>
-      else
-       $option
-  }</select>
+  return search:select-control ("sort", "order by", $options, $sort)
+};
+
+declare function search:type-control ($params as element(param)*)
+{
+  let $type := $params[@name="type"]
+  let $options := 
+  for $t in lux:field-terms ("doctype_s")
+  return <option value="{$t}">{$t}</option>
+  return search:select-control ("type", "type", $options, $type)
 };
 
 declare function search:search-controls ($params as element(param)*) 
 {
 <div class="container">
   <div>
-  Context <input type="text" name="qname" id="qname" value="{$params[@name='qname']}"/>
-  Text <input type="text" name="term" id="term" value="{$params[@name='term']}"/>
+    <input type="text" name="term" id="term" value="{$params[@name='term']}" size="10" />
+    in <input type="text" name="qname" id="qname" value="{$params[@name='qname']}" size="10" />
   <input type="submit" value="search" />
+  { search:type-control ($params) }
   { search:sort-control ($params) }
   </div>
   <div id="selection"></div>

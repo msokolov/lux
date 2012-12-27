@@ -13,7 +13,7 @@ declare variable $lux:http as document-node() external;
           dispatcher, search results formatting :)
 
 
-declare function demo:search-results ($query, $start as xs:int, $page-size as xs:int, $sort as xs:string?)
+declare function demo:search-results ($query, $start as xs:integer, $page-size as xs:integer, $sort as xs:string?)
 {
   for $doc in subsequence(lux:search ($query, (), $sort), $start, $page-size)
   let $doctype := name($doc/*)
@@ -22,16 +22,18 @@ declare function demo:search-results ($query, $start as xs:int, $page-size as xs
     if (doc-available ($stylesheet-name)) then
       lux:transform (doc($stylesheet-name), $doc)
     else
-    <a href="view.xqy{$doc/base-uri()}">{$doc/base-uri()}</a>
+      let $uri := base-uri ($doc)
+      return
+        if (starts-with($uri, "/")) then
+        <a href="view.xqy{$doc/base-uri()}">{$doc/base-uri()}</a>
+      else <a href="view.xqy/{$doc/base-uri()}">{$doc/base-uri()}</a>
     return <li>{$result-markup}</li>
 };
 
 declare function demo:search ($params as element(param)*, $start as xs:integer, $page-size as xs:integer)
 {
-let $qname := $params[@name='qname']/value/string()
-let $term := $params[@name='term']/value/string()
 let $sort := $params[@name='sort']/value/string()
-let $query := search:query ($qname, $term)
+let $query := search:query ($params)
 let $total := if ($query) then lux:count ($query) else 0
 return
 <search-results total="{$total}">{
@@ -42,7 +44,7 @@ return
 declare function demo:search () {
 let $page-size := 20
 let $params := $lux:http/http/params/param 
-let $start as xs:integer := if (number($params[@name='start'])) then number($params[@name='start']) else 1
+let $start as xs:integer := if (number($params[@name='start'])) then xs:integer($params[@name='start']) else 1
 let $results := demo:search ($params, $start, $page-size)
 let $next := $start + count($results/*)
 let $body := 
@@ -53,7 +55,10 @@ let $body :=
     </form>
     <ul id="search-results">{$results/*}</ul>
     { search:search-pagination ($start, $results/@total, $next, $page-size) }
-    <p>titles: { subsequence (lux:field-terms ("title", "a"), 1, 10) }</p>
+    <div class="indent-body">
+      <br/>
+      <input type="button" value="erase all" onclick="javascript:if (confirm('Are you sure you want to irretrievably delete the entire contents of your database?')) location.href='delete-all.xqy'" />
+    </div>
     { search:javascript-postamble () }
     {
       let $qname := $params[@name='qname'] where not ($qname) return

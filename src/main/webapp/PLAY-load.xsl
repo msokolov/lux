@@ -1,32 +1,64 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
 
+  <xsl:param name="uri-base" />
+
   <xsl:template match="/">
     <xsl:apply-templates />
   </xsl:template>
 
-    <!-- chunk each SCENE, and each LINE separately -->
+  <xsl:template match="@*|node()">
+    <xsl:copy copy-namespaces="no">
+      <xsl:apply-templates select="@*|node()" />
+    </xsl:copy>
+  </xsl:template>
+
+  <!-- chunk each SCENE, and each LINE separately -->
   <xsl:template match="ACT">
-    <xsl:apply-templates>
-      <xsl:with-param name="act" select="position()" tunnel="yes" />
-    </xsl:apply-templates>
+    <ACT>
+      <xsl:attribute name="act">
+        <xsl:number />
+      </xsl:attribute>
+      <xsl:apply-templates />
+    </ACT>
   </xsl:template>
  
   <xsl:template match="SCENE">
-    <xsl:param name="act" tunnel="yes" />
-    <xsl:output-document href="{base-uri(.)}/{$act}/{$scene}">
-      <xsl:copy-of select="." />
-    </xsl:output-document>
-    <xsl:apply-templates>
-      <xsl:with-param name="scene" select="position()" tunnel="yes" />
-    </xsl:apply-templates>
+    <xsl:variable name="act">
+      <xsl:number count="ACT" />
+    </xsl:variable>
+    <xsl:variable name="scene">
+      <xsl:number />
+    </xsl:variable>
+    <xsl:variable name="uri" select="concat('/',$uri-base,'/act',$act,'/scene',$scene)" />
+    <xsl:message select="$uri" />
+    <xsl:result-document href="{$uri}">
+      <SCENE play="{/PLAY/TITLE}" act="{$act}" scene="{$scene}">
+        <xsl:apply-templates />
+      </SCENE>
+    </xsl:result-document>
+    <SCENE uri="{$uri}" />
   </xsl:template>
 
-  <xsl:template match="LINE">
-    <xsl:param name="act" tunnel="yes" />
-    <xsl:param name="scene" tunnel="yes" />
-    <xsl:output-document href="{base-uri(.)}/act{$act}/sc{$scene}/l{position()}">
-      <xsl:copy-of select="." />
-    </xsl:output-document>
+  <xsl:template match="SPEECH">
+    <xsl:variable name="act">
+      <xsl:number count="ACT" />
+    </xsl:variable>
+    <xsl:variable name="scene">
+      <xsl:number count="SCENE" />
+    </xsl:variable>
+    <xsl:variable name="speech">
+      <xsl:number />
+    </xsl:variable>
+    <xsl:variable name="uri" select="concat('/',$uri-base,'/act',$act,'/scene',$scene,'/speech',$speech)" />
+    <xsl:variable name="speech">
+      <SPEECH play="{/PLAY/TITLE}" act="{$act}" scene="{$scene}" speech="{$speech}">
+        <xsl:apply-templates />
+      </SPEECH>
+    </xsl:variable>
+    <xsl:copy-of select="$speech" />
+    <xsl:result-document href="{$uri}">
+      <xsl:copy-of select="$speech" />
+    </xsl:result-document>
   </xsl:template>
   
 </xsl:stylesheet>

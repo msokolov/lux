@@ -16,16 +16,26 @@ as node()*
 declare function demo:load-file ($file as xs:string)
 as xs:string*
 {
-    let $doc := doc (concat("file:", $file))
-    let $doctype := name($doc/*)
-    let $load-xsl := concat ($doctype, "-load.xsl")
+    let $doc as document-node()? := doc (concat("file:", $file))
+    let $doctype as xs:string := name($doc/*)
+    let $load-xsl as xs:string := concat ("file:src/main/webapp/", $doctype, "-load.xsl")
     return if (doc-available ($load-xsl)) then
-      lux:transform (doc($load-xsl), $doc)
+      demo:transform-load ($doc, doc($load-xsl))
     else
       demo:default-load ($doc)
 };
 
+declare function demo:transform-load ($doc as document-node(), $xsl as document-node())
+  as xs:string
+{
+    let $basename := replace($doc/base-uri(), "^.*/(.*)\.xml", "$1")
+    let $uri := concat ("/", $basename, ".xml")
+    let $transformed := lux:transform ($xsl, $doc, ("uri-base", $basename))
+    return (lux:insert ($uri, $transformed), $uri)
+};
+
 declare function demo:default-load ($doc as document-node())
+  as xs:string
 {
     let $basename := replace($doc/base-uri(), "^.*/(.*)\.xml", "$1")
     return
