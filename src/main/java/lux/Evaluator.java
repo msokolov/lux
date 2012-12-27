@@ -278,10 +278,11 @@ public class Evaluator {
         public Result resolve(String href, String base) throws TransformerException {
             try {
                 XdmDestination dest = new XdmDestination();
-                URI uri = new URI(base).resolve(href);
+                URI uri = new URI("lux:/").resolve(href);
                 dest.setBaseURI(uri);
                 Configuration config = getCompiler().getProcessor().getUnderlyingConfiguration();
                 Receiver receiver = dest.getReceiver(config);
+                receiver.setSystemId(href);
                 XdmDestinationProxy xdmDestinationProxy = new XdmDestinationProxy(receiver, dest);
                 xdmDestinationProxy.setSystemId(href);
                 return xdmDestinationProxy;
