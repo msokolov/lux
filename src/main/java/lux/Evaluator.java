@@ -2,8 +2,11 @@ package lux;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
+import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
@@ -19,13 +22,17 @@ import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.Configuration;
+import net.sf.saxon.event.ProxyReceiver;
+import net.sf.saxon.event.Receiver;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.CollectionURIResolver;
+import net.sf.saxon.lib.OutputURIResolver;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmDestination;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmValue;
@@ -44,7 +51,7 @@ import org.slf4j.LoggerFactory;
  * This class holds all the per-request state required for evaluating queries. It is *not* thread-safe:
  * a new Evaluator should be created for each evaluation.
  */
-public class Evaluator implements URIResolver, CollectionURIResolver {
+public class Evaluator {
 
     private final Compiler compiler;
     private final CachingDocReader docReader;
@@ -68,8 +75,9 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
         this.searcher = searcher;
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
         defaultURIResolver = config.getURIResolver();
-        config.setURIResolver(this);
-        config.setCollectionURIResolver(this);
+        config.setURIResolver(new LuxURIResolver());
+        config.setCollectionURIResolver(new LuxCollectionURIResolver());
+        config.setOutputURIResolver(new LuxOutputURIResolver());
         builder = compiler.getProcessor().newDocumentBuilder();
         if (searcher != null) {
             DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
@@ -89,6 +97,20 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
      */
     public Evaluator () {
         this (new Compiler(IndexConfiguration.DEFAULT), null, null);
+    }
+    
+    /** Call this method to release the Evaluator from its role as the URI and Collection URI
+     * Resolver, and to close the underlying Lucene Searcher.
+     */
+    public void close() {
+        Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
+        config.setURIResolver(defaultURIResolver);
+        config.setCollectionURIResolver(null);
+        try {
+            searcher.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -164,72 +186,118 @@ public class Evaluator implements URIResolver, CollectionURIResolver {
         }
     }
     
-    /**
-     * Evaluator provides this method as an implementation of URIResolver so as to resolve uris in service of fn:doc().
-     * file: uri resolution is delegated to the default resolver by returning null.  lux: and other uris are all resolved
-     * using the provided searcher.  The lux: prefix is optional, e.g: the uris "lux:/hello.xml" and "/hello.xml"
-     * are equivalent.  Documents read from the index are numbered according to their Lucene docIDs, and retrieved
-     * using the {@link CachingDocReader}.
-     * @throws IllegalStateException if a search is attempted, but no searcher was provided
-     * @throws TransformerException if the document is not found in the index, or there was an IOException
-     * thrown by Lucene.
-     */
-    @Override
-    public Source resolve(String href, String base) throws TransformerException {
-        if (href.startsWith("file:")) {
-            // let the default resolver do its thing
-            if (defaultURIResolver != null) {
-                return defaultURIResolver.resolve(href, base);
+    public class LuxURIResolver implements URIResolver {
+        /**
+         * Evaluator provides this method as an implementation of URIResolver so as to resolve uris in service of fn:doc().
+         * file: uri resolution is delegated to the default resolver by returning null.  lux: and other uris are all resolved
+         * using the provided searcher.  The lux: prefix is optional, e.g: the uris "lux:/hello.xml" and "/hello.xml"
+         * are equivalent.  Documents read from the index are numbered according to their Lucene docIDs, and retrieved
+         * using the {@link CachingDocReader}.
+         * @throws IllegalStateException if a search is attempted, but no searcher was provided
+         * @throws TransformerException if the document is not found in the index, or there was an IOException
+         * thrown by Lucene.
+         */
+        @Override
+        public Source resolve(String href, String base) throws TransformerException {
+            if (href.startsWith("file:")) {
+                // let the default resolver do its thing
+                if (defaultURIResolver != null) {
+                    return defaultURIResolver.resolve(href, base);
+                }
+                // shouldn't happen, as I read the Saxon source...
+                return null;
             }
-            // shouldn't happen, as I read the Saxon source...
-            return null;
-        }
-        if (searcher == null) {
-            throw new IllegalStateException ("Attempted search, but no searcher was provided");
-        }
-        String path = href.startsWith("lux:/") ? href.substring(5) : href;
-        path = path.replace('\\', '/');
-        try {
-            DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), href)));
-            int docID = disi.nextDoc();
-            if (docID == DocIdSetIterator.NO_MORE_DOCS) {
-                throw new TransformerException("document '" +  href + "' not found");
+            if (searcher == null) {
+                throw new IllegalStateException ("Attempted search, but no searcher was provided");
             }
-            XdmNode doc = docReader.get(docID, getSearcher().getIndexReader());
-            return doc.asSource(); 
-        } catch (IOException e) {
-            throw new TransformerException(e);
+            String path = href.startsWith("lux:/") ? href.substring(5) : href;
+            path = path.replace('\\', '/');
+            try {
+                DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), href)));
+                int docID = disi.nextDoc();
+                if (docID == DocIdSetIterator.NO_MORE_DOCS) {
+                    throw new TransformerException("document '" +  href + "' not found");
+                }
+                XdmNode doc = docReader.get(docID, getSearcher().getIndexReader());
+                return doc.asSource(); 
+            } catch (IOException e) {
+                throw new TransformerException(e);
+            }
+        }
+
+    }
+    
+    public class LuxCollectionURIResolver implements CollectionURIResolver {
+        /**
+         * Evaluator provides this method as an implementation of CollectionURIResolver in support of fn:collection() (and fn:uri-collection()).
+         * @param href the path to resolve.  If empty or null, all documents are returned (from the index).  Paths beginning "lux:" are parsed
+         * (after removing the prefix) using {@link LuxQueryParser} and evaluated as queries against the index.  Other paths
+         * are resolved using the default resolver.
+         * @param base the base uri of the calling context (see {@link CollectionURIResolver}).  This is ignored for lux queries.
+         */
+        @Override
+        public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
+            if (StringUtils.isEmpty(href)) {
+                return new Search().iterate(new MatchAllDocsQuery(), Evaluator.this, 0, null);
+            }
+            if (href.startsWith("lux:")) {
+                // Saxon doesn't actually enforce that this is a valid URI, and we don't care about that either
+                String query = href.substring(4);
+                Query q;
+                try {
+                    // TODO: use a prebuilt parser, don't construct a new one for every query
+                    LuxQueryParser luxQueryParser = getLuxQueryParser();
+                    q = luxQueryParser.parse(query);
+                } catch (ParseException e) {
+                    throw new XPathException ("Failed to parse query: " + query, e);
+                }
+                LoggerFactory.getLogger(getClass()).debug("executing query: {}", q);
+
+                return new Search().iterate(q, Evaluator.this, 0, null);
+            }
+            return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);
+        }
+        
+        public Evaluator getEvaluator() {
+            return Evaluator.this;
         }
     }
     
-    /**
-     * Evaluator provides this method as an implementation of CollectionURIResolver in support of fn:collection() (and fn:uri-collection()).
-     * @param href the path to resolve.  If empty or null, all documents are returned (from the index).  Paths beginning "lux:" are parsed
-     * (after removing the prefix) using {@link LuxQueryParser} and evaluated as queries against the index.  Other paths
-     * are resolved using the default resolver.
-     * @param base the base uri of the calling context (see {@link CollectionURIResolver}).  This is ignored for lux queries.
-     */
-    @Override
-    public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
-        if (StringUtils.isEmpty(href)) {
-            return new Search().iterate(new MatchAllDocsQuery(), this, 0, null);
-        }
-        if (href.startsWith("lux:")) {
-            // Saxon doesn't actually enforce that this is a valid URI, and we don't care about that either
-            String query = href.substring(4);
-            Query q;
-            try {
-                // TODO: use a prebuilt parser, don't construct a new one for every query
-                LuxQueryParser luxQueryParser = getLuxQueryParser();
-                q = luxQueryParser.parse(query);
-            } catch (ParseException e) {
-                throw new XPathException ("Failed to parse query: " + query, e);
+    class LuxOutputURIResolver implements OutputURIResolver {
+        
+        class XdmDestinationProxy extends ProxyReceiver {
+            private XdmDestination dest;
+            public XdmDestinationProxy(Receiver nextReceiver, XdmDestination dest) {
+                super(nextReceiver);
+                this.dest = dest;
             }
-            LoggerFactory.getLogger(getClass()).debug("executing query: {}", q);
-
-            return new Search().iterate(q, this, 0, null);
+            
         }
-        return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);
+
+        @Override
+        public Result resolve(String href, String base) throws TransformerException {
+            try {
+                XdmDestination dest = new XdmDestination();
+                URI uri = new URI(base).resolve(href);
+                dest.setBaseURI(uri);
+                Configuration config = getCompiler().getProcessor().getUnderlyingConfiguration();
+                Receiver receiver = dest.getReceiver(config);
+                XdmDestinationProxy xdmDestinationProxy = new XdmDestinationProxy(receiver, dest);
+                xdmDestinationProxy.setSystemId(href);
+                return xdmDestinationProxy;
+            } catch (SaxonApiException e) {
+                throw new TransformerException(e);
+            } catch (URISyntaxException e) {
+                throw new TransformerException(e);
+            }
+        }
+
+        @Override
+        public void close(Result result) throws TransformerException {
+            XdmDestinationProxy receiver = (XdmDestinationProxy) result;
+            docWriter.write(receiver.dest.getXdmNode().getUnderlyingNode(), receiver.getSystemId());
+        }
+        
     }
     
     /**
