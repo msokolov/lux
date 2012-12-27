@@ -341,7 +341,9 @@
         <filter class="solr.LowerCaseFilterFactory"/>
         <!-- The TrimFilter removes any leading or trailing whitespace -->
         <filter class="solr.TrimFilterFactory" />
-<!--         <filter class="solr.ICUFoldingFilterFactory" /> -->
+        <!-- <filter class="solr.ICUFoldingFilterFactory" /> -->
+        <filter class="solr.PatternReplaceFilterFactory" pattern="^\W+">
+        </filter>
       </analyzer>
     </fieldType>
 
@@ -398,7 +400,7 @@
    <!-- whether the content is active / enabled for display -->
    <field name="active" type="boolean" indexed="true" stored="false" multiValued="false"/>
 
-   <field name="title" type="string" indexed="true" stored="true" multiValued="false" xpath="/*/title" />
+   <field name="title" type="sortkey" indexed="true" stored="true" multiValued="false" xpath="/*/title" />
    <!-- Uncommenting the following will create a "timestamp" field using
         a default value of "NOW" to indicate when each document was indexed.
      -->
