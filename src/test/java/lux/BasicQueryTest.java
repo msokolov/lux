@@ -101,7 +101,7 @@ public class BasicQueryTest {
     public void testConvertRootedPathToPredicate() throws Exception {
         assertQuery ("//ACT/SCENE/root()", "lux:search(" + 
                      getQueryXml(Q.ACT_SCENE) + ",24)" +
-        		"[(descendant::ACT/child::SCENE)/root(.)]", 
+        		"[(descendant::element(ACT)/child::element(SCENE))/root(.)]", 
         		XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
     
@@ -282,7 +282,7 @@ public class BasicQueryTest {
         // fn:collection() is implicit
         assertQuery ("collection()//SCENE", "lux:search(" +
                 getQueryXml(Q.SCENE)
-                + ",2)/descendant::SCENE", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
+                + ",2)/descendant::element(SCENE)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.SCENE);
     }
     
     @Test public void testOrderBy () throws Exception {

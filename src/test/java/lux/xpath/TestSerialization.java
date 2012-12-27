@@ -41,16 +41,16 @@ public class TestSerialization {
         assertEquals ("text()", new NodeTest (ValueType.TEXT, starfoo).toString());
 
         assertEquals ("element()", new NodeTest (ValueType.ELEMENT, null).toString());
-        assertEquals ("*", new NodeTest (ValueType.ELEMENT, star).toString());
+        assertEquals ("element()", new NodeTest (ValueType.ELEMENT, star).toString());
         assertEquals ("*:*", new NodeTest (ValueType.ELEMENT, starstar).toString());
-        assertEquals ("foo", new NodeTest (ValueType.ELEMENT, foo).toString());
-        assertEquals ("foo:bar", new NodeTest (ValueType.ELEMENT, foobar).toString());
+        assertEquals ("element(foo)", new NodeTest (ValueType.ELEMENT, foo).toString());
+        assertEquals ("element(foo:bar)", new NodeTest (ValueType.ELEMENT, foobar).toString());
         assertEquals ("foo:*", new NodeTest (ValueType.ELEMENT, foostar).toString());
         assertEquals ("*:foo", new NodeTest (ValueType.ELEMENT, starfoo).toString());
 
         assertEquals ("attribute()", new NodeTest (ValueType.ATTRIBUTE, null).toString());
-        assertEquals ("foo", new NodeTest (ValueType.ATTRIBUTE, foo).toString());
-        assertEquals ("foo:bar", new NodeTest (ValueType.ATTRIBUTE, foobar).toString());
+        assertEquals ("attribute(foo)", new NodeTest (ValueType.ATTRIBUTE, foo).toString());
+        assertEquals ("attribute(foo:bar)", new NodeTest (ValueType.ATTRIBUTE, foobar).toString());
         assertEquals ("foo:*", new NodeTest (ValueType.ATTRIBUTE, foostar).toString());
         assertEquals ("*:foo", new NodeTest (ValueType.ATTRIBUTE, starfoo).toString());
 
@@ -75,20 +75,21 @@ public class TestSerialization {
     
     @Test public void testPathStepToString () {
         NodeTest foo = new NodeTest (ValueType.ELEMENT, FOO_QNAME);
-        assertEquals ("self::foo", new PathStep (Axis.Self, foo).toString());
-        assertEquals ("child::foo", new PathStep (Axis.Child, foo).toString());
-        assertEquals ("parent::foo", new PathStep (Axis.Parent, foo).toString());
-        assertEquals ("ancestor::foo", new PathStep (Axis.Ancestor, foo).toString());
-        assertEquals ("ancestor-or-self::foo", new PathStep (Axis.AncestorSelf, foo).toString());
-        assertEquals ("descendant::foo", new PathStep (Axis.Descendant, foo).toString());
-        assertEquals ("descendant-or-self::foo", new PathStep (Axis.DescendantSelf, foo).toString());
-        assertEquals ("preceding::foo", new PathStep (Axis.Preceding, foo).toString());
-        assertEquals ("preceding-sibling::foo", new PathStep (Axis.PrecedingSibling, foo).toString());
-        assertEquals ("following::foo", new PathStep (Axis.Following, foo).toString());
-        assertEquals ("following-sibling::foo", new PathStep (Axis.FollowingSibling, foo).toString());
+        assertEquals ("self::element(foo)", new PathStep (Axis.Self, foo).toString());
+        assertEquals ("child::element(foo)", new PathStep (Axis.Child, foo).toString());
+        assertEquals ("parent::element(foo)", new PathStep (Axis.Parent, foo).toString());
+        assertEquals ("ancestor::element(foo)", new PathStep (Axis.Ancestor, foo).toString());
+        assertEquals ("ancestor-or-self::element(foo)", new PathStep (Axis.AncestorSelf, foo).toString());
+        assertEquals ("descendant::element(foo)", new PathStep (Axis.Descendant, foo).toString());
+        assertEquals ("descendant-or-self::element(foo)", new PathStep (Axis.DescendantSelf, foo).toString());
+        assertEquals ("preceding::element(foo)", new PathStep (Axis.Preceding, foo).toString());
+        assertEquals ("preceding-sibling::element(foo)", new PathStep (Axis.PrecedingSibling, foo).toString());
+        assertEquals ("following::element(foo)", new PathStep (Axis.Following, foo).toString());
+        assertEquals ("following-sibling::element(foo)", new PathStep (Axis.FollowingSibling, foo).toString());
         
-        assertEquals ("attribute::att", new PathStep (Axis.Attribute, new NodeTest (ValueType.ATTRIBUTE, new QName("att"))).toString());
-        assertEquals ("attribute::foo", new PathStep (Axis.Attribute, foo).toString());
+        assertEquals ("attribute::attribute(att)", new PathStep (Axis.Attribute, new NodeTest (ValueType.ATTRIBUTE, new QName("att"))).toString());
+        // Don't do this!
+        assertEquals ("attribute::element(foo)", new PathStep (Axis.Attribute, foo).toString());
         
         NodeTest node = new NodeTest (ValueType.NODE);
         assertEquals ("self::node()", new PathStep (Axis.Self, node).toString());

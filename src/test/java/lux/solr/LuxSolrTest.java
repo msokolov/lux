@@ -2,6 +2,7 @@ package lux.solr;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -156,7 +157,9 @@ public class LuxSolrTest {
         SolrQuery q = new SolrQuery(query);
         q.setQueryType(SOLR_QUERY_TYPE);
         QueryResponse rsp = solr.query (q, METHOD.POST);
-        assertEquals (error, rsp.getResponse().get("xpath-error"));
+        String actualError = rsp.getResponse().get("xpath-error").toString();
+        assertTrue ("Error " + actualError + " does not contain expected error " + error, 
+                actualError.contains(error));
     }
     
     protected void assertXPathSearchCount (int count, int docCount, int maxResults, String type, String value, String query) throws SolrServerException {
