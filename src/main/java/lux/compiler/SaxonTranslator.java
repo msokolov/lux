@@ -756,12 +756,7 @@ public class SaxonTranslator {
             typeExpr = type.toString();
         } else if (type instanceof NodeTest) {
             lux.xpath.NodeTest nodeTest = nodeTestFor((NodeTest)type);
-            ValueType nodeType = nodeTest.getType() ;
-            if (nodeTest.getQName() != null && (nodeType == ValueType.ELEMENT || nodeType == ValueType.ATTRIBUTE)) {
-                typeExpr = nodeType.name + '(' + nodeTest.toString() + ')';
-            } else {
-                typeExpr = nodeTest.toString();                
-            }
+            typeExpr = nodeTest.toString();
         } else {
             throw new LuxException ("Unsupported node test in instance-of expression: " + expr.toString());
         }
@@ -789,8 +784,9 @@ public class SaxonTranslator {
             case StandardNames.XS_G_MONTH_DAY:
                 return ValueType.MONTH_DAY;
             case StandardNames.XS_INT:
-            case StandardNames.XS_INTEGER:
                 return ValueType.INT;
+            case StandardNames.XS_INTEGER:
+                return ValueType.INTEGER;
             case StandardNames.XS_DOUBLE:
                 return ValueType.DOUBLE;
             case StandardNames.XS_FLOAT:
