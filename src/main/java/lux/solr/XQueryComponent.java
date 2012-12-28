@@ -20,6 +20,7 @@ import lux.Compiler;
 import lux.DocWriter;
 import lux.Evaluator;
 import lux.QueryContext;
+import lux.TransformErrorListener;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
@@ -147,16 +148,17 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         SolrIndexSearcher searcher = rb.req.getSearcher();
         DocWriter docWriter = new SolrDocWriter (indexer, rb.req.getCore().getUpdateHandler());
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
+        TransformErrorListener errorListener = new TransformErrorListener();
         try {
             // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
             // of the query so error reporting will be able to report it
             // and so it can include modules with relative paths
             // String queryPath = rb.req.getParams().get(LuxServlet.LUX_XQUERY);
-        	expr = compiler.compile(query);
+        	expr = compiler.compile(query, errorListener);
         } catch (LuxException ex) {
         	ex.printStackTrace();
         	StringBuilder buf = new StringBuilder ();
-        	for (TransformerException te : compiler.getErrorListener().getErrors()) {
+        	for (TransformerException te : errorListener.getErrors()) {
         	    if (te instanceof XPathException) {
         	        buf.append(((XPathException)te).getAdditionalLocationText());
         	    }
