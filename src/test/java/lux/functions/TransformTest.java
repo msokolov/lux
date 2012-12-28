@@ -37,7 +37,7 @@ public class TransformTest extends XQueryTest {
         String query = IOUtils.toString(TransformTest.class.getResourceAsStream("transform-context.xqy"));
         QueryContext context = new QueryContext();
         context.bindVariable(new QName("external-var"), new XdmAtomicValue(10));
-        XdmResultSet results = evaluator.evaluate(evaluator.getCompiler().compile(query), context);
+        XdmResultSet results = evaluator.evaluate(query, context);
         assertEquals ("got an unexpected error", 0, results.getErrors().size());
         assertEquals ("undefined", results.iterator().next().toString());
     }

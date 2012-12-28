@@ -188,15 +188,12 @@ public class Compiler {
     }
     
     public XsltCompiler getXsltCompiler () {
-        XsltCompiler xsltCompiler = processor.newXsltCompiler();
-        xsltCompiler.setErrorListener(new TransformErrorListener());
-        return xsltCompiler;
+        return processor.newXsltCompiler();
     }
 
     public XQueryCompiler getXQueryCompiler () {
         XQueryCompiler xqueryCompiler = processor.newXQueryCompiler();
         xqueryCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-        xqueryCompiler.setErrorListener(new TransformErrorListener());
         return xqueryCompiler;
     }
 

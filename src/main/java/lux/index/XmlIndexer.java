@@ -23,7 +23,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.exception.LuxException;
 import lux.index.field.FieldDefinition;
-import lux.xml.Offsets;
+import lux.xml.OffsetDocBuilder;
 import lux.xml.SaxonDocBuilder;
 import lux.xml.Serializer;
 import lux.xml.XmlReader;
@@ -151,7 +151,7 @@ public class XmlIndexer {
     private void initDocBuilder () {
         try {
             if (isOption (COMPUTE_OFFSETS)) {
-                saxonBuilder = new SaxonDocBuilder(getProcessor(), new Offsets());                    
+                saxonBuilder = new OffsetDocBuilder(getProcessor());                    
             } else {
                 saxonBuilder = new SaxonDocBuilder(getProcessor());
             }

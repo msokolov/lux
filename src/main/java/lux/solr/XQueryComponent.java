@@ -148,7 +148,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         SolrIndexSearcher searcher = rb.req.getSearcher();
         DocWriter docWriter = new SolrDocWriter (indexer, rb.req.getCore().getUpdateHandler());
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
-        TransformErrorListener errorListener = new TransformErrorListener();
+        TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
             // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
             // of the query so error reporting will be able to report it

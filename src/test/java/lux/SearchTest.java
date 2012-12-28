@@ -4,7 +4,8 @@ import static lux.IndexTestSupport.QUERY_CONSTANT;
 import static lux.IndexTestSupport.QUERY_EXACT;
 import static lux.IndexTestSupport.QUERY_MINIMAL;
 import static lux.IndexTestSupport.QUERY_NO_DOCS;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
 
@@ -409,6 +410,11 @@ public class SearchTest extends BaseSearchTest {
         // to reduce to doc-count = 1
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
             " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
+    }
+    // hey do you really like the clicky sound?? Maybe brown would have been better?
+    @Test
+    public void testHighlight () throws Exception {
+        assertSearch ("<TITLE>The Tragedy of <B>Hamlet</B>, Prince of Denmark</TITLE>\n", "lux:highlight('hamlet',/PLAY/TITLE)", null, null);
     }
 
 }

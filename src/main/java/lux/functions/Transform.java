@@ -75,12 +75,13 @@ public class Transform extends ExtensionFunctionDefinition {
 
             Evaluator eval = SearchBase.getEvaluator(context);
             XsltCompiler xsltCompiler = eval.getCompiler().getXsltCompiler();
+            xsltCompiler.setErrorListener(eval.getErrorListener());
             try {
                 // TODO: cache compiled xslt somewhere
                 XsltExecutable xsltexec = xsltCompiler.compile(stylesheet);
                 XsltTransformer transformer = xsltexec.load();
                 transformer.setSource(node);
-                transformer.setErrorListener(new TransformErrorListener());
+                transformer.setErrorListener(eval.getErrorListener());
                 if (arguments.length > 2) {
                     @SuppressWarnings("rawtypes")
                     SequenceIterator<? extends Item> params = arguments[2];

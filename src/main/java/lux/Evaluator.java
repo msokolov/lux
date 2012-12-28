@@ -57,6 +57,8 @@ public class Evaluator {
     private final CachingDocReader docReader;
     private final DocWriter docWriter;
     private final DocumentBuilder builder;
+    private final TransformErrorListener errorListener;
+
     private LuxSearcher searcher;
     private LuxQueryParser queryParser;
     private XmlQueryParser xmlQueryParser;
@@ -87,6 +89,8 @@ public class Evaluator {
         }
         this.docWriter = docWriter;
         queryStats = new QueryStats();
+        errorListener = new TransformErrorListener();
+        errorListener.setUserData(this);
     }
     
     /**
@@ -119,11 +123,16 @@ public class Evaluator {
      * @return the results of the evaluation; any errors are encapsulated in the result set.
      */
     public XdmResultSet evaluate(String query) {
-        XQueryExecutable compiledQuery = compiler.compile(query);
+        return evaluate (query, null);
+    }
+    
+    public XdmResultSet evaluate(String query, QueryContext context) {
+        errorListener.clear();
+        XQueryExecutable compiledQuery = compiler.compile(query, errorListener);
         if (queryStats != null && compiler.getLastOptimized() != null) {
             queryStats.optimizedQuery = compiler.getLastOptimized().toString();
         }
-        return evaluate (compiledQuery, null);
+        return evaluate (compiledQuery, context);
     }
     
     /**
@@ -134,20 +143,25 @@ public class Evaluator {
     public XdmResultSet evaluate(XQueryExecutable xquery) {
         return evaluate (xquery, null);
     }
+    
+    public XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context) { 
+        return evaluate (xquery, context, errorListener);
+    }
 
     /**
      * Evaluate the already-compiled query, with the given context (external variable bindings, context item) defined.
      * @param xquery a compiled XQuery expression
      * @param context the query context holds external variable bindings and the context item
+     * @param listener an error listener that will capture errors and also act as a conduit that passes
+     * the Evaluator to function calls that require it.
      * @return the results of the evaluation; any errors are encapsulated in the result set.
      */
-    public XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context) { 
+    private XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context, TransformErrorListener listener) { 
         if (context == null) {
             context = new QueryContext();
         }
         XQueryEvaluator xqueryEvaluator = xquery.load();
         try {
-            TransformErrorListener listener = new TransformErrorListener();
             listener.setUserData(this);
             xqueryEvaluator.setErrorListener(listener);
             if (context != null) {
@@ -355,6 +369,10 @@ public class Evaluator {
             xmlQueryParser = new XmlQueryParser(config.getFieldName(field), field.getAnalyzer());
         }
         return xmlQueryParser;
+    }
+    
+    public TransformErrorListener getErrorListener() {
+        return errorListener;
     }
 
 }

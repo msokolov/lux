@@ -137,8 +137,9 @@ public class SearchPathQueryTest extends BasicQueryTest {
             xq = new Expandifier().expandify(xq);
             String expanded = xq.toString();
             XQueryExecutable baseline;
-            baseline = compiler2.compile(expanded);
+            baseline = compiler2.compile(expanded, eval2.getErrorListener());
             XQueryEvaluator baselineEval = baseline.load();
+            baselineEval.setErrorListener(eval2.getErrorListener());
             baseResult = baselineEval.evaluate();
         } catch (SaxonApiException e) {
             throw new LuxException ("error evaluting query " + xq, e);

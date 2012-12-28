@@ -9,9 +9,7 @@ import java.util.Collection;
 import javax.xml.transform.TransformerException;
 
 import lux.Evaluator;
-import lux.QueryContext;
 import lux.XdmResultSet;
-import net.sf.saxon.s9api.XQueryExecutable;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
@@ -39,8 +37,7 @@ public abstract class XQueryTest {
     }
 
     protected void assertXQuery(String result, String query, String firstError) {
-        XQueryExecutable xquery = evaluator.getCompiler().compile(query);
-        XdmResultSet results = evaluator.evaluate(xquery, new QueryContext());
+        XdmResultSet results = evaluator.evaluate(query);
         if (result == null) {
             assertEquals (0, results.size());
             if (firstError != null) {

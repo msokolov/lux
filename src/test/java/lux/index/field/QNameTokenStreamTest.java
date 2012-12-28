@@ -1,6 +1,8 @@
 package lux.index.field;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -8,8 +10,8 @@ import java.io.IOException;
 import lux.index.analysis.AttributeTokenStream;
 import lux.index.analysis.ElementTokenStream;
 import lux.index.analysis.XmlTextTokenStream;
+import lux.xml.OffsetDocBuilder;
 import lux.xml.Offsets;
-import lux.xml.SaxonDocBuilder;
 import lux.xml.XmlReader;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
@@ -102,7 +104,7 @@ public class QNameTokenStreamTest {
         byte[] input = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream(filename));
         inputString = new String (input, "utf-8");
         Processor proc = new Processor(false);
-        SaxonDocBuilder builder = new SaxonDocBuilder(proc.newDocumentBuilder(), new Offsets());
+        OffsetDocBuilder builder = new OffsetDocBuilder(proc);
         builder.setFixupCRLF(true); // TODO: should be autodetected
         XmlReader reader = new XmlReader();
         reader.addHandler(builder);
