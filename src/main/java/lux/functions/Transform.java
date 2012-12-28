@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import javax.xml.transform.TransformerException;
 
 import lux.Evaluator;
-import lux.Evaluator.LuxCollectionURIResolver;
 import lux.TransformErrorListener;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
@@ -73,8 +72,9 @@ public class Transform extends ExtensionFunctionDefinition {
                 throws XPathException {
             NodeInfo stylesheet = (NodeInfo) arguments[0].next();
             NodeInfo node = (NodeInfo) arguments[1].next();
-            LuxCollectionURIResolver resolver = (Evaluator.LuxCollectionURIResolver) context.getConfiguration().getCollectionURIResolver();
-            XsltCompiler xsltCompiler = resolver.getEvaluator().getCompiler().getXsltCompiler();
+
+            Evaluator eval = SearchBase.getEvaluator(context);
+            XsltCompiler xsltCompiler = eval.getCompiler().getXsltCompiler();
             try {
                 // TODO: cache compiled xslt somewhere
                 XsltExecutable xsltexec = xsltCompiler.compile(stylesheet);

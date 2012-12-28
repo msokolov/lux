@@ -1,7 +1,6 @@
 package lux.functions;
 
 import lux.Evaluator;
-import lux.Evaluator.LuxCollectionURIResolver;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -72,8 +71,7 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
             if (arguments.length > 0) {
                 uri = arguments[0].next().getStringValue();
             }
-            LuxCollectionURIResolver resolver = (Evaluator.LuxCollectionURIResolver) context.getConfiguration().getCollectionURIResolver();
-            Evaluator eval = resolver.getEvaluator();
+            Evaluator eval = SearchBase.getEvaluator(context);
             if (uri == null) {
                 eval.getDocWriter().deleteAll();
             } else {

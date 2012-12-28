@@ -15,6 +15,8 @@ public class TransformErrorListener implements ErrorListener {
         errors = new ArrayList<TransformerException>();
     }
     
+    private Object userData;
+    
     private ArrayList<TransformerException> errors;
 
     public ArrayList<TransformerException> getErrors() {
@@ -42,6 +44,22 @@ public class TransformErrorListener implements ErrorListener {
     @Override
     public void warning(TransformerException exception) throws TransformerException {
         errors.add(exception);
+    }
+
+    /** 
+     * @return the user-data
+     */
+    public Object getUserData() {
+        return userData;
+    }
+
+    /** 
+     * Provided as a conduit for passing lux internal data through a Saxon evaluation episode
+     * into a function call.
+     * @param userData any object
+     */
+    public void setUserData(Object userData) {
+        this.userData = userData;
     }
 
 }

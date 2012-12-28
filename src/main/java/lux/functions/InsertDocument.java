@@ -1,7 +1,6 @@
 package lux.functions;
 
 import lux.Evaluator;
-import lux.Evaluator.LuxCollectionURIResolver;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -61,8 +60,7 @@ public class InsertDocument extends ExtensionFunctionDefinition {
                 throws XPathException {
             String uri = arguments[0].next().getStringValue();
             NodeInfo node = (NodeInfo) arguments[1].next();
-            LuxCollectionURIResolver resolver = (Evaluator.LuxCollectionURIResolver) context.getConfiguration().getCollectionURIResolver();
-            Evaluator eval = resolver.getEvaluator();
+            Evaluator eval = SearchBase.getEvaluator(context);
             eval.getDocWriter().write(node, uri);
             return EmptySequence.asIterator(EmptySequence.getInstance());
         }

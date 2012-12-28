@@ -2,6 +2,12 @@ package lux.xml;
 
 import java.util.Arrays;
 
+import lux.index.analysis.XmlTextTokenStream;
+
+/**
+ * This class stores the offsets of text nodes and character entities in serialized XML.  It is 
+ * populated by {@link SaxonDocBuilder} and consumed by {@link XmlTextTokenStream}.
+ */
 public final class Offsets {
     
     private int iOffset;

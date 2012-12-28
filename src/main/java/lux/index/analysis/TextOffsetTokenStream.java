@@ -28,7 +28,6 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
 
     @Override
     protected boolean resetTokenizer(CharSequence text) {
-        //charSequenceStream.reset(text);  can't reset a BaseCharFilter :(
         charSequenceStream = new CharSequenceStream(text);
         OffsetCharFilter offsetCharFilter = null;
         if (offsets != null) {

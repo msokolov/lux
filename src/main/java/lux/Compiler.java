@@ -3,6 +3,8 @@ package lux;
 import java.io.IOException;
 import java.io.StringReader;
 
+import javax.xml.transform.ErrorListener;
+
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
@@ -12,6 +14,7 @@ import lux.functions.DeleteDocument;
 import lux.functions.Exists;
 import lux.functions.FieldTerms;
 import lux.functions.FieldValues;
+import lux.functions.Highlight;
 import lux.functions.InsertDocument;
 import lux.functions.Search;
 import lux.functions.Transform;
@@ -50,14 +53,7 @@ public class Compiler {
     private final CollectionURIResolver defaultCollectionURIResolver;
     private final String uriFieldName;
     private final IndexConfiguration indexConfig;
-    // Warning: error listener may receive errors from multiple threads since the compiler
-    // is shared.  This is a limitation of the Saxon API, which provides a threadsafe compiler
-    // class whose error reporting is not thread-safe.
-    private final TransformErrorListener errorListener;
     private final boolean isSaxonLicensed;
-    private XQueryCompiler xqueryCompiler;
-    private XPathCompiler xpathCompiler;
-    private XsltCompiler xsltCompiler;
 
     // for testing
     private XQuery lastOptimized;
@@ -107,7 +103,6 @@ public class Compiler {
         uriFieldName = indexConfig.getFieldName(FieldName.URI);
         //this.dialect = dialect;
         logger = LoggerFactory.getLogger(getClass());
-        errorListener = new TransformErrorListener();
     }
     
     /**
@@ -118,9 +113,15 @@ public class Compiler {
      * @throws LuxException if any error occurs while compiling, such as a static XQuery error or syntax error.
      */
     public XQueryExecutable compile(String exprString) throws LuxException {
+        return compile (exprString, null);
+    }
+    
+    public XQueryExecutable compile(String exprString, ErrorListener errorListener) throws LuxException {
         XQueryExecutable xquery;
+        XQueryCompiler xQueryCompiler = getXQueryCompiler();
+        xQueryCompiler.setErrorListener(errorListener);
         try {
-            xquery = getXQueryCompiler().compile(exprString);
+            xquery = xQueryCompiler.compile(exprString);
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
@@ -134,7 +135,7 @@ public class Compiler {
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         lastOptimized = optimizedQuery;
         try {
-            xquery = getXQueryCompiler().compile(optimizedQuery.toString());
+            xquery = xQueryCompiler.compile(optimizedQuery.toString());
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
@@ -143,6 +144,7 @@ public class Compiler {
         }
         return xquery;
     }
+
     
     private static Processor makeProcessor () {
         try {
@@ -173,6 +175,7 @@ public class Compiler {
         processor.registerExtensionFunction(new InsertDocument());
         processor.registerExtensionFunction(new DeleteDocument());
         processor.registerExtensionFunction(new Commit());
+        processor.registerExtensionFunction(new Highlight());
 
         FileExtensions.registerFunctions(processor);
     }
@@ -185,29 +188,21 @@ public class Compiler {
     }
     
     public XsltCompiler getXsltCompiler () {
-        if (xsltCompiler == null) {
-            xsltCompiler = processor.newXsltCompiler();
-            xsltCompiler.setErrorListener(errorListener);
-        }
-        errorListener.clear();
+        XsltCompiler xsltCompiler = processor.newXsltCompiler();
+        xsltCompiler.setErrorListener(new TransformErrorListener());
         return xsltCompiler;
     }
 
     public XQueryCompiler getXQueryCompiler () {
-        if (xqueryCompiler == null) {
-            xqueryCompiler = processor.newXQueryCompiler();
-            xqueryCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-            xqueryCompiler.setErrorListener(errorListener);
-        }
-        errorListener.clear();
+        XQueryCompiler xqueryCompiler = processor.newXQueryCompiler();
+        xqueryCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
+        xqueryCompiler.setErrorListener(new TransformErrorListener());
         return xqueryCompiler;
     }
 
     public XPathCompiler getXPathCompiler () {
-        if (xpathCompiler == null) {
-            xpathCompiler = processor.newXPathCompiler();
-            xpathCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
-        }
+        XPathCompiler xpathCompiler = processor.newXPathCompiler();
+        xpathCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
         return xpathCompiler;
     }
 
@@ -241,10 +236,6 @@ public class Compiler {
 
     public void setSearchStrategy(SearchStrategy searchStrategy) {
         this.searchStrategy = searchStrategy;
-    }
-
-    public TransformErrorListener getErrorListener() {
-        return errorListener;
     }
 
     public boolean isSaxonLicensed() {

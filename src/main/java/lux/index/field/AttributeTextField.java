@@ -39,7 +39,6 @@ public class AttributeTextField extends FieldDefinition {
         return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
                         new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
     }
-    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

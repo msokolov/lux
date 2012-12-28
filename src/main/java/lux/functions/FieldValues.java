@@ -3,7 +3,6 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
-import lux.Evaluator.LuxCollectionURIResolver;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -100,8 +99,7 @@ public class FieldValues extends ExtensionFunctionDefinition {
                 node = (NodeInfo) arguments[1].next();
             }
             long docID = node.getDocumentNumber();  
-            LuxCollectionURIResolver resolver = (Evaluator.LuxCollectionURIResolver) context.getConfiguration().getCollectionURIResolver();
-            Evaluator eval = resolver.getEvaluator();
+            Evaluator eval = SearchBase.getEvaluator(context);
             Document doc ;
             try {
                 doc = eval.getSearcher().doc((int) docID);

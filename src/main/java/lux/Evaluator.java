@@ -145,22 +145,24 @@ public class Evaluator {
         if (context == null) {
             context = new QueryContext();
         }
+        XQueryEvaluator xqueryEvaluator = xquery.load();
         try {
-            XQueryEvaluator eval = xquery.load();
-            eval.setErrorListener(compiler.getErrorListener());
+            TransformErrorListener listener = new TransformErrorListener();
+            listener.setUserData(this);
+            xqueryEvaluator.setErrorListener(listener);
             if (context != null) {
-                eval.setContextItem((XdmItem) context.getContextItem());
+                xqueryEvaluator.setContextItem((XdmItem) context.getContextItem());
                 if (context.getVariableBindings() != null) {
                     for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
                         net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
-                        eval.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
+                        xqueryEvaluator.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
                     }
                 }
             }
-            XdmValue value = eval.evaluate();
+            XdmValue value = xqueryEvaluator.evaluate();
             return new XdmResultSet (value);
         } catch (SaxonApiException e) {
-            return new XdmResultSet(getCompiler().getErrorListener().getErrors());
+            return new XdmResultSet(((TransformErrorListener)xqueryEvaluator.getErrorListener()).getErrors());
         } finally {
             if (docReader != null) {
                 docReader.clear();
@@ -258,9 +260,6 @@ public class Evaluator {
             return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);
         }
         
-        public Evaluator getEvaluator() {
-            return Evaluator.this;
-        }
     }
     
     class LuxOutputURIResolver implements OutputURIResolver {

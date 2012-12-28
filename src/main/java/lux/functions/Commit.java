@@ -1,7 +1,6 @@
 package lux.functions;
 
 import lux.Evaluator;
-import lux.Evaluator.LuxCollectionURIResolver;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -54,8 +53,7 @@ public class Commit extends ExtensionFunctionDefinition {
         @Override
         public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
                 throws XPathException {
-            LuxCollectionURIResolver resolver = (Evaluator.LuxCollectionURIResolver) context.getConfiguration().getCollectionURIResolver();
-            Evaluator eval = resolver.getEvaluator();
+            Evaluator eval = SearchBase.getEvaluator(context);
             eval.getDocWriter().commit();
             eval.reopenSearcher();
             return EmptySequence.asIterator(EmptySequence.getInstance());

@@ -3,7 +3,6 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
-import lux.Evaluator.LuxCollectionURIResolver;
 import lux.index.IndexConfiguration;
 import lux.index.field.XmlTextField;
 import lux.xpath.FunCall;
@@ -87,8 +86,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                     start = arg1 == null ? "" : arg1.getStringValue();
                 }
             }
-            LuxCollectionURIResolver resolver = (Evaluator.LuxCollectionURIResolver) context.getConfiguration().getCollectionURIResolver();
-            Evaluator eval = resolver.getEvaluator();
+            Evaluator eval = SearchBase.getEvaluator(context);
             try {
                 if (fieldName == null) {
                     fieldName = eval.getCompiler().getIndexConfiguration().getDefaultFieldName();
