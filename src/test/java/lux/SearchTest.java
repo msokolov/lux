@@ -386,7 +386,7 @@ public class SearchTest extends BaseSearchTest {
     
     @Test 
     public void testBugFix0018b() throws Exception {
-        assertSearch ("<TITLE>The Tragedy of Hamlet, Prince of Denmark</TITLE>\n", "lux:search(\"*:*\")[2]", null, 2, 2);
+        assertSearch ("<TITLE>The Tragedy of Hamlet, Prince of Denmark</TITLE>", "lux:search(\"*:*\")[2]", null, 2, 2);
     }
 
     @Test 
@@ -411,10 +411,56 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
             " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
     }
-    // hey do you really like the clicky sound?? Maybe brown would have been better?
+    
     @Test
     public void testHighlight () throws Exception {
-        assertSearch ("<TITLE>The Tragedy of <B>Hamlet</B>, Prince of Denmark</TITLE>\n", "lux:highlight('hamlet',/PLAY/TITLE)", null, null);
+        assertSearch ("<TITLE>The Tragedy of <B>Hamlet</B>, Prince of Denmark</TITLE>", "lux:highlight('hamlet',/PLAY/TITLE)", null, null);
+    }
+
+    @Test
+    public void testHighlightMultiple () throws Exception {
+        assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince <B>of</B> Denmark</TITLE>", 
+                "lux:highlight('tragedy of hamlet',/PLAY/TITLE)", null, null);
+    }
+
+    @Test
+    public void testHighlightPhrase () throws Exception {
+        assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince of Denmark</TITLE>", 
+                "lux:highlight('\"tragedy of hamlet\"',/PLAY/TITLE)", null, null);
+    }
+    
+    @Test
+    public void testHighlightElementQuery () throws Exception {
+        assertSearch ("<TITLE>The Tragedy of <B>Hamlet</B>, Prince of Denmark</TITLE>", 
+                "lux:highlight('<TITLE:hamlet',/PLAY/TITLE)", null, null);
+    }
+    
+    @Test
+    public void testHighlightElementMultiple () throws Exception {
+        assertSearch ("<TITLE>The <B>Tragedy</B> of <B>Hamlet</B>, Prince of Denmark</TITLE>", 
+                "lux:highlight('<TITLE:hamlet <TITLE:tragedy',/PLAY/TITLE)", null, null);
+    }
+    
+    // Highlighting element-phrase-queries is not well-supported by the current highlighter.
+    // because the Lucene phrase highlighting is restricted to operate on a single field,
+    // and we use the main text field.  So we choose to err on thse side of over-highlighting
+    // using a workaround that ignores element restrictions in the presence of phrase queries.
+    @Test
+    public void testHighlightElementPhrase () throws Exception {
+        assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince of Denmark</TITLE>", 
+                "lux:highlight('<TITLE:\"tragedy of hamlet\"',/PLAY/TITLE)", null, null);
+    }
+    
+    @Test 
+    public void testHighlightMixedQuery () throws Exception {
+        assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince of Denmark</TITLE>",
+                "lux:highlight('<TITLE:tragedy \"of hamlet\"',/PLAY/TITLE)", null, null);
+    }
+    
+    @Test
+    public void testHighlightAttributeQuery () throws Exception {
+        // no highlighting in attributes
+        assertSearch ("<node id=\"10\">node 10</node>", "lux:highlight('<@id:10', <node id=\"10\">node 10</node>)", null, null);
     }
 
 }

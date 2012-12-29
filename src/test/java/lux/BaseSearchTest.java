@@ -12,12 +12,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Properties;
+
+import javax.xml.transform.stream.StreamResult;
 
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
+import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.query.QueryResult;
 import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmItem;
+import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.CorruptIndexException;
@@ -74,7 +83,15 @@ public abstract class BaseSearchTest {
             throw results.getErrors().iterator().next();
         }
         boolean hasResults = results.iterator().hasNext();
-        String result = hasResults ? results.iterator().next().toString() : null;
+        String result = null;
+        if (hasResults) {
+            XdmItem item = results.iterator().next();
+            if (item instanceof XdmNode) {
+                result = serialize (((XdmNode)item).getUnderlyingNode());
+            } else {
+                result = item.toString();
+            }
+        }
         if (expectedResult == null) {            
             assertTrue ("results not empty, got: " + result, !hasResults);
             return results;
@@ -82,6 +99,16 @@ public abstract class BaseSearchTest {
         assertTrue ("no results", hasResults);
         assertEquals ("incorrect query result", expectedResult, result);
         return results;
+    }
+    
+    public static String serialize(/*@NotNull*/ NodeInfo nodeInfo) throws XPathException {
+        StringWriter sw = new StringWriter();
+        Properties props = new Properties();
+        props.setProperty("method", "xml");
+        props.setProperty("indent", "no");
+        props.setProperty("omit-xml-declaration", "yes");
+        QueryResult.serialize(nodeInfo, new StreamResult(sw), props);
+        return sw.toString();
     }
 
     /**

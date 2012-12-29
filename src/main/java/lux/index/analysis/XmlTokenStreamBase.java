@@ -16,13 +16,18 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
+ * This sets up a somewhat tangled analysis chain: it may help to remember that
+ * when the Tokenizer/TokenStream/AttributeSource constructors reference another AttributeSource,
+ * then they share the *same* attributes.
+ * 
  * TODO: wrap an entire Analyzer, not just a StandardTokenizer
  */
 abstract class XmlTokenStreamBase extends TokenStream {
 
+    
     protected TokenStream wrapped; // these two do the actual tokenizing within
                                    // each block of text
-    protected Tokenizer tokenizer;
+    protected Tokenizer tokenizer;  
 
     protected XdmNode curNode;
     protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to

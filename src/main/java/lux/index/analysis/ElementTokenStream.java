@@ -31,7 +31,7 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
     
     @Override
     protected void updateNodeAtts () {
-        getAncestorQNames();        
+        getAncestorQNames();
     }
     
     private void getAncestorQNames() {

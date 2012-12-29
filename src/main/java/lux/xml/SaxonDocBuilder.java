@@ -17,15 +17,19 @@ import net.sf.saxon.s9api.XdmNode;
 public class SaxonDocBuilder implements StAXHandler {
     
     private final DocumentBuilder builder;
-    private BuildingStreamWriterImpl writer;
+    protected BuildingStreamWriterImpl writer;
     
     /**
      * @param processor the Saxon processor
-     * @throws SaxonApiException if there is an error creating an XMLStreamWriter
+     * @throws LuxException if there is an error creating an XMLStreamWriter
      */
-    public SaxonDocBuilder (Processor processor) throws SaxonApiException {
+    public SaxonDocBuilder (Processor processor) {
         builder = processor.newDocumentBuilder();
-        writer = builder.newBuildingStreamWriter();
+        try {
+            writer = builder.newBuildingStreamWriter();
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
     }
 
     public XdmNode getDocument() throws SaxonApiException {
@@ -139,3 +143,8 @@ public class SaxonDocBuilder implements StAXHandler {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
