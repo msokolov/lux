@@ -49,20 +49,6 @@ public class SearchCall extends FunCall {
         this.generated = isGenerated;
         generateArguments();
     }
-
-    /*
-    public static SearchCall makeSearchCall (AbstractExpression [] args) {
-        SortField[] sort;
-        if (args.length >= 3) {
-            AbstractExpression sortArg = args[2];
-            if (sortArg.getType() == Type.LITERAL) {
-                String sortExpr = ((LiteralExpression)sortArg).getValue().toString();
-                // TODO? parse sort expressions here?
-            }
-        }
-        return new SearchCall (args[0], ValueType.VALUE, sort);
-    }
-    */
    
     public void combineQuery(XPathQuery additionalQuery, IndexConfiguration config) {
         ElementConstructor additional = additionalQuery.getParseableQuery().toXmlNode(config.getDefaultFieldName());
@@ -113,25 +99,8 @@ public class SearchCall extends FunCall {
         }
         return buf.toString();
     }
-    
-    /*
-    @Override
-    public void toString (StringBuilder buf)  {
-        if (fnCollection) {
-            // FIXME: URL (or URI?) escaping here:
-            FunCall collection = new FunCall (FunCall.FN_COLLECTION, query.getResultType(), 
-                new LiteralExpression ("lux:" + 
-                        query.toQueryString(defaultField, indexConfig) +
-                        "?sort=" + createSortString(query.getSortFields())));
-            collection.toString(buf);
-        } else {
-            super.toString(buf);
-        }
-    }
-    */
 
     /**
-     * 
      * @return whether this function call will be represented by fn:collection("lux:" + query)
      */
     public boolean isFnCollection() {

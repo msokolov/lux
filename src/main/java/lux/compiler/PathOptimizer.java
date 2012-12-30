@@ -4,7 +4,7 @@ import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import lux.Compiler.SearchStrategy;
@@ -167,7 +167,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
             Variable var = new Variable (new QName("_lx" + nextVariableNumber++));
             expr = expr.replaceRoot(var);
             // for $var in lux:search(...) return $var op $expr
-            // TODO: if op was //, replace with descendant::
             // avoids the need for document-ordering (b/c we are *already* document-ordered)
             return new FLWOR (expr, new ForClause(var, null, search));
         }
@@ -180,8 +179,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * is wrapped by root(); root(search(QS)/S)
      * 
      * @param expr an expression
-     * @param facts assertions about the search to be injected, if any.  These are or-ed with 
-     * facts found in the search query. In fact we always pass 0 here?  So TODO: nuke facts.
      */
     protected void optimizeSubExpressions(AbstractExpression expr) {
         AbstractExpression[] subs = expr.getSubs();
@@ -381,8 +378,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
             occur = Occur.SHOULD;
         }
         // a built-in XPath 2 function
-        else if (fnArgParity.containsKey(name.getLocalPart())) {
-            occur = fnArgParity.get(name.getLocalPart());
+        else if (isomorphs.contains(name.getLocalPart())) {
+            occur = Occur.MUST;
             // what does it mean if occur is null here??
         } else {
             // for functions in fn: and xs: namespaces not listed below, we assume that they 
@@ -410,21 +407,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return funcall;
     }
 
-    // TODO: just make this a set of emptiness-preserving functions
-    // the Occur value isn't really needed or useful 
-    protected static HashMap<String, Occur> fnArgParity = new HashMap<String, Occur>();
+    // These functions are emptiness-preserving - if their argument is empty, then their
+    // result is also empty
+    protected static HashSet<String> isomorphs = new HashSet<String>();
 
     static {
-        fnArgParity.put("empty", Occur.SHOULD);
-        fnArgParity.put("not", Occur.SHOULD);
-        fnArgParity.put("string", Occur.SHOULD);
-        fnArgParity.put("data", Occur.MUST);
-        fnArgParity.put("exists", Occur.MUST);
-        fnArgParity.put("root", Occur.MUST);
-        fnArgParity.put("collection", Occur.MUST);
-        fnArgParity.put("doc", Occur.MUST);
-        fnArgParity.put("uri-collection", Occur.MUST);
-        fnArgParity.put("unparsed-text", Occur.MUST);
+        isomorphs.add("data");
+        isomorphs.add("exists");
+        isomorphs.add("root");
+        isomorphs.add("collection");
+        isomorphs.add("doc");
+        isomorphs.add("uri-collection");
+        isomorphs.add("unparsed-text");
     };
     
     /**
@@ -555,7 +549,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(Dot dot) {
-        // FIXME - should have value type=VALUE?
         push(MATCH_ALL);
         return dot;
     }
@@ -830,7 +823,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     sortField = new SortField (sortField.getField(), sortField.getType(), true);
                 }
                 if (! sortKey.isEmptyLeast()) {
-                    /* FIXME:
+                    /* FIXME: implement empty greatest
                      * punt on empty greatest for Strings for now: 
                      * Lucene 4.0 seems to have a more sensible
                      * implementation

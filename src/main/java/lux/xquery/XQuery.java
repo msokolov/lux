@@ -126,7 +126,6 @@ public class XQuery {
                 def.toString(buf);
             }
         }
-        // TODO: collation, variables, modes, default function namespace, etc.
         if (functionDefinitions != null) {
             for (FunctionDefinition def : functionDefinitions) {
                 def.toString(buf);

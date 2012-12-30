@@ -138,7 +138,6 @@ public class IndexConfiguration {
         fields = new HashSet<FieldDefinition>();
         fieldNames = new HashMap<FieldDefinition, String>();
         fieldAnalyzers = new MultiFieldAnalyzer();
-        // TODO: configuration?  Inherit from XML_TEXT?
         fieldAnalyzers.put(null, new DefaultAnalyzer());
         addField (URI);
         this.options = options | NAMESPACE_AWARE;

@@ -107,7 +107,7 @@ public enum ValueType {
     
     @Override
     public String toString () {
-        // FIXME: QName qualification, and occurrence specifiers
+        // FIXME: QName qualification eg element(foo) or document-node(element(foo))
         if (!isAtomic) {
             return name + "()";
         }

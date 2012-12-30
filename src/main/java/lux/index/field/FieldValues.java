@@ -39,7 +39,7 @@ public class FieldValues implements Iterable<Fieldable> {
 
         @Override
         public Fieldable next() {
-            // FIXME: for best indexing performance, avoid GC and re-use these Field objects:
+            // TODO: for best indexing performance, avoid GC and re-use these Field objects:
             // can also re-use Documents.  Can only use each field instance once per document
             Object value = iter.next();
             switch (field.getType()) {

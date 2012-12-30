@@ -61,7 +61,6 @@ public class LuxSolrTest {
         // make sure the documents have the values we expect
         assertQueryCount (102, "*:*");
         // QNAME index is no longer part of the default setup created by LuxUpdateProcessor
-        // TODO: expose index config in solrconfig.xml
         //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":config");
         //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":schema");
         assertQueryCount (1, LUX_PATH + ":\"{} schema types fieldType\"");

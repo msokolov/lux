@@ -312,11 +312,11 @@ public class TestRunner extends RunnerBase {
     }
     
     /*
-     * TODO: Run test cases, replacing the context item with collection().
+     * Run test cases, replacing the context item with collection().
      * Compare results and timing using Lux with results and timing using Saxon
      * alone fetching files from the file system.
      * 
-     * To do this, we need to:
+     * To do this:
      * 1. Change the processing of context items when we load the tests to bind external variables to collection()
      * 2. Change the test runner so it compares results from Lux and Saxon (not from XQTS)
      * 2a. the test runner should skip tests that throw errors, and those that use the emptydoc as context

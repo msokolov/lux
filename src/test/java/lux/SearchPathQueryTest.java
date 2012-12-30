@@ -111,7 +111,6 @@ public class SearchPathQueryTest extends BasicQueryTest {
             t = System.nanoTime() - t0;
             elapsedBaseline += t;
         }
-        // TODO: also assert facts about query optimizations
         System.out.println (String.format("%dms using lux; %dms w/o lux", elapsed/1000000, elapsedBaseline/1000000));
         
         results = evalQuery(query, eval2);

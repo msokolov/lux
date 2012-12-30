@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE test PUBLIC "test" "no.dtd">
-<test id="test">
+<test id="test" att="&lt; &#9;
+.&gt;">
   <!-- this is a comment -->
   <title>TEST</title>
   <entities>&amp;&gt;&#48;</entities>

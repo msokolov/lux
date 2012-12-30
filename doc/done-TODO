@@ -1,3 +1,15 @@
+* query highlighting
+XmlHighlighter works along the lines of the Lucene highlighter, but with some xml awareness.
+It accepts a NodeInfo and a Query and produces a NodeInfo, via StAX event streams.
+There is a pluggable class to do the actual highlighting.  All query types supported by 
+the Lucene Highlighter are supported,
+and use the standard analysis chain (so matching respects case-folding and so on).  
+The one exception is element text phrase queries: these are highlighted without regard to 
+element containment due to limitations in the Lucene highlighter phrase support, which works 
+only on a single field at a time.
+* improved diagnostics via Solr component
+Now when there's a syntax or runtime error, you get a meaningful error
+message on the client side.
 * module import
 * optimized sorting
 ** support ordering by named indexes

@@ -261,9 +261,7 @@ public class Evaluator {
                 String query = href.substring(4);
                 Query q;
                 try {
-                    // TODO: use a prebuilt parser, don't construct a new one for every query
-                    LuxQueryParser luxQueryParser = getLuxQueryParser();
-                    q = luxQueryParser.parse(query);
+                    q = getLuxQueryParser().parse(query);
                 } catch (ParseException e) {
                     throw new XPathException ("Failed to parse query: " + query, e);
                 }

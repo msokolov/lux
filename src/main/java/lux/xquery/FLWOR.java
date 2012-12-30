@@ -62,7 +62,7 @@ public class FLWOR extends AbstractExpression {
     }
 
     // TODO: are we confused here? Spec lists different precedence (2)
-    // for assignment operator?
+    // for assignment operator, but something failed when we did that?
     @Override
     public int getPrecedence () {
         return 3;

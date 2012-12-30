@@ -18,7 +18,7 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
     private CharSequenceStream charSequenceStream;
 
     public TextOffsetTokenStream(XdmNode doc, Offsets offsets) {
-        super(doc);
+        super();
         //charSequenceStream = new CharSequenceStream(null);
         //charStream = new OffsetCharFilter(charSequenceStream);
         this.offsets = offsets;

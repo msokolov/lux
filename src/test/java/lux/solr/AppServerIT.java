@@ -59,7 +59,7 @@ public class AppServerIT {
         WebResponse httpResponse = httpclient.getResponse(path);
         assertEquals ("text/plain", httpResponse.getContentType());
         String response = httpResponse.getText();
-        // FIXME - somebody is appending an extra newline - is it HttpUnit or us?
+        // We need to trim since HttpUnit seems to be adding an extra newline?
         assertEquals ("This is a test", response.trim());
     }
     

@@ -26,7 +26,8 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     }
     
     private XmlIndexer getIndexer (IndexConfiguration config) {
-        // TODO: pool these
+        // TODO: pool these across requests - the UpdateProcessor is allocated per-request,
+        // but XmlIndexer contains various expensive components that should be reused
         return new XmlIndexer(config);
     }
 

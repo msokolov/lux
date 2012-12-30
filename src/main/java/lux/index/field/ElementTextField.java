@@ -27,7 +27,6 @@ public class ElementTextField extends FieldDefinition {
     }
     
     protected ElementTextField () {
-        // TODO - better default analyzer w/stemming + diacritic normalization
         // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
         // element/attribute text tokens are generated)
         super ("lux_elt_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO);

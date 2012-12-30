@@ -292,11 +292,11 @@ public class SearchTest extends BaseSearchTest {
         // NB - count was 1164; reduced to 1138 by path query (20 scenes + 5 acts + 1 play = 26).
         // Then reduced to 2! by a full text term query
         assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
-        // FIXME - why is this 141 and not 28?
+        // TODO - why is this 141 and not 28?
         assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 141);
         assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7);
         // saxon cleverly optimizes this and gets rid of the intersect
-        // but FIXME our optimizer fails to see the opportunity for a word query
+        // but TODO our optimizer fails to see the opportunity for a word query
         assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1138);
     }
     
@@ -391,13 +391,13 @@ public class SearchTest extends BaseSearchTest {
 
     @Test 
     public void testTrailingStringCall () throws Exception {
-        // FIXME - this isn't optimized as well as it could be; it has some Booleans in it?
+        // TODO - this isn't optimized as well as it could be; it has some Booleans in it?
         assertSearch ("Where is your son?", "/PLAY/ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]/string()", null, 1);        
     }
     
     @Test
     public void testOrderBy () throws Exception {
-        // FIXME: we don't yet have a solution that allows us to push the order by
+        // TODO: we don't yet have a solution that allows us to push the order by
         // optimization (to say nothing of additional constraints) into a user-supplied
         // query using the string query syntax.
         assertSearch ("ACT", "(for $doc in lux:search('bernardo')" + 

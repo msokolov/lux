@@ -1,5 +1,7 @@
 package lux.xquery;
 
+import lux.xpath.LiteralExpression;
+
 public class ModuleImport {
     private final String prefix;
     private final String nsURI;
@@ -13,13 +15,13 @@ public class ModuleImport {
     
     public void toString (StringBuilder buf) {
         buf.append("import module ");
-        // TODO: quote double quotes in namespace and systemId
         if (prefix != null) {
             buf.append ("namespace ").append (prefix).append('=');
         }
-        buf.append ('"').append(nsURI).append('"');
+        LiteralExpression.quoteString(nsURI, buf);
         if (systemId != null) {
-            buf.append (" at ").append('"').append(systemId).append('"');
+            buf.append (" at ");
+            LiteralExpression.quoteString(systemId, buf);
         }
         buf.append(";\n");
     }

@@ -70,7 +70,6 @@ public class XmlIndexer {
     
     private final IndexConfiguration configuration;
     private XmlReader xmlReader;
-    // TODO: consolidate with XCompiler 
     private Processor processor;
     private XPathCompiler compiler;
     private SaxonDocBuilder saxonBuilder;

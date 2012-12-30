@@ -62,10 +62,6 @@ public class Compiler {
         NONE, LUX_SEARCH, SAXON_LICENSE
     }
     private SearchStrategy searchStrategy;
-    // TODO: once we get a handle on an IndexWriter
-    // keep track of the number of writes so we can reopen readers that are out of sync
-    // private final AtomicInteger indexGeneration;
-    // private final IndexWriter indexWriter;
 
     /** Creates a Compiler configured according to the given {@link IndexConfiguration}. 
      * A Saxon Processor is generated using the installed version of Saxon.  If a licensed version of Saxon 

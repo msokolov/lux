@@ -31,8 +31,6 @@ public class QNameTokenStreamTest {
     OffsetAttribute offsetAtt;
     String inputString;
 
-    // TODO: add some entities in attributes    
-    // test attribute space normalization?
     @Test
     public void testElementTokenStream() throws Exception {
 

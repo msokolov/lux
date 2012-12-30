@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Arrays;
 
@@ -168,10 +169,10 @@ public class XmlReaderTest {
 
     private void assertTestPathValues(XPathValueMapper xpathValueMapper) {
         assertEquals ("{} test @id test\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(0)));
-        assertEquals ("{} test title TEST\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(1)));
-        assertEquals ("{} test entities &>0\0\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(2)));
-        assertEquals ("{} test token ȑȒȓȔȕȖȗȘ", String.valueOf(xpathValueMapper.getPathValues().get(5)));
-        assertEquals ("{} test token \u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", String.valueOf(xpathValueMapper.getPathValues().get(5)));
+        assertEquals ("{} test title TEST\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(2)));
+        assertEquals ("{} test entities &>0\0\0\0\0\0", String.valueOf(xpathValueMapper.getPathValues().get(3)));
+        assertEquals ("{} test token ȑȒȓȔȕȖȗȘ", String.valueOf(xpathValueMapper.getPathValues().get(6)));
+        assertEquals ("{} test token \u0211\u0212\u0213\u0214\u0215\u0216\u0217\u0218", String.valueOf(xpathValueMapper.getPathValues().get(6)));
     }
     
     @Test
@@ -194,15 +195,18 @@ public class XmlReaderTest {
         assertPathMapperKeys(mapper);
         assertEquals ("@id", mapper.getNames().get(0));
         assertEquals ("test", mapper.getValues().get(0));
-        assertEquals ("title", mapper.getNames().get(1));
-        assertEquals ("TEST", mapper.getValues().get(1));
-        assertEquals ("entities", mapper.getNames().get(2));
-        assertEquals ("&>0", mapper.getValues().get(2));
-        assertEquals ("token", mapper.getNames().get(5));
-        assertEquals ("        12345678", mapper.getValues().get(5));
-        assertEquals ("test", mapper.getNames().get(6));
+        assertEquals ("@att", mapper.getNames().get(1));
+        // test attribute value normalization
+        assertEquals ("< \t .>", mapper.getValues().get(1));
+        assertEquals ("title", mapper.getNames().get(2));
+        assertEquals ("TEST", mapper.getValues().get(2));
+        assertEquals ("entities", mapper.getNames().get(3));
+        assertEquals ("&>0", mapper.getValues().get(3));
+        assertEquals ("token", mapper.getNames().get(6));
+        assertEquals ("        12345678", mapper.getValues().get(6));
+        assertEquals ("test", mapper.getNames().get(7));
         assertEquals ("This is some markup <that> is escaped The end.", 
-                normalize (mapper.getValues().get(6)));
+                normalize (mapper.getValues().get(7)));
     }
     
     public final String INPUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\r\n" +
@@ -221,7 +225,8 @@ public class XmlReaderTest {
 
     /**
      * This test ensures that we correctly process namespace information when sending events
-     * to the Saxon XmlStreamWriter.  TODO: use the resource file instead of the embedded String.
+     * to the Saxon XmlStreamWriter.  At one point this failed due to lack of namespace 
+     * declarations for all of the prefixes.
      * @throws SaxonApiException
      * @throws XMLStreamException
      */
@@ -232,7 +237,8 @@ public class XmlReaderTest {
         SaxonDocBuilder streamBuilder = new SaxonDocBuilder(processor);
         XmlReader reader = new XmlReader();
         reader.addHandler(streamBuilder);
-        reader.read (new StringReader(INPUT));
+        InputStream testInput = getClass().getResourceAsStream("/lux/reader-test-ns.xml");
+        reader.read (new InputStreamReader (testInput));
         XdmNode doc = streamBuilder.getDocument();
         net.sf.saxon.s9api.Serializer outputter = new net.sf.saxon.s9api.Serializer();
         XdmSequenceIterator iter = doc.axisIterator(Axis.DESCENDANT);

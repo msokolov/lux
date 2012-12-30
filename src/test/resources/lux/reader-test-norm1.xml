@@ -1,5 +1,5 @@
 <!DOCTYPE test PUBLIC "test" "no.dtd">
-<test id="test">
+<test id="test" att="&lt; 	 .>">
   <!-- this is a comment -->
   <title>TEST</title>
   <entities>&amp;&gt;&#48;</entities>

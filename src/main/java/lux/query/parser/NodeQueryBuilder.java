@@ -80,8 +80,8 @@ public class NodeQueryBuilder implements QueryBuilder {
             }
         }
         int prefixLength = termText.length();
-        // TODO: see if we are embedded in a SpanQuery of any sort.  If so,
-        // generate a SpanNearQuery here, not a PhraseQuery
+        // We assume that we are never embedded in a SpanQuery of any sort, which is valid
+        // because the query syntax doesn't provide any means of specifying Spans.
         PhraseQuery pq=new PhraseQuery();
         Term term = null;
         try {

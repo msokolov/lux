@@ -19,19 +19,21 @@ import org.apache.lucene.search.SortField;
  * For now, simply distinguishes the two cases: whether the results are in fact
  * supposed to be the results of the original XPath evaluation, or if further
  * evaluation is needed.
- * 
+ */
+/*
+ *  * TODO: cleanup XPathQuery 
+ *  
  * We could also tell: whether the query will return the correct document set;
  * it's possible that we may sometimes retrieve documents that don't match.
  * We're not allowed to miss a document, though. Some evaluators that return the
  * correct doc set still may need additional evaluation though if the results
  * are not to be documents.
  * 
- * TODO: cleanup
- * I don't think we make use of the information about return type at all, except for
- * counting and boolean (which are stored in facts, weirdly).  ValueType.NODE, DOCUMENT, etc
- * all seem pointless
+ * We go to great lengths to maintain return type info, yet it is only used in one place
+ * that has any other purpose than maintaining this info:
+ * PathOptimizer.optimizeFunCall checks if the return type is document when determining 
+ * whether to replace count() with lux:count()
  * 
- * Also: get rid of immutable queries
  */
 public class XPathQuery {
 

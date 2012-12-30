@@ -182,10 +182,6 @@ public class TestSerialization {
         assertEquals ("\"&lt;\"", new LiteralExpression("<").toString());
     }
     
-    // TODO: add more serialization tests
-    // testAttributeToString
-    // testTextToString
-    // testFLWORToString
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

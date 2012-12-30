@@ -913,9 +913,6 @@ public class SaxonTranslator {
     }
     
     public AbstractExpression exprFor (UnaryExpression expr) {
-        // int cardinality = checker.getRequiredCardinality();
-        // TODO: implement?  can we merge this with an Atomizer?
-        // CardinalityChecker; DocumentSorter
         return exprFor (expr.getBaseExpression());
     }
     

@@ -24,8 +24,6 @@ public class InsertDocumentTest extends XQueryTest {
     @Test
     public void testInsertDocument () throws Exception {
         assertXQuery(null, "lux:insert('/test.xml', <test>this is a test</test>)");
-        // TODO: I don't like that this throws an error, but what else can you do in a URI
-        // resolver???
         assertXQuery(null, "doc('/test.xml')", "document '/test.xml' not found");
         assertXQuery(null, "lux:commit()");
         assertXQuery("this is a test", "doc('/test.xml')/test/string()");

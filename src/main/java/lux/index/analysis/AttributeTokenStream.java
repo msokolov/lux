@@ -38,7 +38,7 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
 
     /**
      * Iterates over /descendant::element()/@*); all descendant elements'
-     * attributes TODO: refactor the lookahead logic
+     * attributes
      */
     private static class ContentIterator implements Iterator<XdmNode> {
 
@@ -77,12 +77,12 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
 
         @Override
         public XdmNode next() {
-            if (next != null) {
+            if (hasNext()) {
                 XdmNode node = next;
                 next = null;
                 return node;
             }
-            return getNext();
+            return null;
         }
 
         @Override

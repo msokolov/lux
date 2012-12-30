@@ -16,11 +16,41 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
- * This sets up a somewhat tangled analysis chain: it may help to remember that
- * when the Tokenizer/TokenStream/AttributeSource constructors reference another AttributeSource,
- * then they share the *same* attributes.
- * 
- * TODO: wrap an entire Analyzer, not just a StandardTokenizer
+ * <p>
+ * This is the root of a set of xml-aware TokenStream classes that work by selecting text
+ * a node at a time (using {@link XmlTokenStreamBase#contentIterator}) from an XML document, and then 
+ * passing that text to the wrapped TokenStream.  The wrapped TokenStream is re-used for each text node.
+ * The outermost link in the chain will be a TokenFilterthat applies a sequence of structure-related 
+ * Attributes to each text token (ie a list of QNames, but can be any kind of structural attribute
+ * that should be composed with each text token).
+ * <p>
+ * The token stream topology is: this( this.wrapped (this.tokenizer ))
+ * For example, for the element-text field we have ElementTokenStream (a subclass of this class):
+ * </p>
+ * <blockquote>
+ * <code>ElementTokenStream (QNameTokenFilter (LowerCaseFilter (StandardTokenizer)))</code>
+ * </blockquote>
+ * <p>
+ * There is an oddity here in that the first link in the chain (the ElementTokenStream above)
+ * needs to supply the structural information to the final link (the QNameTokenFilter), since 
+ * the QNames are iterated in an *inner* loop - ie for each text token.  This is accomplished 
+ * using the 
+ * </p>
+ * <p>
+ * So this class and its descendants serve a dual function: as factories for the analysis
+ * chain, and their instances serve as the first links in those chains.  This contrasts with 
+ * the usual approach in Lucene, where an Analyzer serves to construct a TokenStream, but
+ * is necessary since Analyzers work on character-based Readers, and here we need a more abstract
+ * notion of Analysis that can encompass structured documents.
+ * </p>
+ */
+/*
+ * TODO: refactor so as to make this more intelligible / similar to existing Lucene code
+ * 1) Separate factory from TokenStream - create a StructureAnalyzer or something of that sort
+ *    this should accept an Analyzer, and use it to create a TokenStream based on a:
+ * 2) NodesReader, say, which reads the text of a sequence of nodes?  Note: we also have
+ * a special CharFilter that applies Offsets gleaned from XML parsing.  And there is CharSequenceStream,
+ * which extends CharStream wrapping a CharSequence.
  */
 abstract class XmlTokenStreamBase extends TokenStream {
 
@@ -39,9 +69,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
 
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
-    // TODO: change to QNameTextTokenStream(Analyzer)
-    // and provide read (XdmNode)
-    XmlTokenStreamBase(XdmNode doc) {
+    XmlTokenStreamBase() {
         tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
     }
     

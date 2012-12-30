@@ -1,3 +1,40 @@
+* thread-safety
+Some aspects of Saxon are difficult to make thread safe and efficient (lock
+free): the CollectionURIResolver is shared at the Configuration level;
+Processor/Configuration are advertised as thread-safe.  However our
+resolver must be allocated per-thread in order to guarantee thread-safety.
+
+URIResolver, CollectionURIResolver are set on Configuration, but need to
+read documents from the index, so they use LuxSearcher and
+CachingDocReader, both of which have per-request scope.
+
+For example, in a multicore Solr setup, one Evaluator could have a Searcher
+tied to one core, while another Evaluator could be tied to a completely
+different core.  But there can only be a single CollectionURIResolver.
+
+Perhaps the solution is to pool Processors among threads, then?
+
+Or: make a CollectionURIResolver that *is* threadsafe and pulls the
+thread-unsafe resource as needed from a pool?
+
+* packaging, documentation
+** easy to run out of the box 
+Without Eclipse or Maven
+*** command-line loading?
+*** Package as standalone webapp?
+Be able to run from command line as java with jetty and war?  so you
+can build prototypes/reports, etc using xquery/html
+* demo
+** http header control
+redirect, 404, error, etc
+** query sandbox
+*** create an xquery-based one?
+would require eval
+*** improve the one in the loader
+** eval
+execute xquery from within xquery
+* sorting by value
+** empty least/greatest
 * dochaus.org
 Maintain a searchable archive of software documentation.
 Support multiple catalogs.  Support multiple software versions.
@@ -27,18 +64,6 @@ you *own* the data, OK, you own the data.
 **** search page
 **** display page
 **** browse page for discoverability
-* demo
-** standalone webapp 
-so you can build prototypes/reports, etc using xquery/html
-** query sandbox
-*** create an xquery-based one?
-would require eval
-*** improve the one in the loader
-** eval
-execute xquery from within xquery
-** highlighting
-* sorting by value
-** empty least/greatest
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
 Configuration, you lose out on some nice performance optimizations for some
@@ -61,21 +86,6 @@ and/or EE do a better job of optimization here.
 try reading files using James Clark's fixup parser?  Tag Soup, more likely
 - is this built in to Saxon?
 * Solr/Lucene 4.0
-* thread safety
-Some aspects of Saxon are difficult to make thread safe and efficient (lock
-free): the CollectionURIResolver is shared at the Configuration level;
-Processor/Configuration are advertised as thread-safe.  However our
-resolver must be allocated per-thread in order to guarantee thread-safety.
-
-For example, in a multicore Solr setup, one Evaluator could have a Searcher
-tied to one core, while another Evaluator could be tied to a completely
-different core.  But there can only be a single CollectionURIResolver.
-
-Perhaps the solution is to pool Processors among threads, then?
-
-Or: make a CollectionURIResolver that *is* threadsafe and pulls the
-thread-unsafe resource as needed from a pool?
-
 * ifpress integration
 Make sure it's easy to configure.  Check compatibility with pub factory usage
 ** download jar and dependencies
@@ -101,10 +111,6 @@ don't want XML tags, and (2) we only want the body in fulltext_t.  Once we
 adopt lux, we can search the body in an easier way, fix the highlighting
 problem, and do away with fulltext_t I think.
 ** test usage in ifpress context
-* diagnostics
-** error reporting
-when there's a syntax or runtime error, you get a useless stack trace on
-the client side.
 * optimizations
 count (//pageNum[.="835"]/root()) retrieves a bunch of docs?? - not
 count-optimized?

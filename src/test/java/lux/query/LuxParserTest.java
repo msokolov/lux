@@ -42,6 +42,7 @@ public class LuxParserTest {
     public void setup () {
         indexConfig = IndexConfiguration.DEFAULT;
         parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
+        parser.bindNamespacePrefix("ns", "nsuri");
     }
     
     @Test
@@ -184,9 +185,9 @@ public class LuxParserTest {
         assertParseQuery (makePhraseQuery(LUX_ELT_TEXT, "element:big", "element:dog"), "<element:\"big dog\"");
         assertParseQuery (makePhraseQuery(LUX_ELT_TEXT, "element:big", "element:dog"), "node<element:\"big dog\"");
 
-        // TODO: namespaces
-        // assertQuery (makePhraseQuery("lux_node", "{nsuri}element:big", "{nsuri}element:dog"), "<ns:element:\"big dog\"");
-        // assertQuery (makePhraseQuery("lux_node", "{nsuri}element:big", "{nsuri}element:dog"), "node<ns:element:\"big dog\"");
+        // namespaces
+        assertParseQuery (makePhraseQuery(LUX_ELT_TEXT, "element{nsuri}:big", "element{nsuri}:dog"), "<ns\\:element:\"big dog\"");
+        assertParseQuery (makePhraseQuery(LUX_ELT_TEXT, "element{nsuri}:big", "element{nsuri}:dog"), "node<ns\\:element:\"big dog\"");
     
         // attribute text query
         assertParseQuery (makePhraseQuery(LUX_ATT_TEXT, "attribute:big", "attribute:dog"), "<@attribute:\"big dog\"");

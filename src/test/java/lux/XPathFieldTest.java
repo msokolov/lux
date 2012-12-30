@@ -136,8 +136,6 @@ public class XPathFieldTest {
         } catch (Exception e) {
             assertTrue (e.getMessage().contains("there is no context defined"));
         }
-        // FIXME: this should return some kind of error?  The order by expression gets 
-        // removed by the optimizer, but we should make sure it has a context
         try {
             assertResultSequence  ("for $doc in collection() order by lux:field-values('title') return $doc");
             assertFalse ("expected exception not thrown", true);

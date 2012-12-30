@@ -1,6 +1,7 @@
 package lux;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import lux.exception.LuxException;
 
 import org.junit.BeforeClass;
@@ -49,14 +50,6 @@ public class SearchTestNS extends BaseSearchTest {
         assertSearch ("2", "count(/entities)", null, 2);
         assertSearch ("0", "declare namespace x='x'; count(/x:title)", null, 0);
         // this actually has the correct namespace
-        /* FIXME:
-         * namespace-unaware is not actually that helpful: it will lead to over-matching
-         * To correctly match generated queries, which must be namespace-aware to maintain correct
-         * behavior, it would be necessary to index both the reverse-clark name *and* the prefixed
-         * lexical QName.
-         * We could get most of the benefit of the namespace-unawareness by supporting
-         * wildcarded namespace index queries
-         */
         assertSearch ("1", "declare namespace x='http://lux.net{test}'; count(/x:title)", null, 1);
         assertSearch ("1", "declare namespace x='#2'; count(/x:entities)", null, 1);
     }
