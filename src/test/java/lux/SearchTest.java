@@ -356,6 +356,13 @@ public class SearchTest extends BaseSearchTest {
     @Test public void testContains () throws Exception {
         assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
         assertSearch ("true", "contains(/PLAY,'Holla')", null, 1, 1);
+        // searches match all 10 instances of 'given' since they will be case-insensitive
+        // There is also one occurrence of 'forgiveness' that should match
+        assertSearch ("1", "count (/LINE[contains(.,'Given')])", null, 11, 11);
+        assertSearch ("10", "count (/LINE[contains(.,'given')])", null, 11, 11);
+        int lineCount = index.elementCounts.get("LINE");
+        // has to check every /LINE document:
+        assertSearch ("1", "count(/LINE[contains(.,'olla! Bern')])", null, lineCount, lineCount);        
     }
     
     @Test public void testLuxSearch () throws Exception {

@@ -474,11 +474,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 qname = FunCall.LUX_EXISTS;
             }
             else if (fname.equals(FunCall.FN_CONTAINS)) {
-                // FIXME - this is overly aggressive.  contains() doesn't have the same semantics
-                // as full-text search; eg it does no analysis so it
-                // matches more restrictively than our search function does
-                // We should continue to wrap the search call in the contains(): also, is it possible
-                // that we are *under-reporting* in some cases?
+                // also see optimizeComparison
                 if (! subs[0].isAbsolute()) {
                     // don't query if the sequence arg isn't absolute??
                     // if the arg is relative, presumably the contains is in a predicate somewhere
@@ -644,22 +640,31 @@ public class PathOptimizer extends ExpressionVisitorBase {
             last = predicate.getBase().getLastContextStep();
         }            
         if (last.getType() == Type.PATH_STEP) {
-            createTermQuery((PathStep) last, path, value);
+            String v = value.getValue().toString();
+            if (filter.getType() == Type.FUNCTION_CALL) {
+                if (v.matches("\\w+")) {
+                    // when optimizing contains(), we have to do a wildcard query;
+                    // we can only do this if the term contains only word characters
+                    createTermQuery((PathStep) last, path, "*" + v + "*");
+                }
+            } else {
+                createTermQuery((PathStep) last, path, v);
+            }
         }
     }
 
-    private void createTermQuery(PathStep context, AbstractExpression path, LiteralExpression value) {
+    private void createTermQuery(PathStep context, AbstractExpression path, String value) {
         NodeTest nodeTest = context.getNodeTest();
         QName nodeName = nodeTest.getQName();
         ParseableQuery termQuery = null;
         if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
-            termQuery = makeTextQuery(value.getValue().toString(), indexConfig);
+            termQuery = makeTextQuery(value, indexConfig);
         }
         else if (nodeTest.getType() == ValueType.ELEMENT) {
-            termQuery = makeElementValueQuery(nodeName, value.getValue().toString(), indexConfig);
+            termQuery = makeElementValueQuery(nodeName, value, indexConfig);
         } 
         else if (nodeTest.getType() == ValueType.ATTRIBUTE) {
-            termQuery = makeAttributeValueQuery(nodeName, value.getValue().toString(), indexConfig);
+            termQuery = makeAttributeValueQuery(nodeName, value, indexConfig);
         }
         if (termQuery != null) {
             XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexConfig, null);

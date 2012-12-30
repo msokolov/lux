@@ -5,6 +5,8 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import lux.index.analysis.WildcardAnalyzer;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -23,10 +25,12 @@ public class NodeQueryBuilder implements QueryBuilder {
 
     private final Map<String,String> nsMap;
     private final Analyzer analyzer;
+    private final Analyzer wildcardAnalyzer;
     private final boolean namespaceAware;
     
     public NodeQueryBuilder(Analyzer analyzer, boolean namespaceAware) {
         this.analyzer = analyzer;
+        this.wildcardAnalyzer = new WildcardAnalyzer();
         nsMap = new HashMap<String, String>();
         this.namespaceAware = namespaceAware;
     }
@@ -80,12 +84,25 @@ public class NodeQueryBuilder implements QueryBuilder {
             }
         }
         int prefixLength = termText.length();
+
+        Analyzer termAnalyzer;
+        if ((text.indexOf('*') >= 0 || text.indexOf('?') >= 0)) {
+            if (text.matches(".*\\s.*")) {
+                // warning? we just ignore the "wildcards" if this is a phrase query
+                termAnalyzer = analyzer;
+            } else {
+                isWild = true;
+                termAnalyzer = wildcardAnalyzer;
+            }
+        } else {
+            termAnalyzer = analyzer;
+        }
         // We assume that we are never embedded in a SpanQuery of any sort, which is valid
         // because the query syntax doesn't provide any means of specifying Spans.
         PhraseQuery pq=new PhraseQuery();
         Term term = null;
         try {
-            TokenStream ts = analyzer.reusableTokenStream(fieldName, new StringReader(text));
+            TokenStream ts = termAnalyzer.reusableTokenStream(fieldName, new StringReader(text));
             CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
             ts.reset();
             if (ts.incrementToken()) {
