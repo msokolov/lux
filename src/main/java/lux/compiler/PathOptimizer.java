@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import lux.Compiler.SearchStrategy;
+import lux.SearchResultIterator;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
@@ -823,24 +824,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 }
                 String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();
                 SortField sortField = q.getSortFields()[0];
-                if (order.toString().equals("descending")) {
+                if (! sortKey.isEmptyLeast()) {
+                    // empty greatest
+                    sortField = new SortField (sortField.getField(), SearchResultIterator.MISSING_LAST, order.toString().equals("descending"));
+                }
+                else if (order.toString().equals("descending")) {
                     // reverse sort order
                     sortField = new SortField (sortField.getField(), sortField.getType(), true);
-                }
-                if (! sortKey.isEmptyLeast()) {
-                    /* FIXME: implement empty greatest
-                     * punt on empty greatest for Strings for now: 
-                     * Lucene 4.0 seems to have a more sensible
-                     * implementation
-                     */
-                    /*
-                    if (sortField.getType() == SortField.STRING) {
-                        sortField.setMissingValue("\uffff");
-                    } 
-                    else {
-                    */
-                    foundUnindexedSort = true;
-                    continue;
                 }
                 // add at the beginning: fields pop off the stack in reverse order
                 sortFields.add(sortField);

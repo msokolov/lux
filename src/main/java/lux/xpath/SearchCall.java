@@ -2,6 +2,7 @@ package lux.xpath;
 
 import java.util.ArrayList;
 
+import lux.SearchResultIterator;
 import lux.compiler.XPathQuery;
 import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
@@ -90,6 +91,9 @@ public class SearchCall extends FunCall {
                 buf.append (sortField.getField());
                 if (sortField.getReverse()) {
                     buf.append (" descending");
+                }
+                if (SearchResultIterator.MISSING_LAST.equals(sortField.getComparatorSource())) {
+                    buf.append (" empty greatest");
                 }
                 buf.append (",");
             }

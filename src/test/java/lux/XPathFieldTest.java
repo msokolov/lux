@@ -172,5 +172,4 @@ public class XPathFieldTest {
         assertFalse ("query returned extra results", iter.hasNext());
     }
 
-    // TODO: test empty greatest / empty least
 }

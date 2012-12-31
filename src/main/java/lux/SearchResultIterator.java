@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lux.exception.LuxException;
 import lux.search.LuxSearcher;
+import lux.solr.MissingStringLastComparatorSource;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmItem;
@@ -31,15 +32,18 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     private CachingDocReader docCache;
     private NodeInfo current = null;
     private int position = 0;
+    public static final MissingStringLastComparatorSource MISSING_LAST = new MissingStringLastComparatorSource();
     
     /**
      * Executes a Lucene search.
      * @param eval provides the link to the index via its {@link IndexSearcher}.
      * @param query the query to execute
      * @param sortCriteria sort criteria, formatted as a comma-separated list of sort field names;
-     * each name may be followed by ascending|descending.  The sort criteria are Lucene field names, or
-     * may be the special name "lux:score", which selects relevance score ranking. If null, results
-     * are returned in intrinsic document order.
+     * each name may be followed by ascending|descending, and/or by "empty greatest"|"empty least".
+     * The default is "ascending empty least".
+     * The sort criteria are Lucene field names, or may be the special name "lux:score", which selects 
+     * relevance score ranking, which is always sorted in descending order: modifiers on relevance orders are ignored. 
+     * If no ordering is provided, results are returned in intrinsic document order (ie ordered by document ID).
      * @throws IOException
      */
     public SearchResultIterator (Evaluator eval, Query query, String sortCriteria) throws IOException {
@@ -71,31 +75,55 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         SortField[] sortFields = new SortField [fields.length];
         for (int i = 0; i < fields.length; i++) {
             String [] tokens = fields[i].split("\\s+");
-            boolean reverse = false;
-            if (tokens.length > 1) {
-                if (tokens[1].equals("descending")) {
-                    reverse = true;
-                } else if (!tokens[1].equals("ascending")) {
-                    throw new LuxException ("Invalid sort key keyword: " + tokens[2] + " in: " + sortCriteria);
-                }
-                if (tokens.length > 2) {
-                    throw new LuxException ("Invalid sort key: " + sortCriteria);
+            String field = tokens[0];
+            Boolean reverse = null;
+            Boolean emptyGreatest = null;
+            for (int j = 1; j < tokens.length; j++) {
+                if (tokens[j].equals("descending")) {
+                    reverse = setBooleanOnce (reverse, true, sortCriteria);
+                } else if (tokens[j].equals("ascending")) {
+                    reverse = setBooleanOnce (reverse, false, sortCriteria);
+                } else if (tokens[j].equals("empty")) {
+                    if (j == tokens.length-1) {
+                        throw new LuxException ("missing keyword after 'empty' in sort criterion: " + sortCriteria);
+                    }
+                    j = j + 1;
+                    if (tokens[j].equals("least")) {
+                        emptyGreatest = setBooleanOnce(emptyGreatest, false, sortCriteria);
+                    } 
+                    else if (tokens[j].equals("greatest")) {
+                        emptyGreatest = setBooleanOnce(emptyGreatest, true, sortCriteria);
+                    }
+                    else {
+                        throw new LuxException ("missing or invalid keyword after 'empty' in sort criterion: " + sortCriteria);
+                    }
+                } else {
+                    throw new LuxException ("invalid keyword '" + tokens[j] + "' in sort criterion: " + sortCriteria);
                 }
             }
-            // TODO: use or copy from org.apache.solr.Sorting to implement missing least/greatest
-            String field = tokens[0];
             if (field.equals("lux:score")) {
-                if (! reverse) {
+                if (reverse == Boolean.FALSE) {
                     throw new LuxException ("Not countenanced: attempt to sort by irrelevance");
                 }
                 sortFields[i] = SortField.FIELD_SCORE;
             } else {
-                sortFields[i] = new SortField(field, SortField.STRING, reverse);
+                if (emptyGreatest == Boolean.TRUE) {
+                    sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);
+                } else {
+                    sortFields[i] = new SortField(field, SortField.STRING, reverse == Boolean.TRUE);
+                }
             }
         }
         return new Sort(sortFields);
     }
 
+    private final Boolean setBooleanOnce (Boolean current, boolean value, String sortCriteria) {
+        if (current != null) {
+            throw new LuxException ("Too many sort ordering keywords in: " + sortCriteria);
+        }
+        return value;
+    }
+    
     /**
      * @return the next result.  Returns null when there are no more results.
      * Calling this function after null has been returned may result
