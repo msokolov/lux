@@ -1,5 +1,7 @@
 package lux;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.sf.saxon.tree.util.DocumentNumberAllocator;
 
 /**
@@ -14,26 +16,27 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
     
     private long nextInternalID = Integer.MAX_VALUE+1;
     
-    private Integer nextDocID;
+    private ConcurrentHashMap<Long,Integer> nextThreadDocId = new ConcurrentHashMap<Long, Integer>();
   
     /**
-     * It is the caller's responsibility to ensure that the ids passed to this method are never
-     * repeated, and that they are assigned to documents in such a way that any functions declaring
-     * their results to be in document order have that assertion borne out.  The caller must also ensure
-     * that a document will be allocated immediately after this method is called.  For this reason,
-     * this entire class is *not* thread-safe.
-     * @param id the next id to allocate, or null if the next id to allocate should be an internal id.
+     * It is the caller's responsibility to ensure that the same id is not assigned to multiple different documents, 
+     * IDs must be assigned to documents in such a way that a consistent document ordering is maintained.
+     * In order to ensure thread safety, a separate id is maintained for each calling thread.  
+     * @param id the next id to allocate for the calling thread, or null if the next id to allocate should be an internal id.
      */
     public void setNextDocID (Integer id) {
-        nextDocID = id;
+        long threadId = Thread.currentThread().getId();
+        nextThreadDocId.put(threadId, id);
     }
     
     @Override
     public long allocateDocumentNumber() {
         long id;
+        long threadId = Thread.currentThread().getId();
+        Integer nextDocID = nextThreadDocId.get(threadId);
         if (nextDocID != null) {
             id = nextDocID;
-            nextDocID = null;
+            nextThreadDocId.remove(threadId);
         } else {
             id = nextInternalID++;
         }

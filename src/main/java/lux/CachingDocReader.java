@@ -23,7 +23,8 @@ import org.apache.lucene.index.IndexReader;
 
 /**
  *  Reads, parses and caches XML documents from a Lucene index.  Assigns Lucene docIDs as Saxon document numbers.
- *  This reader is intended to survive for a single query only.
+ *  This reader is intended to survive for a single query only.  TODO: a nice optimization would be to maintain
+ *  a global cache, shared across threads, with some tunable resource-based eviction policy.
  */
 public class CachingDocReader {
     private final HashMap <Integer, XdmNode> cache = new HashMap<Integer, XdmNode>();
