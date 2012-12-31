@@ -6,7 +6,9 @@ import lux.exception.LuxException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith (MultiThreadedRunner.class)
 public class SearchTestNS extends BaseSearchTest {
     
     @BeforeClass

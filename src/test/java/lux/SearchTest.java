@@ -19,12 +19,14 @@ import net.sf.saxon.s9api.XdmNode;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Check a variety of XPath queries, ensuring that results when executed using the default indexing
  * settings, as provided by IndexTestSupport, are correct, 
  * and test that expected optimizations are in fact being applied. 
  */
+@RunWith (MultiThreadedRunner.class)
 public class SearchTest extends BaseSearchTest {
     
     @BeforeClass

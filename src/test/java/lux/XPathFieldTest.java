@@ -22,11 +22,13 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 
 /**
  * Tests for features related to XPathFields.
  */
+@RunWith (MultiThreadedRunner.class)
 public class XPathFieldTest {
     
     private static RAMDirectory dir;

@@ -19,11 +19,13 @@ import lux.xquery.XQuery;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Tests the parsing of XPath expressions and the generation
  * of a supporting Lucene query using node name indexes, and using path indexes.
  */
+@RunWith(MultiThreadedRunner.class)
 public class BasicQueryTest {
     
     public enum Q {
