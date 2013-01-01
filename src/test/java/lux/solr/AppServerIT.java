@@ -19,7 +19,7 @@ import com.meterware.httpunit.WebResponse;
  */
 public class AppServerIT {
 
-    private final String APP_SERVER_PATH = "http://localhost:8983/lux";
+    private final String APP_SERVER_PATH = "http://localhost:8983";
     private static WebClient httpclient;
     
     @Test

@@ -47,12 +47,16 @@
   <filter>
     <filter-name>AppServerRequestFilter</filter-name>
     <filter-class>lux.solr.AppServerRequestFilter</filter-class>
+    <init-param>
+      <param-name>application-root</param-name>
+      <param-value>c:/users/sokolov/workspace/lux/src/main/app-server</param-value>
+    </init-param>
   </filter>
   
   <filter-mapping>
     <filter-name>AppServerRequestFilter</filter-name>
     <dispatcher>REQUEST</dispatcher>
-    <url-pattern>/lux/*</url-pattern>
+    <url-pattern>/*</url-pattern>
   </filter-mapping>
   
   <!-- Any path (name) registered in solrconfig.xml will be sent to that filter -->
@@ -97,6 +101,21 @@
     <dispatcher>REQUEST</dispatcher>  
     <url-pattern>/*</url-pattern>
   </filter-mapping>
+
+  <servlet>
+    <servlet-name>default</servlet-name>
+    <servlet-class>org.mortbay.jetty.servlet.DefaultServlet</servlet-class>
+    <init-param>
+      <param-name>resourceBase</param-name>
+      <param-value>c:/users/sokolov/workspace/lux/src/main/app-server</param-value>
+    </init-param>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>default    </servlet-name>
+    <url-pattern>/*    </url-pattern>
+  </servlet-mapping>
+
 
   <servlet>
     <servlet-name>Logging</servlet-name>

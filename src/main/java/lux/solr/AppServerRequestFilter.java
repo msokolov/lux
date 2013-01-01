@@ -29,13 +29,16 @@ public class AppServerRequestFilter implements Filter {
     public static final String LUX_HTTPINFO = "lux.httpinfo";
     public static final String LUX_XQUERY = "lux.xquery";
     
-    private String applicationRoot = "src/main/webapp/";
-    private String servletPath = "/lux";
+    private String applicationRoot = "";
+    private String servletPath = "/";
     
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         String p = filterConfig.getInitParameter("application-root");
         if (p != null) {
+            if (!(p.startsWith("file:/") || p.startsWith("lux:"))) {
+                p = "file:/" + p;
+            }
             applicationRoot = p;
         }
         p = filterConfig.getInitParameter("servlet-path");
@@ -80,15 +83,15 @@ public class AppServerRequestFilter implements Filter {
             pathInfo = requestURI.substring(head);
             int tail = requestURI.indexOf(".xqy");
             if (tail > 0) {
-                pathTranslated = applicationRoot + requestURI.substring(head, tail + (".xqy".length()));
+                pathTranslated = addPaths (applicationRoot, requestURI.substring(head, tail + (".xqy".length())));
             } else {
-                pathTranslated = applicationRoot + requestURI.substring(head);
+                pathTranslated = addPaths (applicationRoot, requestURI.substring(head));
             }
         }
         
         @Override
         public String getServletPath() {
-            return "/";
+            return servletPath;
         }
         
         @Override
@@ -99,6 +102,16 @@ public class AppServerRequestFilter implements Filter {
         @Override
         public String getPathTranslated () {
             return pathTranslated;
+        }
+        
+        private String addPaths (String base, String path) {
+            if (base.endsWith("/")) {
+                if (path.startsWith("/")) {
+                    return new StringBuilder(base).append(path, 1, path.length()).toString();
+                }
+                return base + path;
+            }
+            return base + '/' + path;
         }
 
     }
@@ -122,7 +135,7 @@ public class AppServerRequestFilter implements Filter {
         
         @Override
         public String getServletPath() {
-            return servletPath;
+            return "/lux";
         }
         
         /**

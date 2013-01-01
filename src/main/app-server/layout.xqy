@@ -1,11 +1,13 @@
-module namespace layout = "http://luxproject.net/layout";
+module namespace layout = "http://luxproject.net/demo/layout";
+
+import module namespace config="http://luxproject.net/demo/config" at "config.xqy";
 
 declare function layout:render-nav ($current-url as xs:string)
 {
 let $nav := (
-  <item url="/lux/browse.xqy">source</item>,
-(:  <item url="/lux/index.xqy">search</item>, :)
-  <item url="/lux/maven-get.xqy">maven</item>
+  <item url="{$config:root-url}browse.xqy">source</item>,
+(:  <item url="{$config:root-url}index.xqy">search</item>, :)
+  <item url="{$config:root-url}maven-get.xqy">maven</item>
 )
 return <div><ul class="hlist">{
   for $item in $nav 
@@ -20,12 +22,12 @@ declare function layout:outer ($current-url as xs:string, $body as node()*)
 <html>
   <head>
     <title>Lux Demo</title>
-    <link href="/lux/styles.css" rel="stylesheet" />
+    <link href="{$config:root-url}styles.css" rel="stylesheet" />
   </head>
   <body>
     <h1>
-      <a href="/lux/index.xqy">
-        <img class="logo" src="/lux/img/sunflwor52.png" alt="Lux" height="40" /> Lux Demo
+      <a href="{$config:root-url}index.xqy">
+        <img class="logo" src="{$config:root-url}img/sunflwor52.png" alt="Lux" height="40" /> Lux Demo
       </a>
     </h1>
     {

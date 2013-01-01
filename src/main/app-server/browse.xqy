@@ -4,7 +4,7 @@ declare namespace lux="http://luxproject.net";
 declare namespace file="http://expath.org/ns/file";
 declare namespace demo="http://luxproject.net/demo";
 
-import module namespace layout="http://luxproject.net/layout" at "src/main/webapp/layout.xqy";
+import module namespace layout="http://luxproject.net/demo/layout" at "layout.xqy";
 
 declare variable $lux:http as document-node() external;
 

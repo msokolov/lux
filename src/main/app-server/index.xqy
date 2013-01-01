@@ -2,8 +2,8 @@ xquery version "1.0";
 
 declare namespace demo="http://luxproject.net/demo";
 
-import module namespace layout="http://luxproject.net/layout" at "src/main/webapp/layout.xqy";
-import module namespace search="http://luxproject.net/search" at "src/main/webapp/search-lib.xqy";
+import module namespace layout="http://luxproject.net/demo/layout" at "layout.xqy";
+import module namespace search="http://luxproject.net/search" at "search-lib.xqy";
 
 declare variable $lux:http as document-node() external;
 
