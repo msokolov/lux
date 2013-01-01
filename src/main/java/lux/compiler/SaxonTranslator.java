@@ -172,7 +172,11 @@ public class SaxonTranslator {
         while (moduleIter.hasNext()) {
             QueryModule importedModule = (QueryModule) moduleIter.next();
             String moduleNamespace = importedModule.getModuleNamespace();
-            importedModules.add(new ModuleImport(getPrefixForNamespace(moduleNamespace), moduleNamespace, importedModule.getSystemId()));
+            String prefix = getPrefixForNamespace(moduleNamespace);
+            if (!StringUtils.isBlank(prefix)) {
+                // if prefix is blank, that indicates the imported module was not used
+                importedModules.add(new ModuleImport(prefix, moduleNamespace, importedModule.getSystemId()));
+            }
         }
         //StructuredQName[] extVars = saxonQuery.getExternalVariableNames();
         // Namespace declarations are accumulated while walking the expression trees:
