@@ -2,6 +2,7 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
 
 import javax.xml.transform.ErrorListener;
 
@@ -109,13 +110,22 @@ public class Compiler {
      * @throws LuxException if any error occurs while compiling, such as a static XQuery error or syntax error.
      */
     public XQueryExecutable compile(String exprString) throws LuxException {
-        return compile (exprString, null);
+        return compile (exprString, null, null);
     }
     
     public XQueryExecutable compile(String exprString, ErrorListener errorListener) throws LuxException {
+        return compile (exprString, errorListener, null);
+    }
+    
+    public XQueryExecutable compile(String exprString, ErrorListener errorListener, URI baseURI) throws LuxException {
         XQueryExecutable xquery;
         XQueryCompiler xQueryCompiler = getXQueryCompiler();
-        xQueryCompiler.setErrorListener(errorListener);
+        if (errorListener != null) {
+            xQueryCompiler.setErrorListener(errorListener);
+        }
+        if (baseURI != null) {
+            xQueryCompiler.setBaseURI(baseURI);
+        }
         try {
             xquery = xQueryCompiler.compile(exprString);
         } catch (SaxonApiException e) {
