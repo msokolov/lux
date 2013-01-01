@@ -4,13 +4,11 @@ import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
 import static lux.index.IndexConfiguration.STORE_XML;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,8 +36,6 @@ import net.sf.saxon.value.FloatValue;
 import net.sf.saxon.value.QNameValue;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.solr.common.SolrException;
-import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
@@ -63,7 +59,6 @@ import org.slf4j.LoggerFactory;
 public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
-    protected URL baseUri;
     protected Set<String> fields = new HashSet<String>();
     protected Compiler compiler;
     protected XmlIndexer indexer;
@@ -73,27 +68,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
-    }
-    
-    @Override
-    public void init(@SuppressWarnings("rawtypes") NamedList args) {
-        String base;
-        if (args.get("lux.base-uri") != null) {
-            base = args.get("lux.base-uri").toString();
-            try {
-                baseUri = new URL (base);
-            } catch (MalformedURLException e) {
-                logger.error("lux.base-uri " + base + " is malformed: " + e.getMessage());
-            }
-        } 
-        if (baseUri == null) {
-            base = System.getProperty("user.dir");
-            try {
-                baseUri = new File (base).toURI().toURL();
-            } catch (MalformedURLException e) { 
-                throw new SolrException(ErrorCode.UNKNOWN, base + " is an invalid URL?", e);
-            }
-        }
     }
     
     @Override
@@ -150,11 +124,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
-            // TODO: pass in (String) params.get(LuxServlet.LUX_XQUERY) as the systemId
-            // of the query so error reporting will be able to report it
-            // and so it can include modules with relative paths
-            // String queryPath = rb.req.getParams().get(LuxServlet.LUX_XQUERY);
-        	expr = compiler.compile(query, errorListener);
+            String queryPath = rb.req.getParams().get(AppServerRequestFilter.LUX_XQUERY);
+        	expr = compiler.compile(query, errorListener, queryPath == null ? null : URI.create(queryPath));
         } catch (LuxException ex) {
         	ex.printStackTrace();
         	StringBuilder buf = new StringBuilder ();
