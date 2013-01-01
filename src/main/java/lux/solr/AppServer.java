@@ -8,6 +8,8 @@ import net.sf.saxon.s9api.XdmItem;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.solr.common.SolrException;
+import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.handler.component.ResponseBuilder;
@@ -27,7 +29,7 @@ public class AppServer extends XQueryComponent {
         if (rb.getQueryString() == null) {
             String path = (String) params.get(AppServerRequestFilter.LUX_XQUERY);
             if (! StringUtils.isBlank(path)) {
-                URL absolutePath = new URL (baseUri, path);
+                URL absolutePath = new URL (path);
                 String scheme = absolutePath.getProtocol();
                 String contents = null;
                 if (scheme.equals("lux")) {
@@ -36,9 +38,7 @@ public class AppServer extends XQueryComponent {
                     if (absolutePath.getProtocol().equals("file")) {
                         File f = new File(absolutePath.getPath());
                         if (f.isDirectory() || ! f.canRead()) {
-                            // Maybe throw an exception ?
-                            // This just causes the wuery to be empty
-                            return;
+                            throw new SolrException (ErrorCode.NOT_FOUND, f + " not found");
                         }
                     }
                     contents = IOUtils.toString(absolutePath.openStream());   
