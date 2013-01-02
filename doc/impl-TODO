@@ -1,3 +1,7 @@
+* transfer domains
+dochaus.org (networksolutions)
+luxdb.net (yahoo - will autorenew!)
+luxdb.org (register.com - bastards took me for the private thingy)
 * thread-safety
 Some aspects of Saxon are difficult to make thread safe and efficient (lock
 free): the CollectionURIResolver is shared at the Configuration level;

@@ -8,10 +8,10 @@ Why another XML search engine?  Many excellent XML search engines (content
 stores, database, what have you) already exist.  Every SQL database has
 some form of built-in XQuery technology.  There are several excellent open
 source offerings, too.  We use these in our development practice.  But a
-key requirement for Lux was to provide an XQuery capability on top of a
-simple Solr(Lucene)-based index and document store.  We think this
-positions it as an attractive drop-in technology for organizations with an
-investment in Lucene looking to add an XQuery search capability.
+key requirement for Lux was to provide an XQuery capability on top of an
+existing Solr(Lucene) index and document store.  We think this positions it
+as an attractive drop-in technology for organizations with an investment in
+Lucene looking to add an XQuery search capability.
 
 The story of Lux
 
