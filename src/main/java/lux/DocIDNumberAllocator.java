@@ -1,7 +1,5 @@
 package lux;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import net.sf.saxon.tree.util.DocumentNumberAllocator;
 
 /**
@@ -16,7 +14,7 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
     
     private long nextInternalID = Integer.MAX_VALUE+1;
     
-    private ConcurrentHashMap<Long,Integer> nextThreadDocId = new ConcurrentHashMap<Long, Integer>();
+    private ThreadLocal<Integer> nextThreadDocId = new ThreadLocal<Integer>();
   
     /**
      * It is the caller's responsibility to ensure that the same id is not assigned to multiple different documents, 
@@ -25,18 +23,16 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
      * @param id the next id to allocate for the calling thread, or null if the next id to allocate should be an internal id.
      */
     public void setNextDocID (Integer id) {
-        long threadId = Thread.currentThread().getId();
-        nextThreadDocId.put(threadId, id);
+        nextThreadDocId.set (id);
     }
     
     @Override
     public long allocateDocumentNumber() {
         long id;
-        long threadId = Thread.currentThread().getId();
-        Integer nextDocID = nextThreadDocId.get(threadId);
+        Integer nextDocID = nextThreadDocId.get();
         if (nextDocID != null) {
             id = nextDocID;
-            nextThreadDocId.remove(threadId);
+            nextThreadDocId.set(null);
         } else {
             id = nextInternalID++;
         }
