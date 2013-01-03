@@ -380,7 +380,7 @@
      default: a value that should be used if no value is specified
        when adding a document.
    -->
-   <field name="lux_uri" type="string" indexed="true" stored="true" />
+<!--    <field name="lux_uri" type="string" indexed="true" stored="true" /> -->
    <field name="size_i" type="int" indexed="false" stored="true" />
    <field name="directory_b" type="boolean" indexed="true" stored="true" />
 
