@@ -20,7 +20,6 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -103,8 +102,7 @@ public class IndexTestSupport {
     }
     
     public void indexAllElements(String uri, InputStream in) throws XMLStreamException, IOException, SaxonApiException {
-        String xml = IOUtils.toString(in);
-        indexer.indexDocument(indexWriter, '/' + uri, xml);
+        indexer.indexDocument(indexWriter, '/' + uri, in);
         Serializer outputter = new Serializer();
         // index all descendants
         totalDocs = 1;
