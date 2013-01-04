@@ -154,6 +154,14 @@
               <name>org.expath.pkg.saxon.repo</name>
               <value>c:\users\sokolov\workspace\xrepos</value>
             </systemProperty>
+<!--             <systemProperty> -->
+<!--               <name>log4j.configuration</name> -->
+<!--               <value>c:/users/sokolov/workspace/lux/src/test/resources/log4j.properties</value> -->
+<!--             </systemProperty> -->
+<!--             <systemProperty> -->
+<!--               <name>log4j.debug</name> -->
+<!--               <value>true</value> -->
+<!--             </systemProperty> -->
           </systemProperties>
         </configuration>
         <executions>
