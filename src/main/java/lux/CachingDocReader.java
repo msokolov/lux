@@ -73,7 +73,7 @@ public class CachingDocReader {
         Document document;
         document = reader.document(docID, fieldSelector);
         String xml = document.get(xmlFieldName);
-        String uri = document.get(uriFieldName);
+        String uri = "lux:/" + document.get(uriFieldName);
         long t0 = System.nanoTime();
         docIDNumberAllocator.setNextDocID(docID);
         StreamSource source = new StreamSource (new StringReader (xml));

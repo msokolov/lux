@@ -127,7 +127,7 @@ public class LuxSolrTest {
     }
     
     @Test public void testCollectionFunction () throws Exception {
-        assertXPathSearchCount (1, 1, "xs:string", "src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
+        assertXPathSearchCount (1, 1, "xs:string", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
         // TODO: optimize count(collection ())
         // TODO: return an integer
         assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())");  

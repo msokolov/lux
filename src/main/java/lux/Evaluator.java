@@ -229,7 +229,7 @@ public class Evaluator {
             String path = href.startsWith("lux:/") ? href.substring(5) : href;
             path = path.replace('\\', '/');
             try {
-                DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), href)));
+                DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
                 int docID = disi.nextDoc();
                 if (docID == DocIdSetIterator.NO_MORE_DOCS) {
                     throw new TransformerException("document '" +  href + "' not found");

@@ -211,24 +211,24 @@ public class XmlIndexer {
         return saxonBuilder;
     }
 
-    // FIXME: why does this method prefix the uri w/lux but the next one strip it off?
-    public void indexDocument(IndexWriter indexWriter, String inputUri, String xml) throws XMLStreamException, CorruptIndexException, IOException {
+    public void indexDocument(final IndexWriter indexWriter, final String inputUri, final String xml) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
-        /*
-        String path = uri.startsWith("lux:/") ? uri.substring(5) : uri;
-        path = path.replace('\\', '/');
-        */
-        inputUri = "lux:/" + inputUri;
-        read(new StringReader(xml), inputUri);
+        String path = normalizeUri(inputUri);
+        read(new StringReader(xml), path);
         addLuceneDocument(indexWriter);
     }
     
-    public void indexDocument(IndexWriter indexWriter, String inputUri, InputStream xmlStream) throws XMLStreamException, CorruptIndexException, IOException {
+    public void indexDocument(final IndexWriter indexWriter, final String inputUri, final InputStream xmlStream) throws XMLStreamException, CorruptIndexException, IOException {
         reset();
-        String path = inputUri.startsWith("lux:/") ? inputUri.substring(5) : inputUri;
-        path = path.replace('\\', '/');
+        String path = normalizeUri(inputUri);
         read(xmlStream, path);
         addLuceneDocument(indexWriter);
+    }
+
+    private String normalizeUri(String inputUri) {
+        String path = inputUri.replaceFirst("^\\w+:/+", "/"); // strip the scheme part (file:/, lux:/, etc), if any
+        path = path.replace('\\', '/');
+        return path;
     }
 
     public void indexDocument(IndexWriter indexWriter, String path, NodeInfo node) throws XMLStreamException, CorruptIndexException, IOException {
