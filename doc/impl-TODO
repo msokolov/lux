@@ -68,6 +68,23 @@ you *own* the data, OK, you own the data.
 **** search page
 **** display page
 **** browse page for discoverability
+* demo
+** sorting by value (empty least/greatest)
+*** empty least/greatest
+** standalone webapp 
+so you can build prototypes/reports, etc using xquery/html
+** query sandbox
+*** create an xquery-based one?
+would require eval
+*** improve the one in the loader
+** eval
+execute xquery from within xquery
+** highlighting
+** performance 
+*** tests
+StressTest - compare w/ML, Solr, exist
+*** indexing perf improvement
+pool XmlIndexer in Solr
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
 Configuration, you lose out on some nice performance optimizations for some

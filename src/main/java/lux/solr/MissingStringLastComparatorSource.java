@@ -112,7 +112,6 @@ public class MissingStringLastComparatorSource extends FieldComparatorSource {
     @Override
     public int compareBottom(int doc) {
       assert bottomSlot != -1;
-      @SuppressWarnings("hiding")
       int order = this.order[doc];
       int ord = (order == 0) ? NULL_ORD : order;
       final int cmp = bottomOrd - ord;

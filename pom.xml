@@ -9,11 +9,9 @@
   </properties>
   <dependencies>
     <dependency>
-        <groupId>saxon</groupId>
-        <artifactId>saxon</artifactId>
-        <scope>system</scope>
-        <version>9.4.0.3</version>
-        <systemPath>${project.basedir}/lib/saxon9he.jar</systemPath>
+        <groupId>net.sf.saxon</groupId>
+        <artifactId>Saxon-HE</artifactId>
+        <version>9.4</version>
     </dependency>
     <dependency>
       <groupId>expath</groupId>
@@ -198,6 +196,21 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <descriptors>
+            <descriptor>assembly-bin.xml</descriptor>
+          </descriptors>
+          <!--
+          <descriptorRefs>
+            <descriptorRef>bin</descriptorRef>
+          </descriptorRefs>
+          -->
+        </configuration>
       </plugin>
     </plugins>
   </build>

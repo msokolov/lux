@@ -1,14 +1,41 @@
-* second release 
-** manifesto
+* second release (1.0?)
+** distribution
+*** bundles
+**** jar + config (zip and tgz)
+include also dependent jars - OK
+TODO: test this distribution using a Solr-only install
+**** app-server (jetty + config + war)
+
+*** Maven
+**** Eliminate woodstox dependency?? 
+**** Saxon dependency
+*** test install procedure
+** Hosting for luxdb.net, luxdb.org, luxdb.com
+   park luxdb.org (as is); register luxdb.com (w/dyn) and park
+   sign up for DNS at dyn; get a server at rackspace
+** import to GitHub
+** web site setup for luxdb.net
+   Wait and see what is available on GitHub.
+   Install Lux, of course.  Package a site using Maven?  Also provide for
+   dynamic content somewhere on the server?  Yuck I don't want a build a
+   CMS just yet!!  However: generate function documentation??
+** web content
+*** startup documentation
+download/install/getting started
+*** about lux
 Explain what it is, is not, what it's for, why you might want to use it, etc.
-** sample webapp
-based on Solr; reads from files and/or the database
-some easy way to load files
-** open source 
+license
+statement about contributions
+*** function / query documentation
+*** cookbook / FAQ
 *** bug tracker
 *** source control system
 *** mailing list
-*** some method to accept contributions
+*** links
+   to luxdb.net from GitHub and vice-versa
+*** sample webapp
+based on Solr; reads from files and/or the database
+some easy way to load files
 ** criteria for release 1.0
 *** Highest Quality
 Rigorous testing; no known major bugs.

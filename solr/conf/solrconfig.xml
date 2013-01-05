@@ -1431,7 +1431,6 @@
     -->
   </searchComponent>
   
-  <!-- Lux Configuration -->
     <!--  Lux update processor
         Indexes the given named field as an XML document. Enables index-assisted XQuery/XPath evaluation using Lux.
      --> 
@@ -1453,26 +1452,6 @@
        <processor class="solr.RunUpdateProcessorFactory" />
      </updateRequestProcessorChain>
       
-  <!-- This component and handler provide a search-enabled xquery
-       evaluation service.  Its query is taken from request parameter 'q',
-       like other Solr search handlers, and results are returned using
-       the usual Solr marshalling options (XML, javabin, json, etc)
-  -->
-  <searchComponent name="xquery" class="lux.solr.XQueryComponent">
-    <!--  updateChain references the update chain whose update processor factory may be
-          configured with indexing configuration required by this component
-     -->
-    <!--   <str name="update-chain">lux-update-chain</str> -->
-  </searchComponent>
-  
-  <requestHandler name="/xquery" class="solr.SearchHandler">
-    <arr name="components">
-      <str>xquery</str>
-      <str>stats</str>
-      <str>debug</str>
-      <!-- highlight? facet? -->
-    </arr>
-  </requestHandler>
 
   <!-- This component, handler and response writer together provide an
        app-server service.  When configured with the LuxServlet, its query
@@ -1485,9 +1464,23 @@
     <!--   <str name="xmlFieldName">lux_xml</str> -->
   </searchComponent>
 
-  <queryResponseWriter name="lux" class="lux.solr.LuxResponseWriter"/>
+  <!-- This component and handler provide a search-enabled xquery
+       evaluation service.  Its query is taken from request parameter 'q',
+       like other Solr search handlers, and results are returned using
+       the usual Solr marshalling options (XML, javabin, json, etc)
+  -->
+  <searchComponent name="xquery" class="lux.solr.XQueryComponent" />
+  
+  <requestHandler name="/xquery" class="solr.SearchHandler" id="xquery">
+    <arr name="components">
+      <str>xquery</str>
+      <str>stats</str>
+      <str>debug</str>
+      <!-- highlight? facet? -->
+    </arr>
+  </requestHandler>
 
-  <requestHandler name="/lux" class="solr.SearchHandler">
+  <requestHandler name="/lux" class="solr.SearchHandler" id="lux">
     <lst name="defaults">
       <str name="lux.contentType">text/html;charset=UTF-8</str>
       <str name="wt">lux</str>
@@ -1499,5 +1492,7 @@
       <!-- highlight? facet? -->
     </arr>
   </requestHandler>
-    
+  
+  <queryResponseWriter name="lux" class="lux.solr.LuxResponseWriter"/>
+
 </config>
