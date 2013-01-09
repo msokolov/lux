@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.xml.transform.TransformerException;
@@ -59,6 +60,7 @@ import org.slf4j.LoggerFactory;
 public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     public static final String LUX_XQUERY = "lux.xquery";
+    public static final String LUX_PATH_INFO = "lux.pathInfo";
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
     protected Set<String> fields = new HashSet<String>();
     protected Compiler compiler;
@@ -163,7 +165,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             context = new QueryContext();
             context.bindVariable(LUX_HTTP, buildHttpParams(
                     evaluator,
-                    rb.req.getParams().get(LUX_HTTPINFO), 
+                    rb.req.getParams(), 
                     xqueryPath
                     ));
         }
@@ -200,8 +202,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
     }
 
-    private XdmNode buildHttpParams(Evaluator evaluator, String http, String path) {
-        return (XdmNode) evaluator.build(new StringReader(http), path);
+    private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, String path) {
+        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params)), path);
     }
 
     private Compiler createXCompiler() {
@@ -236,6 +238,42 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             xpathResults.add(nodeKind.toString().toLowerCase(), node.toString());
         }
     }
+    
+    // This may be a bit fragile - I worry we'll have serialization bugs -
+    // but the only alternative I can see is to provide a special xquery function
+    // and pass the map into the Saxon Evaluator object - but we can't get that
+    // from here, and it would be thread-unsafe anyway, which is bad for a server
+    private String buildHttpInfo(SolrParams params) {
+        StringBuilder buf = new StringBuilder();
+        String xquery = params.get(LUX_XQUERY);
+        // TODO: http method
+        buf.append (String.format("<http uri=\"%s\">", xmlEscape(xquery)));
+        buf.append ("<params>");
+        Iterator<String> paramNames = params.getParameterNamesIterator();
+        while (paramNames.hasNext()) {
+            String param = paramNames.next();
+            if (param.startsWith("lux.")) {
+                continue;
+            }
+            buf.append(String.format("<param name=\"%s\">", param));
+            String[] values = params.getParams(param);
+            for (String value : values) {
+                buf.append(String.format ("<value>%s</value>", xmlEscape(value)));
+            }
+            buf.append("</param>");
+        }
+        buf.append ("</params>");
+        String pathInfo = params.get(LUX_PATH_INFO);
+        buf.append("<path-info>").append(xmlEscape(pathInfo)).append("</path-info>");
+        // TODO: headers, path, etc?
+        buf.append ("</http>");
+        return buf.toString();
+    }
+
+    private String xmlEscape(String value) {
+        return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll("\"", "&quot;");
+    }
+    
 	public static final String XQUERY_COMPONENT_NAME = "xquery";
 
     @Override
