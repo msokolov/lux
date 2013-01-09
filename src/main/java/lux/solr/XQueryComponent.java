@@ -57,7 +57,8 @@ import org.slf4j.LoggerFactory;
  *  with the INDEX_PATHS option.
  */
 public class XQueryComponent extends QueryComponent implements SolrCoreAware {
-
+    
+    public static final String LUX_XQUERY = "lux.xquery";
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
     protected Set<String> fields = new HashSet<String>();
     protected Compiler compiler;
@@ -124,7 +125,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
-            String queryPath = rb.req.getParams().get(AppServerRequestFilter.LUX_XQUERY);
+            String queryPath = rb.req.getParams().get(LUX_XQUERY);
         	expr = compiler.compile(query, errorListener, queryPath == null ? null : URI.create(queryPath));
         } catch (LuxException ex) {
         	ex.printStackTrace();
@@ -157,12 +158,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         long tstart = System.currentTimeMillis();
         int count = 0;
         QueryContext context = null;
-        String xqueryPath = rb.req.getParams().get(AppServerRequestFilter.LUX_XQUERY);
+        String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
         if (xqueryPath != null) {
             context = new QueryContext();
             context.bindVariable(LUX_HTTP, buildHttpParams(
                     evaluator,
-                    rb.req.getParams().get(AppServerRequestFilter.LUX_HTTPINFO), 
+                    rb.req.getParams().get(LUX_HTTPINFO), 
                     xqueryPath
                     ));
         }

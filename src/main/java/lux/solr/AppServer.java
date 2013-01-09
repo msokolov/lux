@@ -22,12 +22,14 @@ import org.apache.solr.request.SolrQueryRequest;
  */
 public class AppServer extends XQueryComponent {
 
+
+
     @Override
     public void prepare(ResponseBuilder rb) throws IOException {
         SolrQueryRequest req = rb.req;
         SolrParams params = req.getParams();            
         if (rb.getQueryString() == null) {
-            String path = (String) params.get(AppServerRequestFilter.LUX_XQUERY);
+            String path = (String) params.get(LUX_XQUERY);
             if (! StringUtils.isBlank(path)) {
                 URL absolutePath = new URL (path);
                 String scheme = absolutePath.getProtocol();

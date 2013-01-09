@@ -30,6 +30,13 @@ public class AppServerIT {
     }
     
     @Test
+    public void testServerRoot() throws Exception {
+        String path = (APP_SERVER_PATH + "/");
+        WebResponse response = httpclient.getResponse(path);
+        assertEquals (404, response.getResponseCode());
+    }
+    
+    @Test
     public void testSyntaxError () throws Exception {
         String path = (APP_SERVER_PATH + "/test/undeclared.xqy");
         WebResponse httpResponse = httpclient.getResponse(path);

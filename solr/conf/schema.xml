@@ -268,7 +268,7 @@
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+<!--         <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/> -->
         <!-- 
                 <filter class="solr.StopFilterFactory"
                 ignoreCase="true"
@@ -304,7 +304,7 @@
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+<!--         <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/> -->
         <!-- 
         <filter class="solr.StopFilterFactory"
                 ignoreCase="true"
@@ -325,7 +325,7 @@
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+<!--         <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/> -->
         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
 <!--         <filter class="solr.ICUFoldingFilterFactory"/> -->
       </analyzer>

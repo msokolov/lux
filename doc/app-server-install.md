@@ -1,29 +1,28 @@
-The app server bundle includes everything (except the Java
-runtime) that you need to run Lux out of the box, as well as a demo
-application for searching (and reading) the complete plays of
-Shakespeare. These are all available for direct download from luxdb.net
-(see links below).  The source code is also distributed via {source control
-system: GitHub?} at {scm-url}.
+Problem w/Solr search handlers:
 
-## Lux bundled with application server ##
+Can't use URL to convey useful information: it *only* identifies the handler.
 
-The quickest way to get up and running with Lux is to install the complete
-application bundle.  You will need to have
-[Java](http://java.com/en/download/index.jsp "Download") 6 or greater
-installed in order to run Lux:
+We tried fixing this in a few ways, but they all involve adding something
+to Solr's web.xml, which means repacking the Solr war somehow.  What we
+*really* want is an *external* app server: basically a URL rewriter.
 
-1. Download the bundle as a [zip
-   file](http://luxdb.net/download/lux-server-0.5.zip) "Download app server
-   zip") or [tar archive](http://luxdb.net/download/lux-server-0.5.tar.gz
-   "Download app server tar").
+For example, create a context for the app server (say /app - could be /, too) 
+and another context for solr (/solr ftsoa).
 
-2. Unpack the bundle (no installer required!).  This will create a folder
-   called "lux-0.5".
+Then in the app server context, deploy an app which is just a single
+filter that maps xquery requests like:
 
-3. Run Lux.  You can do this from the command line using either the Windows
-   *lux.bat* batch file or UNIX *lux* bash script.
+/app/foo/bar.xqy/trailing/info?query-string=stuff
 
-4. Verify that Lux is running by visiting http://localhost:8080/lux/demo in
-   your browser.  Lux comes with the Shakespeare demo installed: follow the
-   on-screen instructions there to load the text of all the Shakespeare
-   plays, try out the search, and explore the xquery source for the demo.
+to:
+
+/solr/lux?q=/foo/bar.xqy&lux.pathinfo=/trailing/info&query-string=stuff
+
+I tried URL rewrite in Jetty, but: this rewrites the URL part OK: there's no
+way to add anything to the query string
+
+Next thing to try is to create a second context with a single filter that
+forwards across to the main context
+
+2) if not, do we have to act as a proxy and introduce an http client (ew).
+

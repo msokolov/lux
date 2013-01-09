@@ -1,0 +1,58 @@
+body { font-family: Arial, Helvetica, sans-serif; 
+       font-size: small; line-height: 1.6em; margin: 0; padding: 0;
+       background-color: #eeffdd;
+       color: #210337;
+     }
+
+/******** header, branding ********/
+h1, h2, h3 { font-family: "Candara Bold", Arial, Helvetica, sans-serif; margin: 0.5em; float: left }
+img.logo { vertical-align: middle }
+
+h1 a { text-decoration: none }
+
+ul.hlist { list-style-type: none; font-size: 0; float: right}
+ul.hlist li { display: inline; 
+              padding: 1em;
+              padding-top: 0.25em; padding-bottom: 0.25em;
+              padding-right: 1em; padding-left: 1em; 
+              border: 1px solid black;
+              background: #dddd88;
+              font-size: medium;
+            }
+ul.hlist li.selected { display: inline; background: #eeee22; }
+
+#main { padding-top: 70px }
+
+/******** browse page layout ******/
+.indent-body { margin-left: 3em; }
+
+#browse-list { margin-left: 3em; }
+#browse-list span { margin-left: 1em; }
+#browse-list input { margin-right: 0.5em; }
+
+/******** search page controls ******/
+#search { margin-left: 3em; }
+
+/* .container { margin: 1em; } */
+.autocomplete-w1 { position: absolute; top: 0px; left: 0px; }
+.autocomplete { border: 1px solid #999; background: #FFF; cursor: default; text-align: left; max-height: 350px; overflow: auto; /* IE6 specific: */ _height: 350px; _margin: 0; _overflow-x: hidden; }
+.autocomplete .selected { background: #F0F0F0; }
+.autocomplete div { padding: 2px 2px; line-height: 1em; white-space: nowrap; overflow: hidden; }
+
+#search-description { color: #666; }
+#search-description span { margin: 4px }
+
+#search-results { list-style: none; margin-left: 3em; padding-left: 0 }
+#search-results a { text-decoration: none; color: black }
+#search-results a:hover { text-decoration: underline }
+#search-results li { margin-bottom: 1em }
+
+#pagination { margin-left: 3em; width: 400px }
+
+/********* search results styles *******/
+
+/* .play-info { font-size: smaller } */
+.play-info { color: #666; margin-left: 1em }
+.play-info span { margin-left: 5px }
+.speaker { margin-right: 0.5em }
+.source { font-style: italic }

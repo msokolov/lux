@@ -7,28 +7,13 @@ service.  With a little extra configuration in the Solr web.xml, it acts as
 a web application server for applications written in XQuery and XSLT,
 accessing XML indexed and stored using Solr/Lucene.
 
-## Lux library ##
+## Lux app server (in Solr) ##
 
-At the moment, we do not distribute a complete server.  To get Lux running
-it's necessary first to set up Solr. To install Solr, follow these [Solr
+We do not distribute a complete server.  To get Lux running it's necessary
+first to set up Java, a servlet container like Tomcat or Jetty, and
+Solr. To install Solr (which comes with a Jetty setup), follow these [Solr
 installation instructions](http://wiki.apache.org/solr/SolrInstall "Solr
 Installation").
-
-If you are a Lucene user, but do not use Solr, you can still use Lux as a
-means of indexing XML content and querying it using XQuery, since Lux
-provides a Lucene-only API and its dependencies on Solr only arise in the
-service of Solr request handlers.  Similarly, if you are Saxon user and
-want to use Saxon to execute queries against a persistent indexed data
-store, you can use Lux to do that without needing Solr.
-
-In these cases, you "install" Lux by placing the Lux jar file (and its
-dependencies) on your classpath.  If you use Maven to build your project,
-this is easily accomplished by declaring the luxdb.net/luxdb/1.0 dependency
-in your pom.xml file.  Otherwise, you can download Lux with all of its
-dependencies [here](http://luxdb.net/download/) "Download Lux").
-
-In order to use Lux as a REST service or an application server, follow
-these instructions to integrate it with an existing Solr installation.
 
 1. Download the library bundle as a [zip
    file](http://luxdb.net/download/lux-0.5.zip) "Download Lux zip") or [tar
@@ -67,6 +52,28 @@ these instructions to integrate it with an existing Solr installation.
    You may see ClassNotFoundException.  If you do, that probably means the
    jars are not in the right folder: you may need to read up about Solr
    configuration: see above for a link.
+
+   Now you have a REST server; if you also want to use the app server, it must
+   be configured in Solr's web.xml
+
+## Lux library only ##
+
+If you are a Lucene user, but do not use Solr, you can still use Lux as a
+means of indexing XML content and querying it using XQuery, since Lux
+provides a Lucene-only API and its dependencies on Solr only arise in the
+service of Solr request handlers.  Similarly, if you are Saxon user and
+want to use Saxon to execute queries against a persistent indexed data
+store, you can use Lux to do that without needing Solr.
+
+In these cases, you "install" Lux by placing the Lux jar file (and its
+dependencies) on your classpath.  If you use Maven to build your project,
+this is easily accomplished by declaring the luxdb.net/luxdb/1.0 dependency
+in your pom.xml file.  Otherwise, you can download Lux with all of its
+dependencies [here](http://luxdb.net/download/) "Download Lux").
+
+In order to use Lux as a REST service or an application server, follow
+these instructions to integrate it with an existing Solr installation.
+
 
 ## Lux source code ##
 
