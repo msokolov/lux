@@ -264,7 +264,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         buf.append ("</params>");
         String pathInfo = params.get(LUX_PATH_INFO);
-        buf.append("<path-info>").append(xmlEscape(pathInfo)).append("</path-info>");
+        if (pathInfo != null) {
+            buf.append("<path-info>").append(xmlEscape(pathInfo)).append("</path-info>");
+        }
         // TODO: headers, path, etc?
         buf.append ("</http>");
         return buf.toString();

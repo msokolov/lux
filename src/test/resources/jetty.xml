@@ -232,37 +232,5 @@
     <Set name="sendServerVersion">false</Set>
     <Set name="sendDateHeader">false</Set>
     <Set name="gracefulShutdown">1000</Set>
-    
-        <!-- =========================================================== -->
-        <!-- URL rewrite configuration for Lux app server                -->
-        <!-- =========================================================== -->    
-<!-- 
-  <New id="RewriteHandler" class="org.mortbay.jetty.handler.rewrite.RewriteHandler">
-
-        
-        <Set name="rules">
-        
-            <Array type="org.mortbay.jetty.handler.rewrite.Rule">
-                <Item>
-                  <New class="org.mortbay.jetty.handler.rewrite.RewriteRegexRule">
-                    <Set name="regex">/lux/([^/]*.xqy(?:/.*)?)</Set>
-                    <Set name="replacement">/lux:$1</Set>
-                  </New>
-                </Item>
-            </Array>
-        </Set>
-  </New>
-  <Set name="handler">
-  <New id="Handlers" class="org.mortbay.jetty.handler.HandlerCollection">
-    <Set name="handlers">
-      <Array type="org.mortbay.jetty.Handler">
-        <Item>
-          <Ref id="RewriteHandler"/>
-        </Item>
-      </Array>
-    </Set>
-  </New>
-</Set>
- -->
  
 </Configure>

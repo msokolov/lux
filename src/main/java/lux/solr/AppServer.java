@@ -22,8 +22,6 @@ import org.apache.solr.request.SolrQueryRequest;
  */
 public class AppServer extends XQueryComponent {
 
-
-
     @Override
     public void prepare(ResponseBuilder rb) throws IOException {
         SolrQueryRequest req = rb.req;
