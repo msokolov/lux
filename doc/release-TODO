@@ -1,14 +1,13 @@
 * second release (1.0?)
 ** distribution
 *** bundles
+revisit now that we have app-server
 **** jar + config (zip and tgz)
 include also dependent jars - OK
 TODO: test this distribution using a Solr-only install
 **** app-server (jetty + config + war)
-
 *** Maven
-**** Eliminate woodstox dependency?? 
-**** Saxon dependency
+**** expath dependencies
 *** test install procedure
 ** Hosting for luxdb.net, luxdb.org, luxdb.com
    park luxdb.org (as is); register luxdb.com (w/dyn) and park

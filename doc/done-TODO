@@ -1,3 +1,27 @@
+* thread-safety
+I tested using multi-threaded test runner and found some bugs. Notes about
+concerns that should be addressed now since I made CachingDocReader thread
+safe (by giving it a thread-local document id to allocate), and I believe
+LuxSearcher was *already* thread-safe.
+
+Some aspects of Saxon are difficult to make thread safe and efficient (lock
+free): the CollectionURIResolver is shared at the Configuration level;
+Processor/Configuration are advertised as thread-safe.  However our
+resolver must be allocated per-thread in order to guarantee thread-safety.
+
+URIResolver, CollectionURIResolver are set on Configuration, but need to
+read documents from the index, so they use LuxSearcher and
+CachingDocReader, both of which have per-request scope.
+
+For example, in a multicore Solr setup, one Evaluator could have a Searcher
+tied to one core, while another Evaluator could be tied to a completely
+different core.  But there can only be a single CollectionURIResolver.
+
+Perhaps the solution is to pool Processors among threads, then?
+
+Or: make a CollectionURIResolver that *is* threadsafe and pulls the
+thread-unsafe resource as needed from a pool?
+
 * query highlighting
 XmlHighlighter works along the lines of the Lucene highlighter, but with some xml awareness.
 It accepts a NodeInfo and a Query and produces a NodeInfo, via StAX event streams.

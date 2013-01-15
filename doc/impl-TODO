@@ -1,26 +1,12 @@
+* app-server polish
+** passing current uri
+We currently send Solr the translated path - so it can read the resource,
+but it doesn't have the original url, which it would be nice to have so we
+can give it to the application
 * transfer domains
 dochaus.org (networksolutions)
 luxdb.net (yahoo - will autorenew!)
 luxdb.org (register.com - bastards took me for the private thingy)
-* thread-safety
-Some aspects of Saxon are difficult to make thread safe and efficient (lock
-free): the CollectionURIResolver is shared at the Configuration level;
-Processor/Configuration are advertised as thread-safe.  However our
-resolver must be allocated per-thread in order to guarantee thread-safety.
-
-URIResolver, CollectionURIResolver are set on Configuration, but need to
-read documents from the index, so they use LuxSearcher and
-CachingDocReader, both of which have per-request scope.
-
-For example, in a multicore Solr setup, one Evaluator could have a Searcher
-tied to one core, while another Evaluator could be tied to a completely
-different core.  But there can only be a single CollectionURIResolver.
-
-Perhaps the solution is to pool Processors among threads, then?
-
-Or: make a CollectionURIResolver that *is* threadsafe and pulls the
-thread-unsafe resource as needed from a pool?
-
 * packaging, documentation
 ** easy to run out of the box 
 Without Eclipse or Maven
