@@ -19,7 +19,7 @@ import com.meterware.httpunit.WebResponse;
  */
 public class AppServerIT {
 
-    private final String APP_SERVER_PATH = "http://localhost:8983";
+    private final String APP_SERVER_PATH = "http://localhost:8080";
     private static WebClient httpclient;
     
     @Test
@@ -33,7 +33,7 @@ public class AppServerIT {
     public void testServerRoot() throws Exception {
         String path = (APP_SERVER_PATH + "/");
         WebResponse response = httpclient.getResponse(path);
-        assertEquals (404, response.getResponseCode());
+        assertEquals (403, response.getResponseCode());
     }
     
     @Test
@@ -54,7 +54,8 @@ public class AppServerIT {
         String path = (APP_SERVER_PATH + "/test/test-params.xqy?p1=A&p2=B&p2=C");
         String response = httpclient.getResponse(path).getText();
         // This test depends on the order in which keys are retrieved from a java.util.HashMap
-        assertEquals ("<http method=\"GET\"><params>" +
+        assertEquals ("<http method=\"\"><params>" +
+                "<parm name=\"wt\"><value>lux</value></parm>" +
         		"<parm name=\"p2\"><value>B</value><value>C</value></parm>" +
                 "<parm name=\"p1\"><value>A</value></parm>" +
         		"</params></http>", response.replaceAll("\n\\s*",""));
