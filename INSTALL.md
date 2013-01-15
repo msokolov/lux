@@ -7,13 +7,33 @@ service.  With a little extra configuration in the Solr web.xml, it acts as
 a web application server for applications written in XQuery and XSLT,
 accessing XML indexed and stored using Solr/Lucene.
 
-## Lux app server (in Solr) ##
+## Lux app server (complete) ##
 
-We do not distribute a complete server.  To get Lux running it's necessary
-first to set up Java, a servlet container like Tomcat or Jetty, and
-Solr. To install Solr (which comes with a Jetty setup), follow these [Solr
-installation instructions](http://wiki.apache.org/solr/SolrInstall "Solr
-Installation").
+FIXME: fix links once we have created the artifacts.
+
+1. Download the complete server bundle as a [zip
+   file](http://luxdb.net/download/lux-server-0.5.zip) "Download Lux zip")
+   or [tar archive](http://luxdb.net/download/lux-server-0.5.tar.gz
+   "Download Lux tar").
+
+   This download includes the following artifacts:
+
+   1. Jetty servlet container
+   2. Solr search engine, configured with Lux library and EXPath 
+      repo support.
+   3. Lux application server
+   4. EXPath repository w/modules: HTTP and Zip
+
+2. Start the server using the Windows batch file bin/lux.bat, or the UNIX
+   shell script bin/lux.
+
+3. The app server is configured to occupy the root context (/) on port 80,
+with the webapp directory as the web app root folder. The Solr service is
+set up to on port 8983. The the xrepo folder is configured as an EXPath
+repository from which the app server will load EXPath modules. (TODO:
+configure app server so it connects to this embedded solr out of the box).
+
+## Lux app server (integrate with existing Solr) ##
 
 1. Download the library bundle as a [zip
    file](http://luxdb.net/download/lux-0.5.zip) "Download Lux zip") or [tar
@@ -27,7 +47,8 @@ Installation").
    configuration file: solrconfig.xml; just before the closing <config> tag
    is a good place.
 
-4. In solrconfig.xml, insert the Lux update chain in the configuration block for each update processor:
+4. In solrconfig.xml, insert the Lux update chain in the configuration
+   block for each update processor:
 
         <lst name="defaults">
           <str name="update.chain">lux-update-chain</str>
@@ -74,6 +95,25 @@ dependencies [here](http://luxdb.net/download/) "Download Lux").
 In order to use Lux as a REST service or an application server, follow
 these instructions to integrate it with an existing Solr installation.
 
+## EXPath Package Manager
+
+TODO: links
+
+Lux is distributed with a copy of the EXPath package manager, which enables
+loading of standardized extensions to the XPath function library.  The app
+server is configured to initialize the package manager, and will load any
+modules in the EXPath repository.  It comes with two modules installed: an
+HTTP client and a Zip file access module.
+
+If you install the Lux library into a pre-existing environment, and you
+also want to make use of EXPath modules, you need to add the EXPath (for
+Saxon) package manager jars to your classpath, create an EXPath repository,
+install the extension jars to that repository, and install the extensions
+you want into the repository.  The EXPath jars are available from the
+EXPath site, and are also distributed as part of the Lux app server bundle.
+
+To activate the EXPath extensions, you must provide the location of the
+repo as the value of the system property "org.expath.pkg.saxon.repo".
 
 ## Lux source code ##
 
