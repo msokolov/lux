@@ -1460,7 +1460,7 @@
        body.
   -->
 
-  <searchComponent name="lux-app-server" class="lux.solr.AppServer">
+  <searchComponent name="lux-app-server" class="lux.solr.AppServerComponent">
     <!--   <str name="xmlFieldName">lux_xml</str> -->
   </searchComponent>
 
