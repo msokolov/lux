@@ -250,9 +250,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     // from here, and it would be thread-unsafe anyway, which is bad for a server
     private String buildHttpInfo(SolrParams params) {
         StringBuilder buf = new StringBuilder();
-        String xquery = params.get(LUX_XQUERY);
         // TODO: http method
-        buf.append (String.format("<http uri=\"%s\">", xmlEscape(xquery)));
+        buf.append (String.format("<http>"));
         buf.append ("<params>");
         Iterator<String> paramNames = params.getParameterNamesIterator();
         while (paramNames.hasNext()) {
