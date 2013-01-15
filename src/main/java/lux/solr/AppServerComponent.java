@@ -20,7 +20,7 @@ import org.apache.solr.request.SolrQueryRequest;
  * eg for redirects, binary responses, etc.
  * TODO: file upload support
  */
-public class AppServer extends XQueryComponent {
+public class AppServerComponent extends XQueryComponent {
 
     @Override
     public void prepare(ResponseBuilder rb) throws IOException {
