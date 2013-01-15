@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<packages xmlns="http://expath.org/ns/repo/packages">
+<package name="http://expath.org/lib/http-client" dir="expath-http-client-saxon-0.10.0" version="0.10.0"/>
+<package name="http://expath.org/lib/zip" dir="expath-zip-saxon-0.6.0" version="0.6.0"/>
+</packages>

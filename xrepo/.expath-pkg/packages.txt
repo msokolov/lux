@@ -1,0 +1,2 @@
+expath-http-client-saxon-0.10.0 http://expath.org/lib/http-client 0.10.0
+expath-zip-saxon-0.6.0 http://expath.org/lib/zip 0.6.0

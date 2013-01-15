@@ -1,0 +1,17 @@
+<package xmlns="http://cxan.org/ns/package"
+         id="expath-zip-saxon">
+
+   <abstract>
+      Implementation for Saxon of the EXPath ZIP Facility module.
+   </abstract>
+
+   <author id="fgeorges">Florent Georges</author>
+
+   <category id="tools">Tools</category>
+   <category id="saxon">Saxon extensions</category>
+
+   <tag>zip</tag>
+   <tag>library</tag>
+   <tag>saxon</tag>
+
+</package>

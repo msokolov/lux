@@ -1,0 +1,26 @@
+<package xmlns="http://saxon.sf.net/ns/expath-pkg">
+
+   <jar>jar/expath-zip-java.jar</jar>
+   <jar>jar/expath-zip-saxon.jar</jar>
+   <jar>lib/tagsoup-1.2.jar</jar>
+
+   <function>org.expath.zip.saxon.EntriesFunction</function>
+   <function>org.expath.zip.saxon.XmlEntryFunction</function>
+   <function>org.expath.zip.saxon.HtmlEntryFunction</function>
+   <function>org.expath.zip.saxon.TextEntryFunction</function>
+   <function>org.expath.zip.saxon.BinaryEntryFunction</function>
+   <function>org.expath.zip.saxon.ZipFileFunction</function>
+   <function>org.expath.zip.saxon.UpdateEntriesFunction</function>
+
+   <!-- TODO: Still to be implemented...! -->
+   <!--library>org.expath.zip.saxon.ZipLibrary</library-->
+   <xslt-wrapper>
+      <import-uri>http://expath.org/ns/zip.xsl</import-uri>
+      <file>expath-zip-saxon.xsl</file>
+   </xslt-wrapper>
+   <xquery-wrapper>
+      <namespace>http://expath.org/ns/zip</namespace>
+      <file>expath-zip-saxon.xql</file>
+   </xquery-wrapper>
+
+</package>

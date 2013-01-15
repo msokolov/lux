@@ -1,0 +1,9 @@
+<package xmlns="http://expath.org/ns/pkg"
+         name="http://expath.org/lib/zip"
+         abbrev="expath-zip-saxon"
+         version="0.6.0"
+         spec="1.0">
+
+   <title>EXPath ZIP Facility</title>
+
+</package>

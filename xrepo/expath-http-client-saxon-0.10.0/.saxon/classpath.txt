@@ -1,0 +1,8 @@
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\lib\commons-codec-1.4.jar
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\lib\apache-mime4j-0.6.jar
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\lib\tagsoup-1.2.jar
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\jar\expath-http-client-saxon.jar
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\lib\httpcore-4.0.1.jar
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\jar\expath-http-client-java.jar
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\lib\httpclient-4.0.1.jar
+C:\Users\sokolov\workspace\lux\xrepos\expath-http-client-saxon-0.10.0\expath-http-client-saxon\lib\commons-logging-1.1.1.jar
