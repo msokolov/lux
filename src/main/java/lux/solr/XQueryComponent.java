@@ -9,8 +9,10 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.xml.transform.TransformerException;
@@ -131,27 +133,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         	expr = compiler.compile(query, errorListener, queryPath == null ? null : URI.create(queryPath));
         } catch (LuxException ex) {
         	ex.printStackTrace();
-        	StringBuilder buf = new StringBuilder ();
-        	for (TransformerException te : errorListener.getErrors()) {
-        	    if (te instanceof XPathException) {
-        	        buf.append(((XPathException)te).getAdditionalLocationText());
-        	    }
-        	    buf.append (te.getMessageAndLocation());
-        	    buf.append ("\n");
-        	    if (te.getLocator() != null) {
-        	        int lineNumber = te.getLocator().getLineNumber();
-        	        int column = te.getLocator().getColumnNumber();
-        	        if (compiler.getLastOptimized() != null) {
-        	            query = compiler.getLastOptimized().toString();
-        	        }
-        	        String[] lines = query.split("\r?\n");
-        	        if (lineNumber <= lines.length) {
-        	            String line = lines[lineNumber-1];
-        	            buf.append (line, Math.max(0, column - 60), Math.min(line.length(), column + 60));
-        	        }
-        	    }
-        	}
-        	rsp.add("xpath-error", buf.toString());
+        	String err = formatError(query, errorListener);
+        	rsp.add("xpath-error", err);
         	evaluator.close();
         	return;
         }
@@ -184,15 +167,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             }
         }
         else {
-            for (TransformerException te : queryResults.getErrors()) {
-                if (te instanceof XPathException) {
-                    XPathException xpe = (XPathException) te;
-                    if (((XPathException) te).getAdditionalLocationText() != null) {
-                        rsp.add ("xpath-error", xpe.getAdditionalLocationText());
-                    }
-                }
-                rsp.add("xpath-error", te.getMessageAndLocation());
-            }
+            String err = formatError(query, queryResults.getErrors());
+            rsp.add ("xpath-error", err);
         }
         rsp.add("xpath-results", xpathResults);
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
@@ -200,6 +176,35 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         rsp.add ("response", rb.getResults().docList);
         logger.debug ("retrieved: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
                     xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
+    }
+
+    private String formatError(String query, TransformErrorListener errorListener) {
+        ArrayList<TransformerException> errors = errorListener.getErrors();
+        return formatError(query, errors);
+    }
+
+    private String formatError(String query, List<TransformerException> errors) {
+        StringBuilder buf = new StringBuilder();
+        for (TransformerException te : errors) {
+            if (te instanceof XPathException) {
+                buf.append(((XPathException)te).getAdditionalLocationText());
+            }
+            buf.append (te.getMessageAndLocation());
+            buf.append ("\n");
+            if (te.getLocator() != null) {
+                int lineNumber = te.getLocator().getLineNumber();
+                int column = te.getLocator().getColumnNumber();
+                if (compiler.getLastOptimized() != null) {
+                    query = compiler.getLastOptimized().toString();
+                }
+                String[] lines = query.split("\r?\n");
+                if (lineNumber <= lines.length) {
+                    String line = lines[lineNumber-1];
+                    buf.append (line, Math.max(0, column - 60), Math.min(line.length(), column + 60));
+                }
+            }
+        }
+        return buf.toString();
     }
 
     private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, String path) {
