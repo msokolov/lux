@@ -2,6 +2,8 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 
 import javax.xml.transform.ErrorListener;
@@ -36,7 +38,6 @@ import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XsltCompiler;
 
-import org.expath.pkg.saxon.PkgInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.EntityResolver;
@@ -150,7 +151,6 @@ public class Compiler {
         }
         return xquery;
     }
-
     
     private static Processor makeProcessor () {
         try {
@@ -165,9 +165,43 @@ public class Compiler {
             }
         } catch (ClassNotFoundException e) { }
         Processor p = new Processor (new Config());
-        // initialize the EXPath package manager
-        new PkgInitializer().initialize(p.getUnderlyingConfiguration());
+        if (System.getProperty("org.expath.pkg.saxon.repo") != null) {
+            initializeEXPath(p);
+        }
         return p;
+    }
+
+    private static void initializeEXPath(Processor p) {
+        Logger log = LoggerFactory.getLogger(Compiler.class);
+        // initialize the EXPath package manager
+        Class<?> pkgInitializerClass;
+        try {
+            pkgInitializerClass = Class.forName("org.expath.pkg.saxon.PkgInitializer");
+            Object pkgInitializer = null;
+            try {
+                pkgInitializer = pkgInitializerClass.newInstance();
+            } catch (InstantiationException e) {
+                log.error (e.getMessage());
+                return;
+            } catch (IllegalAccessException e) {
+                log.error (e.getMessage());
+                return;
+            }
+            Method initialize = pkgInitializerClass.getMethod("initialize", Configuration.class);
+            initialize.invoke(pkgInitializer, p.getUnderlyingConfiguration());
+        } catch (ClassNotFoundException e) {
+            log.error("EXPath repository declared, but EXPath Saxon package support classes are not available");
+        } catch (SecurityException e) {
+            log.error (e.getMessage());
+        } catch (NoSuchMethodException e) {
+            log.error (e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error (e.getMessage());
+        } catch (IllegalAccessException e) {
+            log.error (e.getMessage());
+        } catch (InvocationTargetException e) {
+            log.error (e.getMessage());
+        }
     }
     
     private void registerExtensionFunctions() {
