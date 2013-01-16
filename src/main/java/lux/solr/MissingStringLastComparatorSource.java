@@ -112,14 +112,14 @@ public class MissingStringLastComparatorSource extends FieldComparatorSource {
     @Override
     public int compareBottom(int doc) {
       assert bottomSlot != -1;
-      int order = this.order[doc];
-      int ord = (order == 0) ? NULL_ORD : order;
+      int docOrder = this.order[doc];
+      int ord = (docOrder == 0) ? NULL_ORD : docOrder;
       final int cmp = bottomOrd - ord;
       if (cmp != 0) {
         return cmp;
       }
 
-      final String val2 = lookup[order];
+      final String val2 = lookup[docOrder];
 
       // take care of the case where both vals are null
       if (bottomValue == val2) return 0;
