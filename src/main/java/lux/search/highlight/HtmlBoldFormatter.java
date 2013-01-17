@@ -3,7 +3,7 @@ package lux.search.highlight;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-public class HtmlBoldHighlighter implements Highlighter {
+public class HtmlBoldFormatter implements HighlightFormatter {
 
     /* (non-Javadoc)
      * @see lux.search.highlight.Highlighter#highlightTerm(javax.xml.stream.XMLStreamWriter, java.lang.String)

@@ -6,7 +6,7 @@ import javax.xml.stream.XMLStreamWriter;
 /**
  * Called by the XmlHighlighter to write highlighted terms.
  */
-public interface Highlighter {
+public interface HighlightFormatter {
 
     /**
      * Write StAX events that "highlight" the text
