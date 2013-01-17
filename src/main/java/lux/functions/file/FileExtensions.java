@@ -18,8 +18,13 @@ import net.sf.saxon.s9api.XdmValue;
 
 /**
  * <p>Provides a (very incomplete, noncompliant) implementation of http://www.expath.org/spec/file</p>
+
+ * <code>file:exists($path as xs:string) as xs:boolean</code>
+ * <p>returns true iff the file at the given path exists.</p>
+
  * <code>file:is-dir($path as xs:string) as xs:boolean</code>
  * <p>returns true iff the file at the given path exists and is a directory.</p>
+ * 
  * <code>file:list($path as xs:string) as xs:string*</code>
  * <p>If $path is a directory, returns the names of files (and directories) in the directory in a system-dependent order.
  * The directory itself and its parent are not included in the list</p>
@@ -30,7 +35,23 @@ public class FileExtensions {
     
     public static void registerFunctions (Processor processor) {
         processor.registerExtensionFunction(createIsDirFunction());
+        processor.registerExtensionFunction(createExistsFunction());
         processor.registerExtensionFunction(createListFunction());
+    }
+    
+    private static ExtensionFunction createExistsFunction () {
+        return new Function (
+                new QName ("file", FILE_NAMESPACE, "exists"),
+                SequenceType.makeSequenceType(ItemType.BOOLEAN, OccurrenceIndicator.ONE),
+                new SequenceType[] { SequenceType.makeSequenceType(ItemType.STRING, OccurrenceIndicator.ONE)})
+        {
+            @Override
+            public XdmValue call(XdmValue[] arguments) throws SaxonApiException {
+                String path = arguments[0].itemAt(0).getStringValue();
+                boolean result = new File(path).exists();
+                return new XdmAtomicValue(result);
+            }
+        };
     }
 
     private static ExtensionFunction createIsDirFunction () {
