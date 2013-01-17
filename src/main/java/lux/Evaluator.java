@@ -216,12 +216,16 @@ public class Evaluator {
         @Override
         public Source resolve(String href, String base) throws TransformerException {
             if (href.startsWith("file:")) {
+                Source source = null;
+                String path = href.substring(5);
                 // let the default resolver do its thing
                 if (defaultURIResolver != null) {
-                    return defaultURIResolver.resolve(href, base);
+                    source = defaultURIResolver.resolve(path, base);
                 }
-                // shouldn't happen, as I read the Saxon source...
-                return null;
+                if (source == null) {
+                    source = getCompiler().getProcessor().getUnderlyingConfiguration().getSystemURIResolver().resolve (path, base);
+                }
+                return source;
             }
             if (searcher == null) {
                 throw new IllegalStateException ("Attempted search, but no searcher was provided");
