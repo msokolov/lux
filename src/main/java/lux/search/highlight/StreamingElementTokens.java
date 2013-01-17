@@ -18,7 +18,7 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
  */
 public final class StreamingElementTokens extends TokenStream {
     
-    private final TokenStream wrapped;
+    private TokenStream wrapped;
     private final CharTermAttribute termAtt;
     private final PositionIncrementAttribute posIncrAtt;
     private final CharTermAttribute term;
@@ -74,6 +74,9 @@ public final class StreamingElementTokens extends TokenStream {
         return true;
     }
 
+    public void reset (TokenStream tokens) {
+        this.wrapped = tokens;
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
