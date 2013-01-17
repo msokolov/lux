@@ -1461,7 +1461,6 @@
   -->
 
   <searchComponent name="lux-app-server" class="lux.solr.AppServerComponent">
-    <!--   <str name="xmlFieldName">lux_xml</str> -->
   </searchComponent>
 
   <!-- This component and handler provide a search-enabled xquery
@@ -1469,7 +1468,10 @@
        like other Solr search handlers, and results are returned using
        the usual Solr marshalling options (XML, javabin, json, etc)
   -->
-  <searchComponent name="xquery" class="lux.solr.XQueryComponent" />
+  <searchComponent name="xquery" class="lux.solr.XQueryComponent">
+    <!--   <str name="xmlFieldName">lux_xml</str> -->
+    <!--   <str name="uriFieldName">lux_uri</str> -->
+  </searchComponent>
   
   <requestHandler name="/xquery" class="solr.SearchHandler" id="xquery">
     <arr name="components">

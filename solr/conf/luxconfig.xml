@@ -28,7 +28,6 @@
   -->
 
   <searchComponent name="lux-app-server" class="lux.solr.AppServer">
-    <!--   <str name="xmlFieldName">lux_xml</str> -->
   </searchComponent>
 
   <!-- This component and handler provide a search-enabled xquery
@@ -37,10 +36,8 @@
        the usual Solr marshalling options (XML, javabin, json, etc)
   -->
   <searchComponent name="xquery" class="lux.solr.XQueryComponent">
-    <!--  updateChain references the update chain whose update processor factory may be
-          configured with indexing configuration required by this component
-     -->
-    <!--   <str name="update-chain">lux-update-chain</str> -->
+    <!--   <str name="xmlFieldName">lux_xml</str> -->
+    <!--   <str name="uriFieldName">lux_uri</str> -->
   </searchComponent>
   
   <requestHandler name="/xquery" class="solr.SearchHandler" id="xquery">
