@@ -105,9 +105,9 @@ public class SolrIndexConfig {
         }
         SchemaField uniqueKeyField = schema.getUniqueKeyField();
         if (uniqueKeyField == null) {
-            LoggerFactory.getLogger(getClass()).warn("schema does not define any unique field");
+            LoggerFactory.getLogger(getClass()).error("schema does not define any unique field");
         } else if (! uniqueKeyField.getName().equals(indexConfig.getFieldName(FieldName.URI))) {
-            LoggerFactory.getLogger(getClass()).warn("schema defines a different unique field than the uri field declared in lux configuration");            
+            LoggerFactory.getLogger(getClass()).error("schema defines a different unique field than the uri field declared in lux configuration");            
         }
         // must call this after making changes to the field map:
         schema.refreshAnalyzers();
