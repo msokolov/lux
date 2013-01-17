@@ -4,7 +4,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.Evaluator;
 import lux.index.IndexConfiguration;
-import lux.search.highlight.HtmlBoldHighlighter;
+import lux.search.highlight.HtmlBoldFormatter;
 import lux.search.highlight.XmlHighlighter;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
@@ -74,7 +74,7 @@ public class Highlight extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             IndexConfiguration indexConfiguration = eval.getCompiler().getIndexConfiguration();
-            XmlHighlighter xmlHighlighter = new XmlHighlighter(eval.getCompiler().getProcessor(), indexConfiguration, new HtmlBoldHighlighter());
+            XmlHighlighter xmlHighlighter = new XmlHighlighter(eval.getCompiler().getProcessor(), indexConfiguration, new HtmlBoldFormatter());
             try {
                 XdmNode highlighted = xmlHighlighter.highlight(query, docArg);
                 return SingletonIterator.makeIterator(highlighted.getUnderlyingNode());
