@@ -25,9 +25,10 @@ import net.sf.saxon.tree.iter.UnfailingIterator;
 import net.sf.saxon.value.SequenceType;
 
 /**
- * <code>lux:transform($stylesheet as node(), $context as node()) as node()
- * <p>This function transforms a node with an XSLT stylesheet.  If the stylesheet produces
- * a result that is not a single node, an error will be thrown.</p>
+ * <code>lux:transform($stylesheet as node(), $context as node(), $params as item()*) as node()</code>
+ * <p>This function transforms a node with an XSLT stylesheet.  Parameters are bound
+ * from the $params argument, which must be an even-length list of alternating names and values.
+ * If the stylesheet produces a result that is not a single node, an error will be thrown.</p>
  */
 public class Transform extends ExtensionFunctionDefinition {
 
