@@ -471,6 +471,16 @@ public class SearchTest extends BaseSearchTest {
         // no highlighting in attributes
         assertSearch ("<node id=\"10\">node 10</node>", "lux:highlight('<@id:10', <node id=\"10\">node 10</node>)", null, null);
     }
+    
+    // Make sure text offset calculations handle multiple text nodes
+    @Test
+    public void testHighlightComplexContent() throws Exception {
+        assertSearch ("<FM>\n<P>Text placed in the public domain by Moby Lexical Tools, 1992.</P>\n" +
+        		"<P>SGML markup by <B>Jon</B> <B>Bosak</B>, 1992-1994.</P>\n" +
+        		"<P>XML version by <B>Jon</B> <B>Bosak</B>, 1996-1998.</P>\n" +
+        		"<P>This work may be freely copied and distributed worldwide.</P>\n</FM>", 
+                "lux:highlight('Jon Bosak', /FM)", null, null);
+    }
 
 }
 
