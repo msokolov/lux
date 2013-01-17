@@ -180,10 +180,12 @@
               <name>org.expath.pkg.saxon.repo</name>
               <value>${basedir}/xrepo</value>
             </systemProperty>
+            <!-- 
             <systemProperty>
               <name>log4j.configuration</name>
               <value>${basedir}/src/main/resources/log4j.properties</value>
             </systemProperty>
+             -->
           </systemProperties>
           <!--
           <contextHandler implementation="org.mortbay.jetty.webapp.WebAppContext">
@@ -193,6 +195,7 @@
           -->
         </configuration>
         <dependencies>
+        <!-- 
         <dependency>
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging</artifactId>
@@ -205,6 +208,7 @@
           <version>1.0.1</version>
           <type>jar</type>
         </dependency>
+         -->
         <dependency>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
