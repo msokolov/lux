@@ -34,8 +34,7 @@ import org.apache.lucene.search.highlight.TextFragment;
 
 public class XmlHighlighter extends SaxonDocBuilder {
 
-    private int lastTextOffset = 0;
-    private final Highlighter highlighter;
+    private final HighlightFormatter highlighter;
     private QueryScorer scorer;
     private final XmlStreamTextReader textReader;
     private XMLStreamReader xmlStreamReader;
@@ -50,7 +49,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
     private String textFieldName;
     private Analyzer analyzer;
     
-    public XmlHighlighter(Processor processor, IndexConfiguration indexConfig, Highlighter highlighter) {
+    public XmlHighlighter(Processor processor, IndexConfiguration indexConfig, HighlightFormatter highlighter) {
         super(processor);
         textFieldName = indexConfig.getFieldName(FieldName.XML_TEXT);
         analyzer = indexConfig.getFieldAnalyzers();
@@ -186,7 +185,6 @@ public class XmlHighlighter extends SaxonDocBuilder {
             throw new XMLStreamException ("unexpected CDATA event");
         
         case XMLStreamConstants.SPACE:
-            lastTextOffset += reader.getTextLength();
             super.handleEvent(reader, eventType);
             break;
             
@@ -197,7 +195,6 @@ public class XmlHighlighter extends SaxonDocBuilder {
             } catch (IOException e) {
                 throw new XMLStreamException(e);
             }
-            lastTextOffset += reader.getTextLength();
             break;
 
         case XMLStreamConstants.ENTITY_REFERENCE:
@@ -220,7 +217,6 @@ public class XmlHighlighter extends SaxonDocBuilder {
      */
     private void highlightTextNode() throws IOException, XMLStreamException {
         xmlStreamTokens.reset(analyzer.reusableTokenStream(textFieldName, textReader));
-        lastTextOffset = 0; // TODO: remove
         lastEndOffset = 0;
         for (boolean next = xmlStreamTokens.incrementToken(); 
                     next && (offsetAtt.startOffset() < maxDocCharsToAnalyze); 
@@ -244,12 +240,11 @@ public class XmlHighlighter extends SaxonDocBuilder {
 
     private void writeTrailingText() throws XMLStreamException {
         // Test what remains of the original text beyond the point where we stopped analyzing 
-        int textOffset = lastEndOffset - lastTextOffset;
+        int textOffset = lastEndOffset;
         int totalTextLength = xmlStreamReader.getTextStart() + xmlStreamReader.getTextLength();
         if (textOffset < totalTextLength) {
             // append it to the output stream
-            writeText (lastEndOffset, lastTextOffset + totalTextLength);
-            lastEndOffset = totalTextLength; // TODO: not needed?
+            writeText (lastEndOffset, totalTextLength);
         }
     }
         
@@ -266,7 +261,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
             if (tokenGroup.getTotalScore() > 0) {
                 // TODO allocate and re-use a single buffer here
                 char[] tokenText = new char[endOffset - startOffset];
-                xmlStreamReader.getTextCharacters(startOffset - lastTextOffset, tokenText, 0, endOffset - startOffset);
+                xmlStreamReader.getTextCharacters(startOffset, tokenText, 0, endOffset - startOffset);
                 highlighter.highlightTerm(writer, new String(tokenText));
             } else {
                 writeText (startOffset, endOffset);
@@ -278,10 +273,10 @@ public class XmlHighlighter extends SaxonDocBuilder {
     // start and end are absolute numbers, not relative to the current text node
     private void writeText (int start, int end) throws XMLStreamException {
         // Note: Saxon's StAX "bridge" copies a lot of characters here; we would do better
-        // grabbing the entire buffer when the text event hits and then parceling it out
-        int offsetStart = start - lastTextOffset;
+        // grabbing the entire buffer when the text event hits and then parceling it out,
+        // or else rewriting to use native Saxon API for iterating over XML events...
         int length = end - start;
-        writer.writeCharacters(xmlStreamReader.getTextCharacters(), offsetStart, length);
+        writer.writeCharacters(xmlStreamReader.getTextCharacters(), start, length);
     }
     
     final class XmlStreamTextReader extends Reader {
