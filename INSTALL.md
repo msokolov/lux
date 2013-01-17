@@ -69,6 +69,20 @@ configure app server so it connects to this embedded solr out of the box).
      using.  You can refer to the provided solrconfig.xml file for an
      example of what this should look like.
 
+4. Lux requires that a unique string-values field be defined. If no such field
+   exists, add the following to the schema:
+
+        <field name="uri" type="string" indexed="true" stored="true" multiValued="false"/>
+        <uniqueKey>uri</uniqueKey>
+           
+   If a unique id field is already defined, you can configure Lux to use it
+   by adding the following to one of the parameters of the Lux xquery
+   component in solrconfig.xml:
+
+   <searchComponent name="xquery" class="lux.solr.XQueryComponent">
+    <str name="uriFieldName">{name of your field here}</str>
+   </searchComponent>
+
 5. Restart Solr.  Watch the Solr logs to make sure there are no errors.
    You may see ClassNotFoundException.  If you do, that probably means the
    jars are not in the right folder: you may need to read up about Solr
