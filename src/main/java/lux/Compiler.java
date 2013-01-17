@@ -15,6 +15,7 @@ import lux.functions.Commit;
 import lux.functions.Count;
 import lux.functions.DeleteDocument;
 import lux.functions.Exists;
+import lux.functions.ExtensionFunctions;
 import lux.functions.FieldTerms;
 import lux.functions.FieldValues;
 import lux.functions.Highlight;
@@ -218,6 +219,7 @@ public class Compiler {
         processor.registerExtensionFunction(new Highlight());
 
         FileExtensions.registerFunctions(processor);
+        ExtensionFunctions.registerFunctions(processor);
     }
     
     private class EmptyEntityResolver implements EntityResolver {
