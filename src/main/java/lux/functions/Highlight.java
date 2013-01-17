@@ -25,6 +25,13 @@ import net.sf.saxon.value.SequenceType;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.xmlparser.ParserException;
 
+/**
+ * <code>lux:highlight($query as item(), $node as node())</code>
+ * <p>returns the given node with text matching the query surrounded by HTML B tags.  The query
+ * may be a string or an element/document of the same types supported by lux:search.</p>
+ * <p>TODO: enable control over the highlight tagging. </p>
+ * @see Search
+ */
 public class Highlight extends ExtensionFunctionDefinition {
 
     @Override
