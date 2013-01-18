@@ -24,6 +24,7 @@ import lux.QueryContext;
 import lux.TransformErrorListener;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
+import lux.exception.LuxHttpException;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
@@ -152,25 +153,38 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     xqueryPath
                     ));
         }
-        XdmResultSet queryResults = evaluator.evaluate(expr, context);
-        evaluator.close();
-        if (queryResults.getErrors().isEmpty()) {
-            for (Object xpathResult : queryResults) {
-                if (++ count < start) {
-                    continue;
-                }
-                addResult (xpathResults, (XdmItem) xpathResult);
-                if ((len > 0 && xpathResults.size() >= len) || 
-                        (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
-                    break;
+        XdmResultSet queryResults = null;
+        try {
+            queryResults = evaluator.evaluate(expr, context);
+        } catch (LuxHttpException e) {
+            // TODO: finish this implementation somehow
+            // Solr doesn't provide the ability for us to control the HTTP status
+            // so we would have to pass back a message to the app server???
+            rsp.add ("http-code", e.getCode());
+            rsp.add ("http-message", e.getMessage());
+            logger.debug ("caught http error: " + e.getCode() + " " + e.getMessage());
+        } finally {
+            evaluator.close();
+        }
+        if (queryResults != null) {
+            if (queryResults.getErrors().isEmpty()) {
+                for (Object xpathResult : queryResults) {
+                    if (++ count < start) {
+                        continue;
+                    }
+                    addResult (xpathResults, (XdmItem) xpathResult);
+                    if ((len > 0 && xpathResults.size() >= len) || 
+                            (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
+                        break;
+                    }
                 }
             }
+            else {
+                String err = formatError(query, queryResults.getErrors());
+                rsp.add ("xpath-error", err);
+            }
+            rsp.add("xpath-results", xpathResults);
         }
-        else {
-            String err = formatError(query, queryResults.getErrors());
-            rsp.add ("xpath-error", err);
-        }
-        rsp.add("xpath-results", xpathResults);
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);
@@ -187,7 +201,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         StringBuilder buf = new StringBuilder();
         for (TransformerException te : errors) {
             if (te instanceof XPathException) {
-                buf.append(((XPathException)te).getAdditionalLocationText());
+                String additionalLocationText = ((XPathException)te).getAdditionalLocationText();
+                if (additionalLocationText != null) {
+                    buf.append(additionalLocationText);
+                }
             }
             buf.append (te.getMessageAndLocation());
             buf.append ("\n");

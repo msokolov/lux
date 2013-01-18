@@ -1,4 +1,6 @@
-* app-server polish
+* app-server
+** http header control
+redirect, 404, error, etc
 ** passing current uri
 We currently send Solr the translated path - so it can read the resource,
 but it doesn't have the original url, which it would be nice to have so we
@@ -15,62 +17,24 @@ Without Eclipse or Maven
 Be able to run from command line as java with jetty and war?  so you
 can build prototypes/reports, etc using xquery/html
 * demo
-** http header control
-redirect, 404, error, etc
+** search results format
+*** scene/speech title
+*** highlighting
+** play reading view
 ** query sandbox
 *** create an xquery-based one?
 would require eval
 *** improve the one in the loader
 ** eval
 execute xquery from within xquery
-* sorting by value
-** empty least/greatest
-* dochaus.org
-Maintain a searchable archive of software documentation.
-Support multiple catalogs.  Support multiple software versions.
-** specs
-*** javadoc
-POC using maven javadocs; hmm this is exactly jarvana
-*** online docs
-python, perl, php, mysql, etc etc etc. Well, these already have their own
-sites.  Is there any advantage to something other than Google?
-*** review of random REST APIs:
-Since all of these services host their own data, and allow you to access
-it, why, as an application developer, would you ever want to copy their
-data and store a massive index of your own?  It doesn't make any sense.  If
-you *own* the data, OK, you own the data.
-**** Netflix
-**** Twitter
-**** FB
-**** LinkedIn
-**** Amazon
-**** DropBox
-**** EBay
-** impl
-*** Jarvana clone um no
-**** download javadocs from search.maven.org; 
-**** enhance with metadata
-**** index and serve
-**** search page
-**** display page
-**** browse page for discoverability
-* demo
-** sorting by value (empty least/greatest)
-*** empty least/greatest
-** standalone webapp 
-so you can build prototypes/reports, etc using xquery/html
-** query sandbox
-*** create an xquery-based one?
-would require eval
-*** improve the one in the loader
-** eval
-execute xquery from within xquery
-** highlighting
-** performance 
-*** tests
+* performance evaluation
+** tests
 StressTest - compare w/ML, Solr, exist
-*** indexing perf improvement
+** indexing perf improvement
 pool XmlIndexer in Solr
+* absolute path in function context
+Saxon treats this as a compile-time error, so there's really not much we
+can do about it short of introducing a different parser.
 * compatibility w/vanilla Saxon
 We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
 Configuration, you lose out on some nice performance optimizations for some
