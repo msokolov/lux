@@ -28,11 +28,13 @@ public class AttributeConstructor extends AbstractExpression {
     
     public void appendValue (StringBuilder buf) {
         // This works around a test in the XQTS, but it seems broken: what if some code contains
-        // newlines?  I think it's OK? What happens is that "attribute whitespace normalization" will have
+        // newlines?  I think it's OK for literals only? What happens is that "attribute whitespace normalization" will have
         // converted literal CR LF characters to spaces.  The only way we should be seeing these characters
         // here is if they were originally provided as character references.        
         String c = getContent().toString ();
-        c = c.replace ("\r", "&#xD;").replace("\n", "&#xA;");
+        if (getContent().getType() == Type.LITERAL) {
+            c = c.replace ("\r", "&#xD;").replace("\n", "&#xA;");
+        }
         buf.append (c);        
     }
 

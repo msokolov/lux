@@ -23,10 +23,10 @@ public class Conditional extends AbstractExpression {
     public void toString(StringBuilder buf) {
         buf.append ("if (");
         getCondition().toString(buf);
-        buf.append (") then (");
+        buf.append (")\n then (");
         getTrueAction().toString(buf);
         if (getFalseAction() != null) {
-            buf.append(") else (");
+            buf.append(")\n else (");
             getFalseAction().toString(buf);
         }
         buf.append (")");

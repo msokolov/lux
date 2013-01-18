@@ -42,10 +42,11 @@ public class FLWOR extends AbstractExpression {
             } else {
                 clause.toString(buf);
             }
-            buf.append(' ');
+            buf.append("\n ");
         }
         buf.append ("return ");
         getReturnExpression().toString(buf);
+        buf.append ("\n");
     }
     
     public AbstractExpression getReturnExpression () {
