@@ -220,6 +220,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     buf.append (line, Math.max(0, column - 60), Math.min(line.length(), column + 60));
                 }
             }
+            logger.error("XQuery exception", te);
         }
         return buf.toString();
     }

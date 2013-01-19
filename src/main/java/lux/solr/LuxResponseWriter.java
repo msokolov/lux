@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-import lux.exception.LuxException;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.solr.common.SolrException;
+import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.QueryResponseWriter;
@@ -33,13 +34,13 @@ public class LuxResponseWriter implements QueryResponseWriter {
         List<String> errors = response.getValues().getAll("xpath-error");
         if (CollectionUtils.isNotEmpty(errors)) {
             if (errors.size() == 1) {
-                throw new LuxException(errors.get(0));
+                throw new SolrException(ErrorCode.BAD_REQUEST, errors.get(0));
             }
             StringBuilder buf = new StringBuilder();
             for (String e : errors) {
                 buf.append (e).append ("\n");
             }
-            throw new LuxException (buf.toString());
+            throw new SolrException (ErrorCode.BAD_REQUEST, buf.toString());
             //writeError(writer, error);
         } else {
             NamedList<?> values = (NamedList<?>) response.getValues().get("xpath-results");
