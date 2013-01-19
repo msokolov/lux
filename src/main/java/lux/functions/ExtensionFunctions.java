@@ -39,7 +39,7 @@ public class ExtensionFunctions {
                 new QName ("lux", FunCall.LUX_NAMESPACE, "log"),
                 SequenceType.makeSequenceType(ItemType.ANY_ITEM, OccurrenceIndicator.ZERO_OR_ONE),
                 new SequenceType[] { 
-                    SequenceType.makeSequenceType(ItemType.STRING, OccurrenceIndicator.ONE_OR_MORE),
+                    SequenceType.makeSequenceType(ItemType.ANY_ITEM, OccurrenceIndicator.ONE_OR_MORE),
                     SequenceType.makeSequenceType(ItemType.STRING, OccurrenceIndicator.ZERO_OR_ONE)    
                 })
         {
