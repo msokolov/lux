@@ -1,7 +1,5 @@
 package lux;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -25,6 +23,7 @@ import lux.functions.Transform;
 import lux.functions.file.FileExtensions;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.xml.GentleXmlReader;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
 import lux.xquery.XQuery;
@@ -41,9 +40,6 @@ import net.sf.saxon.s9api.XsltCompiler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Compiles XQuery using Saxon's compiler and optimizes it for use with a Lucene index.
@@ -87,7 +83,11 @@ public class Compiler {
         Configuration config = processor.getUnderlyingConfiguration();
         config.setDocumentNumberAllocator(new DocIDNumberAllocator());
         config.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
-        config.getParseOptions().setEntityResolver(new EmptyEntityResolver());
+
+        GentleXmlReader parser = new GentleXmlReader();
+        config.getParseOptions().setEntityResolver(parser);
+        //config.getParseOptions().setXMLReader(parser);
+        config.setSourceParserClass(GentleXmlReader.class.getName());
         isSaxonLicensed = config.isLicensedFeature(LicenseFeature.PROFESSIONAL_EDITION)
                 || config.isLicensedFeature(LicenseFeature.ENTERPRISE_XQUERY);
         if (indexConfig == null || !indexConfig.isIndexingEnabled()) {
@@ -220,13 +220,6 @@ public class Compiler {
 
         FileExtensions.registerFunctions(processor);
         ExtensionFunctions.registerFunctions(processor);
-    }
-    
-    private class EmptyEntityResolver implements EntityResolver {
-        @Override
-        public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-            return new InputSource(new StringReader(""));
-        }
     }
     
     public XsltCompiler getXsltCompiler () {
