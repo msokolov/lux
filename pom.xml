@@ -8,7 +8,6 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <warBuildLocation>target/lux-${version}.war</warBuildLocation>
   </properties>
   <dependencies>
     <dependency>
@@ -284,6 +283,7 @@
           <type>jar</type>
         </dependency>
         </dependencies>
+        <!--
         <executions>
           <execution>
             <id>start-jetty</id>
@@ -304,6 +304,7 @@
             </goals>
           </execution>
         </executions>
+        -->
       </plugin>
     </plugins>
   </build>
