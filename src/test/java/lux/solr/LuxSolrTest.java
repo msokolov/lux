@@ -3,12 +3,16 @@ package lux.solr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -122,8 +126,9 @@ public class LuxSolrTest {
     }
     
     @Test public void testDocFunction () throws Exception {
-        assertXPathSearchCount (1, 0, "document", "doc", "doc('test50')");        
-        assertXPathSearchCount (0, 0, "error", "document '/foo' not found", "doc('/foo')");  
+        assertXPathSearchCount (1, 0, "document", "doc", "doc('test50')");
+        // TODO: eliminate the repetition of the error:
+        assertXPathSearchCount (0, 0, "error", "document '/foo' not found\ndocument '/foo' not found\n", "doc('/foo')");  
     }
     
     @Test public void testCollectionFunction () throws Exception {
@@ -140,6 +145,48 @@ public class LuxSolrTest {
     @Test
     public void testSyntaxError () throws Exception {
         assertXPathSearchError("Unexpected token name \"bad\" beyond end of query; Line#: 1; Column#: 4\n", "hey bad boy");
+    }
+    
+    /*
+     * Ensure that we can write multiple documents in parallel.
+     */
+    @Test public void testMultiThreadedWrites () throws Exception {
+        ExecutorService taskExecutor = Executors.newFixedThreadPool(16);
+        for (int i = 1; i <= 30; i++) {
+            taskExecutor.execute(new TestDocInsert (i));
+        }
+        taskExecutor.shutdown();
+        taskExecutor.awaitTermination(1, TimeUnit.SECONDS);
+        solr.commit();
+        for (int i = 1; i <= 30; i++) {
+            assertXPathSearchCount (1, 0, "document", "doc", "doc('/test/" + i + "')");
+        }
+    }
+    
+    class TestDocInsert implements Runnable {
+        
+        final int id;
+        
+        TestDocInsert (int n) { id = n; }
+        
+        @Override public void run () {
+            try {
+                solr.add (createTestDocument(id));
+            } catch (SolrServerException e) {
+                fail(e.getMessage());
+            } catch (IOException e) {
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    private SolrInputDocument createTestDocument(int i) {
+        String uri = "/test/" + i;
+        String xml = "<doc><title id='" + i + "'>" + (101-i) + "</title><test>cat</test></doc>";
+        SolrInputDocument doc = new SolrInputDocument(); 
+        doc.addField (URI, uri);
+        doc.addField(LUX_XML, xml);
+        return doc;
     }
     
     protected void assertQueryCount (int count, String query) throws SolrServerException {
