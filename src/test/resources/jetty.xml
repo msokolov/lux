@@ -162,6 +162,7 @@
     <!-- Normally only one type of deployer need be used.            -->
     <!--                                                             -->
     <!-- =========================================================== -->
+    <!-- 
     <Call name="addLifeCycle">
       <Arg>
         <New class="org.mortbay.jetty.deployer.WebAppDeployer">
@@ -174,13 +175,7 @@
         </New>
       </Arg>
     </Call>
-
-    <New class="org.mortbay.jetty.webapp.WebAppContext">
-      <Arg><Ref id="Contexts"/></Arg>
-      <Arg>target/lux-0.5-SNAPSHOT.war</Arg>
-      <Arg>/demo</Arg>
-      <Set name="descriptor">src/main/webapp/WEB-INF/web.xml</Set>
-    </New>
+ -->
 
     <!-- =========================================================== -->
     <!-- Configure Authentication Realms                             -->
