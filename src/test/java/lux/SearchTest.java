@@ -481,6 +481,20 @@ public class SearchTest extends BaseSearchTest {
         		"<P>This work may be freely copied and distributed worldwide.</P>\n</FM>", 
                 "lux:highlight('Jon Bosak', /FM)", null, null);
     }
+    
+    @Test 
+    public void testFunctionDefinition() throws Exception {
+        // test the optimization of function bodies, and also of the collection()
+        // function call.  collection() must be used inside function bodies since 
+        // Saxon generates static (compilation) errors due to the lack of a context item 
+        // for the absolute paths 
+        assertSearch ("<TITLE>The Tragedy of Hamlet, Prince of Denmark</TITLE>",
+            "declare namespace test='test'; " +
+            "declare function test:function () { collection()/PLAY/TITLE }; " +
+            "test:function()", null, 1);
+    }
+
+
 
 }
 
