@@ -9,6 +9,8 @@ TODO: test this distribution using a Solr-only install
 *** Maven
 **** expath dependencies
 *** test install procedure
+**** test in standalone config for both Linux and Windows
+**** test ifpress setup
 ** Namespace
    Change to luxdb.net from luxproject.net?
 ** Hosting for luxdb.net, luxdb.org, luxdb.com

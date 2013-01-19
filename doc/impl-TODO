@@ -12,13 +12,6 @@ can give it to the application
 dochaus.org (networksolutions)
 luxdb.net (yahoo - will autorenew!)
 luxdb.org (register.com - bastards took me for the private thingy)
-* packaging, documentation
-** easy to run out of the box 
-Without Eclipse or Maven
-*** command-line loading?
-*** Package as standalone webapp?
-Be able to run from command line as java with jetty and war?  so you
-can build prototypes/reports, etc using xquery/html
 * demo
 ** search results format
 *** scene/speech title

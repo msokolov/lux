@@ -232,7 +232,7 @@
           <stopKey>STOP</stopKey>
           <contextPath>/</contextPath> 
           <webDefaultXml>src/test/resources/webdefault.xml</webDefaultXml>
-          <webXml>src/main/webapp/WEB-INF/web.xml</webXml>
+          <webXml>src/test/webapp/WEB-INF/web.xml</webXml>
           <jettyConfig>src/test/resources/jetty.xml</jettyConfig>
           <!-- 
           <connectors>

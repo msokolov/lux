@@ -125,12 +125,15 @@ public class AppServerIT {
      */
     @Test public void testMTOutputURIResolver () throws Exception {
         eval ("concat(lux:delete(), lux:commit(), 'OK')");
+        long start = System.currentTimeMillis();
         ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
-        for (int i = 1; i <= 30; i++) {
+        for (int i = 1; i <= 300; i++) {
             taskExecutor.execute(new TestDocInsertMulti (i));
         }
         taskExecutor.shutdown();
         taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        long elapsed = System.currentTimeMillis() - start;
+        System.out.println ("elapsed=" + elapsed);
         eval ("lux:commit()");
         for (int i = 1; i <= 30; i++) {
             WebResponse response = eval ("doc('/doc/" + i + "')");
@@ -160,7 +163,7 @@ public class AppServerIT {
                     " return concat('OK', $i, $trans)";
             try {
                 WebResponse response = eval (insert);
-                assertEquals ("OK", response.getText());
+                assertTrue (response.getText().startsWith("OK"));
             } catch (MalformedURLException e) {
                 fail (e.getMessage());
             } catch (IOException e) {

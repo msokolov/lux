@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.transform.TransformerException;
 
@@ -67,13 +68,15 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
     protected Set<String> fields = new HashSet<String>();
     protected Compiler compiler;
-    protected XmlIndexer indexer;
+    private ArrayBlockingQueue<XmlIndexer> indexerPool;
+    //protected XmlIndexer indexer;
     protected SolrIndexConfig solrIndexConfig;
     
     private Logger logger;
     
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
+        indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
     }
     
     @Override
@@ -83,8 +86,22 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
         solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_XML, info.initArgs);
         solrIndexConfig.inform(core);
-        indexer = new XmlIndexer (solrIndexConfig.getIndexConfig());
         compiler = createXCompiler();
+    }
+    
+    public XmlIndexer checkoutXmlIndexer () {
+        // In tests it didn't seem to make any appreciable difference whether this
+        // pool was present or not, but it salves my conscience
+        XmlIndexer indexer = indexerPool.poll();
+        if (indexer == null) {
+            indexer = new XmlIndexer (solrIndexConfig.getIndexConfig());
+        }
+        return indexer;
+    }
+    
+    public void returnXmlIndexer (XmlIndexer doneWithIt) {
+        indexerPool.offer(doneWithIt);
+        // if the pool was full, we just drop the indexer as garbage
     }
     
     @Override
@@ -126,7 +143,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         XQueryExecutable expr;
         SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         SolrIndexSearcher searcher = rb.req.getSearcher();
-        DocWriter docWriter = new SolrDocWriter (indexer, rb.req.getCore().getUpdateHandler());
+        DocWriter docWriter = new SolrDocWriter (this, rb.req.getCore().getUpdateHandler());
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
@@ -230,7 +247,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
 
     private Compiler createXCompiler() {
-        return new Compiler(indexer.getConfiguration());
+        return new Compiler(solrIndexConfig.getIndexConfig());
     }
     
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) {

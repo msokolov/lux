@@ -19,7 +19,7 @@ import org.apache.solr.update.processor.UpdateRequestProcessor;
 public class LuxUpdateProcessor extends UpdateRequestProcessor {
 
     private final IndexConfiguration indexConfig;
-
+    
     public LuxUpdateProcessor (IndexConfiguration config, UpdateRequestProcessor next) {
         super(next);
         indexConfig = config;

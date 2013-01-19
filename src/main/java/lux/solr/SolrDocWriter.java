@@ -15,35 +15,41 @@ import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.UpdateHandler;
 
 public class SolrDocWriter implements DocWriter {
-    
+
     private final UpdateHandler updateHandler;
-    private final XmlIndexer indexer;
-    
-    SolrDocWriter (XmlIndexer indexer, UpdateHandler updateHandler) {
+    private final XQueryComponent xqueryComponent;
+
+    SolrDocWriter(XQueryComponent xQueryComponent, UpdateHandler updateHandler) {
         this.updateHandler = updateHandler;
-        this.indexer = indexer;
+        this.xqueryComponent = xQueryComponent;
     }
 
     @Override
     public void write(NodeInfo node, String uri) {
+        XmlIndexer indexer = null;
         try {
-            indexer.read (node, uri);
-        } catch (XMLStreamException e) {
-            throw new LuxException(e);
-        }
-        AddUpdateCommand cmd = new AddUpdateCommand();
-        cmd.overwriteCommitted = true;
-        cmd.overwritePending = true;
-        cmd.allowDups = false;
-        //cmd.solrDoc = new SolrInputDocument();
-        //LuxUpdateProcessor.addDocumentFields(indexer, cmd.solrDoc);
-        cmd.doc = indexer.createLuceneDocument();
-        try {
-            updateHandler.addDoc(cmd);
-        } catch (IOException e) {
-            throw new LuxException (e);
+            indexer = xqueryComponent.checkoutXmlIndexer();
+            try {
+                indexer.read (node, uri);
+            } catch (XMLStreamException e) {
+                throw new LuxException(e);
+            }
+            AddUpdateCommand cmd = new AddUpdateCommand();
+            cmd.overwriteCommitted = true;
+            cmd.overwritePending = true;
+            cmd.allowDups = false;
+            //cmd.solrDoc = new SolrInputDocument();
+            //LuxUpdateProcessor.addDocumentFields(indexer, cmd.solrDoc);
+            cmd.doc = indexer.createLuceneDocument();
+            try {
+                updateHandler.addDoc(cmd);
+            } catch (IOException e) {
+                throw new LuxException (e);
+            }
         } finally {
-            indexer.reset();
+            if (indexer != null) {
+                xqueryComponent.returnXmlIndexer(indexer);
+            }
         }
     }
 
@@ -82,12 +88,14 @@ public class SolrDocWriter implements DocWriter {
         try {
             updateHandler.commit(cmd);
         } catch (IOException e) {
-            throw new LuxException (e);
+            throw new LuxException(e);
         }
     }
 
 }
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/.
+ */
