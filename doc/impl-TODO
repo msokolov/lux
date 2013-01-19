@@ -1,4 +1,7 @@
 * app-server
+** packaging cleanup
+We now have a distro that is all-inclusive; test install and run;
+check the configuration in app-server, and the documentation
 ** http header control
 redirect, 404, error, etc
 ** passing current uri
