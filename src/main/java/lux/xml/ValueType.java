@@ -14,7 +14,7 @@ public enum ValueType {
     COMMENT("comment"), 
     PROCESSING_INSTRUCTION("processing-instruction"),
         
-    ATOMIC("xs:untypedAtomic", true), 
+    ATOMIC("xs:anyAtomicType", true), 
     STRING("xs:string", true), 
     INT("xs:int", true), 
     INTEGER("xs:integer", true), 

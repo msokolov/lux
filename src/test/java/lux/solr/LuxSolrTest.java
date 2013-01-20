@@ -1,8 +1,5 @@
 package lux.solr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,42 +8,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrRequest.METHOD;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
-import org.apache.solr.common.util.NamedList;
-import org.apache.solr.core.CoreContainer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class LuxSolrTest {
+public class LuxSolrTest extends BaseSolrTest {
     
     private static final String LUX_XML = "lux_xml";
-
     private static final String URI = "lux_uri";
-
     private static final String XML_TEXT = "lux_text";
-
     private static final String LUX_PATH = "lux_path";
-
     private static final String LUX_ELT_TEXT = "lux_elt_text";
-
     private static final String LUX_ATT_TEXT = "lux_att_text";
 
-    private static SolrServer solr;
-    
-    private final String SOLR_QUERY_TYPE = "/xquery";
-    
-    @BeforeClass public static void setup () throws Exception {
-        System.setProperty("solr.solr.home", "solr");
-        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
-        CoreContainer coreContainer = initializer.initialize();
-        solr = new EmbeddedSolrServer(coreContainer, "");
-        solr.deleteByQuery("*:*");
+    @BeforeClass
+    public static void setup () throws Exception {
+        BaseSolrTest.setup();
         Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
         addSolrDocFromFile("src/test/resources/conf/schema.xml", docs);
         addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs);
@@ -143,54 +120,7 @@ public class LuxSolrTest {
         assertXPathSearchError("Unexpected token name \"bad\" beyond end of query; Line#: 1; Column#: 4\n", "hey bad boy");
     }
     
-
-    
-    protected void assertQueryCount (int count, String query) throws SolrServerException {
-        SolrQuery q = new SolrQuery(query);
-        QueryResponse rsp = solr.query (q);
-        assertEquals (count, rsp.getResults().getNumFound());
-    }
-    
-    protected void assertXPathSearchCount (int count, int docCount, String type, String value, String query) throws SolrServerException {
-        assertXPathSearchCount(count, docCount, 10, type, value, query);
-    }
-    
-    protected void assertXPathSearchError (String error, String query) throws SolrServerException {
-        SolrQuery q = new SolrQuery(query);
-        q.setQueryType(SOLR_QUERY_TYPE);
-        QueryResponse rsp = solr.query (q, METHOD.POST);
-        String actualError = rsp.getResponse().get("xpath-error").toString();
-        assertTrue ("Error " + actualError + " does not contain expected error " + error, 
-                actualError.contains(error));
-    }
-    
-    protected void assertXPathSearchCount (int count, int docCount, int maxResults, String type, String value, String query) throws SolrServerException {
-        SolrQuery q = new SolrQuery(query);
-        q.setQueryType(SOLR_QUERY_TYPE);
-        q.setRows(maxResults);
-        q.setStart(0);
-        QueryResponse rsp = solr.query (q, METHOD.POST);
-        NamedList<?> results = (NamedList<?>) rsp.getResponse().get("xpath-results");
-        String error = (String) rsp.getResponse().get("xpath-error");
-        if (type.equals("error")) {
-            assertEquals (value, error);
-        } else {
-            long docMatches = rsp.getResults().getNumFound();
-            assertNull ("got unexpected error: " + error, error);
-            assertEquals (docCount, docMatches);
-            assertEquals (count, results.size());
-            assertEquals (type, results.getName(0));
-            String returnValue = results.getVal(0).toString();
-            if (returnValue.startsWith ("<")) {
-                // assume the returned value is an element - hack to avoid real parsing 
-                assertEquals (value, returnValue.substring(1, returnValue.indexOf('>')));
-            } else {
-                assertEquals (value, returnValue);
-            }
-        }
-    }
-
-    private static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
+    static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
         doc.addField (URI, path);
         FileInputStream in = new FileInputStream (path);
@@ -199,7 +129,7 @@ public class LuxSolrTest {
         docs.add(doc);
     }
     
-    private static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
+    static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
         doc.addField (URI, uri);
         doc.addField(LUX_XML, text);

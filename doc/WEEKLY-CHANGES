@@ -81,7 +81,7 @@ preserves sequences.
 12/9/2012
 
 Module imports now work, via the filesystem.  Basically we just made sure
-that we didn;t get in Saxon's way.
+that we didn't get in Saxon's way.
 
 UPCOMING
 
@@ -96,4 +96,44 @@ Servlet Filter enables cleaner integration w/Solr
 Namespace-aware searching (handle prefix mappings to resolve prefixes in queries)
 
 Relevance ordering!
+
+1/20/2013
+
+Fixed some thread-unsafety issues:
+  1) accessing XmlIndexer when performing updates, via lux:insert(), and via
+     xsl:result-document().  We now pool and reuse XmlIndexer in XQueryComponent.
+  2) accessing DocIDNumberAllocator - we now maintain a docID per thread
+
+Built an app server that runs lux/solr in one context and an app in another context
+
+Optimized function definitions, and collection()/{xpath}
+
+Integrated EXPath package manager; included http and zip modules in app server
+
+More demo enhancement: 
+  loads all of shakespeare in parallel from ibiblio over http;
+  prettying up the display of speech search results, and scenes
+
+Handle missing DTDs gracefully when loading document with the http module.
+This was truly painful - Saxon really doesn't make this easy.
+
+Worked on packaging, documentation (testing fresh install), and logging setup
+
+Enhanced error reporting
+
+New functions: 
+  lux:highlight(), 
+  lux:log(), 
+  file:is-dir(), file:exists(), file:list()
+  lux:delete() *deletes all documents*
+  
+Removed some overly-aggressive optimization of contains().  We now use a wildcard
+query for that - not sure if that is a the best performer w/Lucene 3.x, but it will 
+be much better w/Lucene 4.X
+
+Added diacritic insensitivity to the built-in (default) analyzer.
+
+Added support for "castable as" and "treat as", and fixed up some messed up type mapping we were doing 
+
+XQTS results: 99.9% (22/17497 fail); some more (61/17498) fail when optimization is on due to the nonstandard way we supply a default context.
 

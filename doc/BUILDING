@@ -10,7 +10,7 @@ mvn verify (runs jetty app server, and then integration tests)
 mvn package (runs tests and builds the jar)
 mvn assembly:single 
 
-To build a clean distribution, running all unit and integration tests:
+To build a clean distribution, running all unit tests:
 
 mvn clean package assembly:single
 

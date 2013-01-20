@@ -1,3 +1,11 @@
+* better app server packaging
+created a standalone app that embeds jetty so we can control uris,
+redirects and other http stuff without relying on solr. This will also
+create a way to hide Solr behind a secure layer.
+
+* optimizing function definitions
+This was easy - just needed to let the optimizer have access to the function body
+
 * thread-safety
 I tested using multi-threaded test runner and found some bugs. Notes about
 concerns that should be addressed now since I made CachingDocReader thread
@@ -21,6 +29,10 @@ Perhaps the solution is to pool Processors among threads, then?
 
 Or: make a CollectionURIResolver that *is* threadsafe and pulls the
 thread-unsafe resource as needed from a pool?
+
+** also found threading bugs related to OutputURIResolver
+This is shared via saxon's Configuration and needed to be thread-safe - now it is, and
+we have a good test to ensure it stays that way.
 
 * query highlighting
 XmlHighlighter works along the lines of the Lucene highlighter, but with some xml awareness.

@@ -146,8 +146,6 @@ public abstract class AbstractExpression implements Visitable {
         return this;
     }
 
-    public enum Direction { Left, Right };
-
     /**
      * @return a number indicating the *outer* precedence of this expression.
      * Expressions with lower precedence numbers have lower

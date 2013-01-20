@@ -171,11 +171,6 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
     }
     
     @Override
-    public AbstractExpression visit(SetOperation setop) {
-        return visitDefault (setop);
-    }
-    
-    @Override
     public AbstractExpression visit(Subsequence subseq) {
         return visitDefault (subseq);
     }

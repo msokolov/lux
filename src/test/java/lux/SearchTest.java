@@ -494,8 +494,6 @@ public class SearchTest extends BaseSearchTest {
             "test:function()", null, 1);
     }
 
-
-
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

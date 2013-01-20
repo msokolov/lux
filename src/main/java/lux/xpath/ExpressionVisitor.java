@@ -68,7 +68,6 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (Root root);
     public abstract AbstractExpression visit (Satisfies satisfies);
     public abstract AbstractExpression visit (Sequence sequence);
-    public abstract AbstractExpression visit (SetOperation setOperation);
     public abstract AbstractExpression visit (Subsequence subsequence);
     public abstract AbstractExpression visit (TextConstructor textConstructor);
     public abstract AbstractExpression visit (TreatAs treat);

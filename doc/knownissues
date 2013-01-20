@@ -1,6 +1,0 @@
-order by empty least / empty greatest not respected (waiting for Lucene 4, which has better support for this)
-  for now you get default Lucene behaviour, which (I think?) is "empty last" - unless you reverse sort?
-
-order by field-values() works only for string-valued fields
-
-

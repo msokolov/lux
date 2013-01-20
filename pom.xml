@@ -15,33 +15,6 @@
         <artifactId>Saxon-HE</artifactId>
         <version>9.4</version>
     </dependency>
-<!--
-    <dependency>
-      <groupId>expath</groupId>
-      <artifactId>expath-repo</artifactId>
-      <version>0.11</version>
-      <scope>system</scope>
-      <optional>true</optional>
-      <systemPath>${project.basedir}/lib/pkg-repo.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>expath</groupId>
-      <artifactId>expath-saxon</artifactId>
-      <version>0.11</version>
-      <scope>system</scope>
-      <optional>true</optional>
-      <systemPath>${project.basedir}/lib/pkg-saxon.jar</systemPath>
-    </dependency>
--->
-    <!-- 
-    <dependency>
-      <groupId>expath</groupId>
-      <artifactId>expath-httpclient-saxon</artifactId>
-      <version>0.6</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/expath-http-client-java.jar</systemPath>
-    </dependency>
-     -->
      <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
@@ -132,80 +105,8 @@
           <exclude>**/log4j.properties</exclude>
          </excludes>
         </configuration>
-        <!--
-        <executions>
-          <execution>
-            <id>build-jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-        -->
       </plugin>
-      <!--
-      <plugin>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>2.3</version>
-        <configuration>
-          <packagingExcludes>**/log4j.properties</packagingExcludes>
-        </configuration>
-        <executions>
-          <execution>
-            <id>build-war</id>
-            <phase>package</phase>
-            <goals>
-              <goal>war</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>install</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <packaging>jar</packaging>
-              <artifactId>${project.artifactId}</artifactId>
-              <groupId>${project.groupId}</groupId>
-              <version>${project.version}</version>
-              <file>
-                ${project.build.directory}/${project.artifactId}-${project.version}.jar
-              </file>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin> 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>deploy</phase>
-            <goals>
-              <goal>deploy-file</goal>
-            </goals>
-            <configuration>
-              <packaging>jar</packaging>
-              <generatePom>true</generatePom>
-              <url>${project.distributionManagement.repository.url}</url>
-              <artifactId>${project.artifactId}</artifactId>
-              <groupId>${project.groupId}</groupId>
-              <version>${project.version}</version>
-              <file>${project.build.directory}/${project.artifactId}-${project.version}.jar</file>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
--->
- 
-    <plugin>
+     <plugin>
       <groupId>org.codehaus.mojo</groupId>
       <artifactId>cobertura-maven-plugin</artifactId>
       <version>2.5.1</version>
@@ -234,48 +135,14 @@
           <webDefaultXml>src/test/resources/webdefault.xml</webDefaultXml>
           <webXml>src/test/webapp/WEB-INF/web.xml</webXml>
           <jettyConfig>src/test/resources/jetty.xml</jettyConfig>
-          <!-- 
-          <connectors>
-            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
-              <port>8000</port>
-              <maxIdleTime>60000</maxIdleTime>
-            </connector>
-          </connectors>
-           -->
           <systemProperties>
             <systemProperty>
               <name>org.expath.pkg.saxon.repo</name>
               <value>${basedir}/xrepo</value>
             </systemProperty>
-            <!-- 
-            <systemProperty>
-              <name>log4j.configuration</name>
-              <value>${basedir}/src/main/resources/log4j.properties</value>
-            </systemProperty>
-             -->
           </systemProperties>
-          <!--
-          <contextHandler implementation="org.mortbay.jetty.webapp.WebAppContext">
-            <war>target/lux-0.5-SNAPSHOT.war</war>
-            <contextPath>/demo</contextPath>
-          </contextHandler>
-          -->
         </configuration>
         <dependencies>
-        <!-- 
-        <dependency>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-          <version>1.1</version>
-          <type>jar</type>
-        </dependency>
-        <dependency>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-jcl</artifactId>
-          <version>1.0.1</version>
-          <type>jar</type>
-        </dependency>
-         -->
         <dependency>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>

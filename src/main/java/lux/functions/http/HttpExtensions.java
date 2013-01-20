@@ -13,7 +13,9 @@ import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.value.IntegerValue;
 
 /**
-
+ 
+ * EXPERIMENTAL - not yet working
+ * 
  * <code>http:sendRedirect($location as xs:string) as xs:string</code>
  * <p>Causes the container to send a 302 HTTP response with Location header as given. 
  * Does not return.  Declared as returning string so that it isn't optimized

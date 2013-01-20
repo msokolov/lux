@@ -274,6 +274,9 @@ public class Compiler {
         return isSaxonLicensed;
     }
     
+    /**
+     * @return the last query that was compiled, in its translated and optimized form.
+     */
     public XQuery getLastOptimized () { 
         return lastOptimized; 
     }
