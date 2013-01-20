@@ -9,6 +9,7 @@ import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.ForClause;
+import lux.xquery.FunctionDefinition;
 import lux.xquery.InstanceOf;
 import lux.xquery.Let;
 import lux.xquery.LetClause;
@@ -54,6 +55,7 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (FLWOR flwor);
     public abstract ForClause visit (ForClause forClause);
     public abstract AbstractExpression visit (FunCall func);
+    public abstract AbstractExpression visit(FunctionDefinition func);
     public abstract AbstractExpression visit (InstanceOf instanceOf);
     public abstract AbstractExpression visit (Let let);
     public abstract LetClause visit (LetClause letClause);
@@ -73,6 +75,7 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit (UnaryMinus predicate);
     public abstract AbstractExpression visit (Variable variable);
     public abstract WhereClause visit (WhereClause whereClause);
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

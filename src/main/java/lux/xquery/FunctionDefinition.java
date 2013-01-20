@@ -21,6 +21,10 @@ public class FunctionDefinition extends FunCall {
         body.toString (buf);
         buf.append (" };\n");
     }
+
+    public AbstractExpression getBody() {
+        return body;
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

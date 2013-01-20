@@ -38,6 +38,7 @@ import lux.xpath.Subsequence;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
+import lux.xquery.FunctionDefinition;
 import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
 import lux.xquery.SortKey;
@@ -106,13 +107,23 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (main != null && indexConfig.isIndexingEnabled()) {
             main = optimize (main);
             return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(), query.getDefaultCollation(), 
-                    query.getModuleImports(), query.getNamespaceDeclarations(), query.getVariableDefinitions(), query.getFunctionDefinitions(),
+                    query.getModuleImports(), query.getNamespaceDeclarations(), query.getVariableDefinitions(),
+                    optimizeFunctionDefinitions (query.getFunctionDefinitions()),
                     main, query.getBaseURI(), query.isPreserveNamespaces(), query.isInheritNamespaces(), query.isEmptyLeast());
         }
-        // TODO optimize function definitions
         return query;
     }
     
+    // note: modifies its argument
+    private FunctionDefinition[] optimizeFunctionDefinitions(FunctionDefinition[] functionDefinitions) {
+        for (int i = 0; i < functionDefinitions.length; i++) {
+            FunctionDefinition function = functionDefinitions[i];
+            AbstractExpression body = optimize (function.getBody());
+            function = new FunctionDefinition (function.getName(), function.getReturnType(), (Variable[]) function.getSubs(), optimize(body));
+        }
+        return functionDefinitions;
+    }
+
     /**
      * Prepares an XQuery expression for indexed execution against a
      * Lux data store.  Inserts calls to lux:search that execute queries
@@ -450,7 +461,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         else if (subs.length == 1 && !subs[0].isAbsolute()) {
             return funcall;
         }
-
+        if (fname.equals(FunCall.FN_COLLECTION) && subs.length == 0) {
+            // Optimize when no arguments to collection()
+            return new Root();
+        } 
         XPathQuery query = pop();
         // can only use these function optimizations when we are sure that its argument expression
         // is properly indexed - MINIMAL here guarantees that every document matching the query will 
@@ -487,15 +501,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_SEARCH;
             }
-            else if (fname.equals(FunCall.FN_COLLECTION)) {
-                if (subs.length == 0) {
-                    // Optimize when no arguments to collection()
-                    push (MATCH_ALL);
-                    return new Root();
-                } else {
-                    return funcall;
-                }
-            }
             if (qname != null) {
                 // We will insert a searching function. apply no restrictions to the enclosing scope:
                 push (MATCH_ALL);
@@ -518,6 +523,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         push (query);
         return funcall;
     }
+    
+    
 
     private XPathQuery combineQueries(XPathQuery rq, Occur occur, XPathQuery lq, ValueType resultType) {
         XPathQuery query;

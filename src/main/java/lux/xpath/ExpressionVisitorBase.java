@@ -9,6 +9,7 @@ import lux.xquery.DocumentConstructor;
 import lux.xquery.ElementConstructor;
 import lux.xquery.FLWOR;
 import lux.xquery.ForClause;
+import lux.xquery.FunctionDefinition;
 import lux.xquery.InstanceOf;
 import lux.xquery.Let;
 import lux.xquery.LetClause;
@@ -101,6 +102,11 @@ public abstract class ExpressionVisitorBase extends ExpressionVisitor {
 
     @Override
     public AbstractExpression visit(FunCall func) {
+        return visitDefault (func);
+    }
+    
+    @Override
+    public AbstractExpression visit(FunctionDefinition func) {
         return visitDefault (func);
     }
 
