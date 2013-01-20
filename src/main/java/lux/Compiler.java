@@ -142,13 +142,13 @@ public class Compiler {
         optimizer.setSearchStrategy(searchStrategy);
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);
         lastOptimized = optimizedQuery;
+        if (logger.isDebugEnabled()) {
+            logger.debug("optimized xquery: " + optimizedQuery.toString());
+        }
         try {
             xquery = xQueryCompiler.compile(optimizedQuery.toString());
         } catch (SaxonApiException e) {
             throw new LuxException (e);
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("optimized xquery: " + optimizedQuery.toString());
         }
         return xquery;
     }

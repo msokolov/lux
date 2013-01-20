@@ -119,7 +119,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         for (int i = 0; i < functionDefinitions.length; i++) {
             FunctionDefinition function = functionDefinitions[i];
             AbstractExpression body = optimize (function.getBody());
-            function = new FunctionDefinition (function.getName(), function.getReturnType(), (Variable[]) function.getSubs(), optimize(body));
+            function = new FunctionDefinition (function.getName(), function.getReturnType(), (Variable[]) function.getSubs(), body);
+            functionDefinitions[i] = function;
         }
         return functionDefinitions;
     }
