@@ -18,6 +18,7 @@ import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -81,8 +82,12 @@ public class XmlHighlighter extends SaxonDocBuilder {
         // phrases in it...
         init(new XmlTextTokenStream(new XdmNode (node), null));
         XmlReader xmlReader = new XmlReader ();
-        xmlReader.addHandler(this);                
+        xmlReader.addHandler(this);
         xmlReader.read(node);
+        // setBaseURI (URI.create(node.getBaseURI()));
+        if (getDocument().getUnderlyingNode() instanceof TinyDocumentImpl) {
+            ((TinyDocumentImpl)getDocument().getUnderlyingNode()).setBaseURI(node.getSystemId());
+        }
         return getDocument();
     }
     
