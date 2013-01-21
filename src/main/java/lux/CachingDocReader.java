@@ -15,6 +15,7 @@ import lux.index.IndexConfiguration;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
@@ -85,6 +86,7 @@ public class CachingDocReader {
             // shouldn't normally happen since the document would generally have been parsed when indexed.
             throw new LuxException(e);
         }
+        ((TinyDocumentImpl)node.getUnderlyingNode()).setBaseURI (uri);
         buildTime += (System.nanoTime() - t0);
         if (node != null) {
             cache.put(docID, node);

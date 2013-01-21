@@ -215,9 +215,21 @@ public class Evaluator {
          */
         @Override
         public Source resolve(String href, String base) throws TransformerException {
-            if (href.startsWith("file:")) {
+            boolean isFile;
+            String path = href;
+            if (href.matches("^\\w+:.*$")) {
+                isFile = href.startsWith("file:");
+                if (isFile) {
+                    path = href.substring(5);
+                } else if (href.startsWith("lux:/")) {
+                    path = href.substring(5);
+                }
+            } else {
+                // relative url, look at base
+                isFile = base.startsWith("file:");
+            }
+            if (isFile) {
                 Source source = null;
-                String path = href.substring(5);
                 // let the default resolver do its thing
                 if (defaultURIResolver != null) {
                     source = defaultURIResolver.resolve(path, base);
@@ -230,7 +242,6 @@ public class Evaluator {
             if (searcher == null) {
                 throw new IllegalStateException ("Attempted search, but no searcher was provided");
             }
-            String path = href.startsWith("lux:/") ? href.substring(5) : href;
             path = path.replace('\\', '/');
             try {
                 DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
