@@ -234,7 +234,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 String[] lines = query.split("\r?\n");
                 if (lineNumber <= lines.length && lineNumber > 0) {
                     String line = lines[lineNumber-1];
-                    buf.append (line, Math.max(0, column - 60), Math.min(line.length(), column + 60));
+                    buf.append (line, Math.min(Math.max(0, column - 100), line.length()), Math.min(line.length(), column + 100));
                 }
             }
             logger.error("XQuery exception", te);
