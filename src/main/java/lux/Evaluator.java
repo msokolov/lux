@@ -226,7 +226,11 @@ public class Evaluator {
                 }
             } else {
                 // relative url, look at base
-                isFile = base.startsWith("file:");
+                if (base != null) {
+                    isFile = base.startsWith("file:");
+                } else {
+                    isFile = false;
+                }
             }
             if (isFile) {
                 Source source = null;
