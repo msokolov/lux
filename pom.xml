@@ -173,6 +173,60 @@
         </executions>
         -->
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <!--
+              <descriptorRefs>
+              <descriptorRef>bin</descriptorRef>
+              </descriptorRefs>
+          -->
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <artifactItems>
+            <artifactItem>
+              <groupId>org.codehaus.woodstox</groupId>
+              <artifactId>woodstox-core-asl</artifactId>
+              <version>4.1.1</version>
+            </artifactItem>
+            <artifactItem>
+              <groupId>org.apache.lucene</groupId>
+              <artifactId>lucene-queryparser</artifactId>
+              <version>3.4.0</version>
+            </artifactItem>
+            <artifactItem>
+              <groupId>org.apache.lucene</groupId>
+              <artifactId>lucene-xml-query-parser</artifactId>
+              <version>3.4.0</version>
+            </artifactItem>
+            <artifactItem>
+              <groupId>net.sf.saxon</groupId>
+              <artifactId>Saxon-HE</artifactId>
+              <version>9.4</version>
+            </artifactItem>
+          </artifactItems>
+          <excludeTransitive>true</excludeTransitive>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>
