@@ -14,7 +14,7 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.CoreContainer;
 import org.junit.BeforeClass;
 
-public class BaseSolrTest {
+public abstract class BaseSolrTest {
 
     protected static SolrServer solr;
     public final String SOLR_QUERY_TYPE = "/xquery";
