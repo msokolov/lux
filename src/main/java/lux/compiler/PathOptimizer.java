@@ -269,7 +269,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
         // This is a counting expr if its base expr is
-        query.setFact(XPathQuery.COUNTING, baseQuery.isFact(XPathQuery.COUNTING));
+        query.setFact(XPathQuery.SINGULAR, baseQuery.isFact(XPathQuery.SINGULAR));
         push (query);
         optimizeComparison(predicate);
         return predicate;
@@ -475,7 +475,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             ValueType returnType = null;
             QName qname = null;
             if (fname.equals(FunCall.FN_COUNT) && query.getResultType().is(ValueType.DOCUMENT)) {
-                functionFacts = XPathQuery.COUNTING;
+                functionFacts = XPathQuery.SINGULAR;
                 returnType = ValueType.INT;
                 qname = FunCall.LUX_COUNT;
             } 

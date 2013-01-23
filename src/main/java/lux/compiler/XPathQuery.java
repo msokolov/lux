@@ -75,12 +75,13 @@ public class XPathQuery {
 
     // FIXME: the result type flags should not be stored this way: they are not independent and combinable in a boolean
     // manner; rather they are mutually exclusive
-    public static final int RESULT_TYPE_FLAGS = 0x0000001C;
+    public static final int RESULT_TYPE_FLAGS = 0x00000018;
 
     /**
-     * A query is counting if its expression returns the count of the results of the lucene query
+     * A query is singular if its expression returns the count of the results of the lucene query;
+     * ie the expression returns a single result for every matching document.
      */
-    public static final int COUNTING=0x00000004;
+    public static final int SINGULAR=0x00000004;
 
     /**
      * A query is boolean_true if its result type is boolean, and the existence of a single query result indicates a 'true()' value
@@ -180,7 +181,7 @@ public class XPathQuery {
             return ValueType.BOOLEAN;
         } else if (typecode == XPathQuery.DOCUMENT_RESULTS) {
             return ValueType.DOCUMENT;
-        } else if (typecode == XPathQuery.COUNTING) {
+        } else if (typecode == XPathQuery.SINGULAR) {
             return ValueType.INT;
         }
         return ValueType.VALUE;                
@@ -367,7 +368,7 @@ public class XPathQuery {
           facts |= DOCUMENT_RESULTS;
       }
       else if (valueType == ValueType.INT) {
-          facts |= COUNTING;
+          facts |= SINGULAR;
       }
       // no other type info is stored in facts since it's not needed by search()
   }

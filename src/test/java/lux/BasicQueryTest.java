@@ -217,10 +217,10 @@ public class BasicQueryTest {
     }
     
     @Test public void testCounting () throws Exception {
-        assertQuery ("count(/)", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.MATCH_ALL);
+        assertQuery ("count(/)", XPathQuery.SINGULAR | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.MATCH_ALL);
         assertQuery ("count(//ACT)", XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
-        assertQuery ("count(//ACT/root())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
-        assertQuery ("count(//ACT/ancestor::document-node())", XPathQuery.COUNTING | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
+        assertQuery ("count(//ACT/root())", XPathQuery.SINGULAR | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
+        assertQuery ("count(//ACT/ancestor::document-node())", XPathQuery.SINGULAR | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
         // FIXME: the optimizer should mark this as minimal/counting too now that we have path queries
         assertQuery ("count(//ACT/SCENE/ancestor::document-node())", XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
     }
@@ -405,8 +405,8 @@ public class BasicQueryTest {
             boolean isMinimal = (facts & XPathQuery.MINIMAL) != 0;
             assertEquals ("isMinimal was not " + isMinimal + " for xpath " + xpath,
                     isMinimal, extractor.queries.get(0).isFact(XPathQuery.MINIMAL));
-            assertEquals ("query counting for xpath " + xpath, (facts & XPathQuery.COUNTING) != 0, 
-                    extractor.queries.get(0).isFact(XPathQuery.COUNTING));
+            assertEquals ("query counting for xpath " + xpath, (facts & XPathQuery.SINGULAR) != 0, 
+                    extractor.queries.get(0).isFact(XPathQuery.SINGULAR));
             assertEquals ("facts don't match", facts, extractor.queries.get(0).getFacts());      
             if (type != null) {
                 if ( ! (type == ValueType.DOCUMENT || type == ValueType.BOOLEAN)) {
