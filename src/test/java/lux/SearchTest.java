@@ -93,7 +93,9 @@ public class SearchTest extends BaseSearchTest {
     public void testPathOrder () throws Exception {
         // Make sure that the Optimizer doesn't incorrectly assert 
         // order is *not* significant in the generated query; 
-        // it should be (SCENE AND ACT):
+        // it should be (SCENE AND ACT), and the query is *not* countable:
+        // it's *not* how many documents have scenes and acts: it's how many scenes are there in documents with acts
+        
         // Overall there are 20 scenes in 5 acts in 1 play
         // 40 = 20 (SCENEs in /PLAY) + 20 (SCENEs in the 5 /ACTs together)
         assertSearch ("40", "count(//ACT/root()//SCENE)", 0, 6);
@@ -175,6 +177,9 @@ public class SearchTest extends BaseSearchTest {
         
         results = assertSearch("count (/descendant::SCENE/root())", QUERY_NO_DOCS);
         assertResultValue(results, sceneDocCount);
+        
+        results = assertSearch("count (/SCENE)", QUERY_NO_DOCS);
+        assertResultValue(results, index.elementCounts.get("SCENE"));
     }
 
     @Test

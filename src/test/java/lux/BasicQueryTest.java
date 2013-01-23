@@ -89,7 +89,7 @@ public class BasicQueryTest {
         
         assertQuery ("/ACT//*", 0, ValueType.ELEMENT, Q.ACT1);
 
-        assertQuery ("/ACT", 0, ValueType.ELEMENT, Q.ACT1);
+        assertQuery ("/ACT", XPathQuery.MINIMAL|XPathQuery.COUNTABLE, ValueType.ELEMENT, Q.ACT1);
         
         // this should be ValueType.TEXT shouldn't it??
         assertQuery ("/ACT/text()", 0, ValueType.ELEMENT, Q.ACT1);
@@ -170,7 +170,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testManySmallDocs () throws Exception {
-        assertQuery ("/LINE", 0, ValueType.ELEMENT, Q.LINE);        
+        assertQuery ("/LINE", XPathQuery.MINIMAL|XPathQuery.COUNTABLE, ValueType.ELEMENT, Q.LINE);        
     }
 
     @Test @Ignore public void testElementValueNoPath () throws Exception {
@@ -223,6 +223,10 @@ public class BasicQueryTest {
         assertQuery ("count(//ACT/ancestor::document-node())", XPathQuery.SINGULAR | XPathQuery.MINIMAL, ValueType.ATOMIC, Q.ACT);
         // FIXME: the optimizer should mark this as minimal/counting too now that we have path queries
         assertQuery ("count(//ACT/SCENE/ancestor::document-node())", XPathQuery.DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE);
+    }
+    
+    @Test public void testCount2 () throws Exception {
+        assertQuery ("count(//ACT/root()//SCENE)", XPathQuery.MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE);
     }
     
     @Test public void testExistence() throws Exception {
@@ -405,7 +409,7 @@ public class BasicQueryTest {
             boolean isMinimal = (facts & XPathQuery.MINIMAL) != 0;
             assertEquals ("isMinimal was not " + isMinimal + " for xpath " + xpath,
                     isMinimal, extractor.queries.get(0).isFact(XPathQuery.MINIMAL));
-            assertEquals ("query counting for xpath " + xpath, (facts & XPathQuery.SINGULAR) != 0, 
+            assertEquals ("query SINGULAR for xpath " + xpath, (facts & XPathQuery.SINGULAR) != 0, 
                     extractor.queries.get(0).isFact(XPathQuery.SINGULAR));
             assertEquals ("facts don't match", facts, extractor.queries.get(0).getFacts());      
             if (type != null) {

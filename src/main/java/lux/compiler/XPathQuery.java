@@ -326,7 +326,7 @@ public class XPathQuery {
     }
 
     public boolean isEmpty() {
-        return this == MATCH_ALL || this == UNINDEXED || this == MATCH_ALL_NODE;
+        return this == MATCH_ALL || this == UNINDEXED || this == MATCH_ALL_NODE || this == PATH_MATCH_ALL;
     }
     
     @Override
@@ -356,19 +356,25 @@ public class XPathQuery {
       if (type == null) {
           type = ValueType.VALUE;
       }
+      // FIXME: kill kill kill! this is so confusing and wrong - we need to extract the return type info, facts, etc this bitmask is so painful
       valueType = type;
       facts &= (~RESULT_TYPE_FLAGS);
       if (valueType == ValueType.BOOLEAN) {
-          facts |= BOOLEAN_TRUE;         
+          facts |= BOOLEAN_TRUE;
+          facts &= ~SINGULAR;
       }
       else if (valueType == ValueType.BOOLEAN_FALSE) {
           facts |= BOOLEAN_FALSE;
+          facts &= ~SINGULAR;
       }
       else if (valueType == ValueType.DOCUMENT) {
           facts |= DOCUMENT_RESULTS;
       }
       else if (valueType == ValueType.INT) {
+          // somehow I guess we only use ValueType.INT for this very special case???
           facts |= SINGULAR;
+      } else {
+          facts &= ~SINGULAR;
       }
       // no other type info is stored in facts since it's not needed by search()
   }

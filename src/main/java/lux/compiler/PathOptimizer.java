@@ -268,7 +268,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery baseQuery = pop();
         
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
-        // This is a counting expr if its base expr is
+        // This is singular if its base expr is
         query.setFact(XPathQuery.SINGULAR, baseQuery.isFact(XPathQuery.SINGULAR));
         push (query);
         optimizeComparison(predicate);
@@ -321,33 +321,76 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(PathStep step) {
         QName name = step.getNodeTest().getQName();
         Axis axis = step.getAxis();
-        boolean isMinimal;
+        XPathQuery currentQuery = getQuery();
+        boolean isMinimal, isCounting = currentQuery.isFact(XPathQuery.COUNTABLE);
         if (axis == Axis.Descendant || axis == Axis.DescendantSelf || axis == Axis.Attribute) {
-            isMinimal = true;
+            if (step.getNodeTest().isWild() && ! currentQuery.isEmpty()) {
+                // This is basically a query that says - this document has an element down below...
+                // we don't generate wildcard queries for these - maybe we should?
+                isMinimal = false;
+            } else {
+                isMinimal = true;
+            }
+            if (axis != Axis.Attribute && !currentQuery.isEmpty()) {
+                isCounting = false;
+            } else {
+                isCounting = true;
+            }
         } 
-        else if (axis == Axis.Child && getQuery().isFact(XPathQuery.MINIMAL) && ValueType.NODE.is(getQuery().getResultType())) {
-            // special case for //descendant-or-self::node()/child::element(xxx)
-            isMinimal = true;
+        else if (axis == Axis.Child && currentQuery.isFact(XPathQuery.MINIMAL)) {
+            ValueType type = currentQuery.getResultType();
+            if (ValueType.NODE.is(type)) {
+                // special case for //descendant-or-self::node()/child::element(xxx)
+                isMinimal = true;
+                isCounting = false;
+            } else if (ValueType.DOCUMENT == type) {
+                // and for /child:element(xxx)
+                isMinimal = true;
+            } else {
+                isMinimal = false;
+            }
+        }
+        else if (axis == Axis.Ancestor || axis == Axis.AncestorSelf || axis == Axis.Self) {
+            if (step.getNodeTest().isWild() && ! currentQuery.isEmpty() && step.getNodeTest().getType().is(ValueType.ELEMENT)) {
+                // This is basically a query that says - this document has an element up above...
+                // we don't generate wildcard queries for these - maybe we should?
+                // actually - we could do better with self::node(), which is completely vacuous
+                isMinimal = false;
+            } else {
+                isMinimal = true;
+            }
+            // TOOD: is counting correct?  We need more tests for that I think
         }
         else {
-            // FIXME: This depends on the indexes available; with path indexes, this should be true
+            // No indexes that help with preceding/following axes
             isMinimal = false;
         }
         XPathQuery query;
+        long facts = currentQuery.getFacts();
+        if (!isCounting) {
+            facts &= ~XPathQuery.COUNTABLE;
+        } else {
+            facts |= XPathQuery.COUNTABLE;
+        }
+        if (!isMinimal) {
+            facts &= ~XPathQuery.MINIMAL;
+        }
         if (name == null) {
             ValueType type = step.getNodeTest().getType();
             if (axis == Axis.Self && (type == ValueType.NODE || type == ValueType.VALUE)) {
                 // if axis==self and the type is loosely specified, use the prevailing type
-                type = getQuery().getResultType();
+                type = currentQuery.getResultType();
             }
             else if (axis == Axis.AncestorSelf && (type == ValueType.NODE || type == ValueType.VALUE)
-                    && getQuery().getResultType() == ValueType.DOCUMENT) {
+                    && currentQuery.getResultType() == ValueType.DOCUMENT) {
                 type = ValueType.DOCUMENT;
             }
-            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), getQuery().getFacts(), type, indexConfig, getQuery().getSortFields());
+
+            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), facts, type, indexConfig, currentQuery.getSortFields());
+            
         } else {
             ParseableQuery termQuery = nodeNameTermQuery(step.getAxis(), name);
-            query = XPathQuery.getQuery(termQuery, isMinimal ? XPathQuery.MINIMAL : 0, step.getNodeTest().getType(), indexConfig, getQuery().getSortFields());
+            query = XPathQuery.getQuery(termQuery, facts, step.getNodeTest().getType(), indexConfig, currentQuery.getSortFields());
         }
        push(query);
        return step;
@@ -474,7 +517,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
-            if (fname.equals(FunCall.FN_COUNT) && query.getResultType().is(ValueType.DOCUMENT)) {
+            if (fname.equals(FunCall.FN_COUNT) && 
+                    ((query.getFacts()&XPathQuery.SINGULAR) != 0 || query.getResultType().is(ValueType.DOCUMENT))) {
                 functionFacts = XPathQuery.SINGULAR;
                 returnType = ValueType.INT;
                 qname = FunCall.LUX_COUNT;
