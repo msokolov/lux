@@ -86,8 +86,10 @@ public class Compiler {
 
         GentleXmlReader parser = new GentleXmlReader();
         config.getParseOptions().setEntityResolver(parser);
+        // tried this, but it seems to lead to concurrent usage of the same parser:
         //config.getParseOptions().setXMLReader(parser);
-        config.setSourceParserClass(GentleXmlReader.class.getName());
+        // the question is: does Saxon re-use a single instance of this parser??
+        config.setSourceParserClass("lux.xml.GentleXmlReader");
         isSaxonLicensed = config.isLicensedFeature(LicenseFeature.PROFESSIONAL_EDITION)
                 || config.isLicensedFeature(LicenseFeature.ENTERPRISE_XQUERY);
         if (indexConfig == null || !indexConfig.isIndexingEnabled()) {
