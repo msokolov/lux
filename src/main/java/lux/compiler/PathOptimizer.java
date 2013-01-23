@@ -1,5 +1,9 @@
 package lux.compiler;
 
+import static lux.compiler.XPathQuery.BOOLEAN_FALSE;
+import static lux.compiler.XPathQuery.BOOLEAN_TRUE;
+import static lux.compiler.XPathQuery.MINIMAL;
+import static lux.compiler.XPathQuery.SINGULAR;
 import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
 
@@ -268,10 +272,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery baseQuery = pop();
         
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
-        // This is singular if its base expr is
-        query.setFact(XPathQuery.SINGULAR, baseQuery.isFact(XPathQuery.SINGULAR));
         push (query);
         optimizeComparison(predicate);
+        // This is singular if its base expr is
+        query = pop();
+        if (indexConfig.isOption(INDEX_PATHS)) {
+            query = query.setFact(SINGULAR, baseQuery.isFact(SINGULAR));
+        }
+        push (query);
         return predicate;
     }
     
@@ -322,7 +330,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         QName name = step.getNodeTest().getQName();
         Axis axis = step.getAxis();
         XPathQuery currentQuery = getQuery();
-        boolean isMinimal, isCounting = currentQuery.isFact(XPathQuery.COUNTABLE);
+        boolean isMinimal, isSingular = currentQuery.isFact(SINGULAR);
         if (axis == Axis.Descendant || axis == Axis.DescendantSelf || axis == Axis.Attribute) {
             if (step.getNodeTest().isWild() && ! currentQuery.isEmpty()) {
                 // This is basically a query that says - this document has an element down below...
@@ -331,49 +339,56 @@ public class PathOptimizer extends ExpressionVisitorBase {
             } else {
                 isMinimal = true;
             }
-            if (axis != Axis.Attribute && !currentQuery.isEmpty()) {
-                isCounting = false;
-            } else {
-                isCounting = true;
+            if (axis != Axis.Attribute) {
+                isSingular = false;
             }
-        } 
-        else if (axis == Axis.Child && currentQuery.isFact(XPathQuery.MINIMAL)) {
-            ValueType type = currentQuery.getResultType();
-            if (ValueType.NODE.is(type)) {
-                // special case for //descendant-or-self::node()/child::element(xxx)
-                isMinimal = true;
-                isCounting = false;
-            } else if (ValueType.DOCUMENT == type) {
-                // and for /child:element(xxx)
-                isMinimal = true;
-            } else {
+        } else {
+            boolean isElementStep = step.getNodeTest().getType().is(ValueType.ELEMENT);
+            if (axis == Axis.Child) {
+                boolean isPathIndexed = indexConfig.isOption(INDEX_PATHS);
+                ValueType type = currentQuery.getResultType();
+                boolean currentMinimal = currentQuery.isFact(MINIMAL);
+                if (ValueType.NODE.is(type)) {
+                    // special case for //descendant-or-self::node()/child::element(xxx)
+                    isMinimal = currentMinimal;
+                    isSingular = false;
+                } else if (ValueType.DOCUMENT == type) {
+                    // and for /child:element(xxx)
+                    isMinimal = (isPathIndexed && currentMinimal) || step.getNodeTest().isWild();
+                    // may have multiple non-element nodes as children of the document node
+                    // can only ensure the query will return the correct number if we have paths
+                    isSingular = (isPathIndexed || step.getNodeTest().isWild()) && isElementStep;
+                } else {
+                    // if we have path indexes, we can resolve a child element step minimally
+                    isMinimal = isPathIndexed && isElementStep && currentMinimal;
+                    isSingular = false;
+                }
+            }
+            else if (axis == Axis.Ancestor || axis == Axis.AncestorSelf || axis == Axis.Self) {
+                if (step.getNodeTest().isWild() && ! currentQuery.isEmpty() && isElementStep) {
+                    // This is basically a query that says - this document has an element up above...
+                    // we don't generate wildcard queries for these - maybe we should?
+                    // actually - we could do better with self::node(), which is completely vacuous
+                    isMinimal = false;
+                } else {
+                    isMinimal = true;
+                }
+                // TOOD: is counting correct?  We need more tests for that I think
+            }
+            else {
+                // No indexes that help with preceding/following axes
                 isMinimal = false;
             }
-        }
-        else if (axis == Axis.Ancestor || axis == Axis.AncestorSelf || axis == Axis.Self) {
-            if (step.getNodeTest().isWild() && ! currentQuery.isEmpty() && step.getNodeTest().getType().is(ValueType.ELEMENT)) {
-                // This is basically a query that says - this document has an element up above...
-                // we don't generate wildcard queries for these - maybe we should?
-                // actually - we could do better with self::node(), which is completely vacuous
-                isMinimal = false;
-            } else {
-                isMinimal = true;
-            }
-            // TOOD: is counting correct?  We need more tests for that I think
-        }
-        else {
-            // No indexes that help with preceding/following axes
-            isMinimal = false;
         }
         XPathQuery query;
         long facts = currentQuery.getFacts();
-        if (!isCounting) {
-            facts &= ~XPathQuery.COUNTABLE;
+        if (!isSingular) {
+            facts &= ~SINGULAR;
         } else {
-            facts |= XPathQuery.COUNTABLE;
+            facts |= SINGULAR;
         }
         if (!isMinimal) {
-            facts &= ~XPathQuery.MINIMAL;
+            facts &= ~MINIMAL;
         }
         if (name == null) {
             ValueType type = step.getNodeTest().getType();
@@ -517,19 +532,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
-            if (fname.equals(FunCall.FN_COUNT) && 
-                    ((query.getFacts()&XPathQuery.SINGULAR) != 0 || query.getResultType().is(ValueType.DOCUMENT))) {
-                functionFacts = XPathQuery.SINGULAR;
+            if (fname.equals(FunCall.FN_COUNT) && query.isFact(SINGULAR)) {// || query.getResultType().is(ValueType.DOCUMENT))) {
+                functionFacts = SINGULAR;
                 returnType = ValueType.INT;
                 qname = FunCall.LUX_COUNT;
             } 
             else if (fname.equals(FunCall.FN_EXISTS)) {
-                functionFacts = XPathQuery.BOOLEAN_TRUE;
+                functionFacts = BOOLEAN_TRUE;
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_EXISTS;
             }
             else if (fname.equals(FunCall.FN_EMPTY)) {
-                functionFacts = XPathQuery.BOOLEAN_FALSE;
+                functionFacts = BOOLEAN_FALSE;
                 returnType = ValueType.BOOLEAN_FALSE;
                 qname = FunCall.LUX_EXISTS;
             }
@@ -542,7 +556,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     push (query);
                     return funcall;
                 }
-                functionFacts = XPathQuery.BOOLEAN_TRUE;
+                functionFacts = BOOLEAN_TRUE;
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_SEARCH;
             }
@@ -551,7 +565,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 push (MATCH_ALL);
                 if (searchArg != null) {
                     // create a searching function call using the argument to the enclosed lux:search call
-                    return new FunCall (qname, returnType, searchArg, new LiteralExpression (XPathQuery.MINIMAL));
+                    return new FunCall (qname, returnType, searchArg, new LiteralExpression (MINIMAL));
                 }
                 if (query.isImmutable()) {
                     // combine functionFacts with query
@@ -648,7 +662,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         XPathQuery query = combineQueries(lq, occur, rq, type);
         if (minimal == false) {
-            query.setFact(XPathQuery.MINIMAL, false);
+            query = query.setFact(MINIMAL, false);
         }
         push (query);
         return op;
@@ -720,7 +734,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             termQuery = makeAttributeValueQuery(nodeName, value, indexConfig);
         }
         if (termQuery != null) {
-            XPathQuery query = XPathQuery.getQuery(termQuery, XPathQuery.MINIMAL, nodeTest.getType(), indexConfig, null);
+            XPathQuery query = XPathQuery.getQuery(termQuery, MINIMAL, nodeTest.getType(), indexConfig, null);
             XPathQuery baseQuery = pop();
             query = combineQueries (query, Occur.MUST, baseQuery, baseQuery.getResultType());
             push(query);
@@ -773,7 +787,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (lengthQuery != null) {
             query = combineQueries (query, Occur.SHOULD, lengthQuery, query.getResultType());
         }
-        query.setFact(XPathQuery.MINIMAL, false);
+        query = query.setFact(MINIMAL, false);
         push (query);
         return subsequence;
     }

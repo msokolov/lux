@@ -78,7 +78,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
      * @throws CorruptIndexException 
      */
     @Override
-    public void assertQuery (String xpath, int facts, ValueType type, Q ... queries) throws IOException {
+    public void assertQuery (String xpath, Integer facts, ValueType type, Q ... queries) throws IOException {
         if (repeatCount > 1) {
             benchmark (xpath);
         } else {
@@ -155,6 +155,11 @@ public class SearchPathQueryTest extends BasicQueryTest {
             throw new LuxException(results.getErrors().iterator().next());
         }
         return results;
+    }
+    
+    @Override
+    protected boolean hasPathIndexes () {
+        return true;
     }
 
 }

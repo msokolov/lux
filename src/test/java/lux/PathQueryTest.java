@@ -156,6 +156,11 @@ public class PathQueryTest extends BasicQueryTest {
     public XmlIndexer getIndexer() {
         return new XmlIndexer(IndexConfiguration.INDEX_PATHS | IndexConfiguration.INDEX_FULLTEXT);
     }
+    
+    @Override
+    public boolean hasPathIndexes() {
+        return true;
+    }
 
 }
 

@@ -37,7 +37,7 @@ import org.apache.lucene.search.SortField;
  */
 public class XPathQuery {
 
-    private final ParseableQuery query;
+    private final ParseableQuery pquery;
     private ValueType valueType;
     private final boolean immutable;
     
@@ -63,6 +63,7 @@ public class XPathQuery {
     /**
      * A query is exact iff its xpath expression returns exactly one value per document, and the
      * generated lucene query returns exactly those documents satisfying the xpath expression.
+     * EXACT <=> MINIMAL and SINGULAR, and we never use EXACT explicitly
      */
     public static final int EXACT=0x00000001;
     
@@ -98,13 +99,13 @@ public class XPathQuery {
      */
     public static final int DOCUMENT_RESULTS=0x00000018;
     
-    public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL|SINGULAR, ValueType.DOCUMENT, true);
     
     private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.NODE, true);
 
     private final static XPathQuery UNINDEXED = new XPathQuery(MatchAllPQuery.getInstance(), 0, ValueType.VALUE, true);
 
-    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL, ValueType.DOCUMENT, true);
+    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|SINGULAR, ValueType.DOCUMENT, true);
     
     private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL, ValueType.NODE, true);
 
@@ -118,7 +119,7 @@ public class XPathQuery {
      * can be determined.
      */
     protected XPathQuery(ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
-        this.query = query;
+        this.pquery = query;
         this.facts = resultFacts;
         setType (valueType);
         this.immutable = immutable;
@@ -188,7 +189,7 @@ public class XPathQuery {
     }
     
     public ParseableQuery getParseableQuery() {
-        return query;
+        return pquery;
     }
 
     /**
@@ -216,7 +217,7 @@ public class XPathQuery {
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
         long resultFacts = combineQueryFacts (this, precursor);
-        ParseableQuery result = combineBoolean (this.query, occur, precursor.query, precursorOccur);
+        ParseableQuery result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
         SortField[] combined = combineSortFields(precursor);
         return getQuery(result, resultFacts, type, config, combined);
     }
@@ -249,7 +250,7 @@ public class XPathQuery {
      */
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance) {
         long resultFacts = combineQueryFacts (this, precursor);
-        ParseableQuery result = combineSpans (this.query, occur, precursor.query, distance);
+        ParseableQuery result = combineSpans (this.pquery, occur, precursor.pquery, distance);
         SortField[] combinedSorts = combineSortFields(precursor);
         XPathQuery q = new XPathQuery(result, resultFacts, type);
         q.setSortFields(combinedSorts);
@@ -258,7 +259,7 @@ public class XPathQuery {
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
         // TODO: get rid of these special cases, and the immutable queries
-        // ther logic for maintaining them is tortured and the purported benefit is dubious
+        // the logic for maintaining them is tortured and the purported benefit is dubious
         if (b.isEmpty()) {
             return a.facts; 
         }
@@ -331,16 +332,20 @@ public class XPathQuery {
     
     @Override
     public String toString () {
-        return query == null ? "" : query.toString();
+        return pquery == null ? "" : pquery.toString();
     }
 
-  public void setFact(int fact, boolean t) {
-      if (immutable) throw new LuxException ("attempt to modify immutable query");
-      if (t) {
-          facts |= fact;
-      } else {
-          facts &= (~fact);
+  public XPathQuery setFact(int fact, boolean t) {
+      XPathQuery query = this;
+      if (immutable) {
+          query = new XPathQuery (this.pquery, facts, valueType);
       }
+      if (t) {
+          query.facts |= fact;
+      } else {
+          query.facts &= (~fact);
+      }
+      return query;
   }
   
   public final boolean isFact (int fact) {
@@ -369,12 +374,7 @@ public class XPathQuery {
       }
       else if (valueType == ValueType.DOCUMENT) {
           facts |= DOCUMENT_RESULTS;
-      }
-      else if (valueType == ValueType.INT) {
-          // somehow I guess we only use ValueType.INT for this very special case???
           facts |= SINGULAR;
-      } else {
-          facts &= ~SINGULAR;
       }
       // no other type info is stored in facts since it's not needed by search()
   }
