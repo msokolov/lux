@@ -200,8 +200,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 String err = formatError(query, queryResults.getErrors());
                 rsp.add ("xpath-error", err);
             }
-            rsp.add("xpath-results", xpathResults);
         }
+        rsp.add("xpath-results", xpathResults);
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);

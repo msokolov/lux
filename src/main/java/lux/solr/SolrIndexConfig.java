@@ -77,16 +77,23 @@ public class SolrIndexConfig {
     }
     
     private void renameFields (@SuppressWarnings("rawtypes") final NamedList args) {
-        for (int i = 0; i < args.size(); i++) {
-            String name = args.getName(i);
-            Object value = args.getVal(i);
+        NamedList<?> aliases = (NamedList<?>) args.get ("fieldAliases");
+        if (aliases == null) {
+            return;
+        }
+        for (int i = 0; i < aliases.size(); i++) {
+            String name = aliases.getName(i);
+            Object value = aliases.getVal(i);
             if ("xmlFieldName".equals(name)) {
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_STORE), value.toString());
+                LoggerFactory.getLogger(getClass()).info("XML storage field name: {}", value.toString());
             }
             else if ("uriFieldName".equals(name)) {
+                LoggerFactory.getLogger(getClass()).info("URI field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.URI), value.toString());
             }
             else if ("textFieldName".equals(name)) {
+                LoggerFactory.getLogger(getClass()).info("XML text field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_TEXT), value.toString());
             }
         }
