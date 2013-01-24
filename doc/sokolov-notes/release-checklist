@@ -2,6 +2,9 @@
 2) review outstanding issues.  any blockers? fix them and go back to 1
 3) remove -SNAPSHOT from version in pom.xml
 4) follow instructions in BUILDING. any failures? back to step 1 :)
+   build binary assemblies; smoke test by:
+   unpacking, running (./lux, or ./lux.bat) and running integration test
+   in lux-appserver (mvn verify)
 5) tag the head revision (as lux-${version}) in version control
 6) increment the version in pom.xml to the next -SNAPSHOT
 7) write release notes, describing new work.  open issues are covered in the bug tracker

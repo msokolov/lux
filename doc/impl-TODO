@@ -1,7 +1,14 @@
+* bugs
+loading all shakespeare from work (using lux-appserver) got various errors
+that look like threading issues, including SolrIndexWriter not closed, lock
+obtain failures, and multiple writes to the same uri: see /proj/lux/doc/lux-bug-2013-01-14
+* pf integration
+** need to upgrade the SolrConnection
+so it handles errors more gracefully see SolrSearchQuery.getResults();
 * app-server
-** packaging cleanup
-We now have a distro that is all-inclusive; test install and run;
-check the configuration in app-server, and the documentation
+** documentation review
+** integration test
+Enhance the integration test so it checks that the demo runs
 ** http header control
 redirect, 404, error, etc
 ** passing current uri
@@ -140,17 +147,6 @@ trees that are much larger than the original xquery form.  The rule of
 thumb seems to be that you can expect compilation time to double.  In XQTS,
 compilation time dominates the test (after simply loading test data).
 
-* Bugs
-** from orr-dev:
-(07/25/2012 03:28:36 PM) Ryan Pollock: for $doc in /ifp:doc[@id='oxfordhb-9780195390032-e-031']/ifp;body
-return $doc
-(07/25/2012 03:28:37 PM) Ryan Pollock: bug!
-(07/25/2012 03:30:46 PM) Ryan Pollock: for $doc in /ifp:doc[@id='oxfordhb-9780195390032-e-031']
-return $doc/ifp:body
-(07/25/2012 03:39:13 PM) Ryan Pollock: lux:search("*:*")[1]
-** contain() is over-optimized
-We replace it with a search call, but search is *analyzed* (so case is
-ignored, etc).
 * features
 ** directory (uri component) index
 also link to collection()?
