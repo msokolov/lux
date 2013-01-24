@@ -8,7 +8,6 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XdmNode;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.util.NamedList;
@@ -32,7 +31,7 @@ public class LuxResponseWriter implements QueryResponseWriter {
     public void write(Writer writer, SolrQueryRequest request, SolrQueryResponse response) throws IOException {
         @SuppressWarnings("unchecked")
         List<String> errors = response.getValues().getAll("xpath-error");
-        if (CollectionUtils.isNotEmpty(errors)) {
+        if (! errors.isEmpty()) {
             if (errors.size() == 1) {
                 throw new SolrException(ErrorCode.BAD_REQUEST, errors.get(0));
             }

@@ -6,14 +6,17 @@
             <str name="wp">http://www.mediawiki.org/xml/export-0.8/</str>
         </lst>
         <lst name="fields">
-          <!--  define additional fields using XPath-->
+          <!--  define additional fields using XPath, eg for sorting -->
           <str name="title">/descendant::title[1]</str>
           <str name="title">/descendant::wp:title[1]</str>
           <str name="title">/SPEECH/LINE[1]</str>
           <str name="doctype_s">local-name(/*)</str>
         </lst>
+        <lst name="fieldAliases">
+          <str name="xmlFieldName">lux_xml_text</str>
+          <str name="uriFieldName">lux_uri</str>
+        </lst>
         <str name="strip-namespaces">no</str>
-        <str name="namespace-aware">no</str>
        <processor class="lux.solr.LuxUpdateProcessorFactory" />
        <processor class="solr.LogUpdateProcessorFactory" />
        <processor class="solr.RunUpdateProcessorFactory" />
@@ -27,18 +30,14 @@
        body.
   -->
 
-  <searchComponent name="lux-app-server" class="lux.solr.AppServer">
-  </searchComponent>
+  <searchComponent name="lux-app-server" class="lux.solr.AppServer" />
 
   <!-- This component and handler provide a search-enabled xquery
        evaluation service.  Its query is taken from request parameter 'q',
        like other Solr search handlers, and results are returned using
        the usual Solr marshalling options (XML, javabin, json, etc)
   -->
-  <searchComponent name="xquery" class="lux.solr.XQueryComponent">
-    <!--   <str name="xmlFieldName">lux_xml</str> -->
-    <!--   <str name="uriFieldName">lux_uri</str> -->
-  </searchComponent>
+  <searchComponent name="xquery" class="lux.solr.XQueryComponent" />
   
   <requestHandler name="/xquery" class="solr.SearchHandler" id="xquery">
     <arr name="components">

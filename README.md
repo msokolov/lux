@@ -2,7 +2,8 @@
 
 Lux is an open source XML search engine formed by fusing two excellent
 technologies: the Apache Lucene/Solr search index and the Saxon XQuery/XSLT
-processor.
+processor (as well as numerous other supporting open source packages: see
+THIRDPARTY-LICENSES.md for details).
 
 At its core, Lux provides XML-aware indexing, an XQuery 1.0 optimizer that
 rewrites queries to use the indexes, and a function library for interacting
@@ -220,9 +221,7 @@ time. We often want to know if an element ever occurs more than once in some con
 
 ## Acknowledgements ##
 
-Lux relies on many underlying open-source software packages.  It makes
-particular use of Solr/Lucene, Saxon, and also Woodstox. For more
-information about Lucene and Solr, see [http://lucene.apache.org/], and for
-more information about The Saxon XSLT and XQuery Processor from Saxonica
-Limited, see [http://www.saxonica.com/].  Woodstox is hosted at
-[http://woodstox.codehaus.org/].
+Lux relies on many underlying open-source software packages, but its main value is serving as a bridge
+between Solr/Lucene, and Saxon. For more information about Lucene and Solr, see [http://lucene.apache.org/], 
+and for more information about The Saxon XSLT and XQuery Processor from Saxonica
+Limited, see [http://www.saxonica.com/].

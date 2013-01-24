@@ -1,13 +1,15 @@
 # Lux 0.5 Installation #
 
-Lux is distributed as source code and as a compiled library, with some
-required dependent libraries, including Saxon-HE and Woodstox.  When
-installed in the context of a Solr installation it provides an XQuery REST
-service.  With a little extra configuration in the Solr web.xml, it acts as
+Lux is distributed as a compiled library, with some
+required dependent libraries, including Saxon-HE and Woodstox, and as a complete
+application server bundle.  The complete source code is also available (via GitHub).
+When the library is installed in the context of a Solr installation it provides an 
+XQuery REST service.  The app server bundle wraps a Solr installation in a thin
+proxy layer (provided by embedded Jetty) and provides
 a web application server for applications written in XQuery and XSLT,
-accessing XML indexed and stored using Solr/Lucene.
+accessing XML indexed and stored in Solr/Lucene.
 
-## Lux app server (complete) ##
+## Lux app server ##
 
 FIXME: fix links once we have created the artifacts.
 
@@ -16,13 +18,8 @@ FIXME: fix links once we have created the artifacts.
    or [tar archive](http://luxdb.net/download/lux-server-0.5.tar.gz
    "Download Lux tar").
 
-   This download includes the following artifacts:
-
-   1. Jetty servlet container
-   2. Solr search engine, configured with Lux library and EXPath 
-      repo support.
-   3. Lux application server
-   4. EXPath repository w/modules: HTTP and Zip
+   This download includes the Lux application server and all of its required
+   dependencies.  Please see THIRDPARTYLICENSES.md for a complete list.
 
 2. Start the server using the Windows batch file bin/lux.bat, or the UNIX
    shell script bin/lux.
@@ -30,8 +27,8 @@ FIXME: fix links once we have created the artifacts.
 3. The app server is configured to occupy the root context (/) on port 80,
 with the webapp directory as the web app root folder. The Solr service is
 set up to on port 8983. The the xrepo folder is configured as an EXPath
-repository from which the app server will load EXPath modules. (TODO:
-configure app server so it connects to this embedded solr out of the box).
+repository from which the app server will load EXPath modules.  These paths
+and ports are all configurable by editing the lux.properties file.
 
 ## Lux app server (integrate with existing Solr) ##
 
@@ -69,27 +66,32 @@ configure app server so it connects to this embedded solr out of the box).
      using.  You can refer to the provided solrconfig.xml file for an
      example of what this should look like.
 
-4. Lux requires that a unique string-values field be defined. If no such field
+4. Lux requires that a unique string-valued key be defined. If no such field
    exists, add the following to the schema:
 
         <field name="uri" type="string" indexed="true" stored="true" multiValued="false"/>
         <uniqueKey>uri</uniqueKey>
            
-   If a unique id field is already defined, you can configure Lux to use it
-   by adding the following to one of the parameters of the Lux xquery
-   component in solrconfig.xml:
+   If a unique id field is already defined, you can configure Lux to use it by editing
+   the configuration element <updateRequestProcessorChain name="lux-update-chain">
+   in solrconfig.xml.
 
-   <searchComponent name="xquery" class="lux.solr.XQueryComponent">
-    <str name="uriFieldName">{name of your field here}</str>
-   </searchComponent>
+   Lux will automatically register all the other fields it needs.  Their names all begin with "lux_", so it
+   should not usually be necessary to rename them, but it is possible to do so using configuration in solrconfog.xml.
+   Also, if you are already storing the complete text of your XML documents in Solr/Lucene, you may wish to instruct 
+   Lux to use your existing field, rather than registering its own (by default: lux_xml).  This will avoid storing each
+   document twice.
 
 5. Restart Solr.  Watch the Solr logs to make sure there are no errors.
    You may see ClassNotFoundException.  If you do, that probably means the
    jars are not in the right folder: you may need to read up about Solr
    configuration: see above for a link.
 
-   Now you have a REST server; if you also want to use the app server, it must
-   be configured in Solr's web.xml
+   Now you have an RESTful XQuery service with automatic node and full text indexes and a search capability.  
+   You can insert XML documents using the standard Solr mechanisms, and they will 
+   automatically be indexed for fast retrieval using XQuery. You can send XQuery requests to it via HTTP, and receive
+   responses using one of Solr's standard response writers, which wrap your results in one way or another, or
+   you can use the LuxResponseWriter, which serializes the results directly as the response.
 
 ## Lux library only ##
 
@@ -100,18 +102,13 @@ service of Solr request handlers.  Similarly, if you are Saxon user and
 want to use Saxon to execute queries against a persistent indexed data
 store, you can use Lux to do that without needing Solr.
 
-In these cases, you "install" Lux by placing the Lux jar file (and its
-dependencies) on your classpath.  If you use Maven to build your project,
-this is easily accomplished by declaring the luxdb.net/luxdb/1.0 dependency
-in your pom.xml file.  Otherwise, you can download Lux with all of its
-dependencies [here](http://luxdb.net/download/) "Download Lux").
+In these cases, you would embed Lux in your application by placing the Lux jar file (and its
+dependencies) on your classpath.
 
 In order to use Lux as a REST service or an application server, follow
 these instructions to integrate it with an existing Solr installation.
 
 ## EXPath Package Manager
-
-TODO: links
 
 Lux is distributed with a copy of the EXPath package manager, which enables
 loading of standardized extensions to the XPath function library.  The app
@@ -131,13 +128,7 @@ repo as the value of the system property "org.expath.pkg.saxon.repo".
 
 ## Lux source code ##
 
-The source distribution comes with a Maven project file and an Eclipse
-.project file, so it is easiest to build it using those tools.  As usual,
+The source distribution comes with Maven project files and Eclipse
+.project files, so it is easiest to build it using those tools.  As usual,
 "mvn package" will compile all the source code, run all the unit tests, and
-build the various artifacts, including the jar, the application server war,
-and the various distribution bundles.
-
-## Maven Artifacts ##
-
-The binaries and source are available via maven using groupId: net.luxdb,
-artifactId: luxdb.  The latest version is 0.5
+build the various artifacts.

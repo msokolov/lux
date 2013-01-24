@@ -1450,10 +1450,9 @@
           <str name="uriFieldName">lux_uri</str>
         </lst>
         <str name="strip-namespaces">no</str>
-        <str name="namespace-aware">yes</str>
-        <processor class="lux.solr.LuxUpdateProcessorFactory" />
-        <processor class="solr.LogUpdateProcessorFactory" />
-        <processor class="solr.RunUpdateProcessorFactory" />
+       <processor class="lux.solr.LuxUpdateProcessorFactory" />
+       <processor class="solr.LogUpdateProcessorFactory" />
+       <processor class="solr.RunUpdateProcessorFactory" />
      </updateRequestProcessorChain>
       
 
@@ -1464,8 +1463,7 @@
        body.
   -->
 
-  <searchComponent name="lux-app-server" class="lux.solr.AppServerComponent">
-  </searchComponent>
+  <searchComponent name="lux-app-server" class="lux.solr.AppServerComponent" />
 
   <!-- This component and handler provide a search-enabled xquery
        evaluation service.  Its query is taken from request parameter 'q',

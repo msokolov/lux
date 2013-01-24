@@ -14,6 +14,20 @@
         <groupId>net.sf.saxon</groupId>
         <artifactId>Saxon-HE</artifactId>
         <version>9.4</version>
+        <exclusions>
+        	<exclusion>
+        		<artifactId>xom</artifactId>
+        		<groupId>xom</groupId>
+        	</exclusion>
+        	<exclusion>
+        		<artifactId>jdom</artifactId>
+        		<groupId>org.jdom</groupId>
+        	</exclusion>
+        	<exclusion>
+        		<artifactId>dom4j</artifactId>
+        		<groupId>dom4j</groupId>
+        	</exclusion>
+        </exclusions>
     </dependency>
      <dependency>
         <groupId>org.slf4j</groupId>
@@ -38,6 +52,14 @@
   			<exclusion>
   				<artifactId>slf4j-jdk14</artifactId>
   				<groupId>org.slf4j</groupId>
+  			</exclusion>
+  			<exclusion>
+  				<artifactId>velocity-tools</artifactId>
+  				<groupId>org.apache.velocity</groupId>
+  			</exclusion>
+  			<exclusion>
+  				<artifactId>zookeeper</artifactId>
+  				<groupId>org.apache.zookeeper</groupId>
   			</exclusion>
   		</exclusions>
   	</dependency>
@@ -76,10 +98,9 @@
   		</exclusions>
   	</dependency>
   	<dependency>
-  		<groupId>org.hamcrest</groupId>
-  		<artifactId>hamcrest-all</artifactId>
-  		<version>1.1</version>
-  		<scope>test</scope>
+  		<groupId>xerces</groupId>
+  		<artifactId>xercesImpl</artifactId>
+  		<version>2.9.1</version>
   	</dependency>
   </dependencies>
   <build>
@@ -156,28 +177,6 @@
           <type>jar</type>
         </dependency>
         </dependencies>
-        <!--
-        <executions>
-          <execution>
-            <id>start-jetty</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <scanIntervalSeconds>0</scanIntervalSeconds>
-              <daemon>true</daemon>
-            </configuration>
-          </execution>
-          <execution>
-            <id>stop-jetty</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>stop</goal>
-            </goals>
-          </execution>
-        </executions>
-        -->
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
