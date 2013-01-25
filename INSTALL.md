@@ -1,8 +1,10 @@
 # Lux 0.5 Installation #
 
 Lux is distributed as a compiled library, with some
-required dependent libraries, including Saxon-HE and Woodstox, and as a complete
-application server bundle.  The complete source code is also available (via GitHub).
+required dependent libraries, including Saxon-HE and Woodstox, designed to be
+dropped into an existing Solr installation, and as a complete
+application server bundle, including Solr and all of its dependencies.  The complete 
+source code is also available (via GitHub).
 When the library is installed in the context of a Solr installation it provides an 
 XQuery REST service.  The app server bundle wraps a Solr installation in a thin
 proxy layer (provided by embedded Jetty) and provides
@@ -21,14 +23,14 @@ FIXME: fix links once we have created the artifacts.
    This download includes the Lux application server and all of its required
    dependencies.  Please see THIRDPARTYLICENSES.md for a complete list.
 
-2. Start the server using the Windows batch file bin/lux.bat, or the UNIX
-   shell script bin/lux.
+2. Start the server using the Windows batch file lux.bat, or the UNIX
+   shell script lux.
 
-3. The app server is configured to occupy the root context (/) on port 80,
-with the webapp directory as the web app root folder. The Solr service is
-set up to on port 8983. The the xrepo folder is configured as an EXPath
-repository from which the app server will load EXPath modules.  These paths
-and ports are all configurable by editing the lux.properties file.
+3. The app server is configured to occupy the root context (/) on port 8080,
+with the webapp directory as the web app root folder. The Solr service is at /solr.
+Application files are set up to be read from the webapps/demo folder.
+The xrepo folder is configured as an EXPath repository from which the app server will 
+load EXPath modules.  These paths and ports are configurable by editing the lux.properties file.
 
 ## Lux app server (integrate with existing Solr) ##
 
@@ -131,4 +133,4 @@ repo as the value of the system property "org.expath.pkg.saxon.repo".
 The source distribution comes with Maven project files and Eclipse
 .project files, so it is easiest to build it using those tools.  As usual,
 "mvn package" will compile all the source code, run all the unit tests, and
-build the various artifacts.
+build the various artifacts.  "mvn assembly:single" builds distribution bundles.
