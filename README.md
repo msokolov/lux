@@ -11,6 +11,18 @@ with Lucene via XQuery.  These capabilities are tightly integrated with
 Solr, and leverage its application framework in order to deliver a REST
 service and application server.
 
+The REST service is accessible to applications written in almost any language,
+but it will be especially convenient for developers already using Solr, for whom
+Lux operates as a Solr plugin that provides query services using the same REST APIs
+as other Solr search plugins, but using a different query language (XQuery). XML documents
+may be inserted (and updated) using standard Solr REST calls: XML-aware indexing
+is triggered by the presence of an XML-aware field in a document.  This means that
+existing application frameworks written in many different languages are positioned
+to use Lux as a drop-in capability for indexing and querying semi-structured content.
+
+The application server is a great way to get started with Lux: it provides the ability
+to write a complete application in XQuery and XSLT with data storage backed by Lucene.
+
 ## Goals ##
 
 We designed Lux with three main priorities in mind:
@@ -30,26 +42,26 @@ custom search functions as needed.
 Finally, we want it to be a pleasure to work with Lux.  We think the best
 way to do this is to provide features that appeal to developers and make
 their lives easier, to support standards initiatives like EXPath, and to
-integrate with other widely-used technologies.  
+integrate with other widely-used technologies.
 
 We need to acknowledge here
 though that Lux is new and is missing many features users will expect from a mature
 database product.  Also, disclaimer: please be aware this is a first public 
-release: even though it benefits from being built on a very solid base, the 
-Lux code itself has seen limited usage, and we are sure to identify gaps
+release: even though it benefits from being built on a very solid base, and is
+very thoroughly unit tested, the 
+Lux code itself is fairly new, and we are sure to identify gaps
 that need addressing in order to make it a more useful system.  In spite of these
-limitations, we felt there would be some real value in sharing this effort with
-a broader community: both for us, because we would appreciate feedback,
-and for the community at large that has a need for an XQuery search capability 
-embedded in Solr.
+limitations, we felt there would be some real value in sharing Lux with
+a broader community that has a need to query XML documents indexed by Solr using 
+XQuery and XSLT.
 
 ## Quality ##
 
-We've used the XQuery Test Suite (TODO: link) to help ensure that Lux
+We've used the XQuery Test Suite to help ensure that Lux
 provides an accurate standards-compliant XQuery service.  Because Lux is
 built using Saxon, and relies on Saxon to compile and evaluate XQuery, it
-is capable of achieving essentially similar results on these
-tests. However, as part of its query optimization, Lux does rewrite
+achieves essentially similar results on these tests. However, as part of 
+its query optimization, Lux does rewrite
 queries, introducing search operations where possible to accelerate
 processing. Therefore it was important to run a complete battery of tests
 to ensure that the optimizer generates results that are faithful to the
@@ -59,7 +71,13 @@ ensure correct results.
 
 ### Performance ###
 
-TODO: performance measurements
+Query performance varies depending on the query, and the data, and the environment,
+so it is impossible to give a meaningful account in a short summary.  However:
+Indexed queries are blindingly fast because Lucene is an excellent search index.  Processing 
+small-to-medium documents is very fast because Saxon is an excellent query processor.
+Lux does a decent job of filtering out irrelevant documents in many cases, and provides
+access (via debug-level logging statements) to the optimized queries it produces, so it is 
+easy to see where it is applying indexing optimizations, and where it is not.
 
 ### XML indexes ###
 
@@ -77,7 +95,7 @@ mechanism.
 
 ### Optimizer ###
 
-Lux evaluates absolute expressions (essentially: paths beginning with a "/") as if they were 
+Lux evaluates absolute expressions in the outer context (essentially: paths beginning with a "/") as if they were 
 preceded by a call to collection(): ie they are evaluated for every document in the database,
 in some fixed order, which is defined per query, but in general is unpredictable.  The Lux
 optimizer's main job is to reduce the number of documents for which a given expression in fact
@@ -85,7 +103,7 @@ needs to be evaluated *while producing the same result as if every document were
 
 A key piece of this puzzle was to solve an impedance mismatch between Saxon and Lucene.  Saxon
 performs all of its work by pulling results through Iterators.  In contrast, Lucene expects to 
-push results (through an object called a Collector).  Lux manages this in different ways depending
+push results (via a Collector object).  Lux manages this in different ways depending
 on whether results are ordered by relevance, by value (some other kind of order by expression),
 or in document order.
 
@@ -107,8 +125,8 @@ search engine requirement.
 ### Function library ###
 
 Lux provides a small library of XQuery functions that expose Lucene functionality such as search,
-iteration over terms, query highlighting, and document updates. An XSLT transform capability is provided.
-A subset of the expath:file module is provided, and the EXPath packaging libraries are included so as to 
+iteration over terms, query highlighting, and document updates. An XSLT transform capability (using Saxon) 
+is provided. A subset of the expath:file module is provided, and the EXPath packaging libraries are included so as to 
 enable modular extension of the function library in a standard way. The complete library of built-in XQuery 
 functions is documented in the (TODO: link) javadoc for the lux.functions package.
 
@@ -121,7 +139,7 @@ solrconfig.xml.  XQueryComponent, however, ignores the pagination, sorting, high
 and other search parameters that are typically interpreted by Solr.  Instead, it's assumed that these
 functions will be handled within the XQuery itself.
 
-The provided configuration sends receive results via a Lux ResponseWriter, which 
+The provided configuration sends results via a Lux ResponseWriter, which 
 serializes XML *as HTML*, so as to support the application server, but in theory any of the Solr 
 ResponseWriters (BinaryResponseWriter, XMLResponseWriter, etc.) may be configured instead.
 
@@ -164,7 +182,9 @@ Finally, the original motivation for Lux was to provide a content exploration
 tool for analyzing new and unfamiliar XML structures.  We often encounter XML
 data that is either known not to conform to its schema/DTD, or may not be constrained
 by any schema whatsoever.  In such cases it is very useful to be able to test assertions
-across a large range of sample data in order to apply evidence-based constraints.
+across a large range of sample data in order to apply evidence-based constraints.  To
+this end, Lux provides path- and content- indexes for every element and attribute node,
+without the need to pre-configure any indexes, and also provides explicit XPath indexing.
 
 ## What's Next? ##
 
@@ -172,7 +192,7 @@ across a large range of sample data in order to apply evidence-based constraints
 
 The next steps will certainly be shaped by requests and comments from the community.  Our main
 focus will be maintaining a high standard of quality w.r.t. any reported bugs or serious gaps
-in existing functionality.
+in existing functionality.  And contributions are definitely welcome.
 
 ### Performance enhancements
 We have numerous ideas for improving performance, including: 
@@ -187,19 +207,24 @@ in both the open source and commercial versions of Saxon.  At the moment however
 and tested against version 9.4.0.3 HE (the open source version) only.  We've performed some basic
 tests with PE/EE, but some Lux optimizations can only be provided with the HE version.
 
+### Solr / Lucene 4.x
+
+This version of Lux works with Solr/Lucene 3.x only.  We plan to move to use the 4.x Solr/Lucene API in the next 
+major release.
+
 ### Binary (XML) storage
 
-We should get substantial performance gains by using Saxon's ptree format internally once we can 
-resolve some of the compatibility issues w/Saxon PE/EE.
+In experiments, we've seen very substantial gains from storing documents in a quick-to-parse binary XML format
+such as Saxon's ptree format.  We plan to provide this as an option in a future release.
 
 ### Binary document storage
 
 It may be convenient to store unindexed non-XML documents in Lux.  Currently these have to be managed 
-separately.
+separately; on the filesystem or in some other data store.
 
 ### Standard HTTP request handling
 
-We're looking at implementing the EXQuery request specification
+We're looking at implementing the EXQuery request specification in the Lux app server
 
 ### Extensible text analysis 
 
