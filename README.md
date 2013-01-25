@@ -26,6 +26,7 @@ to write a complete application in XQuery and XSLT with data storage backed by L
 ## Goals ##
 
 We designed Lux with three main priorities in mind:
+
 1. Top quality
 2. Excellent performance
 3. Convenient features
