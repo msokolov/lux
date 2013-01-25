@@ -1,3 +1,0 @@
-C:\Users\sokolov\workspace\lux\xrepos\expath-zip-saxon-0.6.0\expath-zip-saxon\lib\tagsoup-1.2.jar
-C:\Users\sokolov\workspace\lux\xrepos\expath-zip-saxon-0.6.0\expath-zip-saxon\jar\expath-zip-java.jar
-C:\Users\sokolov\workspace\lux\xrepos\expath-zip-saxon-0.6.0\expath-zip-saxon\jar\expath-zip-saxon.jar
