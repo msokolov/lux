@@ -53,8 +53,8 @@ load EXPath modules.  These paths and ports are configurable by editing the lux.
           <str name="update.chain">lux-update-chain</str>
         </lst>
 
-     For example, the configuration for the XmlUpdateRequestHandler should
-     look like:
+   For example, the configuration for the XmlUpdateRequestHandler should
+   look like:
 
         <requestHandler name="/update" class="solr.XmlUpdateRequestHandler">
           <lst name="defaults">
@@ -62,11 +62,11 @@ load EXPath modules.  These paths and ports are configurable by editing the lux.
           </lst>                  
         </requestHandler>
 
-     Also insert the Lux update chain into the configuration for
-     solr.BinaryUpdateRequestHandler, solr.CSVRequestHandler and
-     solr.JsonRequestHandler, or whichever update handler you will be
-     using.  You can refer to the provided solrconfig.xml file for an
-     example of what this should look like.
+   Also insert the Lux update chain into the configuration for
+   solr.BinaryUpdateRequestHandler, solr.CSVRequestHandler and
+   solr.JsonRequestHandler, or whichever update handler you will be
+   using.  You can refer to the provided solrconfig.xml file for an
+   example of what this should look like.
 
 4. Lux requires that a unique string-valued key be defined. If no such field
    exists, add the following to the schema:
@@ -106,9 +106,6 @@ store, you can use Lux to do that without needing Solr.
 
 In these cases, you would embed Lux in your application by placing the Lux jar file (and its
 dependencies) on your classpath.
-
-In order to use Lux as a REST service or an application server, follow
-these instructions to integrate it with an existing Solr installation.
 
 ## EXPath Package Manager
 
