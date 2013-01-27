@@ -1,15 +1,19 @@
 package lux;
 
 /**
- * Extends saxon Configuration providing lux-specific configuration.  It provides a function library,
- * so that we can declare functions as returning sequences sorted in document order.  It provides
- * an Optimizer extending Saxon's so that we can make use of such an optimization, and a DocumentNumberAllocator
- * that ensures that document ids are assigned in increasing document order.  Document order is defined
- * by Lucene's internal docid ordering.  This ordering is not stable across multiple queries, but that's OK for the 
- * purpose of optimizing ordering operations within a single query.
+ * Extends saxon Configuration providing lux-specific configuration.  It
+ * provides a function library, so that we can declare functions as
+ * returning sequences sorted in document order.  It provides an Optimizer
+ * extending Saxon's so that we can make use of such an optimization, and a
+ * DocumentNumberAllocator that ensures that document ids are assigned in
+ * increasing document order.  Document order is defined by Lucene's
+ * internal docid ordering.  This ordering is not stable across multiple
+ * queries, but that's OK for the purpose of optimizing ordering operations
+ * within a single query.
  * 
- * This Configuration also provides empty uri resolvers: it returns empty documents for every URI.  This is
- * useful for formally satisfying DOCTYPE declarations, at least.
+ * This Configuration also provides empty uri resolvers: it returns empty
+ * documents for every URI.  This is useful for formally satisfying DOCTYPE
+ * declarations, at least.
  */
 
 import java.io.ByteArrayInputStream;
@@ -25,12 +29,15 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Config provides an Optimizer and a FunctionLibrary to Saxon.  The Optimizer identifies certain
- * expressions as "already sorted in document order", enabling Saxon to skip an expensive sorting operation.  The 
- * FunctionLibrary performs a similar function, allowing certain functions to be identified as returning
- * results in document order, so they won't need to be sorted again.  These optimizations do more than 
- * simply skip a (no-op) sorting step: they also enable Saxon to evaluate these sorted sequences 
- * lazily: if the sequences needed to be sorted, the entire sequence would have to be retrieved.
+ * Config provides an Optimizer and a FunctionLibrary to Saxon.  The
+ * Optimizer identifies certain expressions as "already sorted in document
+ * order", enabling Saxon to skip an expensive sorting operation.  The
+ * FunctionLibrary performs a similar function, allowing certain functions
+ * to be identified as returning results in document order, so they won't
+ * need to be sorted again.  These optimizations do more than simply skip a
+ * (no-op) sorting step: they also enable Saxon to evaluate these sorted
+ * sequences lazily: if the sequences needed to be sorted, the entire
+ * sequence would have to be retrieved.
  */
 public class Config extends Configuration implements EntityResolver {
 

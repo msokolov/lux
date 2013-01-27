@@ -1,0 +1,66 @@
+* second release (0.5)
+** web content
+*** startup documentation
+download/install/getting started
+*** about lux
+Explain what it is, is not, what it's for, why you might want to use it, etc.
+license
+** distribution
+*** bundles
+revisit now that we have app-server
+**** jar + config (zip and tgz)
+include also dependent jars - OK
+TODO: test this distribution using a Solr-only install
+**** app-server (jetty + config + war)
+*** Maven
+**** expath dependencies
+*** test install procedure
+**** test in standalone config for both Linux and Windows
+**** test ifpress setup
+** Namespace
+   Change to luxdb.net from luxproject.net? No
+** Hosting for luxdb.net, luxdb.org, luxdb.com
+   park luxdb.org (as is); register luxdb.com (w/dyn) and park
+   sign up for DNS at dyn; get a server at rackspace
+** import to GitHub
+** web site setup for luxdb.net
+   Wait and see what is available on GitHub.
+   Install Lux, of course.  Package a site using Maven?  Also provide for
+   dynamic content somewhere on the server?  Yuck I don't want a build a
+   CMS just yet!!  However: generate function documentation??
+** criteria for release 1.0
+*** Highest Quality
+Rigorous testing; no known major bugs.
+**** 90+ % test coverage
+Hm - ignoring XQTS, we got to 80%.
+*** XQuery search API
+enable explicit access to indexes
+**** search, count, exists
+**** terms (lexicon functions)
+*** word and value and xpath indexes
+no value indexes in use yet
+*** XQuery 1.0
+optimized sorting using indexes
+*** Add relevant copyright notices
+* first release
+DONE
+** Very Good Quality
+Rigorous testing; no known severe bugs.
+*** check performance
+Make sure our search tests really test what they are supposed to?
+**** check indexing speed having added offsets
+**** check search speed- it seems a bit slow
+break down by document creation / parsing, lucene query, saxon query, result construction, assertions?
+*** Pagination
+We have lazy eval working
+*** path and element name indexes
+ok
+*** text indexes
+ok
+*** check integration w/ifpress-solr
+ifpress-solr tests pass with lux installed and configured to use xml_text as
+its xml field.
+**** 
+*** clean API
+good enough for an ifactory-internal release
+*** use of namespaces tested
