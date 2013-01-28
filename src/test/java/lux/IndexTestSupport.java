@@ -67,7 +67,7 @@ public class IndexTestSupport {
         // create an in-memory Lucene index, index some content
         this.indexer = indexer;
         this.dir = dir;
-        indexWriter = indexer.getIndexWriter(dir);
+        indexWriter = indexer.newIndexWriter(dir);
         if (xmlFiles != null) {
             for (String file : xmlFiles) {
                 indexAllElements (file);
@@ -75,9 +75,9 @@ public class IndexTestSupport {
             indexWriter.close(true);
         } else {
             // initialize an empty index
-            indexer.getIndexWriter(dir).close();
+            indexer.newIndexWriter(dir).close();
         }
-        indexWriter = indexer.getIndexWriter(dir);
+        indexWriter = indexer.newIndexWriter(dir);
         searcher = new LuxSearcher(IndexReader.open(indexWriter, true));
         compiler = new Compiler (indexer.getConfiguration());
     }

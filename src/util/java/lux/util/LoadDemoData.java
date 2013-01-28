@@ -30,7 +30,7 @@ public class LoadDemoData {
         String dataDir = "samples/wikipedia";
         XmlIndexer indexer = new XmlIndexer();
         // indexer.getXmlReader().setStripNamespaces(true);
-        IndexWriter indexWriter = indexer.getIndexWriter(index);
+        IndexWriter indexWriter = indexer.newIndexWriter(index);
         indexWriter.deleteAll();
         index (indexer, indexWriter, dataDir);
         indexWriter.commit();

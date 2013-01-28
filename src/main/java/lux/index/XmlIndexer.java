@@ -111,6 +111,10 @@ public class XmlIndexer {
         this (new IndexConfiguration(options));
     }
     
+    /**
+     * initialize the indexer; an extension of the constructors.  Creates subsidiary objects
+     * required for indexing based on the index options.
+     */
     protected void init () {
         xmlReader = new XmlReader();
         if (isOption (INDEX_QNAMES) || isOption (INDEX_PATHS)) {
@@ -139,14 +143,16 @@ public class XmlIndexer {
     }
     
     /**
-     * Constructs a new Lucene IndexWriter for the given index directory supplied with the proper analyzers for each field.
-     * The directory must exist: if there is no index in the directory, a new one will be created.  If there is an existing
-     * directory, it will be locked for writing until the writer is closed.
+     * Constructs a new Lucene IndexWriter for the given index directory
+     * supplied with the proper analyzers for each field.  The directory
+     * must exist: if there is no index in the directory, a new one will be
+     * created.  If there is an existing directory, it will be locked for
+     * writing until the writer is closed.
      * @param dir the directory where the index is stored
      * @return the IndexWriter
      * @throws IOException if there is a problem with the index
      */
-    public IndexWriter getIndexWriter(Directory dir) throws IOException {
+    public IndexWriter newIndexWriter(Directory dir) throws IOException {
         return new IndexWriter(dir, new IndexWriterConfig(LUCENE_VERSION, configuration.getFieldAnalyzers()));
     }
 
@@ -201,33 +207,54 @@ public class XmlIndexer {
         }
     }
     
+    /**
+     * Index the document read from the stream, caching field values to be written
+     * to the Lucene index.
+     * @param xml the document, as a byte-based InputStream
+     * @param inputUri the uri to assign to the document
+     * @throws XMLStreamException 
+     */
     public void index (InputStream xml, String inputUri) throws XMLStreamException {
         reset();
         this.uri = inputUri;
         xmlReader.read (xml);
     }
     
+    /**
+     * Index the document read from the Reader, caching field values to be written
+     * to the Lucene index.
+     * @param xml the document, as a character-based Reader
+     * @param inputUri the uri to assign to the document
+     * @throws XMLStreamException 
+     */
     public void index (Reader xml, String inputUri) throws XMLStreamException {
         reset();
         this.uri = inputUri;
         xmlReader.read (xml);
     }
 
+    /**
+     * Index the document read from the String, caching field values to be
+     * written to the Lucene index.
+     * @param doc the document, as a String
+     * @param inputUri the uri to assign to the document
+     * @throws XMLStreamException 
+     */
     public void index (NodeInfo doc, String inputUri) throws XMLStreamException {
         reset();
         this.uri = inputUri;
         xmlReader.read(doc);
     }
 
-    /** Clears out internal storage used while indexing a document */
+    /** Clear out internal storage cached by #index when indexing a document */
     public void reset() {
         xmlReader.reset();
     }
-    
 
     /**
      * 
-     * @param option an option flag; one of: NAMESPACE_AWARE, STORE_XML, STORE_PTREE, INDEX_QNAMES, INDEX_PATHS, INDEX_FULLTEXT
+     * @param option an option flag; one of: NAMESPACE_AWARE, STORE_XML,
+     * STORE_PTREE, INDEX_QNAMES, INDEX_PATHS, INDEX_FULLTEXT
      * @return whether the option is set
      */
     private boolean isOption (int option) {
@@ -238,10 +265,17 @@ public class XmlIndexer {
         return configuration.getFields();
     }
     
+    /**
+     * @return the uri cached from the last invocation of #index
+     */
     public String getURI() {
         return uri;
     }
     
+    /**
+     * @return the document cached from the last invocation of #index, as a Saxon XdmNode.
+     * This will be null if the indexer options don't require the generation of an XdmNode.
+     */
     public XdmNode getXdmNode () {
         if (saxonBuilder == null) {
             return null;
@@ -253,6 +287,11 @@ public class XmlIndexer {
         }
     }
     
+    /**
+     * @return the document cached from the last invocation of #index, as a
+     * String.  This will be null if the indexer options don't require the
+     * generation of a serialized document.
+     */
     public String getDocumentText() {
         if (serializer != null) {
             return serializer.getDocument();
@@ -261,7 +300,7 @@ public class XmlIndexer {
     }
     
     /**
-     * Writes a document to the Lucene index.
+     * Index and write a document to the Lucene index.
      * @param indexWriter the Lucene IndexWriter for the index to write to
      * @param docUri the uri to assign to the document; any scheme will
      * be stripped: only the path is stored in the index
@@ -277,7 +316,7 @@ public class XmlIndexer {
     }
     
     /**
-     * Writes a document to the Lucene index.
+     * Index and write a document to the Lucene index.
      * @param indexWriter the Lucene IndexWriter for the index to write to
      * @param docUri the uri to assign to the document; any scheme will
      * be stripped: only the path is stored in the index
@@ -299,7 +338,7 @@ public class XmlIndexer {
     }
 
     /**
-     * Indexes a document and writes it to the Lucene index.
+     * Index and write a document to the Lucene index.
      * @param indexWriter the Lucene IndexWriter for the index to write to
      * @param path the uri to assign to the document
      * @param node an xml document to index, as a Saxon NodeInfo
@@ -331,10 +370,16 @@ public class XmlIndexer {
         indexWriter.addDocument(createLuceneDocument());
     }
 
+    /** Primarily for internal use.
+     * @return the {@link SaxonDocBuilder} used by the indexer to construct XdmNodes.
+     */
     public SaxonDocBuilder getSaxonDocBuilder () {
         return saxonBuilder;
     }
 
+    /** Primarily for internal use.
+     * @return the {@link SaxonDocBuilder} used by the indexer to construct XdmNodes.
+     */
     public XmlPathMapper getPathMapper() {
         return pathMapper;
     }

@@ -165,7 +165,7 @@ public class IndexTest {
     @Test
     public void testIndexFullTextOneDoc() throws Exception {
         XmlIndexer indexer = new XmlIndexer (INDEX_FULLTEXT);
-        IndexWriter indexWriter = indexer.getIndexWriter(dir);
+        IndexWriter indexWriter = indexer.newIndexWriter(dir);
         indexer.indexDocument(indexWriter, "/lux/reader-test.xml", 
                 getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
         indexWriter.close();
@@ -179,7 +179,7 @@ public class IndexTest {
     @Test @Ignore
     public void testIndexPathValuesOneDoc() throws Exception {
         XmlIndexer indexer = new XmlIndexer (INDEX_PATHS | INDEX_VALUES);
-        IndexWriter indexWriter = indexer.getIndexWriter(dir);
+        IndexWriter indexWriter = indexer.newIndexWriter(dir);
         indexer.indexDocument(indexWriter, "/lux/hamlet.xml", getClass().getClassLoader().getResourceAsStream("lux/hamlet.xml"));
         indexWriter.close();
         System.out.println 

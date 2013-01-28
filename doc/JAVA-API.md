@@ -17,12 +17,21 @@ should have access to classes in the "lux" package.
 
 === Indexing Documents ===
 
-XmlIndexer provides methods for indexing documents.
+XmlIndexer provides methods for indexing and storing documents.  The typical sequence of events is:
 
-TODO: finish writing javadoc for XmlIndexer
+           XmlIndexer indexer = new XmlIndexer();
+           // allocate directory using Lucene methods...
+           IndexWriter indexWriter indexer.newIndexWriter(dir);
+           // get a document from somewhere (read a file, say).
+           indexer.indexDocument (indexWriter, documentUri, document);
+           indexWriter.close(); // and commit
 
-To store a document in an index, you must first acquire an IndexWriter -
-this is a Lucene class that - yes you guessed it - writes to an index.
+One key thing to understand is that no documents will be visible to
+searches until indexWriter.commit() (or close(), which commits implicitly)
+is called.  Another thing to know is that IndexWriter holds a lock on the
+Directory, so only one IndexWriter may be open per index Directory at once.
+
+=== Executing Queries ===
 
 
 

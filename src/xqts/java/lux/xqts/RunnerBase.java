@@ -70,7 +70,7 @@ public class RunnerBase {
     }
 
     private static void indexDirectory(XmlIndexer indexer, Catalog catalog2, String sourceDirectory) throws IOException {
-        IndexWriter indexWriter = indexer.getIndexWriter(dir);
+        IndexWriter indexWriter = indexer.newIndexWriter(dir);
         File catalogSourceDir = new File(catalog.getDirectory() + '/' + sourceDirectory);
         int count = 0;
         System.out.println ("indexing test sources...");
