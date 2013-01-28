@@ -41,30 +41,36 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.LockObtainFailedException;
 
 /**
- * Indexes XML documents.  The constructor accepts a set of flags that define a set of fields 
- * known to XmlIndexer.  The fields are represented by instances of XmlField.  Instances of XmlField are immutable;
- * they hold no data, merely serving as markers.  Additional fields can also be added using addField().
- * A field may be associated with a StAXHandler; the indexer is responsible for feeding the
- * handlers with StAX (XML) events.  Some fields may share the same handler.  The association between
- * field and handler is implicit: the field calls an XmlIndexer getter to retrieve the handler.
+ * Indexes XML documents.  The constructor accepts a set of flags that
+ * define a set of fields known to XmlIndexer.  The fields are represented
+ * by instances of XmlField.  Instances of XmlField are immutable; they
+ * hold no data, merely serving as markers.  Additional fields can also be
+ * added using addField().  A field may be associated with a StAXHandler;
+ * the indexer is responsible for feeding the handlers with StAX (XML)
+ * events.  Some fields may share the same handler.  The association
+ * between field and handler is implicit: the field calls an XmlIndexer
+ * getter to retrieve the handler.
  * 
  * Also, this class is not thread-safe 
  * 
- * This is all kind of a mess, and not readily extendable.  If you want to add a new type of field (a new XmlField instance),
- * you have to modify the indexer, which has knowledge of all the possible fields.  This is not a good design.
+ * This is all kind of a mess, and not readily extendable.  If you want to
+ * add a new type of field (a new XmlField instance), you have to modify
+ * the indexer, which has knowledge of all the possible fields.  This is
+ * not a good design.
  * 
- * Also, not every combination of indexing options will actually work.  We need to consider which things
- * one might actually want to turn on and off.
+ * Also, not every combination of indexing options will actually work.  We
+ * need to consider which things one might actually want to turn on and
+ * off.
  * 
- * We could make each field act as a StAXHandler factory?
- * For efficiency though, some fields share the same handler instance.  For now, we leave things as they are;
- * we'll refactor as we add more fields.
+ * We could make each field act as a StAXHandler factory?  For efficiency
+ * though, some fields share the same handler instance.  For now, we leave
+ * things as they are; we'll refactor as we add more fields.
  * 
- * Indexing is triggered by a call to indexDocument(). read(InputStream) parses and gathers the values.
- * which are retrieved by calling XmlField.getFieldValues(XmlIndexer) for each field.
+ * Indexing is triggered by a call to indexDocument(). read(InputStream)
+ * parses and gathers the values.  which are retrieved by calling
+ * XmlField.getFieldValues(XmlIndexer) for each field.
  */
 public class XmlIndexer {
     
@@ -78,20 +84,33 @@ public class XmlIndexer {
     private String uri;
     private HashMap<String,XPathExecutable> xpathCache;
     
+    /**
+     * Make a new instance with default options
+     */
+    public XmlIndexer () {
+        this (new IndexConfiguration());
+    }
+        
+    /**
+     * Make a new instance with the given configuration. Options in the configuration control
+     * how documents are indexed, and which kinds of indexed values will be available after indexing
+     * a document.
+     * @param config the index configuration to use
+     */
     public XmlIndexer (IndexConfiguration config) {
         this.configuration = config;
         xpathCache = new HashMap<String, XPathExecutable>();
         init();
     }
     
+    /**
+     * Make a new instance with the given options. Used mostly for testing.
+     * @param options the index configuration options to use
+     */
     public XmlIndexer (long options) {
         this (new IndexConfiguration(options));
     }
     
-    public XmlIndexer () {
-        this (new IndexConfiguration());
-    }
-        
     protected void init () {
         xmlReader = new XmlReader();
         if (isOption (INDEX_QNAMES) || isOption (INDEX_PATHS)) {
@@ -119,13 +138,22 @@ public class XmlIndexer {
         }
     }
     
-    public Processor getProcessor () {
-        if (processor == null) {
-            processor = new Processor(false);
-        }
-        return processor;
+    /**
+     * Constructs a new Lucene IndexWriter for the given index directory supplied with the proper analyzers for each field.
+     * The directory must exist: if there is no index in the directory, a new one will be created.  If there is an existing
+     * directory, it will be locked for writing until the writer is closed.
+     * @param dir the directory where the index is stored
+     * @return the IndexWriter
+     * @throws IOException if there is a problem with the index
+     */
+    public IndexWriter getIndexWriter(Directory dir) throws IOException {
+        return new IndexWriter(dir, new IndexWriterConfig(LUCENE_VERSION, configuration.getFieldAnalyzers()));
     }
-    
+
+    /**
+     * this is primarily for internal use
+     * @return an XPathCompiler 
+     */
     public XPathCompiler getXPathCompiler () {
         if (compiler == null) {
             compiler = getProcessor().newXPathCompiler();
@@ -136,6 +164,19 @@ public class XmlIndexer {
         return compiler;
     }
 
+    private Processor getProcessor () {
+        if (processor == null) {
+            processor = new Processor(false);
+        }
+        return processor;
+    }
+    
+    /**
+     * this is primarily for internal use
+     * @param xpath an xpath expression to evaluate
+     * @return the result of evaluating the xpath expression with the last indexed as context 
+     * @throws SaxonApiException if there is an error during compilation or evaluation
+     */
     public XdmValue evaluateXPath(String xpath) throws SaxonApiException {
         XPathExecutable xpathExec = xpathCache.get(xpath);
         if (xpathExec == null) {
@@ -160,11 +201,29 @@ public class XmlIndexer {
         }
     }
     
-    public void read (InputStream xml, String inputUri) throws XMLStreamException {
+    public void index (InputStream xml, String inputUri) throws XMLStreamException {
         reset();
         this.uri = inputUri;
         xmlReader.read (xml);
     }
+    
+    public void index (Reader xml, String inputUri) throws XMLStreamException {
+        reset();
+        this.uri = inputUri;
+        xmlReader.read (xml);
+    }
+
+    public void index (NodeInfo doc, String inputUri) throws XMLStreamException {
+        reset();
+        this.uri = inputUri;
+        xmlReader.read(doc);
+    }
+
+    /** Clears out internal storage used while indexing a document */
+    public void reset() {
+        xmlReader.reset();
+    }
+    
 
     /**
      * 
@@ -175,25 +234,12 @@ public class XmlIndexer {
         return configuration.isOption(option);
     }
     
-    public void read (Reader xml, String inputUri) throws XMLStreamException {
-        reset();
-        this.uri = inputUri;
-        xmlReader.read (xml);
-    }
-
-    public void read(NodeInfo doc, String inputUri) throws XMLStreamException {
-        reset();
-        this.uri = inputUri;
-        getXmlReader().read(doc);
-    }
-
-    /** Clears out internal storage used while indexing a document */
-    public void reset() {
-        xmlReader.reset();
-    }
-    
     private Collection<FieldDefinition> getFields () {
         return configuration.getFields();
+    }
+    
+    public String getURI() {
+        return uri;
     }
     
     public XdmNode getXdmNode () {
@@ -207,39 +253,69 @@ public class XmlIndexer {
         }
     }
     
-    public SaxonDocBuilder getSaxonDocBuilder () {
-        return saxonBuilder;
+    public String getDocumentText() {
+        if (serializer != null) {
+            return serializer.getDocument();
+        }
+        return null;        
     }
-
-    public void indexDocument(final IndexWriter indexWriter, final String inputUri, final String xml) throws XMLStreamException, CorruptIndexException, IOException {
+    
+    /**
+     * Writes a document to the Lucene index.
+     * @param indexWriter the Lucene IndexWriter for the index to write to
+     * @param docUri the uri to assign to the document; any scheme will
+     * be stripped: only the path is stored in the index
+     * @param xml the text of an xml document to index
+     * @throws XMLStreamException if there is an error parsing the document
+     * @throws IOException if there is an error writing to the index
+     */
+    public void indexDocument(final IndexWriter indexWriter, final String docUri, final String xml) throws XMLStreamException, IOException {
         reset();
-        String path = normalizeUri(inputUri);
-        read(new StringReader(xml), path);
+        String path = normalizeUri(docUri);
+        index(new StringReader(xml), path);
         addLuceneDocument(indexWriter);
     }
     
-    public void indexDocument(final IndexWriter indexWriter, final String inputUri, final InputStream xmlStream) throws XMLStreamException, CorruptIndexException, IOException {
+    /**
+     * Writes a document to the Lucene index.
+     * @param indexWriter the Lucene IndexWriter for the index to write to
+     * @param docUri the uri to assign to the document; any scheme will
+     * be stripped: only the path is stored in the index
+     * @param xmlStream a stream from which the text of an xml document is to be read
+     * @throws XMLStreamException if there is an error parsing the document
+     * @throws IOException if there is an error writing to the index
+     */
+    public void indexDocument(final IndexWriter indexWriter, final String docUri, final InputStream xmlStream) throws XMLStreamException, IOException {
         reset();
-        String path = normalizeUri(inputUri);
-        read(xmlStream, path);
+        String path = normalizeUri(docUri);
+        index(xmlStream, path);
         addLuceneDocument(indexWriter);
     }
 
-    private String normalizeUri(String inputUri) {
-        String path = inputUri.replaceFirst("^\\w+:/+", "/"); // strip the scheme part (file:/, lux:/, etc), if any
+    private static String normalizeUri(String uri) {
+        String path = uri.replaceFirst("^\\w+:/+", "/"); // strip the scheme part (file:/, lux:/, etc), if any
         path = path.replace('\\', '/');
         return path;
     }
 
-    public void indexDocument(IndexWriter indexWriter, String path, NodeInfo node) throws XMLStreamException, CorruptIndexException, IOException {
+    /**
+     * Indexes a document and writes it to the Lucene index.
+     * @param indexWriter the Lucene IndexWriter for the index to write to
+     * @param path the uri to assign to the document
+     * @param node an xml document to index, as a Saxon NodeInfo
+     * @throws XMLStreamException if there is an error parsing the document
+     * @throws IOException if there is an error writing to the index
+     */
+    public void indexDocument(IndexWriter indexWriter, String path, NodeInfo node) throws XMLStreamException, IOException {
         reset();
-        read(node, path);
+        index(node, path);
         addLuceneDocument(indexWriter);
     }
 
     /**
-     * @return a Lucene {@link org.apache.lucene.document.Document} created from the field values stored in this indexer. The document
-     * is ready to be inserted into Lucene via {@link IndexWriter#addDocument}.
+     * @return a Lucene {@link org.apache.lucene.document.Document} created
+     * from the field values stored in this indexer. The document is ready
+     * to be inserted into Lucene via {@link IndexWriter#addDocument}.
      */
     public org.apache.lucene.document.Document createLuceneDocument () {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
@@ -255,29 +331,15 @@ public class XmlIndexer {
         indexWriter.addDocument(createLuceneDocument());
     }
 
-    public IndexWriter getIndexWriter(Directory dir) throws CorruptIndexException, LockObtainFailedException, IOException {
-        return new IndexWriter(dir, new IndexWriterConfig(LUCENE_VERSION, configuration.getFieldAnalyzers()));
+    public SaxonDocBuilder getSaxonDocBuilder () {
+        return saxonBuilder;
     }
 
     public XmlPathMapper getPathMapper() {
         return pathMapper;
     }
-    
-    public XmlReader getXmlReader () {
-        return xmlReader;
-    }
 
-    public String getDocumentText() {
-        if (serializer != null) {
-            return serializer.getDocument();
-        }
-        return null;        
-    }
-    
-    public String getURI() {
-        return uri;
-    }
-    
+    /** @return the index configuration */
     public IndexConfiguration getConfiguration() {
         return configuration;
     }

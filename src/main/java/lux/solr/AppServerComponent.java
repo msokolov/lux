@@ -16,9 +16,9 @@ import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.request.SolrQueryRequest;
 
 /**
- * This component supplies a level of indirection, reading the query from a location specified
- * in the lux.xquery parameter.  When the queries are in a directory, this functions like
- * an xquery application service.
+ * This component supplies a level of indirection, reading the query from a
+ * location specified in the lux.xquery parameter.  When the queries are in
+ * a directory, this functions like an xquery application service.
  * 
  * TODO: add support for controlling HTTP response via xquery;
  * eg for redirects, binary responses, etc.

@@ -30,7 +30,7 @@ public class SolrDocWriter implements DocWriter {
         try {
             indexer = xqueryComponent.checkoutXmlIndexer();
             try {
-                indexer.read (node, uri);
+                indexer.index (node, uri);
             } catch (XMLStreamException e) {
                 throw new LuxException(e);
             }

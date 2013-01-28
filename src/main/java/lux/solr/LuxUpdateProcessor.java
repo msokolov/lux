@@ -40,7 +40,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
             String xml = (String) o;
             String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
             try {
-                xmlIndexer.read (new StringReader(xml), uri);
+                xmlIndexer.index (new StringReader(xml), uri);
             } catch (XMLStreamException e) {
                 log.error ("Failed to parse " + FieldName.XML_STORE, e);
             }

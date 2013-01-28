@@ -1,6 +1,7 @@
 = FAQ =
 
-This page lists some solutions to nonobvious quirks and idiosyncracies.
+This page lists some nonobvious quirks and idiosyncracies, with solutions
+or workarounds where available.
 
 == Why doesn't it work when I call lux:log(), lux:insert(), lux:commit(),
 or some other function whose work is all done as a side effect? ==
