@@ -4,18 +4,18 @@ Lux extends Solr's HTTP REST API to provide XML indexing for documents
 inserted via the Solr update API, and XQuery processing via the Solr search
 API.
 
-For complete documentation on the underlying Solr API, see the (Solr
-wiki)[http://wiki.apache.org/solr/].  There are also books and many other
+For complete documentation on the underlying Solr API, see the [Solr
+wiki](http://wiki.apache.org/solr/).  There are also books and many other
 resources available online.
 
 Lux provides these extensions to Solr: 
 
-    1. (LuxUpdateProcessor) [#update]
-    2. (XQueryComponent) [#xquery]
-    3. (AppServerComponent) [#appserver]
+1. [LuxUpdateProcessor](#update)
+2. [XQueryComponent](#xquery)
+3. [AppServerComponent](#appserver)
 
-## LuxUpdateProcessor ##
 <a name="update" />
+## LuxUpdateProcessor ##
 
 This processor is designed to be inserted into a standard Solr document
 update chain, as in the example solrconfig.xml that comes with Lux. Its job
@@ -42,19 +42,17 @@ Note: The example configuration injects the Lux processor into the /update
 /update/csv or /update/json handlers, although you could certainly add it
 to those as well if you use them.
 
-## XQueryComponent ##
 <a name="xquery" />
+## XQueryComponent ##
 
 The XQueryComponent (by default at path: `/solr/xquery`) evaluates XQuery
 expressions.  It is a Solr QueryComponent and adheres to Solr's conventions
 regarding the arguments it supports:
 
-1. `q` The text of the query to evaluate is taken from the value of the `q`
+* `q` The text of the query to evaluate is taken from the value of the `q`
 parameter.
-
-2. `start` The component will skip the given number of results.
-
-3. `rows` Only the first `rows` results (after skipping past `start`) will
+* `start` The component will skip the given number of results.
+* `rows` Only the first `rows` results (after skipping past `start`) will
 be returned.
 
 XQueryComponent ignores most other standard Solr query parameters, such as
@@ -111,8 +109,8 @@ error:
 
         <str name="xpath-error">query was blank</str>
 
-## AppServerComponent ##
 <a name="appserver" />
+## AppServerComponent ##
 
 The AppServer component provides XQuery evaluations services akin to the
 XQuery component, except that it reads its XQuery from a local file, rather
