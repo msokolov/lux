@@ -1,4 +1,4 @@
-= Lux REST API documentation =
+# Lux REST API documentation #
 
 Lux extends Solr's HTTP REST API to provide XML indexing for documents
 inserted via the Solr update API, and XQuery processing via the Solr search
@@ -14,7 +14,7 @@ Lux provides these extensions to Solr:
     2. (XQueryComponent) [#xquery]
     3. (AppServerComponent) [#appserver]
 
-== LuxUpdateProcessor ==
+## LuxUpdateProcessor ##
 <a name="update" />
 
 This processor is designed to be inserted into a standard Solr document
@@ -42,7 +42,7 @@ Note: The example configuration injects the Lux processor into the /update
 /update/csv or /update/json handlers, although you could certainly add it
 to those as well if you use them.
 
-== XQueryComponent ==
+## XQueryComponent ##
 <a name="xquery" />
 
 The XQueryComponent (by default at path: `/solr/xquery`) evaluates XQuery
@@ -69,7 +69,7 @@ used only for simple tests and ad hoc interactive queries, since XQuery
 modules will tend to be long and will need to be URL-escaped to pass as GET
 query parameters.
 
-=== Result Format ===
+### Result Format ###
 
 Results are marshalled using standard Solr API conventions, which are
 controlled by the RequestWriter that is configured.  By default this is an
@@ -103,7 +103,7 @@ returns:
        </lst>
      ...
 
-=== Error Reporting ===
+### Error Reporting ###
 
 When a query has an error of any kind, this is returned as the value of the
 string "xpath-error"; for example, executing an empty query leads to this
@@ -111,7 +111,7 @@ error:
 
         <str name="xpath-error">query was blank</str>
 
-== AppServerComponent ==
+## AppServerComponent ##
 <a name="appserver" />
 
 The AppServer component provides XQuery evaluations services akin to the
