@@ -1,4 +1,4 @@
-= Lux Java API overview =
+# Lux Java API overview #
 
 This is a high level, brief introduction to the main entry points to the
 Java API, not an exhaustive walk through all the classes provided as part
@@ -10,12 +10,12 @@ read this if you plan to write XQuery applications using the application
 server, or if you plan to talk to Lux/Solr using its REST API, via SolrJ,
 pysolr, or some other Solr REST client.
 
-== Installation ==
+## Installation ##
 
 Once you've installed Lux and its dependent jars on your classpath, you
 should have access to classes in the "lux" package.  
 
-== Indexing Documents ==
+## Indexing Documents ##
 
 XmlIndexer provides methods for indexing and storing documents.  A typical
 sequence of events is:
@@ -32,7 +32,7 @@ searches until indexWriter.commit() (or close(), which commits implicitly)
 is called.  Another thing to know is that IndexWriter holds a lock on the
 Directory, so only one IndexWriter may be open per index Directory at once.
 
-== Executing Queries ==
+## Executing Queries ##
 
 Evaluator is the main entry point for evaluating queries; it relies on a
 Compiler to compile queries, a LuxSearcher to perform searches, and a

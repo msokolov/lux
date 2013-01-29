@@ -1,10 +1,10 @@
-= FAQ =
+# FAQ #
 
 This page lists some nonobvious quirks and idiosyncracies, with solutions
 or workarounds where available.
 
-== Why doesn't it work when I call lux:log(), lux:insert(), lux:commit(),
-or some other function whose work is all done as a side effect? ==
+## Why doesn't it work when I call lux:log(), lux:insert(), lux:commit(),
+or some other function whose work is all done as a side effect? ##
 
 The Saxon XQuery compiler will often optimize away a function call if its
 return value is unused. We've tried a few measures to prevent this, but
@@ -17,8 +17,8 @@ For example:
     ...
     return ($actual-function-return-value, $insert-dummy)
 
-== Why do absolute paths (like //document) work in the global context, but
-not within a function definition? ==
+## Why do absolute paths (like //document) work in the global context, but
+not within a function definition? ##
 
 Lux supplies a special implicit context for such expressions.  It rewrites
 expressions, prefixing all absolute paths with a search expression
@@ -32,7 +32,7 @@ is to supply the context yourself: instead of //foo, write:
 Lux will optimize this expression so that only documents containing
 elements named "foo" will be returned.
 
-== I want to use Lux with Saxon PE/EE.  How do I do that? ==
+## I want to use Lux with Saxon PE/EE.  How do I do that? ##
 
 Lux will work with any (9.x) version of Saxon.  It inspects the loaded
 classes and attempts to instantiate a licensed Saxon Processor if it
@@ -40,7 +40,7 @@ detects that the you have a non-HE version installed.  However, there are
 some caveats about using Lux with PE/EE that you should be aware of if you
 choose to do this.
 
-=== Eager evaluation of document-ordered sequences === 
+### Eager evaluation of document-ordered sequences ### 
 
 Search result sets that need to be document-ordered cannot be evaluated
 lazily in Lux when using Saxon PE/EE.
@@ -59,7 +59,7 @@ Configuration, which cannot be replaced without losing PE/EE licensed
 functionality, and any optimizations they may provide are not applicable to
 to Lux search result sequences.
 
-== What is the Lux security model? ==
+## What is the Lux security model? ##
 
 Currently there is no security model for Lux.
 
