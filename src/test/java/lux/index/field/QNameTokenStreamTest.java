@@ -103,7 +103,7 @@ public class QNameTokenStreamTest {
         inputString = new String (input, "utf-8");
         Processor proc = new Processor(false);
         OffsetDocBuilder builder = new OffsetDocBuilder(proc);
-        builder.setFixupCRLF(true); // TODO: should be autodetected
+        builder.setFixupCRLF(false); // TODO: should be autodetected
         XmlReader reader = new XmlReader();
         reader.addHandler(builder);
         reader.read(new ByteArrayInputStream(input));
