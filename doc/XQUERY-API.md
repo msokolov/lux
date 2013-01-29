@@ -6,30 +6,30 @@ Functions relating to search and indexing are declared in the
 http://luxdb.net namespace, which we always reference using the prefix
 "lux".
 
-       function lux:commit() as empty-sequence()
+### `function lux:commit() as empty-sequence()` ###
 
 commits pending updates to the index and blocks until the operation is complete.
 
-        function lux:count($query as item(), $hints as xs:int?) as xs:integer
+### `function lux:count($query as item(), $hints as xs:int?) as xs:integer` ###
 
 counts the number of results of a search.  It is faster and uses less memory 
 than calling fn:count() on the search results themselves because it does not need to load
 the result documents in memory.  See lux:search() for an explanation of the supported
 $query formats.
 
-       function lux:delete($uri as xs:string?) as empty-sequence()
+### `function lux:delete($uri as xs:string?) as empty-sequence()` ###
 
 deletes a document from the index at the given uri.  NOTE: if the $uri document
 is empty, *all documents* will be deleted.  This "feature" will be removed in a later release.
 
-       function lux:exists($query as item(), $hints as xs:int?) as xs:integer
+### `function lux:exists($query as item(), $hints as xs:int?) as xs:integer` ###
 
 tests whether a search has any results.  It is faster and uses less memory
 than calling fn:exists() on the search results themselves because it does
 not need to load any result documents in memory.  See lux:search() for an
 explanation of the supported $query formats.
 
-       function lux:field-terms($field-name as xs:string?, $start as xs:string?) as xs:anyAtomicItem*
+### `function lux:field-terms($field-name as xs:string?, $start as xs:string?) as xs:anyAtomicItem*` ###
 
 accepts the name of a Lucene field, and a starting value, and returns the
 sequence of terms drawn from the field, ordered according to its natural
@@ -38,7 +38,7 @@ order, starting with the first term that is >= the starting value.
 If the $field-name argument is empty, the terms are drawn from the default
 field defined by the IndexConfiguration, generally the XmlTextField.
 
-      function lux:field-values($field-name as xs:string, $node as node()) as xs:anyAtomicItem*
+### `function lux:field-values($field-name as xs:string, $node as node()) as xs:anyAtomicItem*` ###
 
 accepts the name of a lucene field and optionally, a node, and returns any
 stored value(s) of the field for the document containing the node, or the
@@ -53,18 +53,18 @@ index-optimized sorting in Lucene (only for string-valued fields).  An
 error results if an attempt is made to sort by a field that has multiple
 values for any of the documents in the sequence.
 
-       lux:highlight($query as item(), $node as node())
+### `lux:highlight($query as item(), $node as node())` ###
 
 returns the given node with text matching the query surrounded by B tags.
 The query may be a string or an element/document of the same types
 supported by lux:search.
 
-       function lux:insert-document($uri as xs:string, $node as node()) as empty-sequence()
+### `function lux:insert-document($uri as xs:string, $node as node()) as empty-sequence()` ###
 
 inserts a document to the index at the given uri. lux:commit() must be called for the result
 to become visible.
 
-   function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?) as document-node()*
+### `function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?) as document-node()*` ###
 
 executes a Lucene search query and returns documents.  If the query
 argument is an element or document node, it is parsed using the
@@ -108,15 +108,15 @@ Lux implements a small (noncompliant) subset of the EXPath file functions.
 These functions are declared in the http://expath.org/ns/file namespace,
 which we reference using the "file" prefix.
 
-      file:exists($path as xs:string) as xs:boolean
+### `file:exists($path as xs:string) as xs:boolean` ###
 
 returns true iff the file at the given path exists
 
-      file:is-dir($path as xs:string) as xs:boolean
+### `file:is-dir($path as xs:string) as xs:boolean` ###
 
 returns true iff the file at the given path exists and is a directory
 
-      file:list($path as xs:string) as xs:string*
+### `file:list($path as xs:string) as xs:string*` ###
 
 If $path is a directory, returns the names of files (and directories) in
 the directory in a system-dependent order. The directory itself and its
