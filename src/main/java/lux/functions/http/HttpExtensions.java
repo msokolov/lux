@@ -1,5 +1,6 @@
 package lux.functions.http;
 
+import lux.Evaluator;
 import lux.exception.LuxHttpException;
 import lux.functions.Function;
 import net.sf.saxon.s9api.ExtensionFunction;
@@ -29,7 +30,7 @@ import net.sf.saxon.value.IntegerValue;
  */
 public class HttpExtensions {
     
-    public static final String LUX_HTTP_NS = "http://luxproject.net/http";
+    public static final String LUX_HTTP_NS = Evaluator.LUX_NAMESPACE + "/http";
     
     public static void registerFunctions (Processor processor) {
         processor.registerExtensionFunction(fnSendRedirect());

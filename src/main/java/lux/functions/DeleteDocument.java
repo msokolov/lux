@@ -13,7 +13,7 @@ import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
 /** 
- * <code>function lux:delete-document($uri as xs:string) as empty-sequence()</code>
+ * <code>function lux:delete($uri as xs:string) as empty-sequence()</code>
  * <p>
  * This function deletes a document from the index at the given uri.
  * </p>

@@ -5,6 +5,8 @@ import lux.xml.ValueType;
 
 public class FunCall extends AbstractExpression {
 
+    public static final String LUX_NAMESPACE = lux.Evaluator.LUX_NAMESPACE;
+    
     private final QName name;
     private final ValueType returnType;
 
@@ -43,7 +45,6 @@ public class FunCall extends AbstractExpression {
         return 100;
     }
 
-    public static final String LUX_NAMESPACE = "http://luxproject.net";
     public static final QName LUX_SEARCH = new QName (LUX_NAMESPACE, "search", "lux");
     public static final QName LUX_COUNT = new QName (LUX_NAMESPACE, "count", "lux");
     public static final QName LUX_EXISTS = new QName (LUX_NAMESPACE, "exists", "lux");

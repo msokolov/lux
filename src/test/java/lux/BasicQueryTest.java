@@ -565,7 +565,7 @@ public class BasicQueryTest {
             return "<TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery>";
         case MATCH_ALL: return "<MatchAllDocsQuery />";
         case AND: return "<TermQuery fieldName=\"lux_elt_name\">AND</TermQuery>";
-        case LUX_FOO: return "<TermQuery fieldName=\"lux_elt_name\">foo&#x7B;http://luxproject.net&#x7D;</TermQuery>";
+        case LUX_FOO: return "<TermQuery fieldName=\"lux_elt_name\">foo&#x7B;http://luxdb.net&#x7D;</TermQuery>";
         default: throw new UnsupportedOperationException("unregistered query enum: " + q);
         }
     }

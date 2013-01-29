@@ -65,7 +65,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     public static final String LUX_XQUERY = "lux.xquery";
     public static final String LUX_PATH_INFO = "lux.pathInfo";
-    private static final QName LUX_HTTP = new QName ("http://luxproject.net", "http");
+    private static final QName LUX_HTTP = new QName (Evaluator.LUX_NAMESPACE, "http");
     protected Set<String> fields = new HashSet<String>();
     protected Compiler compiler;
     private ArrayBlockingQueue<XmlIndexer> indexerPool;

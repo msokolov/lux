@@ -48,11 +48,12 @@ import org.apache.lucene.search.TermQuery;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class holds all the per-request state required for evaluating queries. It is *not* thread-safe:
- * a new Evaluator should be created for each evaluation.
+ * This class holds all the per-request state required for evaluating queries. It is *not* thread-safe.
  */
 public class Evaluator {
 
+    public static final String LUX_NAMESPACE = "http://luxdb.net";
+    
     private final Compiler compiler;
     private final CachingDocReader docReader;
     private final DocWriter docWriter;
@@ -388,6 +389,9 @@ public class Evaluator {
         return xmlQueryParser;
     }
     
+    /**
+     * @return the error listener that receives static and dynamic error events. 
+     */
     public TransformErrorListener getErrorListener() {
         return errorListener;
     }

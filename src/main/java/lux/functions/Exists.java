@@ -17,7 +17,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
 /**
- * <code>function lux:count($query as item(), $hints as xs:int?) as xs:integer</code>
+ * <code>function lux:exists($query as item(), $hints as xs:int?) as xs:integer</code>
  *<p>
  * This function tests whether a search has any results.  It is faster and uses less memory 
  * than calling fn:exists() on the search results themselves because it does not need to load
