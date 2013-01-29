@@ -172,7 +172,7 @@ public class IndexTest {
         System.out.println 
              (String.format("indexed path-values for lux/reader-test.xml in %d bytes", dir.sizeInBytes()));
         IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
-        printAllTerms(indexTestSupport);
+        // printAllTerms(indexTestSupport);
         assertFullTextQuery (indexTestSupport, "title", "TEST", 1);
     }
 
@@ -185,7 +185,7 @@ public class IndexTest {
         System.out.println 
              (String.format("indexed path-values for hamlet.xml in %d bytes", dir.sizeInBytes()));
         // hamlet.xml = 288815 bytes; indexed in 215040 bytes seems ok??
-        printAllTerms(new IndexTestSupport(indexer, dir));
+        // printAllTerms(new IndexTestSupport(indexer, dir));
     }
 
     @Test
@@ -302,6 +302,7 @@ public class IndexTest {
         return indexTestSupport;
     }
 
+    @SuppressWarnings("unused")
     private void printAllTerms(IndexTestSupport indexTestSupport) throws Exception {
         IndexReader reader = IndexReader.open(dir);
         TermEnum terms = reader.terms();
