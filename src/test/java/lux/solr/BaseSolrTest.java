@@ -12,20 +12,30 @@ import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.CoreContainer;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 public abstract class BaseSolrTest {
 
     protected static SolrServer solr;
+    private static CoreContainer coreContainer;
+    
     public final String SOLR_QUERY_TYPE = "/xquery";
 
     @BeforeClass
     public static void setup() throws Exception {
         System.setProperty("solr.solr.home", "solr");
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
-        CoreContainer coreContainer = initializer.initialize();
+        coreContainer = initializer.initialize();
         solr = new EmbeddedSolrServer(coreContainer, "");
         solr.deleteByQuery("*:*");
+    }
+    
+    @AfterClass
+    public static void tearDown() throws Exception {
+        if (coreContainer != null) {
+            coreContainer.shutdown();
+        }
     }
 
     public BaseSolrTest() {
