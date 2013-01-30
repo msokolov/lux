@@ -26,6 +26,7 @@ public class InsertDocumentTest extends XQueryTest {
         assertXQuery(null, "lux:insert('/test.xml', <test>this is a test</test>)");
         assertXQuery(null, "doc('/test.xml')", "document '/test.xml' not found");
         assertXQuery(null, "lux:commit()");
+        evaluator.reopenSearcher(); // need to do this to see the updates
         assertXQuery("this is a test", "doc('/test.xml')/test/string()");
         assertXQuery("lux://test.xml", "lux:search('this is a test')/base-uri()");
         // find document with no scheme in URI
@@ -35,6 +36,7 @@ public class InsertDocumentTest extends XQueryTest {
         assertXQuery(null, "lux:delete('/test.xml')");
         assertXQuery("true", "doc-available('/test.xml')");
         assertXQuery(null, "lux:commit()");
+        evaluator.reopenSearcher(); // need to do this to see the updates
         assertXQuery("false", "doc-available('/test.xml')");
     }
 

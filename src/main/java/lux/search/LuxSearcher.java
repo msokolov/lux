@@ -14,16 +14,28 @@ import org.apache.lucene.store.Directory;
 
 public class LuxSearcher extends IndexSearcher {
 
+    private final boolean sharedReader;
+    
   public LuxSearcher (Directory dir) throws IOException {
     super (dir);
+    sharedReader = false;
   }
   
   public LuxSearcher (IndexSearcher searcher) {
       super (searcher.getIndexReader());
+      sharedReader = true;
   }
   
   public LuxSearcher (IndexReader reader) {
       super (reader);
+      sharedReader = false;
+  }
+  
+  @Override
+  public void close () throws IOException {
+      if (!sharedReader) {
+          super.close();
+      }
   }
 
   /**

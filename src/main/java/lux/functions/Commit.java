@@ -55,7 +55,6 @@ public class Commit extends ExtensionFunctionDefinition {
                 throws XPathException {
             Evaluator eval = SearchBase.getEvaluator(context);
             eval.getDocWriter().commit();
-            eval.reopenSearcher();
             return EmptySequence.asIterator(EmptySequence.getInstance());
         }
         

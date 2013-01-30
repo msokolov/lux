@@ -74,6 +74,7 @@ public class Evaluator {
      * be tied to the same index as the searcher.
      */
     public Evaluator(Compiler compiler, LuxSearcher searcher, DocWriter docWriter) {
+        LoggerFactory.getLogger(getClass()).debug("new evaluator");
         this.compiler = compiler;
         this.searcher = searcher;
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
@@ -108,12 +109,14 @@ public class Evaluator {
      * Resolver, and to close the underlying Lucene Searcher.
      */
     public void close() {
+        LoggerFactory.getLogger(getClass()).debug("close evaluator");
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
         config.setURIResolver(defaultURIResolver);
         config.setCollectionURIResolver(null);
         try {
             searcher.close();
         } catch (IOException e) {
+            LoggerFactory.getLogger (getClass()).error ("failed to close searcher", e);
             e.printStackTrace();
         }
     }
@@ -334,10 +337,15 @@ public class Evaluator {
     
     /**
      * reopen the searcher so it sees any updates; called by lux:commit() after committing.
+     * Do NOT call this when operating within Solr: it interferes in some way with Solr's management
+     * of open searchers/readers.
      */
     public void reopenSearcher() {
+        LoggerFactory.getLogger(getClass()).debug("evaluator reopen searcher");
         try {
-            searcher = new LuxSearcher (searcher.getIndexReader().reopen());
+            LuxSearcher current = searcher;
+            searcher = new LuxSearcher (current.getIndexReader().reopen());
+            current.close();
         } catch (IOException e) {
             throw new LuxException (e);
         }
