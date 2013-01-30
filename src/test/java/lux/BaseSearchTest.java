@@ -21,9 +21,11 @@ import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
+import lux.xml.QName;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.query.QueryResult;
 import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
@@ -127,7 +129,9 @@ public abstract class BaseSearchTest {
             CorruptIndexException, LockObtainFailedException, IOException {
         Evaluator eval = index.makeEvaluator();
         XQueryExecutable expr = eval.getCompiler().compile(query);
-        XdmResultSet results = (XdmResultSet) eval.evaluate(expr);
+        QueryContext qc = new QueryContext();
+        qc.bindVariable(new QName("id"), new XdmAtomicValue("test"));   // bind this random id so we can use it in tests???
+        XdmResultSet results = (XdmResultSet) eval.evaluate(expr, qc);
         if (! results.getErrors().isEmpty()) {
             throw new LuxException (results.getErrors().get(0).getMessage());
         }

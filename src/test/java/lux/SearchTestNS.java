@@ -55,6 +55,21 @@ public class SearchTestNS extends BaseSearchTest {
         assertSearch ("1", "declare namespace x='http://lux.net{test}'; count(/x:title)", null, 1);
         assertSearch ("1", "declare namespace x='#2'; count(/x:entities)", null, 1);
     }
+    
+    @Test
+    public void testFLWOR1() throws Exception {
+        // we were generating an incorrect query when an attribute appears in the middle of a path
+        // in a predicate: in any case we don't optimize around the variable as we should
+        assertSearch ("TEST", "declare variable $id as xs:string external; " +
+                "let $test := collection()/test[@id=$id] " +
+                "return $test/title/string()", null, 1);
+    }
+    
+    @Test
+    public void testAttributePredicate() throws Exception {
+        // this was throwing a parsing exception
+        assertSearch ("1", "count (/test[@id='test']/title)", null, 1);
+    }
 
 }
 

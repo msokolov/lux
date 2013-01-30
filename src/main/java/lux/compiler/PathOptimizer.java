@@ -195,9 +195,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * corresponding to S.  In addition, if S returns documents, the foregoing expression
      * is wrapped by root(); root(search(QS)/S)
      * 
+     * This should be called in visit() for all expressions shouldn't it?
+     * 
      * @param expr an expression
      */
-    protected void optimizeSubExpressions(AbstractExpression expr) {
+    private void optimizeSubExpressions(AbstractExpression expr) {
         AbstractExpression[] subs = expr.getSubs();
         for (int i = 0; i < subs.length; i ++) {
             subs[i] = optimizeExpression (subs[i], subs.length - i - 1);
@@ -251,8 +253,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     /**
      * Conjoin the queries for the two expressions joined by the path.
-     *
-     * PathExpressions can join together Dot, Root, PathStep, FunCall, PathExpression,and maybe Variable?
+     * FIXME: this is not always valid: we have one case /foo[@id]/bar.  There must be others.  What's the category? 
      */
     @Override
     public AbstractExpression visit(PathExpression pathExpr) {
@@ -698,6 +699,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             path = filter.getSubs()[0];
         }
         else {
+            // TODO: handle variables
             return;
         }
         AbstractExpression last = path.getLastContextStep();
@@ -838,6 +840,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visitDefault (AbstractExpression expr) {
+        optimizeSubExpressions (expr);
         popChildQueries (expr);
         return expr;
     }
