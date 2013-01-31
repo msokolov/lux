@@ -38,7 +38,7 @@ public class BasicQueryTest {
             ACT, ACT1, ACT2, ACT_CONTENT, ACT_CONTENT1, ACT_SCENE, ACT_SCENE1, ACT_SCENE_CONTENT, ACT_SCENE_CONTENT1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
             ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
             MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
-            LUX_FOO, LINE, TITLE, 
+            LUX_FOO, LINE, TITLE, ACT_SCENE_SPEECH_AND, 
     };
     
     protected Compiler compiler;
@@ -177,8 +177,17 @@ public class BasicQueryTest {
         // This was three separate queries, whose results would then have to be merged together,
         // but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
         // together into a single query
-        // FIXME: currently failing since the Optimizer is not installed (and will fail w/Saxon PE, etc)
         assertQuery ("/PLAY/(ACT|PERSONAE)/TITLE", facts, ValueType.ELEMENT, Q.PLAY_ACT_OR_PERSONAE_TITLE);
+    }
+    
+    @Test public void testBooleanSpanCombo() throws Exception {
+        if (!hasPathIndexes()) {
+            return;
+        }
+        int facts = hasPathIndexes() ? MINIMAL |SINGULAR : SINGULAR;        
+        assertQuery ("//ACT/TITLE/root()//SCENE/TITLE/root()//SPEECH/TITLE/root()",
+                     facts,
+                     ValueType.DOCUMENT, Q.ACT_SCENE_SPEECH_AND);
     }
     
     @Test public void testManySmallDocs () throws Exception {
@@ -529,6 +538,7 @@ public class BasicQueryTest {
                   "</BooleanQuery>" +
                   "</Clause></BooleanQuery>" +
                 "</Clause></BooleanQuery>";
+
         case LINE:
             return "<TermQuery fieldName=\"lux_elt_name\">LINE</TermQuery>";
         case ACT:

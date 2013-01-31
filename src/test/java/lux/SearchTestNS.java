@@ -57,12 +57,20 @@ public class SearchTestNS extends BaseSearchTest {
     }
     
     @Test
-    public void testFLWOR1() throws Exception {
+    public void testAttributePredicateInPath1() throws Exception {
         // we were generating an incorrect query when an attribute appears in the middle of a path
         // in a predicate: in any case we don't optimize around the variable as we should
         assertSearch ("TEST", "declare variable $id as xs:string external; " +
                 "let $test := collection()/test[@id=$id] " +
                 "return $test/title/string()", null, 1);
+    }
+    
+    @Test
+    public void testAttributePredicateInPath2() throws Exception {
+        // Variation on the above - this was generating SpanNear(Boolean(... which is an error
+        assertSearch ("", "declare variable $id as xs:string external; " +
+                "let $test := collection()/test[@id=$id] " +
+                "return $test/title/other/string()", null, 1);
     }
     
     @Test

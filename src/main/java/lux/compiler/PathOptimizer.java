@@ -586,7 +586,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     
 
-    private XPathQuery combineQueries(XPathQuery rq, Occur occur, XPathQuery lq, ValueType resultType) {
+    private XPathQuery combineQueries(XPathQuery lq, Occur occur, XPathQuery rq, ValueType resultType) {
         XPathQuery query;
         if (indexConfig.isOption(INDEX_PATHS)) {
             query = lq.combineSpanQueries(rq, occur, resultType, -1);
