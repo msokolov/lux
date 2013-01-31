@@ -1,5 +1,7 @@
 package lux.query;
 
+import java.util.ArrayList;
+
 import lux.index.IndexConfiguration;
 import lux.xml.QName;
 import lux.xpath.AbstractExpression;
@@ -21,7 +23,26 @@ public class BooleanPQuery extends ParseableQuery {
     private Clause clauses[];
     
     public BooleanPQuery (Clause ... clauses) {
-        this.clauses = clauses;
+        Occur oc = clauses[0].getOccur();
+        // We assume all the clauses have the same occur 
+        // otherwise possibly merge the clauses if some of them are BooleanPQuery
+        ArrayList<Clause> cl = new ArrayList<Clause> ();
+        for (Clause clause : clauses) {
+            ParseableQuery query = clause.getQuery();
+            if (query instanceof BooleanPQuery) {
+                BooleanPQuery bq = (BooleanPQuery) query;
+                if (bq.getOccur() == oc) {
+                    // same occur; let's merge
+                    for (Clause subclause : bq.getClauses()) {
+                        cl.add (subclause);
+                    }
+                    continue;
+                }
+            }
+            // no merging possible
+            cl.add (clause);
+        }
+        this.clauses = cl.toArray(new Clause[cl.size()]);
     }
     
     public BooleanPQuery (Occur occur, ParseableQuery ... queries) {

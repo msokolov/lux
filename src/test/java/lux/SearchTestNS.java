@@ -68,9 +68,9 @@ public class SearchTestNS extends BaseSearchTest {
     @Test
     public void testAttributePredicateInPath2() throws Exception {
         // Variation on the above - this was generating SpanNear(Boolean(... which is an error
-        assertSearch ("", "declare variable $id as xs:string external; " +
+        assertSearch (null, "declare variable $id as xs:string external; " +
                 "let $test := collection()/test[@id=$id] " +
-                "return $test/title/other/string()", null, 1);
+                "return $test/title/other/string()", null, 0);
     }
     
     @Test

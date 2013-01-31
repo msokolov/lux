@@ -3,6 +3,7 @@ package lux.compiler;
 import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
+import lux.query.BooleanPQuery.Clause;
 import lux.query.MatchAllPQuery;
 import lux.query.ParseableQuery;
 import lux.query.SpanBooleanPQuery;
@@ -289,10 +290,7 @@ public class XPathQuery {
 
         // distance == 0 means the two queries are adjacent
         if (distance == 0) {
-            if (occur != Occur.MUST) {
-                throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
-            }
-            return new SpanNearPQuery(distance, true, a, b);
+            return combineFiniteSpan(a, occur, b, distance);
         }
 
         // don't create a span query for //foo; a single term is enough
@@ -304,13 +302,33 @@ public class XPathQuery {
             return a;
         }
         if (distance > 0) {
-            if (occur != Occur.MUST) {
-                throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
-            }
-            return new SpanNearPQuery(distance, true, a, b);
+            // there is a specific distance (path steps separate by /*/, say)
+            return combineFiniteSpan(a, occur, b, distance);
         }
         // distance = -1
         return new SpanBooleanPQuery(occur, a, b);
+    }
+
+    private static ParseableQuery combineFiniteSpan(ParseableQuery a, Occur occur, ParseableQuery b, int distance) {
+        if (occur != Occur.MUST) {
+            throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
+        }
+        assert (! (a instanceof SpanBooleanPQuery && b instanceof SpanBooleanPQuery));
+        if (a instanceof SpanBooleanPQuery && ((SpanBooleanPQuery) a).getOccur() == Occur.MUST) {
+            return combineBooleanWithSpan(a, b, distance);
+        } else if (b instanceof SpanBooleanPQuery && ((SpanBooleanPQuery) b).getOccur() == Occur.MUST) {
+            return combineBooleanWithSpan(b, a, distance);
+        }
+        return new SpanNearPQuery(distance, true, a, b);
+    }
+
+    private static ParseableQuery combineBooleanWithSpan(ParseableQuery a, ParseableQuery b, int distance) {
+        // ((A NEAR B) AND C) NEAR D => ((A NEAR B) AND (C NEAR D))
+        SpanBooleanPQuery abool = (SpanBooleanPQuery)a;
+        Clause[] clauses = abool.getClauses();
+        int i = clauses.length-1;
+        clauses[i] = new Clause (new SpanNearPQuery (distance, true, clauses[i].getQuery(), b), clauses[i].getOccur());
+        return a;
     }
     
     private static final long combineFacts (long facts2, long facts3) {
