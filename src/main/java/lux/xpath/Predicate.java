@@ -5,7 +5,7 @@ public class Predicate extends AbstractExpression {
     
     public Predicate (AbstractExpression base, AbstractExpression filter) {
         super (Type.PREDICATE);
-        subs = new AbstractExpression[] { base, filter };
+        setSubs (base, filter);
     }
     
     @Override

@@ -5,7 +5,7 @@ public class Sequence extends AbstractExpression {
     
     public Sequence (AbstractExpression ... contents) {
         super (Type.SEQUENCE);
-        subs = contents;
+        setSubs (contents);
     }
     
     @Override

@@ -5,7 +5,7 @@ public class UnaryMinus extends AbstractExpression {
 
     public UnaryMinus (AbstractExpression operand) {
         super (Type.UNARY_MINUS);
-        subs = new AbstractExpression[] { operand };        
+        setSubs (operand);        
     }
     
     public AbstractExpression getOperand () {

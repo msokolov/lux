@@ -15,8 +15,7 @@ public class PathExpression extends AbstractExpression {
     public PathExpression (AbstractExpression lhs, AbstractExpression rhs) {
         super (Type.PATH_EXPRESSION);
         subs = new AbstractExpression[2];
-        subs[0] = lhs;
-        subs[1] = rhs;
+        setSubs (lhs, rhs);
     }
     
     public final AbstractExpression getRHS() {

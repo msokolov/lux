@@ -5,8 +5,9 @@ public class Dot extends AbstractExpression {
     
     private static final Dot instance = new Dot();
 
-    protected Dot () {
+    private Dot () {
         super (Type.DOT);
+        subs = new AbstractExpression[0];
     }
     
     public static Dot getInstance() {

@@ -13,7 +13,7 @@ public class FunCall extends AbstractExpression {
     public FunCall (QName name, ValueType returnType, AbstractExpression ... arguments) {
         super (Type.FUNCTION_CALL);
         this.name = name;
-        this.subs = arguments;
+        setSubs (arguments);
         this.returnType = returnType;
     }
     

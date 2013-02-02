@@ -10,7 +10,8 @@ package lux.xpath;
 
 public abstract class AbstractExpression implements Visitable {
     
-    protected AbstractExpression subs[];
+    protected AbstractExpression sup;       // the enclosing (parent) expression, if any
+    protected AbstractExpression subs[];    // enclosed (child) expressions, or a 0-length array, or null (do we need to make this consistent?)
 
     public enum Type {
         PATH_EXPRESSION, PATH_STEP, PREDICATE, BINARY_OPERATION, SET_OPERATION,
@@ -45,12 +46,26 @@ public abstract class AbstractExpression implements Visitable {
             }
         }
     }
+    
+    /**
+     * @return the super (containing) expression, or null if this is the outermost expression in its tree
+     */
+    public AbstractExpression getSuper() {
+        return sup;
+    }
 
     /**
      * @return the sub-expressions of this expression.
      */
     public AbstractExpression [] getSubs() {
         return subs;
+    }
+    
+    protected void setSubs (AbstractExpression ... subExprs) {
+        subs = subExprs;
+        for (AbstractExpression sub : subs) {
+            sub.sup = this;
+        }
     }
 
     /** Each subclass must implement the toString(StringBuilder) method by

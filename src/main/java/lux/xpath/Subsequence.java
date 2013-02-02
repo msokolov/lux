@@ -16,12 +16,12 @@ public class Subsequence extends AbstractExpression {
 
     public Subsequence (AbstractExpression sequence, AbstractExpression start, AbstractExpression length) {
         super (Type.SUBSEQUENCE);
-        subs = new AbstractExpression[] { sequence, start, length };
+        setSubs (sequence, start, length);
     }
     
     public Subsequence (AbstractExpression sequence, AbstractExpression start) {
         super (Type.SUBSEQUENCE);
-        subs = new AbstractExpression[] { sequence, start };
+        setSubs (sequence, start);
     }
     
     @Override

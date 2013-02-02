@@ -52,7 +52,7 @@ public class BinaryOperation extends AbstractExpression {
     
     public BinaryOperation (AbstractExpression op1, Operator operator, AbstractExpression op2) {
         super (Type.BINARY_OPERATION);
-        subs = new AbstractExpression[] { op1, op2 };
+        setSubs (op1, op2);
         this.operator = operator;
     }
     

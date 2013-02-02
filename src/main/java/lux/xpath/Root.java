@@ -2,10 +2,16 @@ package lux.xpath;
 
 
 public class Root extends AbstractExpression {
-
-    public Root () {
+    
+    private static final Root instance = new Root();
+    
+    private Root () {
         super (Type.ROOT);
         subs = new AbstractExpression[0];
+    }
+    
+    public static Root getInstance() {
+        return instance;
     }
     
     @Override
