@@ -3,8 +3,9 @@
 This page lists some nonobvious quirks and idiosyncracies, with solutions
 or workarounds where available.
 
-## Why doesn't it work when I call lux:log(), lux:insert(), lux:commit(),
-or some other function whose work is all done as a side effect? ##
+## Why doesn't it work when I call lux:log(), ##
+lux:insert(), lux:commit(),
+or some other function whose work is all done as a side effect?
 
 The Saxon XQuery compiler will often optimize away a function call if its
 return value is unused. We've tried a few measures to prevent this, but
@@ -17,8 +18,8 @@ For example:
     ...
     return ($actual-function-return-value, $insert-dummy)
 
-## Why do absolute paths (like //document) work in the global context, but
-not within a function definition? ##
+## Why do absolute paths (like //document) work only in the outer scope, ##
+and not within a function definition?
 
 Lux supplies a special implicit context for such expressions.  It rewrites
 expressions, prefixing all absolute paths with a search expression

@@ -203,10 +203,8 @@ We have numerous ideas for improving performance, including:
 
 ### XQuery 3.0
 
-We would like to support XQuery 3.0 and plan to track whatever features are made available
-in both the open source and commercial versions of Saxon.  At the moment however, Lux is developed 
-and tested against version 9.4.0.3 HE (the open source version) only.  We've performed some basic
-tests with PE/EE, but some Lux optimizations can only be provided with the HE version.
+We will track whatever features are made available
+in the open source version of Saxon, at least to the extent of ensuring the optimizer doesn't break them. Other than that, we don't have any immediate plans to support a full range of XQuery 3.0 features, although we may add some.
 
 ### Solr / Lucene 4.x
 
@@ -247,7 +245,6 @@ time. We often want to know if an element ever occurs more than once in some con
 
 ## Acknowledgements ##
 
-Lux relies on many underlying open-source software packages, but its main value is serving as a bridge
-between Solr/Lucene, and Saxon. For more information about Lucene and Solr, see [http://lucene.apache.org/], 
+Lux relies on many underlying open-source software packages, but it could not exist without Solr/Lucene, and Saxon. For more information about Lucene and Solr, see [http://lucene.apache.org/], 
 and for more information about The Saxon XSLT and XQuery Processor from Saxonica
 Limited, see [http://www.saxonica.com/].

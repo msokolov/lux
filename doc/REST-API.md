@@ -122,7 +122,7 @@ demo.
 
 In particular, AppServer accepts a `lux.xquery` parameter, which is used as
 a url to fetch the query body to evaluate.  At the moment, this can only be
-a path or local file URL, but evetually will enable retrieving modules from
+a local path or file URI, but eventually will enable retrieving modules from
 the Lucene document store.
 
 If errors occur, the component returns an HTTP 400 status (or 404 if the
