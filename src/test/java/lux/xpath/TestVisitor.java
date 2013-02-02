@@ -13,7 +13,7 @@ public class TestVisitor {
     @Test public void testVisit () {
         PathOptimizer opt = new PathOptimizer (IndexConfiguration.DEFAULT);
         PathExpression expr = new PathExpression (
-                new Root(),
+                Root.getInstance(),
                 new Predicate(
                 new PathStep (Axis.Child, new NodeTest (ValueType.ELEMENT, new QName("foo"))),
                 new LiteralExpression (1))

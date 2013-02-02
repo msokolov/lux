@@ -903,7 +903,7 @@ public class SaxonTranslator {
     }
     
     public AbstractExpression exprFor (RootExpression expr) {
-        return new Root();
+        return Root.getInstance();
     }
 
     public AbstractExpression exprFor (SlashExpression expr) {

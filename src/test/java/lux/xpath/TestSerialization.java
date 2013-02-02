@@ -103,7 +103,7 @@ public class TestSerialization {
     }
     
     @Test public void testRootToString () {
-        assertEquals ("(/)", new Root().toString());
+        assertEquals ("(/)", Root.getInstance().toString());
     }
     
     @Test public void testDotToString () {

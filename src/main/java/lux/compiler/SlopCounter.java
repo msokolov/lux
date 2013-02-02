@@ -90,12 +90,7 @@ public class SlopCounter extends ExpressionVisitorBase {
             break;
         case Attribute:
             if (nodeTest.getQName() != null) {
-                if (isReverse()) {
-                    // we cannot combine paths ending in an attribute with anything to the right
-                    slop = null;
-                } else {
-                    foundNode();
-                }
+                foundNode();
             }
             break;
         default:

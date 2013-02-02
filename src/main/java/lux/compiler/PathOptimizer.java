@@ -233,7 +233,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         push (query);
     }
 
-    public XPathQuery getQuery() {        
+    public XPathQuery peek () {        
         return queryStack.get(queryStack.size()-1);
     }
     
@@ -253,13 +253,23 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     /**
      * Conjoin the queries for the two expressions joined by the path.
-     * FIXME: this is not always valid: we have one case /foo[@id]/bar.  There must be others.  What's the category? 
+     * FIXME: this is not always valid: we have one case /foo[@id]/bar.  
+     * There must be others.  What's the category?  Yes - handling of predicates is
+     * wrong.  We fixed by terminating path queries at attributes, but in general
+     * we need to handle predicates as separate path queries, to be combined with AND,
+     * not as path steps 
      */
     @Override
     public AbstractExpression visit(PathExpression pathExpr) {
         XPathQuery rq = pop();
         XPathQuery lq = pop();        
         XPathQuery query = combineAdjacentQueries(pathExpr.getLHS(), pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
+        if (pathExpr.getLHS() instanceof Predicate) {
+            // when there is a predicate, we will have pushed an additional query:
+            // combine its with this one using AND
+            XPathQuery pq = pop();
+            query = combineQueries(pq, Occur.MUST, query, query.getResultType());
+        }
         push(query);
         return pathExpr;
     }
@@ -274,13 +284,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
         
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
         push (query);
+        // FIXME: is there a bug here?  optimizeComparison may or may not push a query??
         optimizeComparison(predicate);
         // This is singular if its base expr is
-        query = pop();
         if (indexConfig.isOption(INDEX_PATHS)) {
-            query = query.setFact(SINGULAR, baseQuery.isFact(SINGULAR));
+            push (pop().setFact(SINGULAR, baseQuery.isFact(SINGULAR)));
         }
-        push (query);
+        // FIXME - in a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C !
+        // We could push the outer query (/A) on the stack again, and combine with /A/B
+        // in optimizeSubexpression (PathExpression when there is a predicate?)
+        if (predicate.getSuper() != null && predicate.getSuper().getType() == Type.PATH_EXPRESSION) {
+            push (baseQuery);
+        }
         return predicate;
     }
     
@@ -330,7 +345,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(PathStep step) {
         QName name = step.getNodeTest().getQName();
         Axis axis = step.getAxis();
-        XPathQuery currentQuery = getQuery();
+        XPathQuery currentQuery = peek();
         boolean isMinimal, isSingular = currentQuery.isFact(SINGULAR);
         if (axis == Axis.Descendant || axis == Axis.DescendantSelf || axis == Axis.Attribute) {
             if (step.getNodeTest().isWild() && ! currentQuery.isEmpty()) {
@@ -472,7 +487,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 AbstractExpression arg = args[0];
                 if (arg.getType() == Type.LITERAL) {
                     // save away the field name as a possible sort key
-                    getQuery().setSortFields(new SortField[] {new SortField (((LiteralExpression)arg).getValue().toString(), SortField.STRING)});
+                    peek().setSortFields(new SortField[] {new SortField (((LiteralExpression)arg).getValue().toString(), SortField.STRING)});
                 }
             }
         }
@@ -523,7 +538,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         if (fname.equals(FunCall.FN_COLLECTION) && subs.length == 0) {
             // Optimize when no arguments to collection()
-            return new Root();
+            return Root.getInstance();
         } 
         XPathQuery query = pop();
         // can only use these function optimizations when we are sure that its argument expression
@@ -640,10 +655,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // and to be properly error-preserving we use SHOULD here
             // occur = Occur.MUST
             break;
-    
-        case AEQ: case EQUALS:
-        case ANE: case ALT: case ALE: case AGT: case AGE:
-        case NE: case LT: case GT: case LE: case GE:
+        
+        case EQUALS: case NE: case LT: case GT: case LE: case GE:
+            type = ValueType.BOOLEAN;
+            occur = Occur.MUST;
+            break;
+            
+        case AEQ: case ANE: case ALT: case ALE: case AGT: case AGE:
+            // atomic comparisons - see note above under arithmetic operators
             type = ValueType.BOOLEAN;
             break;
     
@@ -763,6 +782,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(Variable variable) {
+        // TODO: associate a query with the variable
         push (MATCH_ALL);
         return variable;
     }
@@ -770,13 +790,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
     @Override
     public AbstractExpression visit(Subsequence subsequence) {
         optimizeSubExpressions (subsequence);
-        AbstractExpression start = subsequence.getStartExpr();
         AbstractExpression length = subsequence.getLengthExpr();
-        XPathQuery lengthQuery = null;
+        // For now, we just ignore the queries from the start and length expressions.
         if (length != null) {
-            lengthQuery = pop ();
+            // pop the query from the length expression, if there is one
+            pop ();
         }
-        XPathQuery startQuery = pop();
+        pop(); // pop the query from the start expression
+        AbstractExpression start = subsequence.getStartExpr();
         if (start == FunCall.LastExpression || (start.equals(LiteralExpression.ONE) && length.equals(LiteralExpression.ONE))) {
             // selecting the first or last item from a sequence - this has
             // no effect on the query, its minimality or return type, so
@@ -784,13 +805,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // the start or length queries
             return subsequence;
         }
+        // we don't have an index that can compute how many matches there are
+        push(pop().setFact(MINIMAL, false));
+        /*
+        XPathQuery lengthQuery = null;
+        if (length != null) {
+            lengthQuery = pop ();
+        }
+        XPathQuery startQuery = pop();
         XPathQuery baseQuery = pop();
-        XPathQuery query = combineQueries (baseQuery, Occur.SHOULD, startQuery, baseQuery.getResultType());
+        XPathQuery query = combineQueries (baseQuery, Occur.MUST, startQuery, baseQuery.getResultType());
         if (lengthQuery != null) {
-            query = combineQueries (query, Occur.SHOULD, lengthQuery, query.getResultType());
+            query = combineQueries (query, Occur.MUST, lengthQuery, query.getResultType());
         }
         query = query.setFact(MINIMAL, false);
         push (query);
+        */
         return subsequence;
     }
 
@@ -849,7 +879,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(FLWOR flwor) {
         // combine any constraint from the return clause with the constraint from the clauses
         flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0);
-        getQuery().setSortFields(null); // ignore any ordering expressions found in the return clause
+        peek().setSortFields(null); // ignore any ordering expressions found in the return clause
         int length = flwor.getClauses().length;
         // iterate in reverse order so we can unwind the query stack from its "top"
         // which corresponds to the "bottom" of the expression tree.
@@ -918,19 +948,19 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public ForClause visit (ForClause forClause) {
-        getQuery().setSortFields(null);
+        peek().setSortFields(null);
         return forClause;
     }
 
     @Override
     public WhereClause visit (WhereClause whereClause) {
-        getQuery().setSortFields(null);
+        peek().setSortFields(null);
         return whereClause;
     }
     
     @Override
     public LetClause visit (LetClause letClause) {
-        getQuery().setSortFields(null);
+        peek().setSortFields(null);
         return letClause;
     }
 

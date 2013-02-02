@@ -296,9 +296,15 @@ public class XPathQuery {
         // don't create a span query for //foo; a single term is enough
         // distance < 0 means no distance could be computed
         if (a instanceof SpanMatchAll && occur != Occur.MUST_NOT && (distance > 90 || distance < 0)) {
+            if (occur == Occur.SHOULD) {
+                return a;
+            }
             return b;
         }
         if (b instanceof SpanMatchAll) {
+            if (occur == Occur.SHOULD) {
+                return b;
+            }
             return a;
         }
         if (distance > 0) {
