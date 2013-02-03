@@ -38,6 +38,11 @@ public class Variable extends AbstractExpression {
         // it would be nice to check the variable's referent if we can do that at compile time?
         return false;
     }
+
+    public void setName(QName name2) {
+        name = name2;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

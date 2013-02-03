@@ -1,3 +1,21 @@
+* optimization fixes
+** stopped queries from let clause expressions from bleeding
+These were contributing to the filtering of enclosing expressions and could
+cause some documents to be missed.
+** Enabled the optimization of certain expressions including variables
+variables bound in let expressions that is
+*** we concatenate paths in variable expressions as well:
+let $foo := /foo return $foo/bar should generate /foo/bar
+** paths containing predicates generated incorrect queries
+simple predicates worked, but paths like /a[b]/c would generate queries
+like /a/b/c rather than a/b AND b/c
+** generate IGNORABLE queries for non-isomorphic functions 
+like string(); these queries are marked as IGNORABLE.  This has the effect
+that if their query is the only one, it will act as a filter, otherwise it
+is ignored.
+** there was a bug generating queries for paths beginning collection()
+We weren't pushing a query on the stack?
+** mark subsequence (first or last) as SINGULAR
 * better app server packaging
 created a standalone app that embeds jetty so we can control uris,
 redirects and other http stuff without relying on solr. This will also

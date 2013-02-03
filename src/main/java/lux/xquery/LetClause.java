@@ -13,6 +13,10 @@ public class LetClause extends FLWORClause {
         this.seq = seq;
     }
     
+    public Variable getVariable () {
+        return var;
+    }
+    
     @Override
     public AbstractExpression getSequence() {
         return seq;

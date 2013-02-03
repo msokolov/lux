@@ -6,7 +6,7 @@ package lux.xml;
 
 import org.apache.commons.lang.StringUtils;
 
-public class QName extends javax.xml.namespace.QName {
+public final class QName extends javax.xml.namespace.QName {
 
     public QName(String localPart) {
         super(localPart);

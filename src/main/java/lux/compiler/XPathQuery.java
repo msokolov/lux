@@ -59,6 +59,9 @@ public class XPathQuery {
 
     public void setSortFields(SortField[] sortFields) {
         this.sortFields = sortFields;
+        if (sortFields != null) {
+            setFact (IGNORABLE, false); // TODO seems a bit hacky
+        }
     }
 
     /**
@@ -80,7 +83,7 @@ public class XPathQuery {
     public static final int RESULT_TYPE_FLAGS = 0x00000018;
 
     /**
-     * A query is singular if its expression returns the count of the results of the lucene query;
+     * A query is singular if its expression returns the same number of results as the lucene query;
      * ie the expression returns a single result for every matching document.
      */
     public static final int SINGULAR=0x00000004;
@@ -100,18 +103,20 @@ public class XPathQuery {
      */
     public static final int DOCUMENT_RESULTS=0x00000018;
     
+    /**
+     * If a query a is ignorable, then combine(a,b) = b unless b is also ignorable,
+     * in which case combine(a,b) = a|b
+     */
+    public static final int IGNORABLE=0x00000020;
+    
     public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL|SINGULAR, ValueType.DOCUMENT, true);
     
     private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.NODE, true);
-
-    private final static XPathQuery UNINDEXED = new XPathQuery(MatchAllPQuery.getInstance(), 0, ValueType.VALUE, true);
 
     private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|SINGULAR, ValueType.DOCUMENT, true);
     
     private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL, ValueType.NODE, true);
 
-    private final static XPathQuery PATH_UNINDEXED = new XPathQuery(SpanMatchAll.getInstance(), 0, ValueType.VALUE, true);
-    
     /**
      * @param expr an XPath 2.0 expression
      * @param query a Lucene query
@@ -168,13 +173,6 @@ public class XPathQuery {
         return MATCH_ALL;
     }
     
-    public static XPathQuery getUnindexedQuery (IndexConfiguration indexConfig) {
-        if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
-            return PATH_UNINDEXED;
-        }
-        return UNINDEXED;
-    }
-    
     public static ValueType typeFromFacts (long facts) {
         long typecode = (facts & XPathQuery.RESULT_TYPE_FLAGS); 
         if (typecode == XPathQuery.BOOLEAN_FALSE) {
@@ -217,8 +215,18 @@ public class XPathQuery {
      * @return the combined query
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
+        ParseableQuery result;
+        if (isFact(IGNORABLE)) {
+            if (precursor.isFact(IGNORABLE)) {
+                precursorOccur = occur = Occur.SHOULD;
+            }
+            return precursor.setFact(MINIMAL, false);
+        }
+        else if (precursor.isFact(IGNORABLE)) {
+            return setFact (MINIMAL, false);
+        }
         long resultFacts = combineQueryFacts (this, precursor);
-        ParseableQuery result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
+        result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
         SortField[] combined = combineSortFields(precursor);
         return getQuery(result, resultFacts, type, config, combined);
     }
@@ -250,6 +258,12 @@ public class XPathQuery {
      * @return the combined query
      */
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance) {
+        if (isFact(IGNORABLE)) {
+            return precursor.setFact (MINIMAL, false);
+        }
+        if (precursor.isFact(IGNORABLE)) {
+            return setFact(MINIMAL, false);
+        }
         long resultFacts = combineQueryFacts (this, precursor);
         ParseableQuery result = combineSpans (this.pquery, occur, precursor.pquery, distance);
         SortField[] combinedSorts = combineSortFields(precursor);
@@ -351,7 +365,7 @@ public class XPathQuery {
     }
 
     public boolean isEmpty() {
-        return this == MATCH_ALL || this == UNINDEXED || this == MATCH_ALL_NODE || this == PATH_MATCH_ALL;
+        return this == MATCH_ALL || this == MATCH_ALL_NODE || this == PATH_MATCH_ALL;
     }
     
     @Override

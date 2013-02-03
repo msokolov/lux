@@ -1,7 +1,18 @@
 * bugs
-loading all shakespeare from work (using lux-appserver) got various errors
-that look like threading issues, including SolrIndexWriter not closed, lock
-obtain failures, and multiple writes to the same uri: see /proj/lux/doc/lux-bug-2013-01-14
+** boolean/span nesting
+there must be some combination of paths that will result in booleans inside
+of spans.
+** paths with predicates referenced by variable
+let $x := /a[b]/c 
+gets an incorrect query attached to it (/a/b/c)
+** comparisons sometimes push queries and sometimes don't?
+** exists as an isomorph
+Is there a circumstance where this is incorrect?  If not, then what is the 
+actual rule we are relying on there?
+* optimization
+** handle variables in comparisons
+at least if they're atomic?
+** handle for-variables
 * pf integration
 ** need to upgrade the SolrConnection
 so it handles errors more gracefully see SolrSearchQuery.getResults();

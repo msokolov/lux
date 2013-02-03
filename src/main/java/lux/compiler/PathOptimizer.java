@@ -2,12 +2,14 @@ package lux.compiler;
 
 import static lux.compiler.XPathQuery.BOOLEAN_FALSE;
 import static lux.compiler.XPathQuery.BOOLEAN_TRUE;
+import static lux.compiler.XPathQuery.IGNORABLE;
 import static lux.compiler.XPathQuery.MINIMAL;
 import static lux.compiler.XPathQuery.SINGULAR;
 import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
@@ -79,6 +81,8 @@ import org.apache.lucene.search.SortField;
 public class PathOptimizer extends ExpressionVisitorBase {
 
     private final ArrayList<XPathQuery> queryStack;
+    private final HashMap<QName,XPathQuery> varQuery;
+    private final HashMap<QName,AbstractExpression> varBindings;
     private final IndexConfiguration indexConfig;
     private final XPathQuery MATCH_ALL;
     
@@ -89,6 +93,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
+        varQuery = new HashMap<QName, XPathQuery>();
+        varBindings = new HashMap<QName, AbstractExpression>();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
         this.indexConfig = indexConfig;
         attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
@@ -253,20 +259,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     /**
      * Conjoin the queries for the two expressions joined by the path.
-     * FIXME: this is not always valid: we have one case /foo[@id]/bar.  
-     * There must be others.  What's the category?  Yes - handling of predicates is
-     * wrong.  We fixed by terminating path queries at attributes, but in general
-     * we need to handle predicates as separate path queries, to be combined with AND,
+     * We handle predicates as separate path queries, to be combined with AND,
      * not as path steps 
      */
     @Override
     public AbstractExpression visit(PathExpression pathExpr) {
         XPathQuery rq = pop();
-        XPathQuery lq = pop();        
+        XPathQuery lq = pop();
         XPathQuery query = combineAdjacentQueries(pathExpr.getLHS(), pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
         if (pathExpr.getLHS() instanceof Predicate) {
             // when there is a predicate, we will have pushed an additional query:
-            // combine its with this one using AND
+            // combine it with this one using AND.
+            // FIXME: does not work when this is referenced via a variable
             XPathQuery pq = pop();
             query = combineQueries(pq, Occur.MUST, query, query.getResultType());
         }
@@ -290,9 +294,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (indexConfig.isOption(INDEX_PATHS)) {
             push (pop().setFact(SINGULAR, baseQuery.isFact(SINGULAR)));
         }
-        // FIXME - in a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C !
-        // We could push the outer query (/A) on the stack again, and combine with /A/B
-        // in optimizeSubexpression (PathExpression when there is a predicate?)
+        // In a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C !
+        // We push the outer query (/A) on the stack again, and combine with /A/B
+        // in optimizeSubexpression (PathExpression)
         if (predicate.getSuper() != null && predicate.getSuper().getType() == Type.PATH_EXPRESSION) {
             push (baseQuery);
         }
@@ -317,7 +321,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query;
         Integer rSlop=null, lSlop=null;
         if (indexConfig.isOption(INDEX_PATHS)) {
-            SlopCounter slopCounter = new SlopCounter ();
+            SlopCounter slopCounter = new SlopCounter (this);
 
             // count the left slop of the RHS
             right.accept (slopCounter);
@@ -467,18 +471,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // a built-in XPath 2 function
         else if (isomorphs.contains(name.getLocalPart())) {
             occur = Occur.MUST;
-            // what does it mean if occur is null here??
         } else {
             // for functions in fn: and xs: namespaces not listed below, we assume that they 
-            // are *not* optimizable
+            // are *not* optimizable, and their arguments' queries are ignored
             occur = Occur.SHOULD;
         }
         AbstractExpression[] args = funcall.getSubs();
         if (occur == Occur.SHOULD) {
+            combineTopQueries(args.length, occur, funcall.getReturnType());
+            push(pop().setFact(IGNORABLE, true));
+            /*
             for (int i = args.length; i > 0; --i) {
                 pop();
             }
-            push (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), 0, ValueType.VALUE, indexConfig, null));
+            push (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), IGNORABLE, ValueType.VALUE, indexConfig, null));
+            */
         } else {
             combineTopQueries(args.length, occur, funcall.getReturnType());
         }
@@ -496,11 +503,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     // These functions are emptiness-preserving - if their argument is empty, then their
     // result is also empty
+    // these are not 
+    // isomorphs.add ("string"); 
+    // isomorphs.add ("exists");
+
     protected static HashSet<String> isomorphs = new HashSet<String>();
 
     static {
+        isomorphs.add("exists");   // FIXME - this enables optos that we like, but it is not really an isomorph
+                                    // since it returns a boolean
         isomorphs.add("data");
-        isomorphs.add("exists");
         isomorphs.add("root");
         isomorphs.add("collection");
         isomorphs.add("doc");
@@ -538,6 +550,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         if (fname.equals(FunCall.FN_COLLECTION) && subs.length == 0) {
             // Optimize when no arguments to collection()
+            // TODO: figure out why we don't need to push queries all over here?
+            push (MATCH_ALL);
             return Root.getInstance();
         } 
         XPathQuery query = pop();
@@ -782,8 +796,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(Variable variable) {
-        // TODO: associate a query with the variable
-        push (MATCH_ALL);
+        XPathQuery q = varQuery.get(variable.getQName());
+        if (q != null) {
+            push (q);
+        } else {
+            // if the variables are function arguments
+            push (MATCH_ALL);
+        }
         return variable;
     }
 
@@ -806,7 +825,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return subsequence;
         }
         // we don't have an index that can compute how many matches there are
-        push(pop().setFact(MINIMAL, false));
+        push(pop().setFact(MINIMAL|SINGULAR, false));
         /*
         XPathQuery lengthQuery = null;
         if (length != null) {
@@ -884,14 +903,24 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // iterate in reverse order so we can unwind the query stack from its "top"
         // which corresponds to the "bottom" of the expression tree.
         for (int i = length - 1; i >= 0; i--) {
-            // TODO: is MUST correct here??? What if we have an irrelevant let clause?
-            // for $foo in /foo let $bar := /bar return $foo??
-            combineTopQueries(2, Occur.MUST);
+            // If the clause is a let clause, its query is optional and gets or'ed with others
             FLWORClause clause = flwor.getClauses()[i];
+            if (clause instanceof LetClause) {
+                pop();
+                QName varName = ((LetClause) clause).getVariable().getQName();
+                descopeVariable(varName);
+            } else {
+                combineTopQueries(2, Occur.MUST);
+            }
             AbstractExpression seq = clause.getSequence();
             clause.setSequence(optimizeExpression(seq, 0));
         }
         return flwor;
+    }
+
+    private void descopeVariable(QName varName) {
+        varQuery.remove(varName);
+        varBindings.remove(varName);
     }
 
     @Override
@@ -960,8 +989,41 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public LetClause visit (LetClause letClause) {
-        peek().setSortFields(null);
+        XPathQuery q = peek();
+        q.setSortFields(null);
+        Variable var = letClause.getVariable();
+        // remember the variable binding for use in optimizations
+        QName name = var.getQName();
+        setBoundExpression(name, letClause.getSequence());
+        if (varQuery.containsKey (name)) {
+            // variable is shadowing a same-named variable in an outer scope
+            name = makeUniqueName (name);
+            if (name == null) {
+                return letClause;
+            }
+            var.setName (name);
+        }
+        varQuery.put(name, q);
         return letClause;
+    }
+    
+    private void setBoundExpression(QName name, AbstractExpression expr) {
+        varBindings.put(name, expr);
+    }
+    
+    public AbstractExpression getBoundExpression (QName name) {
+        return varBindings.get (name);
+    }
+
+    private QName makeUniqueName (QName name) {
+        for (int i = 1; i < 100; i++) {
+            QName newName = new QName (name.getNamespaceURI(), name.getLocalPart() + i);
+            if (! varQuery.containsKey(newName)) {
+                return newName;
+            }
+        }
+        // degenerate case: 100 nested variables with the same name
+        return null;
     }
 
     /**
