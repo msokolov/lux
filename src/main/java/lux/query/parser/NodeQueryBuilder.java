@@ -128,7 +128,11 @@ public class NodeQueryBuilder implements QueryBuilder {
             }
             q = pq;
         } else {
-            if (isWild) {
+            if (term == null) {
+                // if the analyzer threw all the text away, or it was empty to begin with
+                q = new WildcardQuery (new Term(fieldName, termText.toString() + "*"));
+            }
+            else if (isWild) {
                 q = new WildcardQuery(term);
             } else {
                 q = new TermQuery (term);

@@ -30,6 +30,10 @@ public class ForClause extends FLWORClause {
     public void setSequence (AbstractExpression seq) {
         this.seq = seq;
     }
+    
+    public Variable getVariable () {
+        return var;
+    }
 
     @Override
     public void toString(StringBuilder buf) {

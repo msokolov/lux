@@ -91,6 +91,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private boolean optimizeForOrderedResults;
     private int nextVariableNumber = 0;
     
+    private static final boolean DEBUG = false;
+        
     public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
         varQuery = new HashMap<QName, XPathQuery>();
@@ -128,9 +130,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private FunctionDefinition[] optimizeFunctionDefinitions(FunctionDefinition[] functionDefinitions) {
         for (int i = 0; i < functionDefinitions.length; i++) {
             FunctionDefinition function = functionDefinitions[i];
+            for (AbstractExpression var : function.getSubs()) {
+                // bind the variables to null in case they are shadowed in the function body
+                setBoundExpression ((Variable) var, null, null);
+            }
             AbstractExpression body = optimize (function.getBody());
             function = new FunctionDefinition (function.getName(), function.getReturnType(), (Variable[]) function.getSubs(), body);
             functionDefinitions[i] = function;
+            for (AbstractExpression var : function.getSubs()) {
+                descopeVariable(((Variable) var).getQName());
+            }
         }
         return functionDefinitions;
     }
@@ -240,7 +249,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     public XPathQuery peek () {        
-        return queryStack.get(queryStack.size()-1);
+        return queryStack.size() == 0 ? null : queryStack.get(queryStack.size()-1);
     }
     
     void push (XPathQuery query) {
@@ -250,9 +259,25 @@ public class PathOptimizer extends ExpressionVisitorBase {
     XPathQuery pop () {
         return queryStack.remove(queryStack.size()-1);
     }
+    
+    private void debug (String tag, AbstractExpression expr) {
+        for (int i = 0; i < queryStack.size(); i++) {
+            System.err.print(' ');
+        }
+        String desc = expr.toString();
+        if (desc.length() > 30) {
+            desc = desc.substring(0, 30);
+            desc = desc.replaceAll("\\s+", " ");
+        }
+        System.err.println(tag + ' ' + expr.getType() + ' ' + desc + "  depth=" + queryStack.size() +
+                ", query: " + peek());
+    }
 
     @Override
     public AbstractExpression visit (Root expr) {
+        if (DEBUG) {
+            debug("visit", expr);
+        }
         push (MATCH_ALL);
         return expr;
     }
@@ -264,42 +289,39 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
     @Override
     public AbstractExpression visit(PathExpression pathExpr) {
+        if (DEBUG) {
+            debug("visit", pathExpr);
+        }
         XPathQuery rq = pop();
         XPathQuery lq = pop();
-        XPathQuery query = combineAdjacentQueries(pathExpr.getLHS(), pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
-        if (pathExpr.getLHS() instanceof Predicate) {
-            // when there is a predicate, we will have pushed an additional query:
-            // combine it with this one using AND.
-            // FIXME: does not work when this is referenced via a variable
-            XPathQuery pq = pop();
-            query = combineQueries(pq, Occur.MUST, query, query.getResultType());
-        }
+        AbstractExpression lhs = pathExpr.getLHS();
+        XPathQuery query = combineAdjacentQueries(lhs, pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
         push(query);
         return pathExpr;
     }
     
     @Override
     public AbstractExpression visit(Predicate predicate) {
+        if (DEBUG) {
+            debug("visit", predicate);
+        }
         // Allow the base expression to be optimized later so we have an opportunity to combine the 
         // predicate query with the base query
         predicate.setFilter (optimizeExpression (predicate.getFilter(), 0));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         
-        XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
-        push (query);
-        // FIXME: is there a bug here?  optimizeComparison may or may not push a query??
-        optimizeComparison(predicate);
-        // This is singular if its base expr is
-        if (indexConfig.isOption(INDEX_PATHS)) {
-            push (pop().setFact(SINGULAR, baseQuery.isFact(SINGULAR)));
-        }
         // In a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C !
-        // We push the outer query (/A) on the stack again, and combine with /A/B
-        // in optimizeSubexpression (PathExpression)
-        if (predicate.getSuper() != null && predicate.getSuper().getType() == Type.PATH_EXPRESSION) {
-            push (baseQuery);
+        // and from A[B[C]/D]/E we want A/B/C AND A/B/D and A/E
+        // so leave the combined query on the stack, but save the base query for path combination 
+        XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
+        if (indexConfig.isOption(INDEX_PATHS)) {
+            // The combined query is singular if its base is
+            query = query.setFact(SINGULAR, baseQuery.isFact(SINGULAR));
         }
+        query.setBaseQuery(baseQuery);
+        push (query);
+        optimizeComparison(predicate);
         return predicate;
     }
     
@@ -320,8 +342,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
             ResultOrientation orient) {
         XPathQuery query;
         Integer rSlop=null, lSlop=null;
+        if (left instanceof Variable) {
+            AbstractExpression binding = getBoundExpression(((Variable)left).getQName());
+            if (binding != null) {
+                left = binding;
+            }
+        }
         if (indexConfig.isOption(INDEX_PATHS)) {
-            SlopCounter slopCounter = new SlopCounter (this);
+            SlopCounter slopCounter = new SlopCounter ();
 
             // count the left slop of the RHS
             right.accept (slopCounter);
@@ -336,9 +364,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
         }
         ValueType resultType = (orient == ResultOrientation.RIGHT) ? rq.getResultType() : lq.getResultType();
+        XPathQuery baseQuery = lq.getBaseQuery();
         if (rSlop != null && lSlop != null) {
             // total slop is the distance between the two path components.
-            query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop);
+            XPathQuery base = baseQuery != null ? baseQuery : lq;
+            query = base.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
+            if (baseQuery != null) {
+                // when there is a base query (from a predicate), add lq as an additional constraint
+                query = combineQueries(lq, Occur.MUST, query, query.getResultType());
+            }
         } else {
             query = combineQueries (lq, Occur.MUST, rq, resultType);
         }
@@ -347,6 +381,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(PathStep step) {
+        if (DEBUG) {
+            debug("visit", step);
+        }
         QName name = step.getNodeTest().getQName();
         Axis axis = step.getAxis();
         XPathQuery currentQuery = peek();
@@ -450,6 +487,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(FunCall funcall) {
+        if (DEBUG) {
+            debug("visit", funcall);
+        }
         QName name = funcall.getName();
         // Try special function optimizations, like count(), exists(), etc.
         AbstractExpression luxfunc = optimizeFunCall (funcall);
@@ -613,12 +653,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return funcall;
     }
     
-    
-
     private XPathQuery combineQueries(XPathQuery lq, Occur occur, XPathQuery rq, ValueType resultType) {
         XPathQuery query;
         if (indexConfig.isOption(INDEX_PATHS)) {
-            query = lq.combineSpanQueries(rq, occur, resultType, -1);
+            query = lq.combineSpanQueries(rq, occur, resultType, -1, indexConfig);
         } else {
             query = lq.combineBooleanQueries(occur, rq, occur, resultType, indexConfig);
         }
@@ -642,12 +680,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(Dot dot) {
+        if (DEBUG) {
+            debug("visit", dot);
+        }
         push(MATCH_ALL);
         return dot;
     }
 
     @Override
     public AbstractExpression visit(BinaryOperation op) {
+        if (DEBUG) {
+            debug("visit", op);
+        }
         optimizeSubExpressions(op);
         XPathQuery rq = pop();
         XPathQuery lq = pop();
@@ -706,6 +750,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (!indexConfig.isOption(INDEX_FULLTEXT)) {
             return;
         }
+        // TODO: test different literal values to ensure we don't run into trouble during text analysis 
         LiteralExpression value = null;
         AbstractExpression path = null;
         AbstractExpression filter = predicate.getFilter();
@@ -790,13 +835,20 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(LiteralExpression literal) {
+        if (DEBUG) {
+            debug ("visit", literal);
+        }
         push (MATCH_ALL);
         return literal;
     }
     
     @Override
     public AbstractExpression visit(Variable variable) {
-        XPathQuery q = varQuery.get(variable.getQName());
+        if (DEBUG) {
+            debug ("visit", variable);
+        }
+        QName qName = variable.getQName();
+        XPathQuery q = varQuery.get(qName);
         if (q != null) {
             push (q);
         } else {
@@ -808,6 +860,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(Subsequence subsequence) {
+        if (DEBUG) {
+            debug ("visit", subsequence);
+        }
         optimizeSubExpressions (subsequence);
         AbstractExpression length = subsequence.getLengthExpr();
         // For now, we just ignore the queries from the start and length expressions.
@@ -872,6 +927,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(Sequence sequence) {
+        if (DEBUG) {
+            debug ("visit", sequence);
+        }
         optimizeSubExpressions(sequence);
         combineTopQueries (sequence.getSubs().length, Occur.SHOULD);
         return sequence;
@@ -889,6 +947,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visitDefault (AbstractExpression expr) {
+        if (DEBUG) {
+            debug ("visit", expr);
+        }
         optimizeSubExpressions (expr);
         popChildQueries (expr);
         return expr;
@@ -896,7 +957,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public AbstractExpression visit(FLWOR flwor) {
-        // combine any constraint from the return clause with the constraint from the clauses
+        if (DEBUG) {
+            debug("visit", flwor);
+        }
+        // combine any constraint from the return clause with the constraint from the 
+        // for and where clauses
         flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0);
         peek().setSortFields(null); // ignore any ordering expressions found in the return clause
         int length = flwor.getClauses().length;
@@ -905,15 +970,23 @@ public class PathOptimizer extends ExpressionVisitorBase {
         for (int i = length - 1; i >= 0; i--) {
             // If the clause is a let clause, its query is optional and gets or'ed with others
             FLWORClause clause = flwor.getClauses()[i];
+            AbstractExpression seq = clause.getSequence();
+            // TODO: check this logic (again) it seems a little hinky.  We haven't really examined
+            // where clauses, eg.
             if (clause instanceof LetClause) {
-                pop();
                 QName varName = ((LetClause) clause).getVariable().getQName();
                 descopeVariable(varName);
-            } else {
-                combineTopQueries(2, Occur.MUST);
+                XPathQuery returnQuery = pop();
+                // ignore the return query when optimizing the let expressions?
+                clause.setSequence(optimizeExpression(seq, 0));
+                push (returnQuery);
+            } 
+            combineTopQueries(2, Occur.MUST);
+            if (clause instanceof ForClause) {
+                QName varName = ((ForClause) clause).getVariable().getQName();
+                descopeVariable(varName);
+                clause.setSequence(optimizeExpression(seq, 0));
             }
-            AbstractExpression seq = clause.getSequence();
-            clause.setSequence(optimizeExpression(seq, 0));
         }
         return flwor;
     }
@@ -977,7 +1050,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public ForClause visit (ForClause forClause) {
-        peek().setSortFields(null);
+        visitVariableBinding (forClause.getVariable(), forClause.getSequence());
         return forClause;
     }
 
@@ -989,30 +1062,42 @@ public class PathOptimizer extends ExpressionVisitorBase {
     
     @Override
     public LetClause visit (LetClause letClause) {
+        visitVariableBinding (letClause.getVariable(), letClause.getSequence());
+        // let clause queries are ignorable since their dependent clauses
+        // don't require them
+        peek().setFact(IGNORABLE, true);
+        return letClause;
+    }
+    
+    private void visitVariableBinding(Variable var, AbstractExpression binding) {
         XPathQuery q = peek();
         q.setSortFields(null);
-        Variable var = letClause.getVariable();
+        setBoundExpression(var, binding, q);
+    }
+    
+    private void setBoundExpression(Variable var, AbstractExpression expr, XPathQuery q) {
         // remember the variable binding for use in optimizations
         QName name = var.getQName();
-        setBoundExpression(name, letClause.getSequence());
         if (varQuery.containsKey (name)) {
             // variable is shadowing a same-named variable in an outer scope
             name = makeUniqueName (name);
             if (name == null) {
-                return letClause;
+                return;
             }
             var.setName (name);
         }
-        varQuery.put(name, q);
-        return letClause;
-    }
-    
-    private void setBoundExpression(QName name, AbstractExpression expr) {
         varBindings.put(name, expr);
+        varQuery.put(name, q);
     }
     
     public AbstractExpression getBoundExpression (QName name) {
-        return varBindings.get (name);
+        AbstractExpression binding;
+        binding = varBindings.get (name);
+        while (binding instanceof Variable) {
+            // variable bound to another variable?
+            binding = varBindings.get(((Variable)binding).getQName());
+        }
+        return binding;
     }
 
     private QName makeUniqueName (QName name) {

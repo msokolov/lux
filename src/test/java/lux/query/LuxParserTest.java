@@ -13,6 +13,7 @@ import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
@@ -77,6 +78,9 @@ public class LuxParserTest {
         // attribute text query
         assertParseQuery (makeTermQuery(LUX_ATT_TEXT, "attribute:term"), "<@attribute:term");
         assertParseQuery (makeTermQuery(LUX_ATT_TEXT, "attribute:term"), "node<@attribute:term");
+    
+        // degenerate query
+        assertParseQuery (makeWildcardQuery(LUX_ELT_TEXT, "field:*"), "<field:....");
     }
     
     @Test 
@@ -271,6 +275,10 @@ public class LuxParserTest {
         q.setBoost(boost);
         return q;
     }
+    
+    public static WildcardQuery makeWildcardQuery (String field, String text) {
+        return new WildcardQuery (new Term (field, text));
+    }    
     
     public static TermPQuery makeTermPQuery (String text) {
         return makeTermPQuery (LUX_TEXT, text);

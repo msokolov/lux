@@ -13,6 +13,18 @@ actual rule we are relying on there?
 ** handle variables in comparisons
 at least if they're atomic?
 ** handle for-variables
+** replace query stack
+Store queries with the abstract expressions that generate them.  The stack
+abstraction is opaque, and fragile.  To make it work we would need
+something that enforces balanced pushing and popping.  Our convention is
+that every expression pushes a single query and pops as many queries as it
+has sub-expressions.  However, we now have a situation with predicates
+where we are pushing *two* queries: one predicated query, and the other the
+base query, to be used in combining with other paths.  This leads to some
+careful work required to ensure we balance that appropriately - we need to
+ensure that every parent of a predicate knows about this so it consumes
+both queries, and now that we are trying to optimize through variables, the
+logic is becoming even more confusing.
 * pf integration
 ** need to upgrade the SolrConnection
 so it handles errors more gracefully see SolrSearchQuery.getResults();

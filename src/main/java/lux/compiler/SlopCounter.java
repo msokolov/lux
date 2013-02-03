@@ -9,7 +9,6 @@ import lux.xpath.NodeTest;
 import lux.xpath.PathStep;
 import lux.xpath.Root;
 import lux.xpath.Sequence;
-import lux.xquery.Variable;
 
 /**
  * adds up the number of wildcard ("*" or node()) path steps on the left or
@@ -25,10 +24,7 @@ import lux.xquery.Variable;
 
 public class SlopCounter extends ExpressionVisitorBase {
     
-    private final PathOptimizer optimizer;
-    
-    public SlopCounter (PathOptimizer optimizer) {
-        this.optimizer = optimizer;
+    public SlopCounter () {
     }
 
     private boolean done = false;
@@ -135,14 +131,6 @@ public class SlopCounter extends ExpressionVisitorBase {
     public AbstractExpression visit(BinaryOperation exp) {
         done = true;
         return exp;
-    }
-    
-    @Override
-    public AbstractExpression visit(Variable var) {
-        if (optimizer.getBoundExpression(var.getQName()) != null) {
-            return optimizer.getBoundExpression(var.getQName()).accept (this);
-        }
-        return var;
     }
 
     public Integer getSlop () {
