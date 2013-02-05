@@ -137,7 +137,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testTwoElementPredicates () throws Exception {
-        assertQuery ("(/)[.//ACT][.//SCENE]", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_SCENE3);
+        assertQuery ("(/)[.//ACT][.//SCENE]", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_AND_SCENE);
     }
     
     @Test public void testUnion () throws Exception {
@@ -369,6 +369,7 @@ public class BasicQueryTest {
         String query = "(for $doc in collection() return string ($doc/*/TITLE))[2]";
         // should return the titles of the second document in document order (which is a TITLE 
         // and has no TITLE), but this was failing because we fetched only documents containing TITLE
+        // TODO: should be minimal?
         assertQuery (query, SINGULAR|DOCUMENT_RESULTS, Q.MATCH_ALL);
 
         query = "(for $doc in collection() return data($doc//TITLE))[2]";

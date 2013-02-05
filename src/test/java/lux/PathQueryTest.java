@@ -101,7 +101,6 @@ public class PathQueryTest extends BasicQueryTest {
             
         case ACT_SCENE_SPEECH_AND:
             return "<BooleanQuery><Clause occurs=\"must\">" + 
-                     "<BooleanQuery><Clause occurs=\"must\">" +    
                       "<SpanNear inOrder=\"true\" slop=\"0\">" +
                         "<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
                       "</SpanNear>" +
@@ -111,12 +110,11 @@ public class PathQueryTest extends BasicQueryTest {
                           "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
                         "</SpanNear>" +
                         "</Clause>" +
-                       "</BooleanQuery></Clause>" +
                         "<Clause occurs=\"must\">" +
                         "<SpanNear inOrder=\"true\" slop=\"0\">" +
                           "<SpanTerm fieldName=\"lux_path\">SPEECH</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
                         "</SpanNear>" +
-                  "</Clause>" +
+                        "</Clause>" +
                 "</BooleanQuery>";
             
         case ACT_SCENE_ID_123:

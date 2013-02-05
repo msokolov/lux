@@ -315,13 +315,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // and from A[B[C]/D]/E we want A/B/C AND A/B/D and A/E
         // so leave the combined query on the stack, but save the base query for path combination 
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery, ResultOrientation.LEFT);
-        if (indexConfig.isOption(INDEX_PATHS)) {
-            // The combined query is singular if its base is
-            query = query.setFact(SINGULAR, baseQuery.isFact(SINGULAR));
-        }
         query.setBaseQuery(baseQuery);
         push (query);
         optimizeComparison(predicate);
+        if (indexConfig.isOption(INDEX_PATHS)) {
+            // The combined query is singular if its base is
+            peek().setFact(SINGULAR, baseQuery.isFact(SINGULAR));
+        }
         return predicate;
     }
     
@@ -963,12 +963,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // combine any constraint from the return clause with the constraint from the 
         // for and where clauses
         flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0);
+        //XPathQuery returnQuery = pop();
         peek().setSortFields(null); // ignore any ordering expressions found in the return clause
         int length = flwor.getClauses().length;
         // iterate in reverse order so we can unwind the query stack from its "top"
         // which corresponds to the "bottom" of the expression tree.
+        // XPathQuery q= MATCH_ALL;
         for (int i = length - 1; i >= 0; i--) {
-            // If the clause is a let clause, its query is optional and gets or'ed with others
             FLWORClause clause = flwor.getClauses()[i];
             AbstractExpression seq = clause.getSequence();
             // TODO: check this logic (again) it seems a little hinky.  We haven't really examined
@@ -976,18 +977,24 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (clause instanceof LetClause) {
                 QName varName = ((LetClause) clause).getVariable().getQName();
                 descopeVariable(varName);
-                XPathQuery returnQuery = pop();
-                // ignore the return query when optimizing the let expressions?
                 clause.setSequence(optimizeExpression(seq, 0));
-                push (returnQuery);
-            } 
-            combineTopQueries(2, Occur.MUST);
+            }
+            //if (i > 0) {
+                combineTopQueries(2, Occur.MUST);
+                /*
+                XPathQuery qq = pop();
+                q = combineQueries (q, Occur.MUST, qq, qq.getResultType());
+                push (q);
+                */
+            //}
+            // 
             if (clause instanceof ForClause) {
                 QName varName = ((ForClause) clause).getVariable().getQName();
                 descopeVariable(varName);
                 clause.setSequence(optimizeExpression(seq, 0));
             }
         }
+        //push (combineQueries (pop(), Occur.MUST, returnQuery, returnQuery.getResultType()));
         return flwor;
     }
 

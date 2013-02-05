@@ -309,6 +309,12 @@ public class XPathQuery {
                 return a;
             }
         }
+        if (a == null || a.equals(b)) {
+            return b;
+        }
+        if (b == null) {
+            return a;
+        }
         return new BooleanPQuery(new BooleanPQuery.Clause(a, aOccur), new BooleanPQuery.Clause(b,  bOccur));
     }
     
@@ -338,6 +344,9 @@ public class XPathQuery {
             return combineFiniteSpan(a, occur, b, distance);
         }
         // distance = -1
+        if (a.equals(b)) {
+            return a;
+        }
         return new SpanBooleanPQuery(occur, a, b);
     }
 
