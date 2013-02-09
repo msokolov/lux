@@ -6,7 +6,10 @@
    unpacking, running (./lux, or ./lux.bat) and running integration test
    in lux-appserver (mvn verify), or run demo, import shakespeare and search
 4a) test installation in existing Solr (ifpress)
-5) tag the head revision (as lux-${version}) in version control
+5) commit and tag the head revision (as lux-${version}) in version control and push
+   git commit
+   git tag -a v0.6 -m 'lux version 0.6'
+   git push
 6) increment the version in pom.xml to the next -SNAPSHOT
 7) write release notes, describing new work.  open issues are covered in the bug tracker
 8) post binary files
