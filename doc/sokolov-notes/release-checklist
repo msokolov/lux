@@ -4,7 +4,7 @@
 4) follow instructions in BUILDING. any failures? back to step 1 :)
    build binary assemblies; smoke test by:
    unpacking, running (./lux, or ./lux.bat) and running integration test
-   in lux-appserver (mvn verify)
+   in lux-appserver (mvn verify), or run demo, import shakespeare and search
 4a) test installation in existing Solr (ifpress)
 5) tag the head revision (as lux-${version}) in version control
 6) increment the version in pom.xml to the next -SNAPSHOT

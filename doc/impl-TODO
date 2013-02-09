@@ -2,17 +2,12 @@
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
-** paths with predicates referenced by variable
-let $x := /a[b]/c 
-gets an incorrect query attached to it (/a/b/c)
-** comparisons sometimes push queries and sometimes don't?
 ** exists as an isomorph
 Is there a circumstance where this is incorrect?  If not, then what is the 
 actual rule we are relying on there?
 * optimization
 ** handle variables in comparisons
 at least if they're atomic?
-** handle for-variables
 ** replace query stack
 Store queries with the abstract expressions that generate them.  The stack
 abstraction is opaque, and fragile.  To make it work we would need
