@@ -13,6 +13,7 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
 import lux.exception.LuxException;
+import lux.exception.NotFoundException;
 import lux.functions.Search;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
@@ -255,7 +256,7 @@ public class Evaluator {
                 DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
                 int docID = disi.nextDoc();
                 if (docID == DocIdSetIterator.NO_MORE_DOCS) {
-                    throw new TransformerException("document '" +  href + "' not found");
+                    throw new NotFoundException(href);
                 }
                 XdmNode doc = docReader.get(docID, getSearcher().getIndexReader());
                 return doc.asSource(); 
@@ -336,8 +337,8 @@ public class Evaluator {
     }
     
     /**
-     * reopen the searcher so it sees any updates; called by lux:commit() after committing.
-     * Do NOT call this when operating within Solr: it interferes in some way with Solr's management
+     * reopen the searcher so it sees any updates.
+     * Do NOT call this when operating within Solr: it interferes with Solr's management
      * of open searchers/readers.
      */
     public void reopenSearcher() {

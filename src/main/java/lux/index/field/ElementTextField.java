@@ -35,13 +35,15 @@ public class ElementTextField extends FieldDefinition {
     @Override
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
-        SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
-        ElementTokenStream tokens = new ElementTokenStream (doc, builder.getOffsets());
-        ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
-        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
+        if (doc != null && doc.getUnderlyingNode() != null) {
+            SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
+            ElementTokenStream tokens = new ElementTokenStream (doc, builder.getOffsets());
+            ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
+            return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
                         new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
+        }
+        return Collections.emptySet();
     }
-    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -44,7 +44,7 @@ public class TestRunner extends RunnerBase {
     public static void setup() throws Exception {
         // By default, no indexes are created, and no Lux query optimizations are performed.
         // This has the effect of testing the query translator only
-        setup(IndexConfiguration.STORE_XML, "TestSources");
+        setup(IndexConfiguration.STORE_DOCUMENT, "TestSources");
         // setup(IndexConfiguration.DEFAULT_OPTIONS, "TestSources");
     }
 

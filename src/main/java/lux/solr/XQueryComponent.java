@@ -2,7 +2,7 @@ package lux.solr;
 
 import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.STORE_XML;
+import static lux.index.IndexConfiguration.STORE_DOCUMENT;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -84,7 +84,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         // Read the init args from the LuxUpdateProcessorFactory's configuration since we require
         // this plugin to use compatible configuration
         PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
-        solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_XML, info.initArgs);
+        solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT, info.initArgs);
         solrIndexConfig.inform(core);
         compiler = createXCompiler();
     }

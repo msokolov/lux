@@ -1,4 +1,6 @@
 * bugs
+**
+lux:search('uri:/*')[contains(substring(lux:field-values('uri')[1]/string(),1),'/')]
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.

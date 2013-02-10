@@ -33,11 +33,14 @@ public class AttributeTextField extends FieldDefinition {
     @Override
     public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
-        SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
-        AttributeTokenStream tokens = new AttributeTokenStream(doc, builder.getOffsets());
-        ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
-        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
+        if (doc != null && doc.getUnderlyingNode() != null) {
+            SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
+            AttributeTokenStream tokens = new AttributeTokenStream(doc, builder.getOffsets());
+            ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
+            return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
                         new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
+        }
+        return Collections.emptySet();
     }
 }
 

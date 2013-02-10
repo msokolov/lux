@@ -1,7 +1,7 @@
 package lux;
 
-import static org.junit.Assert.assertEquals;
 import static lux.index.IndexConfiguration.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -73,7 +73,7 @@ public class IndexTest {
 
     @Test
     public void testIndexQNames() throws Exception {
-        buildIndex ("qnames and xml", INDEX_QNAMES | STORE_XML | BUILD_DOCUMENT);
+        buildIndex ("qnames and xml", INDEX_QNAMES | STORE_DOCUMENT | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
@@ -85,7 +85,7 @@ public class IndexTest {
 
     @Test
     public void testIndexPaths() throws Exception {
-        buildIndex ("paths and xml", INDEX_PATHS | STORE_XML | BUILD_DOCUMENT);
+        buildIndex ("paths and xml", INDEX_PATHS | STORE_DOCUMENT | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
@@ -99,7 +99,7 @@ public class IndexTest {
     
     @Test
     public void testIndexFullText () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text", INDEX_FULLTEXT | STORE_XML |BUILD_DOCUMENT);        
+        IndexTestSupport indexTestSupport = buildIndex ("full-text", INDEX_FULLTEXT | STORE_DOCUMENT |BUILD_DOCUMENT);        
         assertTotalDocs ();
         //printAllTerms(indexTestSupport);
         assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
@@ -175,6 +175,17 @@ public class IndexTest {
         // printAllTerms(indexTestSupport);
         assertFullTextQuery (indexTestSupport, "title", "TEST", 1);
     }
+    
+    @Test
+    public void testStoreBinary () throws Exception {
+        XmlIndexer indexer = new XmlIndexer(STORE_DOCUMENT);
+        IndexWriter indexWriter = indexer.newIndexWriter(dir);
+        indexer.storeDocument(indexWriter, "/lux/compiler/test-module.xqy", 
+                getClass().getClassLoader().getResourceAsStream("lux/compiler/test-module.xqy"));
+        indexWriter.close();
+        System.out.println 
+             (String.format("indexed path-values for test-module.xqy in %d bytes", dir.sizeInBytes()));
+    }
 
     @Test @Ignore
     public void testIndexPathValuesOneDoc() throws Exception {
@@ -204,13 +215,13 @@ public class IndexTest {
 
     @Test
     public void testIndexQNameValues() throws Exception {
-        buildIndex ("qname-values and docs", INDEX_QNAMES | INDEX_VALUES | STORE_XML | BUILD_DOCUMENT);
+        buildIndex ("qname-values and docs", INDEX_QNAMES | INDEX_VALUES | STORE_DOCUMENT | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexQNameText() throws Exception {
-        buildIndex ("qname-text and docs", INDEX_QNAMES | INDEX_FULLTEXT | STORE_XML | BUILD_DOCUMENT);
+        buildIndex ("qname-text and docs", INDEX_QNAMES | INDEX_FULLTEXT | STORE_DOCUMENT | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
@@ -223,13 +234,13 @@ public class IndexTest {
 
     @Test
     public void testIndexPathValues() throws Exception {
-        buildIndex ("path-values and docs", INDEX_PATHS | INDEX_VALUES | STORE_XML | BUILD_DOCUMENT);
+        buildIndex ("path-values and docs", INDEX_PATHS | INDEX_VALUES | STORE_DOCUMENT | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
 
     @Test
     public void testIndexQNamesAndPaths() throws Exception {
-        IndexTestSupport its = buildIndex ("qnames and paths and docs", INDEX_QNAMES | INDEX_PATHS | STORE_XML | BUILD_DOCUMENT);
+        IndexTestSupport its = buildIndex ("qnames and paths and docs", INDEX_QNAMES | INDEX_PATHS | STORE_DOCUMENT | BUILD_DOCUMENT);
         assertTotalDocs ();
         its.close();
         buildIndex ("qnames and paths", INDEX_QNAMES | INDEX_PATHS | BUILD_DOCUMENT);
@@ -243,7 +254,7 @@ public class IndexTest {
 
     @Test
     public void testStoreDocuments() throws Exception {
-        buildIndex ("xml storage", STORE_XML| BUILD_DOCUMENT);
+        buildIndex ("xml storage", STORE_DOCUMENT| BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     

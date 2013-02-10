@@ -48,7 +48,7 @@ public abstract class FieldDefinition {
      * other types provide each values as a Java object.
      */
     public enum Type {
-        TOKENS, STRING, INT
+        TOKENS, STRING, BYTES, INT
     };
     
     private final Type type;    

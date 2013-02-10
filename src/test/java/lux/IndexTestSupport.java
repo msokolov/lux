@@ -3,7 +3,7 @@ package lux;
 import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
 import static lux.index.IndexConfiguration.INDEX_QNAMES;
-import static lux.index.IndexConfiguration.STORE_XML;
+import static lux.index.IndexConfiguration.STORE_DOCUMENT;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,7 +51,7 @@ public class IndexTestSupport {
     
     public IndexTestSupport(String ... xmlFiles) throws XMLStreamException, IOException, SaxonApiException {
         this (xmlFiles,
-                new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_XML|INDEX_FULLTEXT),
+                new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT),
                 new RAMDirectory());
     }
     

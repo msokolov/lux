@@ -43,6 +43,11 @@ public class FieldValues implements Iterable<Fieldable> {
             // can also re-use Documents.  Can only use each field instance once per document
             Object value = iter.next();
             switch (field.getType()) {
+            case BYTES:
+                if (value instanceof byte[]) {
+                    return new Field(fieldName, (byte[])value);
+                }
+                // else fall through and treat as String?
             case STRING:
                 return new Field(fieldName, value.toString(), field.isStored(), field.getIndexOptions());
             case INT:
