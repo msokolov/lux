@@ -20,11 +20,15 @@ public class DocumentField extends FieldDefinition {
     }
     
     protected DocumentField () {
-        super ("lux_xml", null, Store.YES, Type.STRING, TermVector.NO, true);
+        super ("lux_xml", null, Store.YES, Type.BYTES, TermVector.NO, true);
     }
     
     @Override
     public Iterable<?> getValues(XmlIndexer indexer) {
+        byte[] bytes = indexer.getDocumentBytes();
+        if (bytes != null) {
+            return Collections.singleton(bytes);
+        }
         return Collections.singleton(indexer.getDocumentText());
     }
 

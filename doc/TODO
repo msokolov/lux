@@ -1,35 +1,18 @@
-* Packaging / distribution
-What is the goal for a first public release?  Is it better to just get
-something out there and invite users / collaboration?  The best thing will
-be to make sure whatever we put is out very high quality, and complete
-within some limited sphere.  But not to wait too long, since we want to
-test our ideas in the marketplace, and start to drum up interest and
-support.
-** PubFactory
-Open up to PF developers; explain what it is (and is not); solicit ideas
-for improvements and new directions.  Schedule a demo/presentation at
-engineering meeting.
-** sourceforge?
-At some point we'll want to put this up in a collaboration environment.
-Consider Collabnet?  GitHub?  Google Code?
-** ifpress
-
+* step back - what do we want to be good it
+the app server is really secondary, right?  although necessary to shake out
+bugs, and to provide an easy on-ramp.  But the core benefits should be:
+** correctness
+** speed
+*** indexing and query optimization
+*** document loading
+**** compare
+** features
+* Distribution
+** blog post
 ** lucene
-mention on the mailing list?
+mention on the mailing list
 ** xml-dev
-mention on the mailing list?
-** svn
-** domain/namespace
-lux.* is unavailable
-luxpath.net/org are available
-** licensing. 
-Saxon licensing doesn't seem to be an issue?  Review
-Mozilla license, but if we are committed to open source there's no problem?
-If we do commit to saxon (seems like the best way to focus on indexing and
-query optos?), should probably scrap Jaxen support, or stop extending its
-tests.  Already the Lucene and Solr integration is too tied to the specific
-impl.  Alternatively, see this as an oppty to build a good abstraction
-layer.
+mention on the mailing list
 * Plans
 ** benchmark framework
 Eventually will want to scale up, perform repeats, report timings in a
@@ -48,6 +31,4 @@ Use tinytree for storage; evaluate the perf improvement from this.  Could
 use Ptree if you have saxon-PE+.  Or could build a replacement (maybe for
 in house use, but don't release).  Actually this proves to be difficult
 without totally taking over Saxon.
-** TinyTree in ifpress
 ** check whether our code works w/9.1 (Saxon B) ?
-* Highlighting

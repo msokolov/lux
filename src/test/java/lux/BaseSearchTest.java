@@ -7,7 +7,7 @@ import static lux.IndexTestSupport.QUERY_NO_DOCS;
 import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
 import static lux.index.IndexConfiguration.INDEX_QNAMES;
-import static lux.index.IndexConfiguration.STORE_XML;
+import static lux.index.IndexConfiguration.STORE_DOCUMENT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -43,7 +43,7 @@ public abstract class BaseSearchTest {
     protected static int totalDocs;
 
     public static void setup(String ... xmlfile) throws Exception {
-        XmlIndexer indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_XML|INDEX_FULLTEXT);
+        XmlIndexer indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT);
         indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
         index = new IndexTestSupport(xmlfile, indexer, new RAMDirectory());
         

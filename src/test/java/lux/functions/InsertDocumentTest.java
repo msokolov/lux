@@ -2,7 +2,7 @@ package lux.functions;
 
 import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
 import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.STORE_XML;
+import static lux.index.IndexConfiguration.STORE_DOCUMENT;
 import lux.IndexTestSupport;
 import lux.index.XmlIndexer;
 
@@ -17,7 +17,7 @@ public class InsertDocumentTest extends XQueryTest {
     @BeforeClass
     public static void setup() throws Exception {
         RAMDirectory dir = new RAMDirectory();
-        indexTestSupport = new IndexTestSupport(new XmlIndexer(INDEX_PATHS|INDEX_FULLTEXT|STORE_XML), dir);
+        indexTestSupport = new IndexTestSupport(new XmlIndexer(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT), dir);
         evaluator = indexTestSupport.makeEvaluator();
     }
     

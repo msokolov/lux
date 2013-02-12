@@ -58,6 +58,7 @@ public abstract class ExpressionVisitor {
     public abstract AbstractExpression visit(FunctionDefinition func);
     public abstract AbstractExpression visit (InstanceOf instanceOf);
     public abstract AbstractExpression visit (Let let);
+    
     public abstract LetClause visit (LetClause letClause);
     public abstract AbstractExpression visit (LiteralExpression literal);
     public abstract OrderByClause visit (OrderByClause orderByClause);

@@ -29,7 +29,7 @@ public class BenchmarkRunner extends RunnerBase {
     @BeforeClass
     public static void setup() throws Exception {
         // Create path indexes and optimize queries to use them
-        setup(IndexConfiguration.INDEX_PATHS | IndexConfiguration.STORE_XML, "TestSourcesTiny");
+        setup(IndexConfiguration.INDEX_PATHS | IndexConfiguration.STORE_DOCUMENT, "TestSourcesTiny");
     }
 
     private boolean runTest (String caseName) throws Exception {

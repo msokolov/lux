@@ -49,6 +49,7 @@ import lux.xquery.LetClause;
 import lux.xquery.OrderByClause;
 import lux.xquery.SortKey;
 import lux.xquery.Variable;
+import lux.xquery.VariableBindingClause;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
 
@@ -161,7 +162,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // visit the expression tree, optimizing any absolute sub-expressions
         expr = expr.accept (this);
         // optimize the top level expression
-        return optimizeExpression (expr, 0);
+        return optimizeExpression (expr, peek());
     }
     
     /**
@@ -169,18 +170,23 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * @param j the query stack depth at which expr's query is to be found
      * @param facts additional facts to apply to the query
      */
-    private AbstractExpression optimizeExpression (AbstractExpression expr, int j) {
+    private AbstractExpression optimizeExpression (AbstractExpression expr, int i) {
+        int j = queryStack.size() - i - 1;
+        return optimizeExpression (expr, queryStack.get(j));
+    }
+
+    private AbstractExpression optimizeExpression (AbstractExpression expr, XPathQuery query) {
         if (expr instanceof SearchCall) {
             // TODO: when handling count(), exists(), etc: merging facts loses info about their optimizations
             // append any additional constraints from where clauses
             // and ordering criteria from order by clauses
             // to an existing search call
-            return mergeSearchCall ((SearchCall) expr, j);
+            return mergeSearchCall ((SearchCall) expr, query);
         }
         if (! expr.isAbsolute()) {
             return expr;
         }
-        FunCall search = getSearchCall(j);
+        FunCall search = createSearchCall(FunCall.LUX_SEARCH, query);
         if (search.getReturnType().equals(ValueType.DOCUMENT)) {
             // Avoid the need to sort the results of this expression so that it can be 
             // embedded in a subsequence or similar and evaluated lazily.
@@ -201,9 +207,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // for $var in lux:search(...) return $var op $expr
             // avoids the need for document-ordering (b/c we are *already* document-ordered)
             return new FLWOR (expr, new ForClause(var, null, search));
-        }
+        }        
     }
-
     /**
      * Each absolute subexpression S is joined with a call to lux:search(), 
      * effectively replacing it with search(QS)/S, where QS is the query derived 
@@ -307,7 +312,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         // Allow the base expression to be optimized later so we have an opportunity to combine the 
         // predicate query with the base query
-        predicate.setFilter (optimizeExpression (predicate.getFilter(), 0));
+        predicate.setFilter (optimizeExpression (predicate.getFilter(), peek()));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         
@@ -901,18 +906,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     // merge any sorting criteria from the query at position i on the stack
     // with the search call.  TODO: also merge any query with the existing
     // query
-    private SearchCall mergeSearchCall (SearchCall search, int i) {
-        int j = queryStack.size() - i - 1;
-        XPathQuery query = queryStack.get(j);
+    private SearchCall mergeSearchCall (SearchCall search, XPathQuery query) {
         search.combineQuery(query, indexConfig);
         return search;
-    }
-    
-    private FunCall getSearchCall (int i) {
-        int j = queryStack.size() - i - 1;
-        XPathQuery query = queryStack.get(j);
-        queryStack.set (j, MATCH_ALL);
-        return createSearchCall(FunCall.LUX_SEARCH, query);
     }
     
     private FunCall createSearchCall (QName functionName, XPathQuery query) {
@@ -955,6 +951,20 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return expr;
     }
     
+    /**
+     * <p>Optimizing FLWOR expressions is more complicated than path expressions and other simpler 
+     * XPath expressions because the relationship among the clauses is not a simple dependency,
+     * but is mediated by variables.</p>
+     * 
+     * <p>The strategy is to use constraints from each clause and its dependent for, where and return clauses to filter 
+     * that clause's sequence.  Dependent let and order by clauses are not considered when filtering
+     * enclosing clauses.  Order by clauses *do* contribute to ordering relations in their enclosing for 
+     * clause and may be folded together with them when searchable.
+     * </p>
+     * 
+     * <p>Additionally, constraints may come in via variable references, but this is not handled explicitly as part
+     * of the FLWOR optimization; rather it is handled in the visit method for each clause.
+     */
     @Override
     public AbstractExpression visit(FLWOR flwor) {
         if (DEBUG) {
@@ -962,37 +972,36 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         // combine any constraint from the return clause with the constraint from the 
         // for and where clauses
-        flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), 0);
+        flwor.getSubs()[0] = optimizeExpression (flwor.getReturnExpression(), peek());
         //XPathQuery returnQuery = pop();
         peek().setSortFields(null); // ignore any ordering expressions found in the return clause
         int length = flwor.getClauses().length;
         // iterate in reverse order so we can unwind the query stack from its "top"
         // which corresponds to the "bottom" of the expression tree.
-        // XPathQuery q= MATCH_ALL;
+        
         for (int i = length - 1; i >= 0; i--) {
             FLWORClause clause = flwor.getClauses()[i];
             AbstractExpression seq = clause.getSequence();
-            // TODO: check this logic (again) it seems a little hinky.  We haven't really examined
-            // where clauses, eg.
+            if (clause instanceof VariableBindingClause) {
+                QName varName = ((VariableBindingClause) clause).getVariable().getQName();
+                descopeVariable(varName);
+            }
             if (clause instanceof LetClause) {
-                QName varName = ((LetClause) clause).getVariable().getQName();
-                descopeVariable(varName);
-                clause.setSequence(optimizeExpression(seq, 0));
-            }
-            //if (i > 0) {
+                XPathQuery top = pop(); // get top two queries
+                XPathQuery letQuery = pop();
+                // the let query will have been marked as ignorable, but in this context it is not.
+                letQuery.setFact(IGNORABLE, false);
+                // merge into let query (leave the top query alone - don't combine let-constraints with it)
+                letQuery = combineQueries (letQuery, Occur.MUST, top, letQuery.getResultType());
+                clause.setSequence(optimizeExpression(seq, letQuery));
+                push (top); // restore accumulating return query to top of stack
+            } else {
                 combineTopQueries(2, Occur.MUST);
-                /*
-                XPathQuery qq = pop();
-                q = combineQueries (q, Occur.MUST, qq, qq.getResultType());
-                push (q);
-                */
-            //}
-            // 
-            if (clause instanceof ForClause) {
-                QName varName = ((ForClause) clause).getVariable().getQName();
-                descopeVariable(varName);
-                clause.setSequence(optimizeExpression(seq, 0));
             }
+            if (clause instanceof ForClause) {
+                clause.setSequence(optimizeExpression(seq, peek()));
+            }
+            // TODO: optimize where and order by clauses?
         }
         //push (combineQueries (pop(), Occur.MUST, returnQuery, returnQuery.getResultType()));
         return flwor;
@@ -1002,7 +1011,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         varQuery.remove(varName);
         varBindings.remove(varName);
     }
-
+    
     @Override
     public OrderByClause visit (OrderByClause orderByClause) {
         LinkedList<SortField> sortFields  = new LinkedList<SortField>();
@@ -1070,8 +1079,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     @Override
     public LetClause visit (LetClause letClause) {
         visitVariableBinding (letClause.getVariable(), letClause.getSequence());
-        // let clause queries are ignorable since their dependent clauses
-        // don't require them
+        // Mark let clause queries as ignorable so that  expressions that depend
+        // on the let variable don't require the variable to be non-empty by default
         peek().setFact(IGNORABLE, true);
         return letClause;
     }

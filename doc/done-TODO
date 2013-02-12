@@ -1,4 +1,7 @@
 * optimization fixes
+** stopped queries from let clause expressions from bleeding
+These were contributing to the filtering of enclosing expressions and could
+cause some documents to be missed.
 ** paths with predicates referenced by variable
 let $x := /a[b]/c 
 gets an incorrect query attached to it (/a/b/c)

@@ -1,15 +1,6 @@
 package lux.index;
 
-import static lux.index.IndexConfiguration.BUILD_DOCUMENT;
-import static lux.index.IndexConfiguration.COMPUTE_OFFSETS;
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.INDEX_QNAMES;
-import static lux.index.IndexConfiguration.INDEX_VALUES;
-import static lux.index.IndexConfiguration.LUCENE_VERSION;
-import static lux.index.IndexConfiguration.NAMESPACE_AWARE;
-import static lux.index.IndexConfiguration.STORE_XML;
-import static lux.index.IndexConfiguration.STRIP_NAMESPACES;
+import static lux.index.IndexConfiguration.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +27,7 @@ import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmValue;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
@@ -82,6 +74,7 @@ public class XmlIndexer {
     private Serializer serializer;
     private XmlPathMapper pathMapper;
     private String uri;
+    private byte[] documentBytes;
     private HashMap<String,XPathExecutable> xpathCache;
     
     /**
@@ -129,8 +122,8 @@ public class XmlIndexer {
         }
         if (isOption (INDEX_FULLTEXT)) {
             initDocBuilder();
-        }   
-        if (isOption (STORE_XML)) {
+        }
+        if (isOption (STORE_DOCUMENT)) {
             serializer = new Serializer();
             xmlReader.addHandler(serializer);
         }
@@ -249,6 +242,7 @@ public class XmlIndexer {
     /** Clear out internal storage cached by #index when indexing a document */
     public void reset() {
         xmlReader.reset();
+        documentBytes = null;
     }
 
     /**
@@ -290,13 +284,22 @@ public class XmlIndexer {
     /**
      * @return the document cached from the last invocation of #index, as a
      * String.  This will be null if the indexer options don't require the
-     * generation of a serialized document.
+     * generation of a serialized document.  The document is always re-serialized
+     * after parsing.
      */
     public String getDocumentText() {
         if (serializer != null) {
             return serializer.getDocument();
         }
         return null;        
+    }
+
+    /**
+     * @return the document bytes; this will be non-null if {@link #storeDocument(IndexWriter, String, InputStream)}
+     * was called.
+     */
+    public byte[] getDocumentBytes() {
+        return documentBytes;
     }
     
     /**
@@ -331,6 +334,34 @@ public class XmlIndexer {
         addLuceneDocument(indexWriter);
     }
 
+    /**
+     * Fully read the stream and store it as a document without attempting to parse or index it.  Used for
+     * binary and other non-XML text.
+     * @param indexWriter the Lucene IndexWriter for the index to write to
+     * @param docUri the uri to assign to the document; any scheme will be stripped: only the path is stored in the index
+     * @param input the stream to read the document from
+     * @throws IOException if there is an error writing to the index
+     */
+    public void storeDocument(final IndexWriter indexWriter, final String docUri, final InputStream input) throws IOException {
+        storeDocument (indexWriter, docUri, IOUtils.toByteArray(input));
+    }
+    
+    /**
+     * Fully read the stream and store it as a document without attempting to parse or index it.  Used for
+     * binary and other non-XML text.
+     * @param indexWriter the Lucene IndexWriter for the index to write to
+     * @param docUri the uri to assign to the document; any scheme will be stripped: only the path is stored in the index
+     * @param bytes the document bytes to store
+     * @throws IOException if there is an error writing to the index
+     */
+    public void storeDocument(final IndexWriter indexWriter, final String docUri, final byte[] bytes) throws IOException {
+        reset();
+        String path = normalizeUri(docUri);
+        uri = path;
+        documentBytes = bytes;
+        addLuceneDocument(indexWriter);
+    }
+    
     private static String normalizeUri(String uri) {
         String path = uri.replaceFirst("^\\w+:/+", "/"); // strip the scheme part (file:/, lux:/, etc), if any
         path = path.replace('\\', '/');

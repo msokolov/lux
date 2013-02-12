@@ -1,10 +1,9 @@
 * bugs
+**
+lux:search('uri:/*')[contains(substring(lux:field-values('uri')[1]/string(),1),'/')]
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
-** stopped queries from let clause expressions from bleeding
-These were contributing to the filtering of enclosing expressions and could
-cause some documents to be missed.
 ** exists as an isomorph
 Is there a circumstance where this is incorrect?  If not, then what is the 
 actual rule we are relying on there?

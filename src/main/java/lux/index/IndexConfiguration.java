@@ -42,8 +42,8 @@ public class IndexConfiguration {
      */
     public final static int NAMESPACE_AWARE=    0x00000004;
     
-    /** causes a serialized XML document to be stored in the index. This should generally always be enabled/ */
-    public final static int STORE_XML=          0x00000008;
+    /** causes a document to be stored in the index. This should generally always be enabled/ */
+    public final static int STORE_DOCUMENT =    0x00000008;
     
     // public final static int STORE_PTREE=        0x00000010;
     
@@ -75,7 +75,7 @@ public class IndexConfiguration {
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
     
     /** the default indexing options */
-    public final static int DEFAULT_OPTIONS = STORE_XML | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | NAMESPACE_AWARE;
+    public final static int DEFAULT_OPTIONS = STORE_DOCUMENT | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | NAMESPACE_AWARE;
 
     /** unique identifier field that identifies a document */
     public static final FieldDefinition URI = URIField.getInstance();
@@ -173,7 +173,7 @@ public class IndexConfiguration {
                 options |= COMPUTE_OFFSETS;
             }
         }
-        if (isOption (STORE_XML)) {
+        if (isOption (STORE_DOCUMENT)) {
             addField(XML_STORE);
         }
     }
