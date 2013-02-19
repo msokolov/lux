@@ -1,12 +1,7 @@
 package lux.compiler;
 
-import static lux.compiler.XPathQuery.BOOLEAN_FALSE;
-import static lux.compiler.XPathQuery.BOOLEAN_TRUE;
-import static lux.compiler.XPathQuery.IGNORABLE;
-import static lux.compiler.XPathQuery.MINIMAL;
-import static lux.compiler.XPathQuery.SINGULAR;
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.compiler.XPathQuery.*;
+import static lux.index.IndexConfiguration.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +13,7 @@ import lux.SearchResultIterator;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.field.FieldDefinition;
 import lux.query.NodeTextQuery;
 import lux.query.ParseableQuery;
 import lux.query.SpanTermPQuery;
@@ -539,7 +535,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 AbstractExpression arg = args[0];
                 if (arg.getType() == Type.LITERAL) {
                     // save away the field name as a possible sort key
-                    peek().setSortFields(new SortField[] {new SortField (((LiteralExpression)arg).getValue().toString(), SortField.STRING)});
+                    String fieldName = ((LiteralExpression)arg).getValue().toString();
+                    FieldDefinition fieldDefinition = indexConfig.getField (fieldName);
+                    if (fieldDefinition != null) {
+                        int sortType = fieldDefinition.getType().getLuceneSortFieldType();
+                        peek().setSortFields(new SortField[] {new SortField (fieldName, sortType)});
+                    }
                 }
             }
         }

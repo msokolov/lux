@@ -73,6 +73,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     private Sort makeSortFromCriteria() {
         String[] fields = sortCriteria.split(",");
         SortField[] sortFields = new SortField [fields.length];
+        int type = SortField.STRING;
         for (int i = 0; i < fields.length; i++) {
             String [] tokens = fields[i].split("\\s+");
             String field = tokens[0];
@@ -97,6 +98,10 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                     else {
                         throw new LuxException ("missing or invalid keyword after 'empty' in sort criterion: " + sortCriteria);
                     }
+                } else if (tokens[j].equals("int")) {
+                    type = SortField.INT;
+                } else if (tokens[j].equals("long")) {
+                    type = SortField.LONG;
                 } else {
                     throw new LuxException ("invalid keyword '" + tokens[j] + "' in sort criterion: " + sortCriteria);
                 }
@@ -110,7 +115,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 if (emptyGreatest == Boolean.TRUE) {
                     sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);
                 } else {
-                    sortFields[i] = new SortField(field, SortField.STRING, reverse == Boolean.TRUE);
+                    sortFields[i] = new SortField(field, type, reverse == Boolean.TRUE);
                 }
             }
         }

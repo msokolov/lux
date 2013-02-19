@@ -50,10 +50,16 @@ public class FieldValues implements Iterable<Fieldable> {
                 // else fall through and treat as String?
             case STRING:
                 return new Field(fieldName, value.toString(), field.isStored(), field.getIndexOptions());
-            case INT:
+            case INT: {
                 NumericField nf = new NumericField(fieldName);
                 nf.setIntValue((Integer) value);
                 return nf;
+            }
+            case LONG: {
+                NumericField nf = new NumericField(fieldName);
+                nf.setLongValue((Long) value);
+                return nf;
+            }
             case TOKENS:
                 return (Field) value;
             default:

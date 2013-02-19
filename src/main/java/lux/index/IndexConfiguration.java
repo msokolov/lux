@@ -3,9 +3,7 @@ package lux.index;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.field.AttributeQNameField;
@@ -110,7 +108,7 @@ public class IndexConfiguration {
     
     private long options;
     
-    private final Set<FieldDefinition> fields;
+    private final HashMap<String, FieldDefinition> fields;
     private final HashMap<FieldDefinition, String> fieldNames;
     private MultiFieldAnalyzer fieldAnalyzers;
     private final HashMap<String,String> namespaceMap;
@@ -135,7 +133,7 @@ public class IndexConfiguration {
 
     protected IndexConfiguration (long options) {
         namespaceMap = new HashMap<String, String>();
-        fields = new HashSet<FieldDefinition>();
+        fields = new HashMap<String, FieldDefinition>();
         fieldNames = new HashMap<FieldDefinition, String>();
         fieldAnalyzers = new MultiFieldAnalyzer();
         fieldAnalyzers.put(null, new DefaultAnalyzer());
@@ -182,7 +180,7 @@ public class IndexConfiguration {
      * @param field the field to add
      */
     public void addField (FieldDefinition field) {
-        fields.add(field);
+        fields.put(field.getDefaultName(), field);
         fieldAnalyzers.put(getFieldName(field), field.getAnalyzer());
     }
     
@@ -219,15 +217,24 @@ public class IndexConfiguration {
         if (! field.isRenameable()) {
             throw new IllegalArgumentException("Attempt to rename field " + field + " whose name is fixed");
         }
+        String currentName = fieldNames.get (field);
+        if (currentName != null) {
+            fields.remove(currentName);
+        }
         fieldNames.put(field, name);
+        fields.put(name,  field);
     }
 
     public Collection<FieldDefinition> getFields () {
-        return fields;
+        return fields.values();
     }
     
     public FieldDefinition getField (FieldName fieldName) {
         return fieldName.getField();
+    }
+    
+    public FieldDefinition getField (String fieldName) {
+        return fields.get(fieldName);
     }
     
     public String getDefaultFieldName () {

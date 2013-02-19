@@ -10,6 +10,7 @@ import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.search.SortField;
 import org.apache.solr.schema.FieldProperties;
 
 /**
@@ -48,7 +49,15 @@ public abstract class FieldDefinition {
      * other types provide each values as a Java object.
      */
     public enum Type {
-        TOKENS, STRING, BYTES, INT
+        TOKENS, STRING, BYTES, INT, LONG;
+        public int getLuceneSortFieldType () {
+            switch (this) {
+            case STRING: return SortField.STRING;
+            case INT: return SortField.INT;
+            case LONG: return SortField.LONG;
+            default: return SortField.DOC; // ignore??
+            }
+        }
     };
     
     private final Type type;    
