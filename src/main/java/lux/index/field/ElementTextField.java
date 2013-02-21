@@ -37,7 +37,8 @@ public class ElementTextField extends FieldDefinition {
         XdmNode doc = indexer.getXdmNode();
         if (doc != null && doc.getUnderlyingNode() != null) {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
-            ElementTokenStream tokens = new ElementTokenStream (doc, builder.getOffsets());
+            String fieldName = indexer.getConfiguration().getFieldName(this);
+            ElementTokenStream tokens = new ElementTokenStream (fieldName, getAnalyzer(), doc, builder.getOffsets());
             ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
             return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
                         new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));

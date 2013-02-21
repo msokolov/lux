@@ -101,7 +101,7 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test public void testDocFunction () throws Exception {
         assertXPathSearchCount (1, 0, "document", "doc", "doc('test50')");
         // TODO: eliminate the repetition of the error:
-        assertXPathSearchCount (0, 0, "error", "document '/foo' not found\ndocument '/foo' not found\n", "doc('/foo')");  
+        assertXPathSearchCount (0, 0, "error", "document not found: /foo\ndocument not found: /foo\n", "doc('/foo')");  
     }
     
     @Test public void testCollectionFunction () throws Exception {

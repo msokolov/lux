@@ -6,6 +6,8 @@ import lux.xml.Offsets;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 
+import org.apache.lucene.analysis.Analyzer;
+
 /**
  * <p>This TokenStream records the offsets (character positions in the original text) of every token.
  * It records the start offset of each text node, and whenever there is a difference between the 
@@ -22,8 +24,8 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
     
     private CharSequenceStream charSequenceStream;
 
-    public TextOffsetTokenStream(XdmNode doc, Offsets offsets) {
-        super();
+    public TextOffsetTokenStream(String fieldName, Analyzer analyzer, XdmNode doc, Offsets offsets) {
+        super(fieldName, analyzer);
         //charSequenceStream = new CharSequenceStream(null);
         //charStream = new OffsetCharFilter(charSequenceStream);
         this.offsets = offsets;
@@ -37,36 +39,43 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
         OffsetCharFilter offsetCharFilter = null;
         if (offsets != null) {
             charStream = offsetCharFilter = new OffsetCharFilter(charSequenceStream);
+            updateOffsets (offsetCharFilter, text.length());
         } else {
             charStream = charSequenceStream;
         }
         try {
-            tokenizer.reset(charStream);
-            if (curNode.getNodeKind() == XdmNodeKind.TEXT && offsets != null) {
-                int location = offsets.getTextLocation(iText++); // location in the original XML
-                offsetCharFilter.addOffset(0, location);
-                // skip over any deltas preceding this text
-                int deltaLocation = offsets.getDeltaLocation(iDelta);
-                while (iDelta < offsets.getDeltaCount() && deltaLocation < location) {
-                    deltaLocation = offsets.getDeltaLocation(++iDelta);
-                }
-                // apply all the deltas occurring within this text
-                while (iDelta < offsets.getDeltaCount()) {
-                    // accumulate the deltas
-                    location += offsets.getDelta(iDelta);
-                    // calculate the offset within this text (not the original XML-encoded text) where the delta is
-                    int dOff = deltaLocation - location;
-                    if (dOff > text.length()) {
-                        break;
-                    }
-                    // the offset at dOff is the difference between the original position and dOff
-                    offsetCharFilter.addOffset(dOff, location);
-                    deltaLocation = offsets.getDeltaLocation(++iDelta);
-                }
-            }
+            reset (charStream);
+            // this is what we had before refactoring:
             return incrementWrappedTokenStream();
+            // but shouldn't it really be this?:
+            // return incrementToken();
         } catch (IOException e) {
             return false;
+        }
+    }
+
+    private void updateOffsets (OffsetCharFilter offsetCharFilter, int length) {
+        if (curNode.getNodeKind() == XdmNodeKind.TEXT && offsets != null) {
+            int location = offsets.getTextLocation(iText++); // location in the original XML
+            offsetCharFilter.addOffset(0, location);
+            // skip over any deltas preceding this text
+            int deltaLocation = offsets.getDeltaLocation(iDelta);
+            while (iDelta < offsets.getDeltaCount() && deltaLocation < location) {
+                deltaLocation = offsets.getDeltaLocation(++iDelta);
+            }
+            // apply all the deltas occurring within this text
+            while (iDelta < offsets.getDeltaCount()) {
+                // accumulate the deltas
+                location += offsets.getDelta(iDelta);
+                // calculate the offset within this text (not the original XML-encoded text) where the delta is
+                int dOff = deltaLocation - location;
+                if (dOff > length) {
+                    break;
+                }
+                // the offset at dOff is the difference between the original position and dOff
+                offsetCharFilter.addOffset(dOff, location);
+                deltaLocation = offsets.getDeltaLocation(++iDelta);
+            }
         }
     }
 }

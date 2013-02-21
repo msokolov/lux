@@ -129,6 +129,9 @@ public class SolrIndexConfig {
         if (fields.containsKey(fieldName)) {
             // The Solr schema defines this field
             logger.info("Field already defined: " + fieldName);
+            // TODO: in this case, construct an (index-time) Analyzer from the 
+            // field type found in the schema and install it in the the 
+            // xmlField FieldDefinition.
             return;
         }
         // look up the type of this field using the mapping in this class

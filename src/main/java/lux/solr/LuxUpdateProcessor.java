@@ -56,7 +56,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
         for (FieldDefinition field : indexConfig.getFields()) {
             String fieldName = indexConfig.getFieldName(field);
             if (field == indexConfig.getField(FieldName.URI) ||  
-                    field == indexConfig.getField(FieldName.XML_STORE))
+                field == indexConfig.getField(FieldName.XML_STORE))
             {
                 if (doc.getField(fieldName) != null) {
                     // uri and xml are provided externally in LuxUpdateProcessor
