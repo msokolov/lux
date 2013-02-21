@@ -1,18 +1,17 @@
 package lux.index.analysis;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.Iterator;
 
-import lux.index.IndexConfiguration;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharStream;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
@@ -52,27 +51,42 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
  * a special CharFilter that applies Offsets gleaned from XML parsing.  And there is CharSequenceStream,
  * which extends CharStream wrapping a CharSequence.
  */
+/*
+ * FIXME first!  I think we can straighten this out considerably (and
+ * expose the ability to provide a custom analysis chain), by: 
+ * (1) accepting an Analyzer in the constructor
+ * (2) Use the analyzer to acquire a new (or reused) TokenStream in resetTokenizer()
+ * (3) merge TextOffsetTokenStream with this class???  Or merge most of it and leave separate
+ * just to model the offsets behavior.
+ */
 abstract class XmlTokenStreamBase extends TokenStream {
 
-    
-    protected TokenStream wrapped; // these two do the actual tokenizing within
-                                   // each block of text
-    protected Tokenizer tokenizer;  
-
+    private final String fieldName;
+    // The analyzer creates the wrapped TokenStream/Tokenizer that does the text analysis
+    private final Analyzer analyzer;
+    private TokenStream wrapped;
     protected XdmNode curNode;
-    protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to
-                                             // index
-
-    protected CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-
+    protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to index
+    protected CharTermAttribute termAtt;
     protected CharStream charStream = new OffsetCharFilter(null);
-
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
-    XmlTokenStreamBase() {
-        tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
+    XmlTokenStreamBase(String fieldName, Analyzer analyzer) {
+        this.fieldName = fieldName;
+        this.analyzer = analyzer;
+        // initialize the wrapped token stream with an empty stream so it can be further 
+        // wrapped and configured by subclass's constructors.
+        try {
+            reset ( new CharSequenceReader (""));
+        } catch (IOException e) { }
+        termAtt = wrapped.addAttribute(CharTermAttribute.class);
+        //tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
     }
     
+    public void reset (Reader reader) throws IOException {
+        wrapped = analyzer.reusableTokenStream (fieldName, reader);
+    }
+
     /*
      * Advance the iteration by looping through the following:
      * 1) next text node
@@ -95,6 +109,10 @@ abstract class XmlTokenStreamBase extends TokenStream {
      */
     public TokenStream getWrappedTokenStream () {
         return wrapped;
+    }
+    
+    protected void setWrappedTokenStream (TokenStream wrapped) {
+        this.wrapped = wrapped;
     }
     
     protected boolean incrementWrappedTokenStream() throws IOException {

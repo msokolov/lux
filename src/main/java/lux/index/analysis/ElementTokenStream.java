@@ -1,6 +1,8 @@
 package lux.index.analysis;
 
-import lux.index.IndexConfiguration;
+import java.io.IOException;
+import java.io.Reader;
+
 import lux.index.attribute.QNameAttribute;
 import lux.xml.Offsets;
 import net.sf.saxon.expr.parser.Token;
@@ -12,7 +14,7 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
-import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.Analyzer;
 
 /**
  * A TokenStream that extracts text from a Saxon Document model (XdmNode) and generates
@@ -21,12 +23,24 @@ import org.apache.lucene.analysis.LowerCaseFilter;
  */
 public final class ElementTokenStream extends TextOffsetTokenStream {
     
-    private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
+    private final QNameAttribute qnameAtt;
+    private QNameTokenFilter qnameTokenFilter;
 
-    public ElementTokenStream(XdmNode doc, Offsets offsets) {
-        super(doc, offsets);
-        wrapped = new QNameTokenFilter(new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, tokenizer));
+    public ElementTokenStream(String fieldName, Analyzer analyzer, XdmNode doc, Offsets offsets) {
+        super(fieldName, analyzer, doc, offsets);
         contentIter = new ContentIterator(doc);
+        qnameAtt = qnameTokenFilter.addAttribute(QNameAttribute.class);
+    }
+    
+    @Override
+    public void reset (Reader reader) throws IOException {
+        super.reset(reader);
+        if (qnameTokenFilter == null) {
+            qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
+        } else {
+            qnameTokenFilter.reset(getWrappedTokenStream());
+        }
+        setWrappedTokenStream (qnameTokenFilter);
     }
     
     @Override

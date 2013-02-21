@@ -1,10 +1,9 @@
 package lux.index.analysis;
 
-import lux.index.IndexConfiguration;
 import lux.xml.Offsets;
 import net.sf.saxon.s9api.XdmNode;
 
-import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.Analyzer;
 
 /**
  * Extracts tokens from an s9api XML document tree (XdmNode) in order to make them
@@ -21,10 +20,10 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
      * In theory this can be used for faster highlighting, but until that is proven, 
      * this should always be null.
      */
-    public XmlTextTokenStream(XdmNode doc, Offsets offsets) {
-        super(doc, offsets);
+    public XmlTextTokenStream(String fieldName, Analyzer analyzer, XdmNode doc, Offsets offsets) {
+        super(fieldName, analyzer, doc, offsets);
         contentIter = new ContentIterator(doc);
-        wrapped = new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, tokenizer);
+        //wrapped = new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, tokenizer);
     }
 
     @Override

@@ -10,6 +10,7 @@ import javax.xml.stream.XMLStreamReader;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.XmlTextTokenStream;
 import lux.xml.QName;
 import lux.xml.SaxonDocBuilder;
@@ -78,9 +79,10 @@ public class XmlHighlighter extends SaxonDocBuilder {
             query = replaceFields (query, textFieldName);
         }
         scorer = new QueryScorer(query);
-        // grab all the text at once to Lucene's lame-ass highlighter can figure out if there are any
+        // grab all the text at once so Lucene's lame-ass highlighter can figure out if there are any
         // phrases in it...
-        init(new XmlTextTokenStream(new XdmNode (node), null));
+        // TODO: is this the Analyzer we're looking for???  OR ... reimplement using different HL
+        init(new XmlTextTokenStream("xml_text", new DefaultAnalyzer(), new XdmNode (node), null));
         XmlReader xmlReader = new XmlReader ();
         xmlReader.addHandler(this);
         xmlReader.read(node);

@@ -95,6 +95,11 @@ public class SearchCall extends FunCall {
                 if (SearchResultIterator.MISSING_LAST.equals(sortField.getComparatorSource())) {
                     buf.append (" empty greatest");
                 }
+                switch (sortField.getType()) {
+                case SortField.INT: buf.append(" int"); break;
+                case SortField.LONG: buf.append(" long"); break;
+                default: // default is string
+                }
                 buf.append (",");
             }
             if (buf.length() > 0) {

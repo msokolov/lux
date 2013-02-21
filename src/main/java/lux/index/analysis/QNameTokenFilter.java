@@ -32,6 +32,10 @@ final public class QNameTokenFilter extends TokenFilter {
         setNamespaceAware(true);
     }
     
+    public final void reset (TokenStream inputAgain) {
+        assert (input == inputAgain);
+    }
+    
     @Override
     public boolean incrementToken() throws IOException {
         if ((! qnameAtt.hasNext()) || qnameAtt.onFirst()) {

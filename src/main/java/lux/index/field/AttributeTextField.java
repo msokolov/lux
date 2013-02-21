@@ -35,7 +35,8 @@ public class AttributeTextField extends FieldDefinition {
         XdmNode doc = indexer.getXdmNode();
         if (doc != null && doc.getUnderlyingNode() != null) {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
-            AttributeTokenStream tokens = new AttributeTokenStream(doc, builder.getOffsets());
+            String fieldName = indexer.getConfiguration().getFieldName(this);
+            AttributeTokenStream tokens = new AttributeTokenStream(fieldName, getAnalyzer(), doc, builder.getOffsets());
             ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
             return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
                         new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));

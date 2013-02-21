@@ -30,7 +30,8 @@ public class XmlTextField extends FieldDefinition {
         XdmNode doc = indexer.getXdmNode();
         if (doc != null && doc.getUnderlyingNode() != null) {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
-            XmlTextTokenStream tokens = new XmlTextTokenStream (doc, builder.getOffsets());
+            String fieldName = indexer.getConfiguration().getFieldName(this);
+            XmlTextTokenStream tokens = new XmlTextTokenStream (fieldName, getAnalyzer(), doc, builder.getOffsets());
             return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
         }
         return Collections.emptySet();
