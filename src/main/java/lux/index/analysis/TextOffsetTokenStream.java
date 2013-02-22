@@ -7,6 +7,7 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 
 /**
  * <p>This TokenStream records the offsets (character positions in the original text) of every token.
@@ -24,8 +25,8 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
     
     private CharSequenceStream charSequenceStream;
 
-    public TextOffsetTokenStream(String fieldName, Analyzer analyzer, XdmNode doc, Offsets offsets) {
-        super(fieldName, analyzer);
+    public TextOffsetTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
+        super(fieldName, analyzer, wrapped);
         //charSequenceStream = new CharSequenceStream(null);
         //charStream = new OffsetCharFilter(charSequenceStream);
         this.offsets = offsets;

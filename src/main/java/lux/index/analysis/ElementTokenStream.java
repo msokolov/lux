@@ -1,8 +1,5 @@
 package lux.index.analysis;
 
-import java.io.IOException;
-import java.io.Reader;
-
 import lux.index.attribute.QNameAttribute;
 import lux.xml.Offsets;
 import net.sf.saxon.expr.parser.Token;
@@ -15,6 +12,7 @@ import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 
 /**
  * A TokenStream that extracts text from a Saxon Document model (XdmNode) and generates
@@ -26,20 +24,11 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
     private final QNameAttribute qnameAtt;
     private QNameTokenFilter qnameTokenFilter;
 
-    public ElementTokenStream(String fieldName, Analyzer analyzer, XdmNode doc, Offsets offsets) {
-        super(fieldName, analyzer, doc, offsets);
+    public ElementTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
+        super(fieldName, analyzer, wrapped, doc, offsets);
+        qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
         contentIter = new ContentIterator(doc);
         qnameAtt = qnameTokenFilter.addAttribute(QNameAttribute.class);
-    }
-    
-    @Override
-    public void reset (Reader reader) throws IOException {
-        super.reset(reader);
-        if (qnameTokenFilter == null) {
-            qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
-        } else {
-            qnameTokenFilter.reset(getWrappedTokenStream());
-        }
         setWrappedTokenStream (qnameTokenFilter);
     }
     

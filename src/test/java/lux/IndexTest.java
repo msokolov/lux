@@ -1,7 +1,7 @@
 package lux;
 
 import static lux.index.IndexConfiguration.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -272,10 +272,23 @@ public class IndexTest {
     public void testMultipleXPathIndexes () throws Exception {
         XmlIndexer indexer = new XmlIndexer (BUILD_DOCUMENT);
         // SCENE comes in as ACT/*[2] - immediately following TITLE
-        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*/*[2])", null, Store.NO, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*)", null, Store.NO, Type.STRING));
+        // These can be encoded within a single XPath - we don't allow multiple indexes with the same name
+        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*/*[2]),name(/*)", null, Store.NO, Type.STRING));
         IndexTestSupport indexTestSupport = buildIndex("xpath", indexer);
         assertXPathStringField(25, "x", "SCENE", indexTestSupport);
+    }
+    
+    @Test
+    public void testMultipleXPathIndexesFail () throws Exception {
+        XmlIndexer indexer = new XmlIndexer (BUILD_DOCUMENT);
+        // SCENE comes in as ACT/*[2] - immediately following TITLE
+        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*/*[2])", null, Store.NO, Type.STRING));
+        try {
+            indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*)", null, Store.NO, Type.STRING));
+            assertTrue ("expected exception not thrown", false);
+        } catch (IllegalStateException e) {
+            assertEquals ("Duplicate field name: x", e.getMessage());
+        }
     }
     
     @Test

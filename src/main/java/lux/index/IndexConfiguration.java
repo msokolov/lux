@@ -180,6 +180,13 @@ public class IndexConfiguration {
      * @param field the field to add
      */
     public void addField (FieldDefinition field) {
+        FieldDefinition existing = fields.get(field.getDefaultName());
+        if (existing != null) {
+            if (existing != field) {
+                throw new IllegalStateException ("Duplicate field name: " + field);
+            }
+            return;
+        }
         fields.put(field.getDefaultName(), field);
         fieldAnalyzers.put(getFieldName(field), field.getAnalyzer());
     }

@@ -16,6 +16,7 @@ import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -115,7 +116,10 @@ public class QNameTokenStreamTest {
         reader.addHandler(builder);
         reader.read(new ByteArrayInputStream(input));
         XdmNode doc = builder.getDocument();
-        tokenStream = (TokenStream) tokenStreamClass.getConstructor(String.class, Analyzer.class, XdmNode.class, Offsets.class).newInstance("dummy", new DefaultAnalyzer(), doc, builder.getOffsets());
+        DefaultAnalyzer defaultAnalyzer = new DefaultAnalyzer();
+        TokenStream textTokens = defaultAnalyzer.reusableTokenStream("dummy", new CharSequenceReader(""));
+        tokenStream = (TokenStream) tokenStreamClass.getConstructor(String.class, Analyzer.class, TokenStream.class, XdmNode.class, Offsets.class).
+                newInstance("dummy", defaultAnalyzer, textTokens, doc, builder.getOffsets());
         termAtt = tokenStream.addAttribute(CharTermAttribute.class);
         offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
         posAtt = tokenStream.addAttribute(PositionIncrementAttribute.class);

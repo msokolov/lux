@@ -21,6 +21,7 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
+import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -82,7 +83,12 @@ public class XmlHighlighter extends SaxonDocBuilder {
         // grab all the text at once so Lucene's lame-ass highlighter can figure out if there are any
         // phrases in it...
         // TODO: is this the Analyzer we're looking for???  OR ... reimplement using different HL
-        init(new XmlTextTokenStream("xml_text", new DefaultAnalyzer(), new XdmNode (node), null));
+        Analyzer defaultAnalyzer = new DefaultAnalyzer();
+        TokenStream textTokens = null;
+        try {
+            textTokens = defaultAnalyzer.reusableTokenStream("xml_text", new CharSequenceReader(""));
+        } catch (IOException e) { }
+        init(new XmlTextTokenStream("xml_text", defaultAnalyzer, textTokens, new XdmNode (node), null));
         XmlReader xmlReader = new XmlReader ();
         xmlReader.addHandler(this);
         xmlReader.read(node);
