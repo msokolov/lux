@@ -10,6 +10,7 @@ import javax.xml.stream.XMLStreamReader;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.XmlTextTokenStream;
 import lux.xml.QName;
 import lux.xml.SaxonDocBuilder;
@@ -20,6 +21,7 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
+import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -78,9 +80,15 @@ public class XmlHighlighter extends SaxonDocBuilder {
             query = replaceFields (query, textFieldName);
         }
         scorer = new QueryScorer(query);
-        // grab all the text at once to Lucene's lame-ass highlighter can figure out if there are any
+        // grab all the text at once so Lucene's lame-ass highlighter can figure out if there are any
         // phrases in it...
-        init(new XmlTextTokenStream(new XdmNode (node), null));
+        // TODO: is this the Analyzer we're looking for???  OR ... reimplement using different HL
+        Analyzer defaultAnalyzer = new DefaultAnalyzer();
+        TokenStream textTokens = null;
+        try {
+            textTokens = defaultAnalyzer.reusableTokenStream("xml_text", new CharSequenceReader(""));
+        } catch (IOException e) { }
+        init(new XmlTextTokenStream("xml_text", defaultAnalyzer, textTokens, new XdmNode (node), null));
         XmlReader xmlReader = new XmlReader ();
         xmlReader.addHandler(this);
         xmlReader.read(node);

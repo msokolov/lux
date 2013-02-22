@@ -1,13 +1,12 @@
 package lux.index.field;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import lux.index.analysis.AttributeTokenStream;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.ElementTokenStream;
 import lux.index.analysis.XmlTextTokenStream;
 import lux.xml.OffsetDocBuilder;
@@ -17,6 +16,8 @@ import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -115,14 +116,17 @@ public class QNameTokenStreamTest {
         reader.addHandler(builder);
         reader.read(new ByteArrayInputStream(input));
         XdmNode doc = builder.getDocument();
-        tokenStream = (TokenStream) tokenStreamClass.getConstructor(XdmNode.class, Offsets.class).newInstance(doc, builder.getOffsets());
+        DefaultAnalyzer defaultAnalyzer = new DefaultAnalyzer();
+        TokenStream textTokens = defaultAnalyzer.reusableTokenStream("dummy", new CharSequenceReader(""));
+        tokenStream = (TokenStream) tokenStreamClass.getConstructor(String.class, Analyzer.class, TokenStream.class, XdmNode.class, Offsets.class).
+                newInstance("dummy", defaultAnalyzer, textTokens, doc, builder.getOffsets());
         termAtt = tokenStream.addAttribute(CharTermAttribute.class);
         offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
         posAtt = tokenStream.addAttribute(PositionIncrementAttribute.class);
     }
 
     private void assertTokenNoOffsets(String token, int posIncr) throws IOException {
-        assertTrue (tokenStream.incrementToken());
+        assertTrue ("Token stream ended unexpectedly", tokenStream.incrementToken());
         assertEquals (token, termAtt.toString());
         assertEquals (posIncr, posAtt.getPositionIncrement());
     }

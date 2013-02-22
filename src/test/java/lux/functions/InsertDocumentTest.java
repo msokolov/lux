@@ -1,8 +1,6 @@
 package lux.functions;
 
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.STORE_DOCUMENT;
+import static lux.index.IndexConfiguration.*;
 import lux.IndexTestSupport;
 import lux.index.XmlIndexer;
 
@@ -24,7 +22,7 @@ public class InsertDocumentTest extends XQueryTest {
     @Test
     public void testInsertDocument () throws Exception {
         assertXQuery(null, "lux:insert('/test.xml', <test>this is a test</test>)");
-        assertXQuery(null, "doc('/test.xml')", "document '/test.xml' not found");
+        assertXQuery(null, "doc('/test.xml')", "document not found: /test.xml");
         assertXQuery(null, "lux:commit()");
         evaluator.reopenSearcher(); // need to do this to see the updates
         assertXQuery("this is a test", "doc('/test.xml')/test/string()");
