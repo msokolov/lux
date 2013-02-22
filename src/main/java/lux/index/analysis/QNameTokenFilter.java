@@ -33,7 +33,7 @@ final public class QNameTokenFilter extends TokenFilter {
     }
     
     public final void reset (TokenStream inputAgain) {
-        assert (input == inputAgain);
+        assert (input.getAttribute(CharTermAttribute.class) == inputAgain.getAttribute(CharTermAttribute.class));
     }
     
     @Override
