@@ -4,7 +4,6 @@ import java.io.Reader;
 
 import lux.index.IndexConfiguration;
 
-import org.apache.lucene.analysis.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.ReusableAnalyzerBase;
 import org.apache.lucene.analysis.TokenStream;
@@ -16,8 +15,9 @@ public final class DefaultAnalyzer extends ReusableAnalyzerBase {
     @Override
     protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
         Tokenizer tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, reader);
-        TokenStream tokenStream =  new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, 
-                new ASCIIFoldingFilter(tokenizer));
+        TokenStream tokenStream =  new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, tokenizer);
+        // ASCIIFoldingFilter
+        // Stemming
         return new TokenStreamComponents(tokenizer, tokenStream);
     }
 

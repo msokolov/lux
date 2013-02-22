@@ -8,7 +8,6 @@ import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
-import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharStream;
 import org.apache.lucene.analysis.TokenStream;
@@ -19,7 +18,7 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
  * This is the root of a set of xml-aware TokenStream classes that work by selecting text
  * a node at a time (using {@link XmlTokenStreamBase#contentIterator}) from an XML document, and then 
  * passing that text to the wrapped TokenStream.  The wrapped TokenStream is re-used for each text node.
- * The outermost link in the chain will be a TokenFilterthat applies a sequence of structure-related 
+ * The outermost link in the chain will be a TokenFilter that applies a sequence of structure-related 
  * Attributes to each text token (ie a list of QNames, but can be any kind of structural attribute
  * that should be composed with each text token).
  * <p>
@@ -30,34 +29,11 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
  * <code>ElementTokenStream (QNameTokenFilter (LowerCaseFilter (StandardTokenizer)))</code>
  * </blockquote>
  * <p>
- * There is an oddity here in that the first link in the chain (the ElementTokenStream above)
- * needs to supply the structural information to the final link (the QNameTokenFilter), since 
- * the QNames are iterated in an *inner* loop - ie for each text token.  This is accomplished 
- * using the 
+ * We can't follow the standard Lucene pattern of Analyzer as a factory for a TokenStream
+ * since we want to be able to extend any arbitrary textual Analyzer, but the constraints 
+ * of the Analyzer class design prevent it from being extended in a straightforward manner.
+ * Thus we have essentially an outer (XML) stream wrapping an inner (Text) stream.
  * </p>
- * <p>
- * So this class and its descendants serve a dual function: as factories for the analysis
- * chain, and their instances serve as the first links in those chains.  This contrasts with 
- * the usual approach in Lucene, where an Analyzer serves to construct a TokenStream, but
- * is necessary since Analyzers work on character-based Readers, and here we need a more abstract
- * notion of Analysis that can encompass structured documents.
- * </p>
- */
-/*
- * TODO: refactor so as to make this more intelligible / similar to existing Lucene code
- * 1) Separate factory from TokenStream - create a StructureAnalyzer or something of that sort
- *    this should accept an Analyzer, and use it to create a TokenStream based on a:
- * 2) NodesReader, say, which reads the text of a sequence of nodes?  Note: we also have
- * a special CharFilter that applies Offsets gleaned from XML parsing.  And there is CharSequenceStream,
- * which extends CharStream wrapping a CharSequence.
- */
-/*
- * FIXME first!  I think we can straighten this out considerably (and
- * expose the ability to provide a custom analysis chain), by: 
- * (1) accepting an Analyzer in the constructor
- * (2) Use the analyzer to acquire a new (or reused) TokenStream in resetTokenizer()
- * (3) merge TextOffsetTokenStream with this class???  Or merge most of it and leave separate
- * just to model the offsets behavior.
  */
 abstract class XmlTokenStreamBase extends TokenStream {
 
@@ -71,20 +47,21 @@ abstract class XmlTokenStreamBase extends TokenStream {
     protected CharStream charStream = new OffsetCharFilter(null);
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
-    XmlTokenStreamBase(String fieldName, Analyzer analyzer) {
+    XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
+        super (wrapped);
+        this.wrapped = wrapped;
         this.fieldName = fieldName;
         this.analyzer = analyzer;
-        // initialize the wrapped token stream with an empty stream so it can be further 
-        // wrapped and configured by subclass's constructors.
-        try {
-            reset ( new CharSequenceReader (""));
-        } catch (IOException e) { }
-        termAtt = wrapped.addAttribute(CharTermAttribute.class);
+        termAtt = addAttribute(CharTermAttribute.class);
         //tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
     }
     
     public void reset (Reader reader) throws IOException {
-        wrapped = analyzer.reusableTokenStream (fieldName, reader);
+        TokenStream reset = analyzer.reusableTokenStream (fieldName, reader);
+        // This must be the same token stream: ie the Analyzer must be re-usable, and the 
+        // original token stream must have arisen from it.  We don't check for actual
+        // identity with wrapped since that might get wrapped again (eg w/QNameTokenFilter).
+        assert (reset.getAttribute(CharTermAttribute.class) == wrapped.getAttribute(CharTermAttribute.class));
     }
 
     /*

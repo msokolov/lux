@@ -12,6 +12,7 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 
 /**
  * A TokenStream that extracts words from attributes in a Saxon Document model (XdmNode)
@@ -21,8 +22,8 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
     private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
     private final QNameTokenFilter qnameTokenFilter;
     
-    public AttributeTokenStream(String fieldName, Analyzer analyzer, XdmNode doc, Offsets offsets) {
-        super(fieldName, analyzer, doc, offsets);
+    public AttributeTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
+        super(fieldName, analyzer, wrapped, doc, offsets);
         qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
         setWrappedTokenStream (qnameTokenFilter);
         contentIter = new ContentIterator(doc);
