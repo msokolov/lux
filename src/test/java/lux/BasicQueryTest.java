@@ -1,13 +1,7 @@
 package lux;
 
-import static lux.compiler.XPathQuery.BOOLEAN_FALSE;
-import static lux.compiler.XPathQuery.BOOLEAN_TRUE;
-import static lux.compiler.XPathQuery.DOCUMENT_RESULTS;
-import static lux.compiler.XPathQuery.MINIMAL;
-import static lux.compiler.XPathQuery.SINGULAR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
+import static lux.compiler.XPathQuery.*;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 
@@ -37,7 +31,7 @@ public class BasicQueryTest {
         ATTR, SCENE, SCENE_ACT, 
             ACT, ACT1, ACT2, ACT_CONTENT, ACT_CONTENT1, ACT_SCENE, ACT_SCENE1, ACT_SCENE_CONTENT, ACT_SCENE_CONTENT1, ACT_SCENE_SPEECH, ACT_OR_SCENE, 
             ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
-            MATCH_ALL, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
+            MATCH_ALL_Q, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
             LUX_FOO, LINE, TITLE, ACT_SCENE_SPEECH_AND, 
     };
     
@@ -73,13 +67,13 @@ public class BasicQueryTest {
         // Can you have an XML document with no elements?  I don't think so
         //assertQuery ("*", Q.MATCH_ALL, true, ValueType.ELEMENT);
         //assertQuery ("node()", Q.MATCH_ALL, true, ValueType.NODE);
-        assertQuery ("/*", MINIMAL|SINGULAR, ValueType.ELEMENT, Q.MATCH_ALL);
-        assertQuery ("/node()", MINIMAL, ValueType.NODE, Q.MATCH_ALL); // can have multiple root nodes
+        assertQuery ("/*", MINIMAL|SINGULAR, ValueType.ELEMENT, Q.MATCH_ALL_Q);
+        assertQuery ("/node()", MINIMAL, ValueType.NODE, Q.MATCH_ALL_Q); // can have multiple root nodes
         //assertQuery ("self::node()", Q.MATCH_ALL, MINIMAL);
     }
     
     @Test public void testSlash() throws Exception {
-        assertQuery ("/", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
+        assertQuery ("/", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
     }
     
     @Test public void testElementPredicate() throws Exception {
@@ -229,11 +223,11 @@ public class BasicQueryTest {
     }
 
     @Test public void testAncestorOrSelf () throws Exception {
-        assertQuery ("/ancestor-or-self::node()", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
+        assertQuery ("/ancestor-or-self::node()", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
     }
     
     @Test public void testSelf () throws Exception {
-        assertQuery ("/self::node()", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL);
+        assertQuery ("/self::node()", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
     }
     
     @Test public void testAtomicResult () throws Exception {
@@ -243,7 +237,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testCounting () throws Exception {
-        assertQuery ("count(/)", SINGULAR | MINIMAL, ValueType.ATOMIC, Q.MATCH_ALL);
+        assertQuery ("count(/)", SINGULAR | MINIMAL, ValueType.ATOMIC, Q.MATCH_ALL_Q);
         assertQuery ("count(//ACT)", MINIMAL, ValueType.ATOMIC, Q.ACT);
         assertQuery ("count(//ACT/root())", SINGULAR | MINIMAL, ValueType.ATOMIC, Q.ACT);
         assertQuery ("count(//ACT/ancestor::document-node())", SINGULAR | MINIMAL, ValueType.ATOMIC, Q.ACT);
@@ -257,7 +251,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testExistence() throws Exception {
-        assertQuery ("exists(/)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL);
+        assertQuery ("exists(/)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
         assertQuery ("exists(//ACT)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
         assertQuery ("exists(//ACT/root())", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
         assertQuery ("exists(//ACT) and exists(//SCENE)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
@@ -270,7 +264,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testNonexistence() throws Exception {
-        assertQuery ("empty(/)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.MATCH_ALL);
+        assertQuery ("empty(/)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
         assertQuery ("empty(//ACT)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT);
         assertQuery ("empty(//ACT/root())", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT);
         assertQuery ("empty(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
@@ -281,7 +275,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testNot() throws Exception {
-        assertQuery ("not(/)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL);
+        assertQuery ("not(/)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
         assertQuery ("not(//ACT)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
         assertQuery ("not(//ACT/root())", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
         assertQuery ("not(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
@@ -370,7 +364,7 @@ public class BasicQueryTest {
         // should return the titles of the second document in document order (which is a TITLE 
         // and has no TITLE), but this was failing because we fetched only documents containing TITLE
         // TODO: should be minimal?
-        assertQuery (query, SINGULAR|DOCUMENT_RESULTS, Q.MATCH_ALL);
+        assertQuery (query, SINGULAR|DOCUMENT_RESULTS, Q.MATCH_ALL_Q);
 
         query = "(for $doc in collection() return data($doc//TITLE))[2]";
         assertQuery (query, MINIMAL, Q.TITLE);
@@ -488,7 +482,7 @@ public class BasicQueryTest {
         case ACT_SCENE_ID_123:
             return "+(+lux_att_name:\"id\" +lux_elt_name:\"SCENE\") +lux_elt_name:\"ACT\"";
         case PLAY_ACT_OR_PERSONAE_TITLE: return "+lux_elt_name:\"TITLE\" +(+(lux_elt_name:\"PERSONAE\" lux_elt_name:\"ACT\") +lux_elt_name:\"PLAY\")";
-        case MATCH_ALL: return "*:*";
+        case MATCH_ALL_Q: return "*:*";
         case AND: return "lux_elt_name:\"AND\"";
         case LUX_FOO: return "lux_elt_name:\"foo{" + FunCall.LUX_NAMESPACE + "}\"";
         default: throw new UnsupportedOperationException("unregistered query enum: " + q);
@@ -571,7 +565,7 @@ public class BasicQueryTest {
                 "</BooleanQuery>";
         case TITLE:
             return "<TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery>";
-        case MATCH_ALL: return "<MatchAllDocsQuery />";
+        case MATCH_ALL_Q: return "<MatchAllDocsQuery />";
         case AND: return "<TermQuery fieldName=\"lux_elt_name\">AND</TermQuery>";
         case LUX_FOO: return "<TermQuery fieldName=\"lux_elt_name\">foo&#x7B;http://luxdb.net&#x7D;</TermQuery>";
         default: throw new UnsupportedOperationException("unregistered query enum: " + q);

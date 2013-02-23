@@ -157,7 +157,7 @@ public class PathQueryTest extends BasicQueryTest {
             "<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm>" +
             "<SpanTerm fieldName=\"lux_path\">@id</SpanTerm>" +
             "</SpanNear>";
-        case MATCH_ALL: return "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>";
+        case MATCH_ALL_Q: return "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>";
         case AND: return "<SpanTerm fieldName=\"lux_path\">AND</SpanTerm>";
         case TITLE: return "<SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>";
         case LUX_FOO: return "<SpanTerm fieldName=\"lux_path\">foo&#x7B;http://luxdb.net&#x7D;</SpanTerm>";
