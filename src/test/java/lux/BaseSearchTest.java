@@ -1,15 +1,8 @@
 package lux;
 
-import static lux.IndexTestSupport.QUERY_CONSTANT;
-import static lux.IndexTestSupport.QUERY_EXACT;
-import static lux.IndexTestSupport.QUERY_MINIMAL;
-import static lux.IndexTestSupport.QUERY_NO_DOCS;
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.INDEX_QNAMES;
-import static lux.index.IndexConfiguration.STORE_DOCUMENT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static lux.IndexTestSupport.*;
+import static lux.index.IndexConfiguration.*;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.StringWriter;

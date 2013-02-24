@@ -327,7 +327,7 @@ public class BasicQueryTest {
 
     @Test public void testOrderBySearchFunCall () throws Exception {
         String query = "for $doc in lux:search('foo') order by lux:field-values('sortkey', $doc) return $doc";
-        assertQuery (query, null, MINIMAL, ValueType.VALUE, "foo");
+        assertQuery (query, null, MINIMAL|SINGULAR, ValueType.VALUE, "foo");
         assertSortKeys (query, "sortkey");
     }
     @Test 

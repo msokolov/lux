@@ -59,8 +59,8 @@ public class Subsequence extends AbstractExpression {
     }
     
     @Override
-    public boolean isAbsolute () {
-        return getSequence().isAbsolute();
+    public AbstractExpression getRoot () {
+        return getSequence().getRoot();
     }
 
     /**

@@ -83,12 +83,20 @@ public abstract class AbstractExpression implements Visitable {
     }
 
     /**
+     * @return the root of this expression: this will either be a Root(/), a function returning document nodes, 
+     * or null.
+     */
+    public AbstractExpression getRoot () {
+       return null; 
+    }
+    
+    /**
      * @return whether this expression is a Root or another expression that introduces
      * a new query scope, such as a PathExpression beginning with a Root (/), or a subsequence
      * of another absolute expression.  This method returns false, supplying the common default.
      */
     public boolean isAbsolute() {
-        return false;
+        return getRoot() != null;
     }
     
     /**

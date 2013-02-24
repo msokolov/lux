@@ -42,8 +42,8 @@ public class Predicate extends AbstractExpression {
     }
 
     @Override    
-    public boolean isAbsolute () {
-        return getBase().isAbsolute();
+    public AbstractExpression getRoot() {
+        return getBase().getRoot();
     }
     
     @Override

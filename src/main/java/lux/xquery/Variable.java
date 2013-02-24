@@ -7,6 +7,7 @@ import lux.xpath.ExpressionVisitor;
 public class Variable extends AbstractExpression {
     
     private QName name;
+    private AbstractExpression value;
     
     public Variable (QName qname) {
         super (Type.VARIABLE);
@@ -43,6 +44,21 @@ public class Variable extends AbstractExpression {
         name = name2;
     }
 
+    public void setValue(AbstractExpression value) {
+        this.value = value;
+    }
+    
+    public AbstractExpression getValue () {
+        return value;
+    }
+    
+    @Override
+    public AbstractExpression getRoot () {
+        if (value == null) {
+            return null;
+        }
+        return value.getRoot();
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -39,7 +39,7 @@ public class SearchCall extends FunCall {
      * or as a node to be parsed by {@link lux.query.parser.XmlQueryParser}.
      */
     public SearchCall(AbstractExpression abstractExpression) {
-        this (abstractExpression, XPathQuery.MINIMAL, ValueType.VALUE, null, false);
+        this (abstractExpression, XPathQuery.MINIMAL|XPathQuery.SINGULAR, ValueType.VALUE, null, false);
     }
     
     private SearchCall(AbstractExpression queryArg, long facts, ValueType resultType, SortField[] sortFields, boolean isGenerated) {
@@ -118,6 +118,11 @@ public class SearchCall extends FunCall {
 
     public void setFnCollection(boolean isFnCollection) {
         this.fnCollection = isFnCollection;
+    }
+    
+    @Override
+    public SearchCall getRoot() {
+        return this;
     }
 
 }

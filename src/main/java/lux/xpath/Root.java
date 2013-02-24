@@ -3,15 +3,9 @@ package lux.xpath;
 
 public class Root extends AbstractExpression {
     
-    private static final Root instance = new Root();
-    
-    private Root () {
+    public Root () {
         super (Type.ROOT);
         subs = new AbstractExpression[0];
-    }
-    
-    public static Root getInstance() {
-        return instance;
     }
     
     @Override
@@ -20,8 +14,8 @@ public class Root extends AbstractExpression {
     }
     
     @Override
-    public boolean isAbsolute() {
-        return true;
+    public Root getRoot() {
+        return this;
     }
 
     @Override

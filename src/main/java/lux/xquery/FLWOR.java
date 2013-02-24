@@ -58,8 +58,8 @@ public class FLWOR extends AbstractExpression {
     }
     
     @Override
-    public boolean isAbsolute () {
-        return getReturnExpression().isAbsolute();
+    public AbstractExpression getRoot () {
+        return getReturnExpression().getRoot();
     }
 
     // TODO: are we confused here? Spec lists different precedence (2)

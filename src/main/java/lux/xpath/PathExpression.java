@@ -44,12 +44,12 @@ public class PathExpression extends AbstractExpression {
     
     /**
      * Whenever we see a new absolute context (/, collection(), search()), its dependent 
-     * expressions are a possible target for optimizarion.
-     * @return whether the lhs of this path is an expression returning Documents.
+     * expressions are a possible target for optimization.
+     * @return the root of this path, or null if it is not an absolute path.
      */
     @Override
-    public boolean isAbsolute() {
-       return subs[0].isAbsolute();
+    public AbstractExpression getRoot() {
+       return subs[0].getRoot();
     }
 
     @Override

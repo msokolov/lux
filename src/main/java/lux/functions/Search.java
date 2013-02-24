@@ -18,10 +18,17 @@ import net.sf.saxon.value.SequenceType;
 import org.apache.lucene.search.Query;
 
 /**
- * <code>function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?) as document-node()*</code>
+ * <code>function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?, $start as xs:int?) as document-node()*</code>
  * <p>Executes a Lucene search query and returns documents.  If the query argument is an element or document 
  * node, it is parsed using the {@link XmlQueryParser}; otherwise its string value is parsed using the {@link LuxQueryParser}.
  * For details about the query syntaxes, see the parser documentation.</p>
+ * <p>The optimizer provides optimization information in the $hints variable</p>
+ * <p>$sort defines sort criteria: multiple criteria are separated by commas; each criterion is a field
+ * name (or lux:score) with optional keywords appended: ascending|descending, empty least|empty greatest.
+ * If no sort key is provided, documents are ordered by Lucene docID, which is defined to be XQuery document order.
+ * </p>
+ * <p>$start indiciates the (1-based) index of the first result to return. Skipped results don't need to be loaded 
+ * in memory, so providing $start allows for more efficient processing of queries that require "deep paging".
  */
 public class Search extends SearchBase {
     
@@ -41,15 +48,16 @@ public class Search extends SearchBase {
     @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] { 
-                SequenceType.SINGLE_ITEM,
-                SequenceType.OPTIONAL_INTEGER,
-                SequenceType.OPTIONAL_STRING
+                SequenceType.SINGLE_ITEM,       // query: as element node or string
+                SequenceType.OPTIONAL_INTEGER,  // bit set: boolean facts - query optimizations
+                SequenceType.OPTIONAL_STRING,   // sort key stanza
+                SequenceType.OPTIONAL_INTEGER   // start - index of first result (1-based)
                 };
     }
     
     @Override
     public int getMaximumNumberOfArguments() {
-        return 3;
+        return 4;
     }
     
     /**
@@ -62,9 +70,9 @@ public class Search extends SearchBase {
      * @throws XPathException
      */
     @Override
-    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, long facts, String sortCriteria) throws XPathException {        
+    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, long facts, String sortCriteria, int start) throws XPathException {        
         try {
-            return new SearchResultIterator (eval, query, sortCriteria);
+            return new SearchResultIterator (eval, query, sortCriteria, start);
         } catch (IOException e) {
             throw new XPathException (e);
         }

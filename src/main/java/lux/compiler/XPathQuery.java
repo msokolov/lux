@@ -85,8 +85,9 @@ public class XPathQuery {
     public static final int RESULT_TYPE_FLAGS = 0x00000018;
 
     /**
-     * A query is singular if its expression returns the same number of results as the lucene query;
-     * ie the expression returns a single result for every matching document.
+     * An expression is singular if it returns a single result for every matching document.
+     * An XPathQuery is singular if it was generated from a singular expression, and therefore
+     * its expression returns the same number of results as the lucene query.
      */
     public static final int SINGULAR=0x00000004;
 
@@ -262,10 +263,18 @@ public class XPathQuery {
      */
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance, IndexConfiguration config) {
         if (isFact(IGNORABLE)) {
-            return precursor.setFact (MINIMAL, false);
+            XPathQuery result = precursor.setFact (MINIMAL, false);
+            if (type != null) {
+                result.setType(type);
+            }
+            return result;
         }
         if (precursor.isFact(IGNORABLE)) {
-            return setFact(MINIMAL, false);
+            XPathQuery result = setFact(MINIMAL, false);
+            if (type != null) {
+                result.setType(type);
+            }
+            return result;
         }
         long resultFacts = combineQueryFacts (this, precursor);
         ParseableQuery result = combineSpans (this.pquery, occur, precursor.pquery, distance);

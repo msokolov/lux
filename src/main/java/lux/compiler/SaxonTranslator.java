@@ -76,6 +76,7 @@ import net.sf.saxon.expr.QuantifiedExpression;
 import net.sf.saxon.expr.RootExpression;
 import net.sf.saxon.expr.SlashExpression;
 import net.sf.saxon.expr.StaticProperty;
+import net.sf.saxon.expr.TailCallLoop;
 import net.sf.saxon.expr.TailExpression;
 import net.sf.saxon.expr.UnaryExpression;
 import net.sf.saxon.expr.VariableReference;
@@ -903,7 +904,7 @@ public class SaxonTranslator {
     }
     
     public AbstractExpression exprFor (RootExpression expr) {
-        return Root.getInstance();
+        return new Root();
     }
 
     public AbstractExpression exprFor (SlashExpression expr) {
@@ -914,6 +915,10 @@ public class SaxonTranslator {
     
     public AbstractExpression exprFor (TailExpression expr) {
         return new Subsequence (exprFor (expr.getBaseExpression()), new LiteralExpression(expr.getStart()));
+    }
+    
+    public AbstractExpression exprFor (TailCallLoop expr) {
+        return exprFor (expr.getBaseExpression());
     }
     
     public AbstractExpression exprFor (UnaryExpression expr) {

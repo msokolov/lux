@@ -44,7 +44,7 @@ public class Count extends SearchBase {
     }
     
     @Override 
-    public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
+    public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, long facts, String sortCriteria, int start) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {

@@ -1,11 +1,7 @@
 package lux;
 
-import static lux.IndexTestSupport.QUERY_CONSTANT;
-import static lux.IndexTestSupport.QUERY_EXACT;
-import static lux.IndexTestSupport.QUERY_MINIMAL;
-import static lux.IndexTestSupport.QUERY_NO_DOCS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static lux.IndexTestSupport.*;
+import static org.junit.Assert.*;
 
 import java.util.Iterator;
 
@@ -257,7 +253,7 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("BERNARDO", "(//SCENE)[1]/SPEECH[1]/SPEAKER/string()", null, 1);
         // /PLAY/ACT[1]/SCENE[1], /ACT[1]/SCENE[1], /SCENE[1], /SCENE[2], /SCENE[3], /SCENE[4]
         // count reduced from 6 to 4 by path queries; skip /PLAY and /ACT[1]
-        assertSearch ("HAMLET", "subsequence(/SCENE, 4, 1)/SPEECH[1]/SPEAKER/string()", null, 4);
+        assertSearch ("HAMLET", "subsequence(/SCENE, 4, 1)/SPEECH[1]/SPEAKER/string()", null, 1);
     }
     
     @Test
@@ -268,7 +264,7 @@ public class SearchTest extends BaseSearchTest {
         // TODO: We shouldn't need to retrieve (the text of) the first 3 documents in the first query below since
         // they are going to be discarded
 
-        assertSearch ("KING CLAUDIUS", "subsequence((/)[.//SCENE], 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);
+        assertSearch ("KING CLAUDIUS", "subsequence((/)[.//SCENE], 4, 1)//SPEECH[1]/SPEAKER/string()", null, 1);
         assertSearch ("BERNARDO", "(//SCENE/SPEECH)[1]/SPEAKER/string()", null, 1);
     }
     
@@ -279,8 +275,8 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testRoot () throws Exception {
-        assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4]//SPEECH[1]/SPEAKER/string()", null, 4);
-        assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)//SPEECH[1]/SPEAKER/string()", null, 4);        
+        assertSearch ("KING CLAUDIUS", "(//SCENE/root())[4]//SPEECH[1]/SPEAKER/string()", null, 1);
+        assertSearch ("KING CLAUDIUS", "subsequence(//SCENE/root(), 4, 1)//SPEECH[1]/SPEAKER/string()", null, 1);        
     }
     
     @Test @Ignore
@@ -403,7 +399,7 @@ public class SearchTest extends BaseSearchTest {
     
     @Test 
     public void testBugFix0018b() throws Exception {
-        assertSearch (HAMLET_TITLE_MARKUP, "lux:search(\"*:*\")[2]", null, 2, 2);
+        assertSearch (HAMLET_TITLE_MARKUP, "lux:search(\"*:*\")[2]", null, 1, 1);
     }
 
     @Test 
@@ -426,7 +422,7 @@ public class SearchTest extends BaseSearchTest {
         // TODO: optimize so we can skip over the unused results - should be able 
         // to reduce to doc-count = 1
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
+            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 1);
     }
     
     @Test

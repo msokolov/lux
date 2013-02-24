@@ -29,6 +29,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     private final QueryStats stats;
     private final LuxSearcher searcher;
     private final String sortCriteria;
+    private final int start;
     private CachingDocReader docCache;
     private NodeInfo current = null;
     private int position = 0;
@@ -44,18 +45,20 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
      * The sort criteria are Lucene field names, or may be the special name "lux:score", which selects 
      * relevance score ranking, which is always sorted in descending order: modifiers on relevance orders are ignored. 
      * If no ordering is provided, results are returned in intrinsic document order (ie ordered by document ID).
+     * @param start 
      * @throws IOException
      */
-    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria) throws IOException {
-        this (eval.getSearcher(), eval.getDocReader(), eval.getQueryStats(), query, sortCriteria);
+    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria, int start) throws IOException {
+        this (eval.getSearcher(), eval.getDocReader(), eval.getQueryStats(), query, sortCriteria, start);
     }
     
-    protected SearchResultIterator (LuxSearcher searcher, CachingDocReader docReader, QueryStats stats, Query query, String sortCriteria) throws IOException {
+    protected SearchResultIterator (LuxSearcher searcher, CachingDocReader docReader, QueryStats stats, Query query, String sortCriteria, int start) throws IOException {
         this.query = query;
         this.searcher = searcher;
         this.docCache = docReader;
         this.stats = stats;
         this.sortCriteria = sortCriteria;
+        this.start = start;
         if (stats != null) {
             stats.query = query.toString();
         }
@@ -67,6 +70,9 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
             docIter = searcher.search(query, sort);
         } else {
             docIter = searcher.searchOrdered(query);
+        }
+        if (start > 1) {
+            advanceTo (start);
         }
     }
 
@@ -169,6 +175,37 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         }
         return current;
     }
+    
+    /**
+     * advance the iterator to (just before) the given (1-based) position.  Sets current to null: next() must be called
+     * after this method in order to retrieve the result at the position.
+     * @param startPosition
+     * @throws IOException 
+     */
+    protected void advanceTo (int startPosition) throws IOException {
+        long t = System.nanoTime();
+        int start0 = startPosition-1;
+        try {
+            int docID=0;
+            current = null;
+            while (position < start0) {
+                docID = docIter.nextDoc();
+                if (docID == Scorer.NO_MORE_DOCS) {
+                    position = -1;
+                    break;
+                }
+                ++position;
+            }
+            if (stats != null) {
+            }
+        } finally {
+            if (stats != null) {
+                long t1 = System.nanoTime();
+                stats.retrievalTime += t1 - t;
+                stats.totalTime += t1 - t;
+            }
+        }
+    }
 
     /**
      * @return the current result.  This is the last result returned by next(), and will be null if there
@@ -202,7 +239,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     @Override
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
-            return new SearchResultIterator (searcher, docCache, stats, query, sortCriteria);
+            return new SearchResultIterator (searcher, docCache, stats, query, sortCriteria, start);
         } catch (IOException e) {
             throw new XPathException (e);
         }

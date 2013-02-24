@@ -1,4 +1,12 @@
 * bugs
+** type confusion
+declare function x () as xs:integer { return (1, 2) }
+should be an error I think?  Instead it just optimizes x()[2] === () ?
+** variable shadowing
+let $r := rand(0)
+let $r := rand($r)
+return $r
+returns rand(0)
 **
 lux:search('uri:/*')[contains(substring(lux:field-values('uri')[1]/string(),1),'/')]
 ** boolean/span nesting

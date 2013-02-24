@@ -53,15 +53,15 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     }
     
     @SuppressWarnings("rawtypes")
-    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, long facts, String sortCriteria) throws XPathException;
+    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, long facts, String sortCriteria, int start) throws XPathException;
 
     public class SearchCall extends NamespaceAwareFunctionCall {
         
         @SuppressWarnings("rawtypes") @Override
         public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
             
-            if (arguments.length == 0 || arguments.length > 3) {
-                throw new XPathException ("wrong number of arguments");
+            if (arguments.length == 0 || arguments.length > 4) {
+                throw new XPathException ("wrong number of arguments for " + getFunctionQName());
             }
             Item queryArg = arguments[0].next();
             long facts=0;
@@ -78,6 +78,17 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                     sortCriteria = sortArg.getStringValue();
                 }
             }
+            int start = 1;
+            if (arguments.length >= 4) {
+                Item startArg = arguments[3].next();
+                if (startArg != null) {
+                    IntegerValue integerValue = (IntegerValue)startArg;
+                    if (integerValue.longValue() > Integer.MAX_VALUE) {
+                        throw new XPathException ("integer overflow in search $start parameter");
+                    }
+                    start = (int) integerValue.longValue();
+                }
+            }
             Evaluator eval = getEvaluator(context);
             Query query;
             try {
@@ -88,9 +99,11 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
-            return iterate (query, eval, facts, sortCriteria);
+            return iterate (query, eval, facts, sortCriteria, start);
         }
         
     }
+    
+    
   
 }

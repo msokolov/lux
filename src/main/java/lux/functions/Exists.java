@@ -45,7 +45,7 @@ public class Exists extends SearchBase {
     }
     
     @Override 
-    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts, String sortCriteria) throws XPathException {
+    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts, String sortCriteria, int start) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {

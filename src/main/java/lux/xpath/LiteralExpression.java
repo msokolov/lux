@@ -42,13 +42,13 @@ public class LiteralExpression extends AbstractExpression {
     }
 
     public static final LiteralExpression EMPTY = new LiteralExpression ("()", ValueType.EMPTY);
-    public static final LiteralExpression ONE = new LiteralExpression (1);
+    public static final LiteralExpression ONE = new LiteralExpression (1L);
     
     private static ValueType computeType (Object value) {
         if (value instanceof String) {
             return ValueType.STRING;
         } else if (value instanceof Integer || value instanceof Long) {
-            return ValueType.INT;
+            return ValueType.INTEGER;
         } else if (value instanceof Double) {
             return ValueType.DOUBLE;
         } else if (value instanceof Float) {

@@ -17,6 +17,10 @@ public class FunCall extends AbstractExpression {
         this.returnType = returnType;
     }
     
+    public void setArguments (AbstractExpression ... args) {
+        setSubs (args);
+    }
+    
     @Override
     public void toString(StringBuilder buf) {
         buf.append (name);
