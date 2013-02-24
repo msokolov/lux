@@ -638,6 +638,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 searchArg = subs[0].getSubs()[0];
             }
         } else if (fname.equals(FunCall.LUX_SEARCH) && !(funcall instanceof SearchCall)) {
+            // searchArg = subs[0];
+            // TODO: if searchArg is a literal string or element, we may be able to create
+            // a ParseableQuery out of it that can be merged with enclosing info ... otherwise,
+            XPathQuery q = MATCH_ALL;
+            q = q.setFact(MINIMAL, false); // prevent further attempts at optimization
+            push (q);
             if (subs.length == 1) {
                 return new SearchCall(subs[0]);
             } else {

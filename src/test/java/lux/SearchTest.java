@@ -392,6 +392,10 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("65", "lux:count(text{'bernardo'})", null, 65, 0);
     }
     
+    @Test public void testLuxSearchPath () throws Exception {
+        assertSearch ("1", "count(lux:search('\"holla bernardo\"')/SPEECH)", null, 5, 5);   
+    }
+    
     @Test
     public void testBugFix0018() throws Exception {
         assertSearch ("MARCELLUS", "for $doc in /SPEECH[LINE='Holla! Bernardo!'] return $doc/SPEAKER/string()", null, 1, 1);
