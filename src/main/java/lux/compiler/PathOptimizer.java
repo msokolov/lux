@@ -632,18 +632,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // to lux:search if this function can perform the search itself without
         // retrieving documents
         AbstractExpression searchArg = null;
-        if (subs.length == 1 && subs[0].getType() == Type.FUNCTION_CALL
+        if (fname.equals(FunCall.FN_COUNT) || fname.equals(FunCall.FN_EXISTS) || fname.equals(FunCall.FN_EMPTY)) {
+            if (subs.length == 1 && subs[0].getType() == Type.FUNCTION_CALL
                 && ((FunCall) subs[0]).getName().equals(FunCall.LUX_SEARCH)) {
-            if (fname.equals(FunCall.FN_COUNT) || fname.equals(FunCall.FN_EXISTS) || fname.equals(FunCall.FN_EMPTY)) {
                 searchArg = subs[0].getSubs()[0];
             }
         } else if (fname.equals(FunCall.LUX_SEARCH) && !(funcall instanceof SearchCall)) {
             // searchArg = subs[0];
             // TODO: if searchArg is a literal string or element, we may be able to create
             // a ParseableQuery out of it that can be merged with enclosing info ... otherwise,
-            XPathQuery q = MATCH_ALL;
-            q = q.setFact(MINIMAL, false); // prevent further attempts at optimization
-            push (q);
             if (subs.length == 1) {
                 return new SearchCall(subs[0]);
             } else {
@@ -668,9 +665,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
-            if (fname.equals(FunCall.FN_COUNT) && query.isFact(SINGULAR)) {// ||
-                                                                           // query.getResultType().is(ValueType.DOCUMENT)))
-                                                                           // {
+            if (fname.equals(FunCall.FN_COUNT) && query.isFact(SINGULAR)) {
                 functionFacts = SINGULAR;
                 returnType = ValueType.INT;
                 qname = FunCall.LUX_COUNT;
@@ -699,10 +694,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (qname != null) {
                 // We will insert a searching function. apply no restrictions to
                 // the enclosing scope:
-                push(MATCH_ALL);
                 if (searchArg != null) {
                     // create a searching function call using the argument to
                     // the enclosed lux:search call
+                    push(MATCH_ALL);
                     return new FunCall(qname, returnType, searchArg, new LiteralExpression(MINIMAL));
                 }
                 if (query.isImmutable()) {
@@ -715,7 +710,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     query.setType(returnType);
                     query.setFact(functionFacts, true);
                 }
-                return createSearchCall(qname, query);
+                if (! (funcall.getRoot() instanceof SearchCall)) {
+                    push(MATCH_ALL);
+                    return createSearchCall(qname, query);
+                }
             }
         }
         push(query);
