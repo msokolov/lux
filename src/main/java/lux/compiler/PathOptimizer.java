@@ -632,9 +632,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // to lux:search if this function can perform the search itself without
         // retrieving documents
         AbstractExpression searchArg = null;
-        if (fname.equals(FunCall.FN_COUNT) || fname.equals(FunCall.FN_EXISTS) || fname.equals(FunCall.FN_EMPTY)) {
-            if (subs.length == 1 && subs[0].getType() == Type.FUNCTION_CALL
-                && ((FunCall) subs[0]).getName().equals(FunCall.LUX_SEARCH)) {
+        if (subs.length == 1 && isSearchCall(subs[0])) {
+            if (fname.equals(FunCall.FN_COUNT) || fname.equals(FunCall.FN_EXISTS) || fname.equals(FunCall.FN_EMPTY)) {
                 searchArg = subs[0].getSubs()[0];
             }
         } else if (fname.equals(FunCall.LUX_SEARCH) && !(funcall instanceof SearchCall)) {
@@ -710,7 +709,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     query.setType(returnType);
                     query.setFact(functionFacts, true);
                 }
-                if (! (funcall.getRoot() instanceof SearchCall)) {
+                AbstractExpression root = subs[0].getRoot();
+                if (! isSearchCall(root)) {
                     push(MATCH_ALL);
                     return createSearchCall(qname, query);
                 }
@@ -718,6 +718,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         push(query);
         return funcall;
+    }
+
+    private boolean isSearchCall(AbstractExpression root) {
+        return root instanceof SearchCall || (root instanceof FunCall && ((FunCall) root).getName().equals(FunCall.LUX_SEARCH));
     }
 
     private XPathQuery combineQueries(XPathQuery lq, Occur occur, XPathQuery rq, ValueType resultType) {
@@ -993,7 +997,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 isSingular = true; // this must be a user-supplied search call
             } else {
                 LiteralExpression factsArg = (LiteralExpression) args[1];
-                long facts = ((Long) factsArg.getValue());
+                long facts = factsArg.equals(LiteralExpression.EMPTY) ? 0 :
+                    ((Long) factsArg.getValue());
                 isSingular = (facts & SINGULAR) != 0;
             }
             if (isSingular) {

@@ -119,6 +119,14 @@ public class FunCall extends AbstractExpression {
         }
         return this;
     }
+    
+    @Override
+    public AbstractExpression getRoot () {
+        if (name.equals(LUX_SEARCH)) {
+            return this;
+        }
+        return null;
+    }
 
 }
 
