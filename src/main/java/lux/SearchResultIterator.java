@@ -79,7 +79,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     private Sort makeSortFromCriteria() {
         String[] fields = sortCriteria.split(",");
         SortField[] sortFields = new SortField [fields.length];
-        int type = SortField.STRING;
+        SortField.Type type = SortField.Type.STRING;
         for (int i = 0; i < fields.length; i++) {
             String [] tokens = fields[i].split("\\s+");
             String field = tokens[0];
@@ -105,9 +105,9 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                         throw new LuxException ("missing or invalid keyword after 'empty' in sort criterion: " + sortCriteria);
                     }
                 } else if (tokens[j].equals("int")) {
-                    type = SortField.INT;
+                    type = SortField.Type.INT;
                 } else if (tokens[j].equals("long")) {
-                    type = SortField.LONG;
+                    type = SortField.Type.LONG;
                 } else {
                     throw new LuxException ("invalid keyword '" + tokens[j] + "' in sort criterion: " + sortCriteria);
                 }
@@ -119,7 +119,19 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 sortFields[i] = SortField.FIELD_SCORE;
             } else {
                 if (emptyGreatest == Boolean.TRUE) {
-                    sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);
+                    if (type == SortField.Type.STRING) {
+                        sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);
+                    } else {
+                        sortFields[i] = new SortField(field, type, reverse == Boolean.TRUE);
+                        switch (type) {
+                        case INT:
+                            sortFields[i].setMissingValue(reverse ? 0 : Integer.MAX_VALUE);
+                            break;
+                        case LONG:
+                            sortFields[i].setMissingValue(reverse ? 0 : Long.MAX_VALUE);
+                            break;
+                        }
+                    }
                 } else {
                     sortFields[i] = new SortField(field, type, reverse == Boolean.TRUE);
                 }

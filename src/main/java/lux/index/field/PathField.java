@@ -4,7 +4,6 @@ import lux.index.XmlIndexer;
 import lux.index.analysis.WhitespaceGapAnalyzer;
 
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
 
 public class PathField extends FieldDefinition {
     
@@ -15,7 +14,7 @@ public class PathField extends FieldDefinition {
     }
     
     protected PathField () {
-        super ("lux_path", new WhitespaceGapAnalyzer(), Store.NO, Type.STRING, TermVector.NO);
+        super ("lux_path", new WhitespaceGapAnalyzer(), Store.NO, Type.STRING);
     }
     
     @Override

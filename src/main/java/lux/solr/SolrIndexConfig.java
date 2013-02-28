@@ -11,7 +11,7 @@ import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.solr.common.SolrException;
@@ -205,10 +205,13 @@ public class SolrIndexConfig {
             setQueryAnalyzer(new WhitespaceGapAnalyzer());
         }
         
+        /*
+         * REVIEW: do we need this?
         @Override
         protected Field.Index getFieldIndex(SchemaField field, String internalVal) {
             return Field.Index.ANALYZED;
         }
+        */
         
     }
     

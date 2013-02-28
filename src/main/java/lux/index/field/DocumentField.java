@@ -5,7 +5,6 @@ import java.util.Collections;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
 
 /**
  * A stored field that is used to store the entire XML document.
@@ -20,7 +19,7 @@ public class DocumentField extends FieldDefinition {
     }
     
     protected DocumentField () {
-        super ("lux_xml", null, Store.YES, Type.BYTES, TermVector.NO, true);
+        super ("lux_xml", null, Store.YES, Type.BYTES, true);
     }
     
     @Override

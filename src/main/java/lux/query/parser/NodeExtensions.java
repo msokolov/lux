@@ -1,8 +1,8 @@
 package lux.query.parser;
 
-import org.apache.lucene.queryParser.ext.Extensions;
+import org.apache.lucene.queryparser.ext.Extensions;
 
-class NodeExtensions extends Extensions {
+class NodeExtensions extends Extensions{
     
     NodeExtensions (NodeParser parser) {
         super ('<'); // set extension field delimiter

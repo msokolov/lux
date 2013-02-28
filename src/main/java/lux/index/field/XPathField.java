@@ -11,7 +11,6 @@ import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
 
 /**
  * Indexes the values of the XPath expression evaluated with the document as the context item
@@ -23,7 +22,7 @@ public class XPathField<T> extends FieldDefinition {
     private final String xpath;
     
     public XPathField (String name, String xpath, Analyzer analyzer, Store isStored, Type type) {
-        super (name, analyzer, isStored, type, TermVector.NO);
+        super (name, analyzer, isStored, type);
         this.xpath = xpath;
     }
     

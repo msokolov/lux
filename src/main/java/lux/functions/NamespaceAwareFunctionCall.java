@@ -14,8 +14,9 @@ import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.NodeInfo;
 
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.xmlparser.ParserException;
 import org.w3c.dom.Element;
 
 public abstract class NamespaceAwareFunctionCall extends ExtensionFunctionCall {
@@ -39,7 +40,7 @@ public abstract class NamespaceAwareFunctionCall extends ExtensionFunctionCall {
         ((NamespaceAwareFunctionCall) destination).namespaceResolver = namespaceResolver;
     }
     
-   protected Query parseQuery(Item<?> queryArg, Evaluator eval) throws org.apache.lucene.queryParser.ParseException, ParserException {
+   protected Query parseQuery(Item<?> queryArg, Evaluator eval) throws ParseException, ParserException {
         if (queryArg instanceof NodeInfo) {
             NodeInfo queryNodeInfo = (NodeInfo) queryArg;
             NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 

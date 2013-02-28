@@ -2,9 +2,8 @@ package lux.index.field;
 
 import lux.index.XmlIndexer;
 
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
 
 public final class AttributeQNameField extends FieldDefinition {
 
@@ -15,7 +14,7 @@ public final class AttributeQNameField extends FieldDefinition {
     }
     
     protected AttributeQNameField () {
-        super ("lux_att_name", new KeywordAnalyzer(), Store.NO, Type.STRING, TermVector.NO);
+        super ("lux_att_name", new KeywordAnalyzer(), Store.NO, Type.STRING);
     }
     
     @Override

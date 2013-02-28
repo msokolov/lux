@@ -9,7 +9,6 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.CharStream;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
@@ -44,7 +43,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
     protected XdmNode curNode;
     protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to index
     protected CharTermAttribute termAtt;
-    protected CharStream charStream = new OffsetCharFilter(null);
+    protected Reader charStream = new OffsetCharFilter(null);
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
     XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
@@ -57,7 +56,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
     }
     
     public void reset (Reader reader) throws IOException {
-        TokenStream reset = analyzer.reusableTokenStream (fieldName, reader);
+        TokenStream reset = analyzer.tokenStream (fieldName, reader);
         // This must be the same token stream: ie the Analyzer must be re-usable, and the 
         // original token stream must have arisen from it.  We don't check for actual
         // identity with wrapped since that might get wrapped again (eg w/QNameTokenFilter).

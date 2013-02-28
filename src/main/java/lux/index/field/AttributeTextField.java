@@ -14,10 +14,9 @@ import net.sf.saxon.s9api.XdmNode;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.IndexableField;
 
 /**
  * Indexes the text in each attribute of a document
@@ -31,11 +30,11 @@ public class AttributeTextField extends FieldDefinition {
     }
     
     protected AttributeTextField () {
-        super ("lux_att_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO);
+        super ("lux_att_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS);
     }
     
     @Override
-    public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
+    public Iterable<IndexableField> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
         if (doc != null && doc.getUnderlyingNode() != null) {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
@@ -43,12 +42,12 @@ public class AttributeTextField extends FieldDefinition {
             Analyzer analyzer = getAnalyzer();
             TokenStream textTokens=null;
             try {
-                textTokens = analyzer.reusableTokenStream(fieldName, new CharSequenceReader(""));
+                textTokens = analyzer.tokenStream(fieldName, new CharSequenceReader(""));
             } catch (IOException e) { }
             AttributeTokenStream tokens = new AttributeTokenStream(fieldName, analyzer, textTokens, doc, builder.getOffsets());
             ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
             return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
-                        new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
+                        new TextField(indexer.getConfiguration().getFieldName(this), tokens)));
         }
         return Collections.emptySet();
     }

@@ -40,8 +40,9 @@ import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
@@ -344,9 +345,7 @@ public class Evaluator {
     public void reopenSearcher() {
         LoggerFactory.getLogger(getClass()).debug("evaluator reopen searcher");
         try {
-            LuxSearcher current = searcher;
-            searcher = new LuxSearcher (current.getIndexReader().reopen());
-            current.close();
+            DirectoryReader.openIfChanged((DirectoryReader) getSearcher().getIndexReader());
         } catch (IOException e) {
             throw new LuxException (e);
         }

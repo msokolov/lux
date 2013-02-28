@@ -1,10 +1,9 @@
 package lux.index.analysis;
 
 import java.io.IOException;
+import java.io.Reader;
 
-import org.apache.lucene.analysis.CharStream;
-
-public class CharSequenceStream extends CharStream {
+public class CharSequenceStream extends Reader {
     
     private int pos;
     private CharSequence csq;
@@ -18,7 +17,6 @@ public class CharSequenceStream extends CharStream {
         pos = 0;
     }
     
-    @Override
     public int correctOffset(int currentOff) {
         return currentOff;
     }

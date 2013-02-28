@@ -4,12 +4,10 @@ import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.SortField;
 import org.apache.solr.schema.FieldProperties;
 
@@ -50,12 +48,12 @@ public abstract class FieldDefinition {
      */
     public enum Type {
         TOKENS, STRING, BYTES, INT, LONG;
-        public int getLuceneSortFieldType () {
+        public SortField.Type getLuceneSortFieldType () {
             switch (this) {
-            case STRING: return SortField.STRING;
-            case INT: return SortField.INT;
-            case LONG: return SortField.LONG;
-            default: return SortField.DOC; // ignore??
+            case STRING: return SortField.Type.STRING;
+            case INT: return SortField.Type.INT;
+            case LONG: return SortField.Type.LONG;
+            default: return SortField.Type.DOC; // ignore??
             }
         }
     };
@@ -67,8 +65,6 @@ public abstract class FieldDefinition {
 
     private final Store isStored;
     
-    private final TermVector termVector;
-    
     /**
      * Represents a Solr/Lucene field
      * @param name the name of the field
@@ -78,15 +74,13 @@ public abstract class FieldDefinition {
      * analyzer is used only for queries.
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
-     * @param termVector whether to store term vectors for this field
      * @param renameable whether the field is allowed to be renamed
      */
-    public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type, TermVector termVector, boolean renameable) {
+    public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type, boolean renameable) {
         this.name = name;
         this.analyzer = analyzer;
         this.isStored = isStored;
         this.type = type;
-        this.termVector = termVector;
         this.renameable = renameable;
     }
     
@@ -99,18 +93,17 @@ public abstract class FieldDefinition {
      * analyzer is used only for queries.
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
-     * @param termVector whether to store term vectors for this field
      */
-    public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type, TermVector termVector) {
-        this (name, analyzer, isStored, type, termVector, false);
+    public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type) {
+        this (name, analyzer, isStored, type, false);
     }
     
     /** Wraps the values as Field, which includes the values and the Lucene indexing options.
      * Subclasses must implement getValues() or override this method
      * @param indexer the indexer that holds the field values
-     * @return the accumulated values of the field, as Fieldables
+     * @return the accumulated values of the field, as {@link IndexableField}s
      */
-    public Iterable<? extends Fieldable> getFieldValues(XmlIndexer indexer) {
+    public Iterable<? extends IndexableField> getFieldValues(XmlIndexer indexer) {
         Iterable<?> values = getValues(indexer);
         if (values == null) {
             throw new LuxException(getClass().getName() + ".getValues() returned null: did you neglect to implement it?");
@@ -149,16 +142,8 @@ public abstract class FieldDefinition {
         return analyzer;
     }
 
-    public Index getIndexOptions() {
-        return analyzer != null ? Index.ANALYZED : Index.NOT_ANALYZED;
-    }
-
     public Store isStored() {
         return isStored;
-    }
-    
-    public TermVector getTermVector () {
-        return termVector;
     }
     
     public boolean isSingleValued () {

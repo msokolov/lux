@@ -12,13 +12,13 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.xml.DOMUtils;
+import org.apache.lucene.queryparser.xml.ParserException;
+import org.apache.lucene.queryparser.xml.QueryBuilder;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.xmlparser.DOMUtils;
-import org.apache.lucene.xmlparser.ParserException;
-import org.apache.lucene.xmlparser.QueryBuilder;
 import org.w3c.dom.Element;
 
 public class NodeQueryBuilder implements QueryBuilder {
@@ -102,7 +102,7 @@ public class NodeQueryBuilder implements QueryBuilder {
         PhraseQuery pq=new PhraseQuery();
         Term term = null;
         try {
-            TokenStream ts = termAnalyzer.reusableTokenStream(fieldName, new StringReader(text));
+            TokenStream ts = termAnalyzer.tokenStream(fieldName, new StringReader(text));
             CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
             ts.reset();
             if (ts.incrementToken()) {
@@ -113,7 +113,7 @@ public class NodeQueryBuilder implements QueryBuilder {
                     termText.setLength(prefixLength);
                     termText.append(termAtt.buffer(), 0, termAtt.length());
                     // create from previous to save fieldName.intern overhead
-                    term = term.createTerm(termText.toString()); 
+                    term = new Term (fieldName, termText.toString()); 
                     pq.add(term);
                 }
             }

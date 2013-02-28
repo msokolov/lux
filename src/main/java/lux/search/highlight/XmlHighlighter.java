@@ -65,7 +65,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
             // really usable in a simple way in this context
             // What do instead is to create yet another TokenStream class
             // StreamingElementTokens, which wraps xmlStreamToken
-            xmlStreamTokens = new StreamingElementTokens(analyzer.reusableTokenStream(textFieldName, textReader));
+            xmlStreamTokens = new StreamingElementTokens(analyzer.tokenStream(textFieldName, textReader));
             offsetAtt = xmlStreamTokens.addAttribute(OffsetAttribute.class);
             xmlStreamTokens.addAttribute(PositionIncrementAttribute.class);
         } catch (IOException e) {
@@ -86,7 +86,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
         Analyzer defaultAnalyzer = new DefaultAnalyzer();
         TokenStream textTokens = null;
         try {
-            textTokens = defaultAnalyzer.reusableTokenStream("xml_text", new CharSequenceReader(""));
+            textTokens = defaultAnalyzer.tokenStream("xml_text", new CharSequenceReader(""));
         } catch (IOException e) { }
         init(new XmlTextTokenStream("xml_text", defaultAnalyzer, textTokens, new XdmNode (node), null));
         XmlReader xmlReader = new XmlReader ();
@@ -229,7 +229,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
      * @throws XMLStreamException 
      */
     private void highlightTextNode() throws IOException, XMLStreamException {
-        xmlStreamTokens.reset(analyzer.reusableTokenStream(textFieldName, textReader));
+        xmlStreamTokens.reset(analyzer.tokenStream(textFieldName, textReader));
         lastEndOffset = 0;
         for (boolean next = xmlStreamTokens.incrementToken(); 
                     next && (offsetAtt.startOffset() < maxDocCharsToAnalyze); 

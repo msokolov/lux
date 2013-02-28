@@ -1,7 +1,10 @@
 package lux.search;
 
 import java.io.IOException;
+import java.util.List;
 
+import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
@@ -14,27 +17,30 @@ import org.apache.lucene.store.Directory;
 
 public class LuxSearcher extends IndexSearcher {
 
-    private final boolean sharedReader;
+    // a reader managed by this exclusively
+  private final IndexReader indexReader;
     
   public LuxSearcher (Directory dir) throws IOException {
-    super (dir);
-    sharedReader = false;
+    super (DirectoryReader.open(dir));
+    indexReader = getIndexReader(); 
   }
   
   public LuxSearcher (IndexSearcher searcher) {
       super (searcher.getIndexReader());
-      sharedReader = true;
+      indexReader = null;
   }
   
+  // FIXME: should we really take over management of this reader?
+  // I think we only did that as a convenience in our Index tests, but it doesn't really make sense
+  // if you think about the API
   public LuxSearcher (IndexReader reader) {
       super (reader);
-      sharedReader = false;
+      this.indexReader = reader;
   }
   
-  @Override
   public void close () throws IOException {
-      if (!sharedReader) {
-          super.close();
+      if (indexReader != null) {
+          indexReader.close();
       }
   }
 
@@ -76,6 +82,8 @@ public class LuxSearcher extends IndexSearcher {
       private int docID;
       private int docBase; // add to docID which is relative to each sub-reader
       private Scorer scorer;
+      private List<AtomicReaderContext> leaves;
+      private AtomicReaderContext leaf;
       
       /**
        * @param query the lucene query whose results will be iterated
@@ -84,6 +92,7 @@ public class LuxSearcher extends IndexSearcher {
        */
       DocIterator (Query query, boolean ordered) throws IOException {
           weight = createNormalizedWeight(query);
+          leaves = getIndexReader().leaves();
           this.ordered = ordered;
           nextReader = 0;
           docID = -1;
@@ -91,9 +100,9 @@ public class LuxSearcher extends IndexSearcher {
       }
 
       private void advanceScorer () throws IOException {
-          while (nextReader < subReaders.length) {
-              docBase = docStarts[nextReader];
-              scorer = weight.scorer(subReaders[nextReader++], ordered, true);
+          while (nextReader < leaves.size()) {
+              leaf = leaves.get(nextReader);
+              scorer = weight.scorer(leaf, ordered, false, leaf.reader().getLiveDocs()); // NB: arg 3 (topScorer) was 'true' prior to 4.1 upgrade but incorrectly I think??
               if (scorer != null) {
                   return;
               }
@@ -145,7 +154,7 @@ public class LuxSearcher extends IndexSearcher {
       TopDocsIterator (Query query, Sort sort) throws IOException {
           this.query = query;
           this.sort = sort;
-          topDocs = search(createNormalizedWeight(query), null, BATCH_SIZE, sort, false);
+          topDocs = search(createNormalizedWeight(query), BATCH_SIZE, sort, false, false);
       }
 
       @Override
@@ -165,7 +174,7 @@ public class LuxSearcher extends IndexSearcher {
               // storing only the next batch - we could possibly add a term to the query expressing
               // this?
               // iDocBase = iDocNext;
-              topDocs = search(createNormalizedWeight(query), null, iDocNext + BATCH_SIZE, sort, false);
+              topDocs = search(createNormalizedWeight(query), iDocNext + BATCH_SIZE, sort, false, false);
           }
           else {
               // exhausted the entire result set

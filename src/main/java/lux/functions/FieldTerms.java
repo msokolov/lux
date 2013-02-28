@@ -3,6 +3,7 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
+import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.XmlTextField;
 import lux.xpath.FunCall;
@@ -16,9 +17,11 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.SequenceType;
 
+import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
-
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.util.BytesRef;
 
 /**
  * <code>function lux:field-terms($field-name as xs:string?, $start as xs:string?) as xs:anyAtomicItem*</code>
@@ -100,7 +103,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     }
     
     class TermsIterator implements SequenceIterator<AtomicValue> {
-        private final TermEnum terms;
+        private TermsEnum terms;
         private final Evaluator eval;
         private Term term;
         private int pos;
@@ -108,31 +111,37 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         TermsIterator (Evaluator eval, Term term) throws IOException {
             this.term = term;
             this.eval = eval;
-            this.terms = createTerms(term);
             pos = 0;
+            createTermsEnum(term);
         }
 
-        private TermEnum createTerms(Term t) throws IOException {
+        private void createTermsEnum(Term t) throws IOException {
+            String fieldName;
             if (t != null) {
-                return eval.getSearcher().getIndexReader().terms (t);
+                fieldName = t.field();
             } else {
-                TermEnum tenum = eval.getSearcher().getIndexReader().terms ();
-                tenum.next(); // position on first term as we do when a term start position is given
-                return tenum;
+                fieldName = eval.getCompiler().getIndexConfiguration().getFieldName(FieldName.XML_TEXT);
+            }
+            // FIXME: get sub readers (using ReaderUtil (?)) and pull values from those (in parallel?) 
+            Fields fields = MultiFields.getFields(eval.getSearcher().getIndexReader());
+            terms = fields.terms(fieldName).iterator(null);
+            if (t != null) {
+                if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
+                    pos = -1;
+                }
             }
         }
 
         @Override
         public AtomicValue next() throws XPathException {
             try {
-                Term t = terms.term();
-                if (t == null || (term != null && !term.field().equals(t.field()))) {
+                BytesRef value = terms.next();
+                if (value == null) {
                     pos = -1;
                     return null;
                 }
-                terms.next();
                 ++pos;
-                return new net.sf.saxon.value.StringValue (t.text());
+                return new net.sf.saxon.value.StringValue (value.toString());
             } catch (IOException e) {
                 throw new XPathException(e);
             }
@@ -140,7 +149,12 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
         @Override
         public AtomicValue current() {
-            return new net.sf.saxon.value.StringValue(terms.term().text());
+            try {
+                return new net.sf.saxon.value.StringValue(terms.term().toString());
+            } catch (IOException e) {
+                // ???
+                return new net.sf.saxon.value.StringValue ("");
+            }
         }
 
         @Override
@@ -150,9 +164,6 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
         @Override
         public void close() {
-            try {
-                terms.close();
-            } catch (IOException e) { }
         }
 
         @Override

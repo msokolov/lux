@@ -10,11 +10,12 @@ import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
 
-import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.index.IndexableField;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.update.AddUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.processor.UpdateRequestProcessor;
+import org.slf4j.LoggerFactory;
 
 public class LuxUpdateProcessor extends UpdateRequestProcessor {
 
@@ -42,7 +43,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
             try {
                 xmlIndexer.index (new StringReader(xml), uri);
             } catch (XMLStreamException e) {
-                log.error ("Failed to parse " + FieldName.XML_STORE, e);
+                LoggerFactory.getLogger(LuxUpdateProcessor.class).error ("Failed to parse " + FieldName.XML_STORE, e);
             }
             addDocumentFields (xmlIndexer, solrInputDocument);
         }
@@ -69,7 +70,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                     doc.addField(fieldName, value);
                 }
             } else {
-                for (Fieldable value : field.getFieldValues(indexer)) {
+                for (IndexableField value : field.getFieldValues(indexer)) {
                     doc.addField(fieldName, value);
                 }
             }

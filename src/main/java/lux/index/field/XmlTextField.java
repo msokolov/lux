@@ -12,10 +12,9 @@ import net.sf.saxon.s9api.XdmNode;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.IndexableField;
 
 public class XmlTextField extends FieldDefinition {
 
@@ -26,11 +25,11 @@ public class XmlTextField extends FieldDefinition {
     }
     
     protected XmlTextField () {
-        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, TermVector.NO, true);
+        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, true);
     }
     
     @Override
-    public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
+    public Iterable<IndexableField> getFieldValues(XmlIndexer indexer) {
         XdmNode doc = indexer.getXdmNode();
         if (doc != null && doc.getUnderlyingNode() != null) {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
@@ -38,10 +37,10 @@ public class XmlTextField extends FieldDefinition {
             Analyzer analyzer = getAnalyzer();
             TokenStream textTokens=null;
             try {
-                textTokens = analyzer.reusableTokenStream(fieldName, new CharSequenceReader(""));
+                textTokens = analyzer.tokenStream(fieldName, new CharSequenceReader(""));
             } catch (IOException e) { }
             XmlTextTokenStream tokens = new XmlTextTokenStream (fieldName, analyzer, textTokens, doc, builder.getOffsets());
-            return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(new Field(indexer.getConfiguration().getFieldName(this), tokens, getTermVector())));
+            return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(new TextField(indexer.getConfiguration().getFieldName(this), tokens)));
         }
         return Collections.emptySet();
     }

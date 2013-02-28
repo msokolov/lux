@@ -5,10 +5,9 @@ import lux.index.IndexConfiguration;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
-import org.apache.lucene.queryParser.ext.Extensions;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.ext.ExtendableQueryParser;
+import org.apache.lucene.queryparser.ext.Extensions;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
@@ -95,7 +94,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
     
     @Override
     public Query parse (String queryString) throws ParseException {
-        Query q = super.parse(queryString);        
+        Query q = super.parse(queryString);
         return maybeConvert (q);
     }
 
@@ -188,7 +187,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
         if (s.indexOf(' ') >= 0) {
             return '"' + s.replaceAll("\"", "\\\"") + '"';
         }
-        return QueryParser.escape (s);
+        return ExtendableQueryParser.escape (s);
     }
     
 }

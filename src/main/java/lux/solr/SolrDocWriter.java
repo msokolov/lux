@@ -9,7 +9,8 @@ import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 import net.sf.saxon.om.NodeInfo;
 
-import org.apache.solr.update.AddUpdateCommand;
+import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.request.SolrQueryRequestBase;
 import org.apache.solr.update.CommitUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.UpdateHandler;
@@ -34,13 +35,9 @@ public class SolrDocWriter implements DocWriter {
             } catch (XMLStreamException e) {
                 throw new LuxException(e);
             }
-            AddUpdateCommand cmd = new AddUpdateCommand();
-            cmd.overwriteCommitted = true;
-            cmd.overwritePending = true;
-            cmd.allowDups = false;
-            //cmd.solrDoc = new SolrInputDocument();
-            //LuxUpdateProcessor.addDocumentFields(indexer, cmd.solrDoc);
-            cmd.doc = indexer.createLuceneDocument();
+            // Do we need to pass the correct core?  It gets associated with SolrParams that are
+            // never read I think?
+            UpdateDocCommand cmd = new UpdateDocCommand(null, indexer.createLuceneDocument());
             try {
                 updateHandler.addDoc(cmd);
             } catch (IOException e) {
@@ -55,9 +52,11 @@ public class SolrDocWriter implements DocWriter {
 
     @Override
     public void delete(String uri) {
-        DeleteUpdateCommand cmd = new DeleteUpdateCommand();
+        DeleteUpdateCommand cmd = new DeleteUpdateCommand( makeSolrQueryRequest());
+        /*
         cmd.fromCommitted = true;
         cmd.fromPending = true;
+        */
         cmd.id = uri;
         try {
             updateHandler.delete(cmd);
@@ -68,9 +67,11 @@ public class SolrDocWriter implements DocWriter {
 
     @Override
     public void deleteAll() {
-        DeleteUpdateCommand cmd = new DeleteUpdateCommand();
+        DeleteUpdateCommand cmd = new DeleteUpdateCommand( makeSolrQueryRequest());
+        /*
         cmd.fromCommitted = true;
         cmd.fromPending = true;
+        */
         cmd.query = "*:*";
         try {
             updateHandler.deleteByQuery(cmd);
@@ -79,11 +80,18 @@ public class SolrDocWriter implements DocWriter {
         }
     }
 
+    /**
+     * @return
+     */
+    private SolrQueryRequestBase makeSolrQueryRequest() {
+        return new SolrQueryRequestBase(null, new ModifiableSolrParams()) {};
+    }
+
     @Override
     public void commit() {
-        CommitUpdateCommand cmd = new CommitUpdateCommand(false);
+        CommitUpdateCommand cmd = new CommitUpdateCommand(makeSolrQueryRequest(), false);
         cmd.expungeDeletes = false;
-        cmd.waitFlush = true;
+        // cmd.waitFlush = true;
         cmd.waitSearcher = true;
         try {
             updateHandler.commit(cmd);

@@ -11,8 +11,10 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.xmlparser.ParserException;
+
 import org.slf4j.LoggerFactory;
 
 /**
@@ -93,7 +95,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
             Query query;
             try {
                 query = parseQuery(queryArg, eval);
-            } catch (org.apache.lucene.queryParser.ParseException e) {
+            } catch (ParseException e) {
                 throw new XPathException (e.getMessage(), e);
             } catch (ParserException e) {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);

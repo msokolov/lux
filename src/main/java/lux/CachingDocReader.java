@@ -2,10 +2,8 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 
 import javax.xml.transform.stream.StreamSource;
 
@@ -18,8 +16,7 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.FieldSelector;
-import org.apache.lucene.document.SetBasedFieldSelector;
+import org.apache.lucene.document.DocumentStoredFieldVisitor;
 import org.apache.lucene.index.IndexReader;
 
 /**
@@ -28,12 +25,14 @@ import org.apache.lucene.index.IndexReader;
  * single query only. TODO: a nice optimization would be to maintain a global
  * cache, shared across threads, with some tunable resource-based eviction
  * policy.
+ * 
+ * Not threadsafe.
  */
 public class CachingDocReader {
     private final HashMap<Integer, XdmNode> cache = new HashMap<Integer, XdmNode>();
     private final String xmlFieldName;
     private final String uriFieldName;
-    private final FieldSelector fieldSelector;
+    private final DocumentStoredFieldVisitor fieldSelector;
     private final DocumentBuilder builder;
     private final DocIDNumberAllocator docIDNumberAllocator;
     private int cacheHits = 0;
@@ -60,8 +59,7 @@ public class CachingDocReader {
         HashSet<String> fieldNames = new HashSet<String>();
         fieldNames.add(xmlFieldName);
         fieldNames.add(uriFieldName);
-        Set<String> empty = Collections.emptySet();
-        fieldSelector = new SetBasedFieldSelector(fieldNames, empty);
+        fieldSelector = new DocumentStoredFieldVisitor(fieldNames);
     }
 
     /**
@@ -86,8 +84,9 @@ public class CachingDocReader {
             ++cacheHits;
             return cache.get(docID);
         }
-        Document document;
-        document = reader.document(docID, fieldSelector);
+        reader.document(docID, fieldSelector);
+        Document document = fieldSelector.getDocument();
+        
         XdmNode node = null;
         String xml = document.get(xmlFieldName);
         String uri = "lux:/" + document.get(uriFieldName);
@@ -95,7 +94,7 @@ public class CachingDocReader {
         long t0 = System.nanoTime();
         byte[] bytes = null;
         if (xml == null) {
-            bytes = document.getBinaryValue(xmlFieldName);
+            bytes = document.getBinaryValue(xmlFieldName).bytes;
             xml = "<binary xmlns=\"http://luxdb.net\" />";
         }
         StreamSource source = new StreamSource(new StringReader(xml));

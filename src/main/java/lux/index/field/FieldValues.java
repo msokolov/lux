@@ -4,11 +4,13 @@ import java.util.Iterator;
 
 import lux.index.IndexConfiguration;
 
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Fieldable;
-import org.apache.lucene.document.NumericField;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.IndexableField;
 
-public class FieldValues implements Iterable<Fieldable> {
+public class FieldValues implements Iterable<IndexableField> {
     
     private final FieldDefinition field;
     private final String fieldName;
@@ -21,11 +23,11 @@ public class FieldValues implements Iterable<Fieldable> {
     }
 
     @Override
-    public Iterator<Fieldable> iterator() {
+    public Iterator<IndexableField> iterator() {
         return new FieldIterator(values.iterator());
     }
     
-    class FieldIterator implements Iterator<Fieldable> {
+    class FieldIterator implements Iterator<IndexableField> {
         private Iterator<?> iter;
 
         FieldIterator (Iterator<?> iter) {
@@ -38,30 +40,26 @@ public class FieldValues implements Iterable<Fieldable> {
         }
 
         @Override
-        public Fieldable next() {
-            // TODO: for best indexing performance, avoid GC and re-use these Field objects:
-            // can also re-use Documents.  Can only use each field instance once per document
+        public IndexableField next() {
             Object value = iter.next();
             switch (field.getType()) {
             case BYTES:
                 if (value instanceof byte[]) {
-                    return new Field(fieldName, (byte[])value);
+                    return new StoredField(fieldName, (byte[])value);
                 }
                 // else fall through and treat as String?
             case STRING:
-                return new Field(fieldName, value.toString(), field.isStored(), field.getIndexOptions());
-            case INT: {
-                NumericField nf = new NumericField(fieldName);
-                nf.setIntValue((Integer) value);
-                return nf;
-            }
-            case LONG: {
-                NumericField nf = new NumericField(fieldName);
-                nf.setLongValue((Long) value);
-                return nf;
-            }
+                return new StringField(fieldName, value.toString(), field.isStored());
+                
+            case INT:
+                return new IntField(fieldName, ((Integer)value).intValue(), field.isStored());
+
+            case LONG:
+                return new LongField(fieldName, ((Long)value).longValue(), field.isStored());
+
             case TOKENS:
-                return (Field) value;
+                return (IndexableField) value;
+
             default:
                 throw new IllegalStateException("unimplemented field type: " + field.getType());                    
             }
