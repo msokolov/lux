@@ -2,6 +2,7 @@ package lux.index.analysis;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.Iterator;
 
 import net.sf.saxon.om.NodeInfo;
@@ -43,7 +44,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
     protected XdmNode curNode;
     protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to index
     protected CharTermAttribute termAtt;
-    protected Reader charStream = new OffsetCharFilter(null);
+    protected Reader charStream = new OffsetCharFilter(new StringReader(""));
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
     XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
