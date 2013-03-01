@@ -123,6 +123,7 @@ public class QNameTokenStreamTest {
         termAtt = tokenStream.addAttribute(CharTermAttribute.class);
         offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
         posAtt = tokenStream.addAttribute(PositionIncrementAttribute.class);
+        tokenStream.reset();
     }
 
     private void assertTokenNoOffsets(String token, int posIncr) throws IOException {
