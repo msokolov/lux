@@ -334,12 +334,12 @@ public class IndexTest {
     private void printAllTerms(IndexTestSupport indexTestSupport) throws Exception {
         DirectoryReader reader = DirectoryReader.open(dir);
         Fields fields = MultiFields.getFields(reader); 
+        System.out.println ("Printing all terms (except uri)");
         for (String field : fields) {
-            if (field.equals("uri")) {
+            if (field.equals("lux_uri")) {
                 continue;
             }
             Terms terms = fields.terms(field);
-            System.out.println ("Printing all terms (except uri)");
             String uriFieldName = indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.URI);
             TermsEnum termsEnum = terms.iterator(null);
             BytesRef text;
