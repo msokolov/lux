@@ -18,23 +18,27 @@ import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.SaxonApiException;
 
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
-import org.apache.lucene.queryParser.surround.parser.ParseException;
-import org.apache.lucene.queryParser.surround.parser.QueryParser;
-import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
-import org.apache.lucene.queryParser.surround.query.SrndQuery;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.surround.parser.ParseException;
+import org.apache.lucene.queryparser.surround.parser.QueryParser;
+import org.apache.lucene.queryparser.surround.query.BasicQueryFactory;
+import org.apache.lucene.queryparser.surround.query.SrndQuery;
+import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.xmlparser.ParserException;
+import org.apache.lucene.util.BytesRef;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -124,7 +128,7 @@ public class IndexTest {
         assertEquals (5, count);
     }
     
-    private void assertFullTextQuery(IndexTestSupport indexTestSupport, String qName, String term, int expectedCount) throws ParserException, IOException {
+    private void assertFullTextQuery(IndexTestSupport indexTestSupport, String qName, String term, int expectedCount) throws IOException, ParserException {
         LuxSearcher searcher = indexTestSupport.searcher;
         XmlIndexer indexer = indexTestSupport.indexer;
         IndexConfiguration config = indexer.getConfiguration();
@@ -328,15 +332,20 @@ public class IndexTest {
 
     @SuppressWarnings("unused")
     private void printAllTerms(IndexTestSupport indexTestSupport) throws Exception {
-        IndexReader reader = IndexReader.open(dir);
-        TermEnum terms = reader.terms();
-        System.out.println ("Printing all terms (except uri)");
-        String uriFieldName = indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.URI);
-        while (terms.next()) {
-            if (terms.term().field().equals(uriFieldName)) {
+        DirectoryReader reader = DirectoryReader.open(dir);
+        Fields fields = MultiFields.getFields(reader); 
+        for (String field : fields) {
+            if (field.equals("uri")) {
                 continue;
             }
-            System.out.println (terms.term().toString() + ' ' + terms.docFreq());
+            Terms terms = fields.terms(field);
+            System.out.println ("Printing all terms (except uri)");
+            String uriFieldName = indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.URI);
+            TermsEnum termsEnum = terms.iterator(null);
+            BytesRef text;
+            while ((text = termsEnum.next()) != null) {
+                System.out.println (field + " " + text.utf8ToString() + ' ' + termsEnum.docFreq());
+            }
         }
         reader.close();
     }

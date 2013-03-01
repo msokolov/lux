@@ -28,10 +28,10 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.store.Directory;
 
 /**
@@ -390,7 +390,7 @@ public class XmlIndexer {
     public org.apache.lucene.document.Document createLuceneDocument () {
         org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
         for (FieldDefinition field : getFields()) {
-            for (Fieldable f : field.getFieldValues(this)) {
+            for (IndexableField f : field.getFieldValues(this)) {
                 doc.add(f);
             }
         }

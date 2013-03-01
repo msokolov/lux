@@ -1,7 +1,9 @@
 package lux.index.analysis;
 
-import org.apache.lucene.analysis.BaseCharFilter;
-import org.apache.lucene.analysis.CharStream;
+import java.io.IOException;
+import java.io.Reader;
+
+import org.apache.lucene.analysis.charfilter.BaseCharFilter;
 
 /** exposes the offset map so it can be set externally. 
  * It seems as if it would be better to be able to reset() and reuse this?
@@ -10,12 +12,19 @@ import org.apache.lucene.analysis.CharStream;
 
 public class OffsetCharFilter extends BaseCharFilter {
     
-    public OffsetCharFilter(CharStream in) {
+    private Reader in;
+    
+    public OffsetCharFilter(Reader in) {
         super(in);
     }
 
     public void addOffset (int off, int cumulativeDiff) {
         addOffCorrectMap(off, cumulativeDiff);
+    }
+
+    @Override
+    public int read(char[] cbuf, int off, int len) throws IOException {
+        return in.read(cbuf, off, len);
     }
 
 }

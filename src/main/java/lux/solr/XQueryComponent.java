@@ -323,11 +323,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
 
     @Override
-    public String getSourceId() {
-        return "lux.XQueryComponent";
-    }
-
-    @Override
     public String getSource() {
         return "http://falutin.net/svn";
     }

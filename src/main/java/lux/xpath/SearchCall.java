@@ -96,8 +96,8 @@ public class SearchCall extends FunCall {
                     buf.append (" empty greatest");
                 }
                 switch (sortField.getType()) {
-                case SortField.INT: buf.append(" int"); break;
-                case SortField.LONG: buf.append(" long"); break;
+                case INT: buf.append(" int"); break;
+                case LONG: buf.append(" long"); break;
                 default: // default is string
                 }
                 buf.append (",");

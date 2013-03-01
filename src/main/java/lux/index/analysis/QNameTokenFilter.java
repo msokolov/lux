@@ -42,7 +42,7 @@ final public class QNameTokenFilter extends TokenFilter {
             if (!input.incrementToken()) {
                 return false;
             }
-            term.copy(termAtt.buffer(), 0, termAtt.length());
+            term.copyChars(termAtt.buffer(), 0, termAtt.length());
         }
         else {
             // set posIncr = 0 if this is not the first token emitted for this term

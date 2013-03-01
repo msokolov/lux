@@ -5,10 +5,9 @@ import java.util.Set;
 
 import lux.index.XmlIndexer;
 
-import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.document.Field;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
+import org.apache.lucene.document.StringField;
 
 public class URIField extends FieldDefinition {
     
@@ -19,13 +18,12 @@ public class URIField extends FieldDefinition {
     }
     
     protected URIField () {
-        super ("lux_uri", new KeywordAnalyzer(), Store.YES, Type.STRING, TermVector.NO, true);
+        super ("lux_uri", new KeywordAnalyzer(), Store.YES, Type.STRING, true);
     }
     
     @Override
-    public Set<Field> getFieldValues(XmlIndexer indexer) {
-        return Collections.singleton(new Field (indexer.getConfiguration().getFieldName(this), indexer.getURI(), 
-                Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
+    public Set<StringField> getFieldValues(XmlIndexer indexer) {
+        return Collections.singleton(new StringField(indexer.getConfiguration().getFieldName(this), indexer.getURI(),Store.YES)); 
     }
     
     @Override

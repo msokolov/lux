@@ -6,11 +6,10 @@ import lux.index.XPathValueMapper;
 import lux.index.XmlIndexer;
 import lux.index.analysis.PathValueTokenStream;
 
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
-import org.apache.lucene.document.Field;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.util.Version;
 
 public class PathValueField extends FieldDefinition {
@@ -22,16 +21,16 @@ public class PathValueField extends FieldDefinition {
     }
     
     protected PathValueField () {
-        super ("lux_path_value", new WhitespaceAnalyzer(Version.LUCENE_34), Store.NO, Type.TOKENS, TermVector.NO);
+        super ("lux_path_value", new WhitespaceAnalyzer(Version.LUCENE_41), Store.NO, Type.TOKENS);
     }
     
     @Override
-    public Iterable<Fieldable> getFieldValues(XmlIndexer indexer) {
+    public Iterable<IndexableField> getFieldValues(XmlIndexer indexer) {
         // replace with a custom Fieldable
         XPathValueMapper mapper = (XPathValueMapper) indexer.getPathMapper();        
         return new FieldValues (indexer.getConfiguration(), this, Collections.singleton
-                (new Field(indexer.getConfiguration().getFieldName(this), 
-                        new PathValueTokenStream(mapper.getPathValues()), getTermVector())));
+                (new TextField(indexer.getConfiguration().getFieldName(this), 
+                        new PathValueTokenStream(mapper.getPathValues()))));
     }
 
 }

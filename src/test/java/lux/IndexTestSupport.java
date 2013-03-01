@@ -1,9 +1,6 @@
 package lux;
 
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.INDEX_QNAMES;
-import static lux.index.IndexConfiguration.STORE_DOCUMENT;
+import static lux.index.IndexConfiguration.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +18,7 @@ import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockObtainFailedException;
@@ -78,7 +75,7 @@ public class IndexTestSupport {
             indexer.newIndexWriter(dir).close();
         }
         indexWriter = indexer.newIndexWriter(dir);
-        searcher = new LuxSearcher(IndexReader.open(indexWriter, true));
+        searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
         compiler = new Compiler (indexer.getConfiguration());
     }
 
@@ -132,6 +129,9 @@ public class IndexTestSupport {
         return new Evaluator(compiler, searcher, docWriter);
     }
 
+    public IndexWriter getIndexWriter () {
+        return indexWriter;
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -27,7 +27,7 @@ import org.apache.lucene.util.Version;
  */
 public class IndexConfiguration {
 
-    public static final Version LUCENE_VERSION = Version.LUCENE_34;
+    public static final Version LUCENE_VERSION = Version.LUCENE_41;
 
     /** causes a document node to be built during indexing. Must be set if any XPathFields are to be defined. */
     public final static int BUILD_DOCUMENT=     0x00000001;
@@ -164,9 +164,15 @@ public class IndexConfiguration {
             addField (XML_TEXT);
             addField (ELEMENT_TEXT);
             addField (ATTRIBUTE_TEXT);
-            if (XML_TEXT.getTermVector().withOffsets() || 
+            if (false
+                    // FIXME: do we need offsets ever?  Perhaps if we make use of a better highlighter
+                    
+                    /*
+                    XML_TEXT.getTermVector().withOffsets() || 
                     ELEMENT_TEXT.getTermVector().withOffsets() ||
-                    ATTRIBUTE_TEXT.getTermVector().withOffsets()) {
+                    ATTRIBUTE_TEXT.getTermVector().withOffsets()
+                    */
+                    ) {
                 // We may not need to bother computing offsets at all
                 options |= COMPUTE_OFFSETS;
             }
