@@ -345,7 +345,10 @@ public class Evaluator {
     public void reopenSearcher() {
         LoggerFactory.getLogger(getClass()).debug("evaluator reopen searcher");
         try {
-            DirectoryReader.openIfChanged((DirectoryReader) getSearcher().getIndexReader());
+            
+            LuxSearcher current = searcher;
+            searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) getSearcher().getIndexReader()));
+            current.close();
         } catch (IOException e) {
             throw new LuxException (e);
         }
