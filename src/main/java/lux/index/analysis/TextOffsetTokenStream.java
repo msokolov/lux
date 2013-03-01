@@ -45,7 +45,7 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
             charStream = charSequenceStream;
         }
         try {
-            reset (charStream);
+            reset ();
             // this is what we had before refactoring:
             return incrementWrappedTokenStream();
             // but shouldn't it really be this?:
