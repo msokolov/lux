@@ -107,11 +107,12 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         private final Evaluator eval;
         private Term term;
         private int pos;
+        private String current;
         
         TermsIterator (Evaluator eval, Term term) throws IOException {
             this.term = term;
             this.eval = eval;
-            pos = 0;
+            pos = -1;
             createTermsEnum(term);
         }
 
@@ -128,6 +129,8 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             if (t != null) {
                 if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
                     pos = -1;
+                } else {
+                    current = terms.term().utf8ToString();
                 }
             }
         }
@@ -135,13 +138,19 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         @Override
         public AtomicValue next() throws XPathException {
             try {
-                BytesRef value = terms.next();
-                if (value == null) {
-                    pos = -1;
+                if (current == null) {
                     return null;
                 }
-                ++pos;
-                return new net.sf.saxon.value.StringValue (value.toString());
+                String value = current;
+                BytesRef bytesRef = terms.next();
+                if (bytesRef == null) {
+                    pos = -1;
+                    current = null;
+                } else {
+                    ++pos;
+                    current = bytesRef.utf8ToString();
+                }
+                return new net.sf.saxon.value.StringValue (value);
             } catch (IOException e) {
                 throw new XPathException(e);
             }
@@ -149,12 +158,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
         @Override
         public AtomicValue current() {
-            try {
-                return new net.sf.saxon.value.StringValue(terms.term().toString());
-            } catch (IOException e) {
-                // ???
-                return new net.sf.saxon.value.StringValue ("");
-            }
+            return new net.sf.saxon.value.StringValue(current.toString());
         }
 
         @Override
