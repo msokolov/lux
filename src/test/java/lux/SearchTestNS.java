@@ -1,7 +1,6 @@
 package lux;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 import lux.exception.LuxException;
 
 import org.junit.BeforeClass;
@@ -37,7 +36,7 @@ public class SearchTestNS extends BaseSearchTest {
     @Test
     public void testSearchBoundNsPrefix() throws Exception {
         // Search string may use prefixes declared in surrounding context
-        // This test should be run with a namespace-aware idnex
+        // This test should be run with a namespace-aware index
         assertSearch ("2", "declare namespace x='http://lux.net{test}'; count(lux:search('<x\\:title:test'))", null, 2);
     }
     
