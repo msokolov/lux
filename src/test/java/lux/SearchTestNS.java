@@ -40,7 +40,8 @@ public class SearchTestNS extends BaseSearchTest {
     @Test
     public void testSearchNsUri () throws Exception {
         // namespace uri may be supplied explicitly
-        assertSearch ("2", "count(lux:search('<title\\{http\\://lux.net\\{test\\}\\}:test'))", null, 2);
+        // In Lucene 4.1, slashes must be escaped
+        assertSearch ("2", "count(lux:search('<title\\{http\\:\\/\\/lux.net\\{test\\}\\}:test'))", null, 2);
     }
     
     @Test
