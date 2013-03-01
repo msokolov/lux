@@ -19,6 +19,7 @@ import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.tree.iter.EmptyIterator;
 import net.sf.saxon.tree.iter.SingletonIterator;
 import net.sf.saxon.value.SequenceType;
 
@@ -39,7 +40,7 @@ public class Highlight extends ExtensionFunctionDefinition {
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] { 
                 SequenceType.SINGLE_ITEM,
-                SequenceType.SINGLE_NODE,
+                SequenceType.OPTIONAL_NODE,
                 };
     }
     @Override
@@ -49,7 +50,7 @@ public class Highlight extends ExtensionFunctionDefinition {
 
     @Override
     public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
-        return SequenceType.makeSequenceType(NodeKindTest.DOCUMENT, StaticProperty.EXACTLY_ONE);
+        return SequenceType.makeSequenceType(NodeKindTest.DOCUMENT, StaticProperty.ALLOWS_ZERO_OR_ONE);
     }
 
     @Override
@@ -65,6 +66,9 @@ public class Highlight extends ExtensionFunctionDefinition {
                 throws XPathException {
             Item queryArg = arguments[0].next(); 
             NodeInfo docArg = (NodeInfo) arguments[1].next();
+            if (docArg == null) {
+                return EmptyIterator.emptyIterator();
+            }
             Query query;
             Evaluator eval = SearchBase.getEvaluator(context);
             try {
