@@ -156,6 +156,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
 
     private void init (TokenStream tokenStream) {
         try {
+            tokenStream.reset();
             scorer.setMaxDocCharsToAnalyze(maxDocCharsToAnalyze);
             scorerTokens = scorer.init(tokenStream);
             if (scorerTokens == null) {
