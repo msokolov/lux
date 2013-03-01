@@ -101,7 +101,7 @@ public class LuxSearcher extends IndexSearcher {
 
       private void advanceScorer () throws IOException {
           while (nextReader < leaves.size()) {
-              leaf = leaves.get(nextReader);
+              leaf = leaves.get(nextReader++);
               scorer = weight.scorer(leaf, ordered, false, leaf.reader().getLiveDocs()); // NB: arg 3 (topScorer) was 'true' prior to 4.1 upgrade but incorrectly I think??
               if (scorer != null) {
                   return;
