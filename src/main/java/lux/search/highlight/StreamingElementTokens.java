@@ -13,8 +13,7 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 /**
  * Wraps a TokenStream, modifying its CharTermAttribute so as to return
  * the original term, and the term prefixed by each of its enclosing element's QNames,
- * int turn.
- * 
+ * in turn.
  */
 public final class StreamingElementTokens extends TokenStream {
     
@@ -74,8 +73,14 @@ public final class StreamingElementTokens extends TokenStream {
         return true;
     }
 
-    public void reset (TokenStream tokens) {
-        this.wrapped = tokens;
+    public void reset (TokenStream tokens) throws IOException {
+        wrapped = tokens;
+        reset ();
+    }
+    
+    @Override public void reset () throws IOException {
+        super.reset();
+        wrapped.reset();
     }
 }
 
