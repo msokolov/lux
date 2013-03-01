@@ -47,7 +47,7 @@ public abstract class FieldDefinition {
      * other types provide each values as a Java object.
      */
     public enum Type {
-        TOKENS, STRING, BYTES, INT, LONG;
+        TOKENS, STRING, BYTES, INT, LONG, TEXT;
         public SortField.Type getLuceneSortFieldType () {
             switch (this) {
             case STRING: return SortField.Type.STRING;
@@ -108,7 +108,7 @@ public abstract class FieldDefinition {
         if (values == null) {
             throw new LuxException(getClass().getName() + ".getValues() returned null: did you neglect to implement it?");
         }
-        return new FieldValues (indexer.getConfiguration(), this, getValues(indexer));
+        return new FieldValues (indexer.getConfiguration(), this, values);
     }
 
 

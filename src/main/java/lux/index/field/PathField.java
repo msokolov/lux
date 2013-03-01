@@ -14,7 +14,7 @@ public class PathField extends FieldDefinition {
     }
     
     protected PathField () {
-        super ("lux_path", new WhitespaceGapAnalyzer(), Store.NO, Type.STRING);
+        super ("lux_path", new WhitespaceGapAnalyzer(), Store.NO, Type.TEXT);
     }
     
     @Override

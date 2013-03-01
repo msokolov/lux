@@ -8,6 +8,7 @@ import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexableField;
 
 public class FieldValues implements Iterable<IndexableField> {
@@ -50,6 +51,9 @@ public class FieldValues implements Iterable<IndexableField> {
                 // else fall through and treat as String?
             case STRING:
                 return new StringField(fieldName, value.toString(), field.isStored());
+                
+            case TEXT:
+                return new TextField (fieldName, value.toString(), field.isStored());
                 
             case INT:
                 return new IntField(fieldName, ((Integer)value).intValue(), field.isStored());
