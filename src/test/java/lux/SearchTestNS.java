@@ -3,6 +3,15 @@ package lux;
 import static org.junit.Assert.*;
 import lux.exception.LuxException;
 
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanQuery;
+import org.apache.lucene.search.spans.SpanTermQuery;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,6 +22,7 @@ public class SearchTestNS extends BaseSearchTest {
     @BeforeClass
     public static void setup() throws Exception {
         setup ("lux/reader-test-ns.xml", "lux/reader-test.xml");
+        // index.printAllTerms();
     }
     
     @Test
@@ -74,6 +84,37 @@ public class SearchTestNS extends BaseSearchTest {
     
     @Test
     public void testAttributePredicate() throws Exception {
+        // Verifying that the Lucene query actually works:
+        Query q1 = new TermQuery(new Term("lux_att_text", "id:test"));
+        TopDocs results = index.searcher.search(q1, 10);
+        assertEquals (2, results.totalHits);
+        SpanNearQuery q2 = new SpanNearQuery (new SpanQuery[] {
+                new SpanTermQuery(new Term("lux_path", "{}")),
+                new SpanTermQuery(new Term("lux_path", "test")),
+                new SpanTermQuery(new Term("lux_path", "title"))
+        }, 0, true);
+        results = index.searcher.search(q2, 10);
+        assertEquals (1, results.totalHits);
+        SpanNearQuery q3 = new SpanNearQuery (new SpanQuery[] {
+                new SpanTermQuery(new Term("lux_path", "{}")),
+                new SpanTermQuery(new Term("lux_path", "test")),
+                new SpanTermQuery(new Term("lux_path", "@id"))
+        }, 0, true);
+        results = index.searcher.search(q3, 10);
+        assertEquals (1, results.totalHits);
+        BooleanQuery bq = new BooleanQuery ();
+        BooleanQuery bqinner = new BooleanQuery ();
+        bqinner.add(q1, Occur.MUST);
+        bqinner.add(q3, Occur.MUST);
+        bq.add(bqinner, Occur.MUST);
+        bq.add(q2, Occur.MUST);
+        results = index.searcher.search(bq, 10);
+        assertEquals (1, results.totalHits);
+        assertEquals (6, results.scoreDocs[0].doc);
+        assertSearch ("1", "count (/test)", null, 1);
+        assertSearch ("1", "count (/test/@id)", null, 1);
+        assertSearch ("test", "/test/@id/string()", null, 1);
+        // The actual test:
         // this was throwing a parsing exception
         assertSearch ("1", "count (/test[@id='test']/title)", null, 1);
     }

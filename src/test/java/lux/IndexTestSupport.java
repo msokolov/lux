@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import javax.xml.stream.XMLStreamException;
 
+import lux.index.FieldName;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.Axis;
@@ -19,10 +20,15 @@ import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.MultiFields;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.util.BytesRef;
 
 /**
  * Test support class that sets up a lucene index and generates and indexes documents from hamlet.xml.
@@ -131,6 +137,25 @@ public class IndexTestSupport {
 
     public IndexWriter getIndexWriter () {
         return indexWriter;
+    }
+    
+    public void printAllTerms() throws IOException {
+        DirectoryReader reader = DirectoryReader.open(dir);
+        Fields fields = MultiFields.getFields(reader); 
+        System.out.println ("Printing all terms (except uri)");
+        String uriFieldName = indexer.getConfiguration().getFieldName(FieldName.URI);
+        for (String field : fields) {
+            if (field.equals(uriFieldName)) {
+                continue;
+            }
+            Terms terms = fields.terms(field);
+            TermsEnum termsEnum = terms.iterator(null);
+            BytesRef text;
+            while ((text = termsEnum.next()) != null) {
+                System.out.println (field + " " + text.utf8ToString() + ' ' + termsEnum.docFreq());
+            }
+        }
+        reader.close();
     }
 }
 

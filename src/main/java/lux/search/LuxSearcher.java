@@ -80,7 +80,6 @@ public class LuxSearcher extends IndexSearcher {
       private final boolean ordered;
       private int nextReader;
       private int docID;
-      private int docBase; // add to docID which is relative to each sub-reader
       private Scorer scorer;
       private List<AtomicReaderContext> leaves;
       private AtomicReaderContext leaf;
@@ -120,7 +119,7 @@ public class LuxSearcher extends IndexSearcher {
         while (scorer != null) {
             docID = scorer.nextDoc();
             if (docID != NO_MORE_DOCS) {
-                return docID + docBase;
+                return docID + leaf.docBase;
             }
             advanceScorer();
         }
@@ -130,9 +129,9 @@ public class LuxSearcher extends IndexSearcher {
     @Override
     public int advance(int target) throws IOException {
         while (scorer != null) {
-            docID = scorer.advance(target - docBase);
+            docID = scorer.advance(target - leaf.docBase);
             if (docID != NO_MORE_DOCS) {
-                return docID + docBase;
+                return docID + leaf.docBase;
             }
             advanceScorer();
         }

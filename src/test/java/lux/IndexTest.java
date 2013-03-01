@@ -20,13 +20,8 @@ import net.sf.saxon.s9api.SaxonApiException;
 
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.Terms;
-import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.surround.parser.ParseException;
 import org.apache.lucene.queryparser.surround.parser.QueryParser;
 import org.apache.lucene.queryparser.surround.query.BasicQueryFactory;
@@ -38,7 +33,6 @@ import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.util.BytesRef;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -332,22 +326,7 @@ public class IndexTest {
 
     @SuppressWarnings("unused")
     private void printAllTerms(IndexTestSupport indexTestSupport) throws Exception {
-        DirectoryReader reader = DirectoryReader.open(dir);
-        Fields fields = MultiFields.getFields(reader); 
-        System.out.println ("Printing all terms (except uri)");
-        for (String field : fields) {
-            if (field.equals("lux_uri")) {
-                continue;
-            }
-            Terms terms = fields.terms(field);
-            String uriFieldName = indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.URI);
-            TermsEnum termsEnum = terms.iterator(null);
-            BytesRef text;
-            while ((text = termsEnum.next()) != null) {
-                System.out.println (field + " " + text.utf8ToString() + ' ' + termsEnum.docFreq());
-            }
-        }
-        reader.close();
+        indexTestSupport.printAllTerms();
     }
     
     private void assertTotalDocs() throws IOException {
