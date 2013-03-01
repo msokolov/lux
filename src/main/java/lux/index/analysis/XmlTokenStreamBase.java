@@ -56,6 +56,12 @@ abstract class XmlTokenStreamBase extends TokenStream {
         //tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
     }
     
+    @Override
+    public void reset () throws IOException{
+        reset (charStream);
+        wrapped.reset();
+    }
+    
     public void reset (Reader reader) throws IOException {
         TokenStream reset = analyzer.tokenStream (fieldName, reader);
         // This must be the same token stream: ie the Analyzer must be re-usable, and the 

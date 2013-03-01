@@ -12,8 +12,6 @@ import org.apache.lucene.analysis.charfilter.BaseCharFilter;
 
 public class OffsetCharFilter extends BaseCharFilter {
     
-    private Reader in;
-    
     public OffsetCharFilter(Reader in) {
         super(in);
     }
@@ -24,7 +22,7 @@ public class OffsetCharFilter extends BaseCharFilter {
 
     @Override
     public int read(char[] cbuf, int off, int len) throws IOException {
-        return in.read(cbuf, off, len);
+        return input.read(cbuf, off, len);
     }
 
 }
