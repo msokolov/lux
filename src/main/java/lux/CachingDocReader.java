@@ -32,7 +32,7 @@ public class CachingDocReader {
     private final HashMap<Integer, XdmNode> cache = new HashMap<Integer, XdmNode>();
     private final String xmlFieldName;
     private final String uriFieldName;
-    private final DocumentStoredFieldVisitor fieldSelector;
+    private final HashSet<String> fieldsToRetrieve;
     private final DocumentBuilder builder;
     private final DocIDNumberAllocator docIDNumberAllocator;
     private int cacheHits = 0;
@@ -56,10 +56,9 @@ public class CachingDocReader {
         this.docIDNumberAllocator = docIDNumberAllocator;
         this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
         this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
-        HashSet<String> fieldNames = new HashSet<String>();
-        fieldNames.add(xmlFieldName);
-        fieldNames.add(uriFieldName);
-        fieldSelector = new DocumentStoredFieldVisitor(fieldNames);
+        fieldsToRetrieve = new HashSet<String>();
+        fieldsToRetrieve.add(xmlFieldName);
+        fieldsToRetrieve.add(uriFieldName);
     }
 
     /**
@@ -84,6 +83,8 @@ public class CachingDocReader {
             ++cacheHits;
             return cache.get(docID);
         }
+
+        DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
         
