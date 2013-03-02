@@ -26,13 +26,14 @@ import org.apache.lucene.util.BytesRef;
 /**
  * <code>function lux:field-terms($field-name as xs:string?, $start as xs:string?) as xs:anyAtomicItem*</code>
  * <p>
- * This function accepts the name of a Lucene field, and a starting value,
- * and returns the sequence of terms drawn from the field, ordered according
- * to its natural order, starting with the first term that is >= the starting value.
+ * This function accepts the name of a Lucene field, and a starting value, and
+ * returns the sequence of terms drawn from the field, ordered according to its
+ * natural order, starting with the first term that is >= the starting value.
  * </p>
  * <p>
- * If the $field-name argument is empty, the terms are drawn from the default field defined by the {@link IndexConfiguration},
- * generally the {@link XmlTextField}.
+ * If the $field-name argument is empty, the terms are drawn from the default
+ * field defined by the {@link IndexConfiguration}, generally the
+ * {@link XmlTextField}.
  * </p>
  */
 public class FieldTerms extends ExtensionFunctionDefinition {
@@ -44,24 +45,21 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
     @Override
     public SequenceType[] getArgumentTypes() {
-        return new SequenceType[] {
-                SequenceType.OPTIONAL_STRING,
-                SequenceType.OPTIONAL_STRING
-        };
+        return new SequenceType[] { SequenceType.OPTIONAL_STRING, SequenceType.OPTIONAL_STRING };
     }
-    
+
     @Override
     public int getMinimumNumberOfArguments() {
         return 0;
     }
-    
+
     @Override
     public int getMaximumNumberOfArguments() {
         return 2;
     }
-    
+
     @Override
-    public boolean trustResultType () {
+    public boolean trustResultType() {
         return true;
     }
 
@@ -72,15 +70,16 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
     @Override
     public ExtensionFunctionCall makeCallExpression() {
-        return new FieldTermsCall ();
+        return new FieldTermsCall();
     }
-    
+
     class FieldTermsCall extends ExtensionFunctionCall {
 
         @Override
-        public SequenceIterator<AtomicValue> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public SequenceIterator<AtomicValue> call(
+                @SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
                 throws XPathException {
-            String fieldName=null, start="";
+            String fieldName = null, start = "";
             if (arguments.length > 0) {
                 Item<?> arg0 = arguments[0].next();
                 fieldName = arg0.getStringValue();
@@ -94,22 +93,22 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                 if (fieldName == null) {
                     fieldName = eval.getCompiler().getIndexConfiguration().getDefaultFieldName();
                 }
-                return new TermsIterator (eval, new Term(fieldName, start));
+                return new TermsIterator(eval, new Term(fieldName, start));
             } catch (IOException e) {
-                throw new XPathException ("failed getting terms from field " + fieldName, e);
+                throw new XPathException("failed getting terms from field " + fieldName, e);
             }
         }
-        
+
     }
-    
+
     class TermsIterator implements SequenceIterator<AtomicValue> {
         private TermsEnum terms;
         private final Evaluator eval;
         private Term term;
         private int pos;
         private String current;
-        
-        TermsIterator (Evaluator eval, Term term) throws IOException {
+
+        TermsIterator(Evaluator eval, Term term) throws IOException {
             this.term = term;
             this.eval = eval;
             pos = -1;
@@ -123,14 +122,17 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             } else {
                 fieldName = eval.getCompiler().getIndexConfiguration().getFieldName(FieldName.XML_TEXT);
             }
-            // FIXME: get sub readers (using ReaderUtil (?)) and pull values from those (in parallel?) 
+            // FIXME: get sub readers (using ReaderUtil (?)) and pull values
+            // from those (in parallel?)
             Fields fields = MultiFields.getFields(eval.getSearcher().getIndexReader());
-            terms = fields.terms(fieldName).iterator(null);
-            if (t != null) {
-                if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
-                    pos = -1;
-                } else {
-                    current = terms.term().utf8ToString();
+            if (fields != null) {
+                terms = fields.terms(fieldName).iterator(null);
+                if (t != null) {
+                    if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
+                        pos = -1;
+                    } else {
+                        current = terms.term().utf8ToString();
+                    }
                 }
             }
         }
@@ -150,7 +152,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                     ++pos;
                     current = bytesRef.utf8ToString();
                 }
-                return new net.sf.saxon.value.StringValue (value);
+                return new net.sf.saxon.value.StringValue(value);
             } catch (IOException e) {
                 throw new XPathException(e);
             }
@@ -173,9 +175,9 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         @Override
         public SequenceIterator<AtomicValue> getAnother() throws XPathException {
             try {
-                return new TermsIterator (eval, term);
+                return new TermsIterator(eval, term);
             } catch (IOException e) {
-                throw new XPathException (e);
+                throw new XPathException(e);
             }
         }
 
@@ -183,11 +185,13 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         public int getProperties() {
             return 0;
         }
-        
+
     }
 
 }
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/.
+ */
