@@ -6,10 +6,14 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.DocWriter;
 import lux.exception.LuxException;
+import lux.index.FieldName;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import net.sf.saxon.om.NodeInfo;
 
+import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.SolrQueryRequestBase;
 import org.apache.solr.update.CommitUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
@@ -17,12 +21,17 @@ import org.apache.solr.update.UpdateHandler;
 
 public class SolrDocWriter implements DocWriter {
 
-    private final UpdateHandler updateHandler;
+    private final SolrCore core;
     private final XQueryComponent xqueryComponent;
+    private final String uriFieldName;
+    private final String xmlFieldName;
 
-    SolrDocWriter(XQueryComponent xQueryComponent, UpdateHandler updateHandler) {
-        this.updateHandler = updateHandler;
+    SolrDocWriter(XQueryComponent xQueryComponent, SolrCore core) {
+        this.core = core;
         this.xqueryComponent = xQueryComponent;
+        IndexConfiguration indexConfig = xQueryComponent.getSolrIndexConfig().getIndexConfig();
+        uriFieldName = indexConfig.getFieldName(FieldName.URI);
+        xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
     }
 
     @Override
@@ -35,9 +44,21 @@ public class SolrDocWriter implements DocWriter {
             } catch (XMLStreamException e) {
                 throw new LuxException(e);
             }
-            // Do we need to pass the correct core?  It gets associated with SolrParams that are
-            // never read I think?
-            UpdateDocCommand cmd = new UpdateDocCommand(null, indexer.createLuceneDocument());
+            UpdateDocCommand cmd = new UpdateDocCommand(core, indexer.createLuceneDocument(), uri);
+            UpdateHandler updateHandler = core.getUpdateHandler();
+            if (updateHandler.getUpdateLog() != null) {
+                // Create a serialized version of the document for saving to the transaction log
+                // FIXME: find a more efficient serialization scheme
+                // at the very least use a Serializer to preserve white space etc
+                // better still use TinyBinary (or PTree)
+                // TODO: test replay from the log - how?
+                String xml = node.toString();
+                SolrInputDocument solrDoc = new SolrInputDocument();
+                solrDoc.addField(uriFieldName, uri);
+                solrDoc.addField(xmlFieldName, xml);
+                cmd.solrDoc = solrDoc;
+            }
+            
             try {
                 updateHandler.addDoc(cmd);
             } catch (IOException e) {
@@ -52,14 +73,14 @@ public class SolrDocWriter implements DocWriter {
 
     @Override
     public void delete(String uri) {
-        DeleteUpdateCommand cmd = new DeleteUpdateCommand( makeSolrQueryRequest());
+        DeleteUpdateCommand cmd = new DeleteUpdateCommand(makeSolrQueryRequest());
         /*
         cmd.fromCommitted = true;
         cmd.fromPending = true;
         */
         cmd.id = uri;
         try {
-            updateHandler.delete(cmd);
+            core.getUpdateHandler().delete(cmd);
         } catch (IOException e) {
             throw new LuxException(e);
         }
@@ -74,7 +95,7 @@ public class SolrDocWriter implements DocWriter {
         */
         cmd.query = "*:*";
         try {
-            updateHandler.deleteByQuery(cmd);
+            core.getUpdateHandler().deleteByQuery(cmd);
         } catch (IOException e) {
             throw new LuxException(e);
         }
@@ -84,7 +105,7 @@ public class SolrDocWriter implements DocWriter {
      * @return
      */
     private SolrQueryRequestBase makeSolrQueryRequest() {
-        return new SolrQueryRequestBase(null, new ModifiableSolrParams()) {};
+        return new SolrQueryRequestBase(core, new ModifiableSolrParams()) {};
     }
 
     @Override
@@ -94,7 +115,7 @@ public class SolrDocWriter implements DocWriter {
         // cmd.waitFlush = true;
         cmd.waitSearcher = true;
         try {
-            updateHandler.commit(cmd);
+            core.getUpdateHandler().commit(cmd);
         } catch (IOException e) {
             throw new LuxException(e);
         }

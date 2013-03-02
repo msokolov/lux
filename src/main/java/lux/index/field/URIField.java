@@ -23,7 +23,7 @@ public class URIField extends FieldDefinition {
     
     @Override
     public Set<StringField> getFieldValues(XmlIndexer indexer) {
-        return Collections.singleton(new StringField(indexer.getConfiguration().getFieldName(this), indexer.getURI(),Store.YES)); 
+        return Collections.singleton(new StringField(indexer.getConfiguration().getFieldName(this), indexer.getURI(), Store.YES)); 
     }
     
     @Override

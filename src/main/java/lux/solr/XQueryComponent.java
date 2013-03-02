@@ -1,14 +1,11 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.STORE_DOCUMENT;
+import static lux.index.IndexConfiguration.*;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -72,6 +69,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     //protected XmlIndexer indexer;
     protected SolrIndexConfig solrIndexConfig;
     
+    public SolrIndexConfig getSolrIndexConfig() {
+        return solrIndexConfig;
+    }
+
     private Logger logger;
     
     public XQueryComponent() {
@@ -143,12 +144,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         XQueryExecutable expr;
         SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         SolrIndexSearcher searcher = rb.req.getSearcher();
-        DocWriter docWriter = new SolrDocWriter (this, rb.req.getCore().getUpdateHandler());
+        DocWriter docWriter = new SolrDocWriter (this, rb.req.getCore());
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
             String queryPath = rb.req.getParams().get(LUX_XQUERY);
-        	expr = compiler.compile(query, errorListener, queryPath == null ? null : URI.create(queryPath));
+        	expr = compiler.compile(query, errorListener, queryPath == null ? null : java.net.URI.create(queryPath));
         } catch (LuxException ex) {
         	ex.printStackTrace();
         	String err = formatError(query, errorListener);
@@ -279,10 +280,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
     }
     
-    // This may be a bit fragile - I worry we'll have serialization bugs -
+    // FIXME This may be a bit fragile - I worry we'll have serialization bugs -
     // but the only alternative I can see is to provide a special xquery function
     // and pass the map into the Saxon Evaluator object - but we can't get that
-    // from here, and it would be thread-unsafe anyway, which is bad for a server
+    // from here, and it would be thread-unsafe anyway
     private String buildHttpInfo(SolrParams params) {
         StringBuilder buf = new StringBuilder();
         // TODO: http method
