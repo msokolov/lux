@@ -151,7 +151,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             String queryPath = rb.req.getParams().get(LUX_XQUERY);
         	expr = compiler.compile(query, errorListener, queryPath == null ? null : java.net.URI.create(queryPath));
         } catch (LuxException ex) {
-        	ex.printStackTrace();
+        	// ex.printStackTrace();
         	String err = formatError(query, errorListener);
         	rsp.add("xpath-error", err);
         	evaluator.close();
