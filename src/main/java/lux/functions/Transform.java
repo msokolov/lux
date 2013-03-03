@@ -66,7 +66,9 @@ public class Transform extends ExtensionFunctionDefinition {
         return new TransformCall ();
     }
     
-    class TransformCall extends NamespaceAwareFunctionCall {
+    class TransformCall extends InterpreterCall {
+        
+        private XsltTransformer transformer;
 
         @Override
         public UnfailingIterator<NodeInfo> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
@@ -80,31 +82,11 @@ public class Transform extends ExtensionFunctionDefinition {
             try {
                 // TODO: cache compiled xslt somewhere
                 XsltExecutable xsltexec = xsltCompiler.compile(stylesheet);
-                XsltTransformer transformer = xsltexec.load();
+                transformer = xsltexec.load();
                 transformer.setSource(node);
                 transformer.setErrorListener(eval.getErrorListener());
                 if (arguments.length > 2) {
-                    @SuppressWarnings("rawtypes")
-                    SequenceIterator<? extends Item> params = arguments[2];
-                    Item<?> param;
-                    while ((param = params.next()) != null) {
-                        Item<?> value = params.next();
-                        if (value == null) {
-                            throw new XPathException ("Odd number of items in third argument to lux:transform, which should be parameter/value pairs");
-                        }
-                        String paramName = param.getStringValue();
-                        String[] parts = paramName.split(":", 2);
-                        StructuredQName sQName;
-                        if (parts.length < 2) {
-                            sQName = new StructuredQName("", "", paramName);
-                        } else {
-                            String prefix = parts[0];
-                            String name = parts[1];
-                            String nsURI = getNamespaceResolver().getURIForPrefix(prefix, false);
-                            sQName = new StructuredQName(prefix, nsURI, name);
-                        }
-                        transformer.getUnderlyingController().setParameter(sQName, value);
-                    }
+                    bindParameters(arguments[2]);
                 }
                 XdmDestination dest = new XdmDestination();
                 transformer.setDestination(dest);
@@ -117,6 +99,11 @@ public class Transform extends ExtensionFunctionDefinition {
             } catch (SaxonApiException e) {
                 throw new XPathException (e);
             }
+        }
+
+        @Override
+        protected void setParameter(StructuredQName name, Item<?> value) {
+            transformer.getUnderlyingController().setParameter(name, value);
         }
         
     }
