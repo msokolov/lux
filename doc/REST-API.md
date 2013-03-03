@@ -62,6 +62,12 @@ that the pagination provided by `start` and `rows` is not fully optimized
 paginate using subsequence() expressions within the XQuery expression
 itself.
 
+In addition, you can control the content-type, and serialization regime, of the output
+by specifying:
+
+* `lux.content-type` the MIME type of the response; if text/xml then XML serialization 
+   is used for any nodes in the response; otherwise HTML serialization is used. 
+
 Requests may be submitted as either GET or POST; typically GET should be
 used only for simple tests and ad hoc interactive queries, since XQuery
 modules will tend to be long and will need to be URL-escaped to pass as GET

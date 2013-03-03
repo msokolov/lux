@@ -137,3 +137,32 @@ Added support for "castable as" and "treat as", and fixed up some messed up type
 
 XQTS results: 99.9% (22/17497 fail); some more (61/17498) fail when optimization is on due to the nonstandard way we supply a default context.
 
+03/02/2013
+
+Added low-level support for binary documents; you can now store images,
+xquery, and other non-XML files in a Lux index.
+
+Fixed a bug where a document could be stored twice at the same uri.
+
+Index-assisted sorting by numeric fields
+
+Enabled configurable analysis chain so users can control the kind of text
+treatment performed by the XML indexing analyzers.  Specifically,
+XmlTokenStreamBase now wraps an externally-supplied Analyzer.  We'll need
+to follow up by exposing higher-level constructs to make this more usable,
+eg: expose via configuration in schema.xml.  This may actually work already
+and just require documentation?
+
+Optimized deep pagination: we now skip over (not load into memory and
+parse) documents we can prove to be unused.
+
+Fixed an over-optimization bug when we optimized count (exists, not) and
+its argument combined a search call and an additional optimizable
+expression (like a path).
+
+Solr 4.1 - handled changes in the Lucene (mostly) and Solr API's.  Added
+calls to reset() to our custom TokenStreams; adapted to new Term
+enumeration API, and to new IndexReader/AtomicReaderContext usage.
+
+Added "querybox" - a query sandbox - to the demo.
+
