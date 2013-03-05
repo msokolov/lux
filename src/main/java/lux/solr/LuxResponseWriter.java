@@ -67,7 +67,8 @@ public class LuxResponseWriter implements QueryResponseWriter {
                     writer.write("<?xml-stylesheet type='text/xsl' href='" + xsl + "' ?>\n");
                     // css?
                 }
-                boolean wrapResults = contentType.equals("text/xml") && (values.size() > 1 || (! (values.getVal(0) instanceof XdmNode)));
+                boolean wrapResults = contentType.equals("text/xml") && 
+                        (values.size() == 0 || values.size() > 1 || (! (values.getVal(0) instanceof XdmNode)));
                 if (wrapResults) {
                   //writer.write("<?xml-stylesheet type='text/xsl' href='/empty.xsl' ?>\n");
                     writer.write("<results>");
