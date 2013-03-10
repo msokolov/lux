@@ -13,7 +13,7 @@
     <dependency>
         <groupId>net.sf.saxon</groupId>
         <artifactId>Saxon-HE</artifactId>
-        <version>9.4</version>
+        <version>9.4.0.7</version>
         <exclusions>
         	<exclusion>
         		<artifactId>xom</artifactId>
@@ -224,7 +224,7 @@
             <artifactItem>
               <groupId>net.sf.saxon</groupId>
               <artifactId>Saxon-HE</artifactId>
-              <version>9.4</version>
+              <version>9.4.0.7</version>
             </artifactItem>
             <artifactItem>
               <groupId>xerces</groupId>
