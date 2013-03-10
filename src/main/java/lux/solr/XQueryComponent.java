@@ -153,6 +153,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         } catch (LuxException ex) {
         	// ex.printStackTrace();
         	String err = formatError(query, errorListener);
+        	if (StringUtils.isEmpty(err)) {
+        	    err = ex.getMessage();
+        	}
         	rsp.add("xpath-error", err);
         	evaluator.close();
         	return;
