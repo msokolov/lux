@@ -29,3 +29,5 @@ Fixed bug where we dropped the return types of user-defined functions,
 Fixed a variable-shadowing bug
 
 Tested with a multi-core Solr install; seems to work OK.
+
+Use an LRUCache in CachingDocReader to limit memory usage 
