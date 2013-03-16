@@ -1,6 +1,6 @@
 package lux.compiler;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.net.URI;
@@ -9,10 +9,12 @@ import java.net.URL;
 
 import lux.Compiler;
 import lux.Evaluator;
+import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
@@ -39,6 +41,11 @@ public class CompilerTest {
     @Test 
     public void testTypedVariable() throws Exception {
         assertQuery ("5", "typed-variable.xqy"); 
+    }
+    
+    @Test 
+    public void testTypedFunction() throws Exception {
+        assertQueryError ("A sequence of more than one item is not allowed as the result of function local:int-sequence() (1, 2) ", "typed-function.xqy"); 
     } 
     
     @Test 
@@ -78,13 +85,25 @@ public class CompilerTest {
     }
     
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
+        XdmValue value = evalQuery(queryFileName).getXdmValue();
+        assertEquals (result, value.toString());
+    }
+
+    private XdmResultSet evalQuery(String queryFileName) throws IOException, URISyntaxException {
         ClassLoader classLoader = getClass().getClassLoader();
         URL url = classLoader.getResource ("lux/compiler/" + queryFileName);
         String query = IOUtils.toString(url.openStream(), "utf-8");
         URI uri = url.toURI();
         XQueryExecutable cq = compiler.compile(query, null, uri);
         System.err.println (compiler.getLastOptimized());
-        assertEquals (result, eval.evaluate(cq).getXdmValue().toString());
+        return eval.evaluate(cq);
+    }
+    
+    private void assertQueryError (String error, String queryFileName) throws IOException, URISyntaxException {
+        XdmResultSet result = evalQuery (queryFileName);
+        assertFalse ("expected exception '" + error + "' not thrown; got results=" + result.getXdmValue(), 
+                    result.getErrors().isEmpty());
+        assertEquals (error, result.getErrors().get(0).getMessage());
     }
     
 }

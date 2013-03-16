@@ -17,6 +17,9 @@ public class FunctionDefinition extends FunCall {
     @Override public void toString (StringBuilder buf) {
         buf.append ("declare function ");
         super.toString(buf);
+        if (getReturnType() != null) {
+            buf.append (" as ").append(getReturnType().toString()).append(" ");
+        }
         buf.append ("{ ");
         body.toString (buf);
         buf.append (" };\n");
