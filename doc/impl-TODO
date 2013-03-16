@@ -1,14 +1,15 @@
 * bugs
-** type confusion
-declare function x () as xs:integer { return (1, 2) }
-should be an error I think?  Instead it just optimizes x()[2] === () ?
-** variable shadowing
-let $r := rand(0)
-let $r := rand($r)
-return $r
-returns rand(0)
-**
+** was there a problem here?
 lux:search('uri:/*')[contains(substring(lux:field-values('uri')[1]/string(),1),'/')]
+** OOM
+Large queries that return small results, like count(//book), cause OOM.
+We could age documents out of the query cache?
+** not() optimization:
+*** invert the query:
+count(collection()[not(.//pubdate)])
+  optimize as:
+count(collection()) - count(collection()[.//pubdate])
+*** generalize
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
