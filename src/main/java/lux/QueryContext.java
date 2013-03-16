@@ -8,6 +8,8 @@ import lux.xml.QName;
 
 /**
  * Holds external query context: variable bindings and the context item.
+ * TODO: convert java primitives to XdmValues?  Currently the Evaluator expects 
+ * XdmValues.
  */
 public class QueryContext {
     

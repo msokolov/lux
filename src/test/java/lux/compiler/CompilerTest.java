@@ -9,11 +9,14 @@ import java.net.URL;
 
 import lux.Compiler;
 import lux.Evaluator;
+import lux.QueryContext;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
+import lux.xml.QName;
 import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.commons.io.IOUtils;
@@ -46,7 +49,18 @@ public class CompilerTest {
     @Test 
     public void testTypedFunction() throws Exception {
         assertQueryError ("A sequence of more than one item is not allowed as the result of function local:int-sequence() (1, 2) ", "typed-function.xqy"); 
-    } 
+    }
+    
+    @Test 
+    public void testExtVarType() throws Exception {
+        XQueryExecutable query = compileQuery ("ext-var-type.xqy");
+        QueryContext context = new QueryContext ();
+        context.bindVariable(new QName("http://localhost/", "integer"), new XdmAtomicValue("one"));
+        // query expects an integer, not a string
+        XdmResultSet result = eval.evaluate(query, context);
+        assertEquals ("expected one error", 1, result.getErrors().size());
+        assertEquals ("Required item type of value of variable $local:integer is xs:integer; supplied value has item type xs:string", result.getErrors().get(0).getMessage());
+    }
     
     @Test 
     public void testCommentConstructor() throws Exception {
@@ -90,13 +104,18 @@ public class CompilerTest {
     }
 
     private XdmResultSet evalQuery(String queryFileName) throws IOException, URISyntaxException {
+        XQueryExecutable cq = compileQuery(queryFileName);
+        return eval.evaluate(cq);
+    }
+
+    private XQueryExecutable compileQuery(String queryFileName) throws IOException, URISyntaxException {
         ClassLoader classLoader = getClass().getClassLoader();
         URL url = classLoader.getResource ("lux/compiler/" + queryFileName);
         String query = IOUtils.toString(url.openStream(), "utf-8");
         URI uri = url.toURI();
         XQueryExecutable cq = compiler.compile(query, null, uri);
-        System.err.println (compiler.getLastOptimized());
-        return eval.evaluate(cq);
+        // System.err.println (compiler.getLastOptimized());
+        return cq;
     }
     
     private void assertQueryError (String error, String queryFileName) throws IOException, URISyntaxException {
