@@ -19,6 +19,13 @@ is ignored.
 ** there was a bug generating queries for paths beginning collection()
 We weren't pushing a query on the stack?
 ** mark subsequence (first or last) as SINGULAR
+* enhancements
+** highlighting
+** optimized sorting
+** count(collection())
+** simplified some path queries
+We now collapse nested Boolean and Path queries when possible
+eg (a AND (b AND c)) now becomes (a AND b AND c)
 * better app server packaging
 created a standalone app that embeds jetty so we can control uris,
 redirects and other http stuff without relying on solr. This will also

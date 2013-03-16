@@ -1,6 +1,4 @@
 * bugs
-** was there a problem here?
-lux:search('uri:/*')[contains(substring(lux:field-values('uri')[1]/string(),1),'/')]
 ** not() optimization:
 *** invert the query:
 count(collection()[not(.//pubdate)])
@@ -173,33 +171,20 @@ compilation time dominates the test (after simply loading test data).
 * features
 ** directory (uri component) index
 also link to collection()?
-** highlighting
-** optimized sorting
 ** fragmentation 
 use Lucene's block join indexing
 ** support for full set of atomic types
 The main thing missing is marshalling results from Solr
 * api design / cleanup / documentation
-** parseable query
-rename and consolidate naming of subclasses
 ** delete dead code
 *** get rid of lux:search facts argument
 Note: this is still used to convey boolean-falsehood.
-** remove these notes from the release
-** make clean package dependencies
 * optimization ideas
 There are a few more things we can optimize using the "basic" indexing setup
 ** failure to optimize deep path query properly
 see the expression in SearchTest.testTrailingStringCall - it ends up
 including some booleans instead of all paths
-** count(collection())
 ** optimize not(empty(X)) -> exists(X), and not(exists(X)) -> empty(X)
-** simplify some path queries
-Sometimes we generate a query like 
-w(w(w({},\"PLAY\"),\"PERSONAE\" OR \"ACT\"),\"TITLE\")
-instead of
-w({},\"PLAY\",(\"ACT\" OR \"PERSONAE\"),\"TITLE\")
-Is the second one actually better?
 ** optimize the Optimizer 
 It currently generates an entire translated expression tree for every
 subtree it attempts to optimize so that we can figure out if that subtree
@@ -211,6 +196,33 @@ Where does such a cache belong?
 What if instead of collapsing all the paths down so we only store unique
 paths, we retained the document structure in some way by listing *all*
 paths?  What would that buy?  numerical predicates?
+*** index all paths untokenized
+Suppose that instead of phrases, we indexed all paths, as "keywords", ie
+untokenized; the position would be the depth-first sequence, so like:
+
+a a/b a/b/c a/b/c a/z a/z/@id 
+
+except this has the real drawback that you are almost always interested in the *tail end*, so let's reverse:
+
+a b/a c/b/a c/b/a z/a @id/z/a
+
+this lets you easily search for a full path, or a sub-path preceded by //,
+which becomes a prefix query.
+
+TermDocs iterates over term frequency per doc; with that it should be 
+
+TermFreqValueSource counts term freq; use it in a FunctionQuery??
+
+FunctionQuery creates an AllScorer; we would want it to use instead a 
+
+Scorer like the one returned by FunctionValues.getRangeScorer
+
+Solr FunctionRangeQuery does what we want using Solr's ValueSourceRangeFilter
+
+so: new FunctionRangeQuery(new ValueSourceRangeFilter (new TermFreqValueSource (field, val, indexedField, indexedBytes), min, max, includemin, includemax))
+
+(note field, val seem to be basically unused in TFVS? )
+
 ** pre-evaluate some functions, like aggregates:
 
 In cases where we can do this (argument expression is evaluated in the
