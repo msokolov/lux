@@ -8,17 +8,19 @@ import lux.xpath.FunCall;
 public class FunctionDefinition extends FunCall {
 
     private final AbstractExpression body;
+    private final int cardinality;
     
-    public FunctionDefinition (QName name, ValueType returnType, Variable[] args, AbstractExpression body) {
+    public FunctionDefinition (QName name, ValueType returnType, int cardinality, Variable[] args, AbstractExpression body) {
         super (name, returnType, args);
         this.body = body;
+        this.cardinality = cardinality;
     }
     
     @Override public void toString (StringBuilder buf) {
         buf.append ("declare function ");
         super.toString(buf);
         if (getReturnType() != null) {
-            buf.append (" as ").append(getReturnType().toString()).append(" ");
+            buf.append (" as ").append(getReturnType().toString()).append(ValueType.CARDINALITY_MARKER[cardinality]).append(" ");
         }
         buf.append ("{ ");
         body.toString (buf);
@@ -27,6 +29,10 @@ public class FunctionDefinition extends FunCall {
 
     public AbstractExpression getBody() {
         return body;
+    }
+
+    public int getCardinality() {
+        return cardinality;
     }
 }
 

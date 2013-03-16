@@ -98,8 +98,17 @@ public class CompilerTest {
         assertQuery ("1", "minus-1.xqy"); 
     }
     
+    @Test
+    public void testVariableShadowing () throws Exception {
+        assertQuery ("1", "variable-shadowing.xqy");
+    }
+    
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
-        XdmValue value = evalQuery(queryFileName).getXdmValue();
+        XdmResultSet resultSet = evalQuery(queryFileName);
+        if (resultSet.getErrors().size() > 0) {
+            fail ("Got unexpected error: " + resultSet.getErrors().get(0).getMessage());
+        }
+        XdmValue value = resultSet.getXdmValue();
         assertEquals (result, value.toString());
     }
 
