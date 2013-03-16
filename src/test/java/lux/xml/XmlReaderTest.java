@@ -1,8 +1,6 @@
 package lux.xml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +41,21 @@ public class XmlReaderTest {
     private void assertDocContent(XdmNode doc) {
         assertEquals("test", ((XdmNode) doc.axisIterator(Axis.CHILD).next()).getNodeName().toString());
         assertEquals(CONTENT, normalize(doc.getStringValue()));
+    }
+    
+    @Test
+    public void testSaxonBuildFromNodeImpl() throws Exception {
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder(new Processor(false));
+        handleDocument(saxonBuilder, "lux/reader-test.xml");
+        XdmNode doc = saxonBuilder.getDocument();
+        // re-process from one node to another
+        XmlReader xmlReader = new XmlReader ();
+        saxonBuilder.reset();
+        xmlReader.addHandler(saxonBuilder);
+        xmlReader.read(doc.getUnderlyingNode());
+        XdmNode doc2 = saxonBuilder.getDocument();
+        assertNotSame(doc, doc2);
+        assertDocContent(doc2);
     }
 
     @Test

@@ -1161,7 +1161,7 @@ public class SaxonTranslator {
         case VariableReference:
             return exprFor ((VariableReference) expr);
         case ErrorExpression:
-           throw new LuxException (((ErrorExpression) expr).getException().getMessage());
+           throw new LuxException ("A potential run-time error was detected during compilation: " + ((ErrorExpression) expr).getException().getMessageAndLocation());
         default:
             throw new UnsupportedOperationException("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
         }
