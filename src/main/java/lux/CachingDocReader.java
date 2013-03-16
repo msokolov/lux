@@ -22,7 +22,7 @@ import org.apache.lucene.index.IndexReader;
 /**
  * Reads, parses and caches XML documents from a Lucene index. Assigns Lucene
  * docIDs as Saxon document numbers. This reader is intended to survive for a
- * single query only. TODO: a nice optimization would be to maintain a global
+ * single query only, and is *not thread-safe*. TODO: a nice optimization would be to maintain a global
  * cache, shared across threads, with some tunable resource-based eviction
  * policy.
  * 
@@ -79,16 +79,16 @@ public class CachingDocReader {
      *             retrieved
      */
     public XdmNode get(int docID, IndexReader reader) throws IOException {
-        if (cache.containsKey(docID)) {
+        XdmNode node= cache.get(docID);
+        if (node != null) {
             ++cacheHits;
-            return cache.get(docID);
+            return node;
         }
 
         DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
         
-        XdmNode node = null;
         String xml = document.get(xmlFieldName);
         String uri = "lux:/" + document.get(uriFieldName);
         docIDNumberAllocator.setNextDocID(docID);
