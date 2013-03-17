@@ -55,6 +55,7 @@ import org.junit.Test;
  * of JDOM outputter - could this all be whitespace from indentation or something?
  * qnames: 2302976 - 2274304 = 28672 = 1.3%
  * paths: 2328576 - 2274304 = 54272 = 2.4%
+ * path-occurrences = 122880 = 5.1%
  * path-values alone: 755712
  * path-values (w/docs): 2714624 - 2274304 = 19%
  * qname-values (as phrases): 2631680 - 2274304 = 357376 = 16%
@@ -64,6 +65,7 @@ import org.junit.Test;
  * full-text (with all nodes transparent) 3899392 - 2274304 = 1625088 = 71% (1940480 full text alone)
  * full-text (text only) 2673664 - 2274304 = 18%
  * full-text (text plus all nodes opaque) 3068928 - 2274304 = 35%
+ * 
  */
 public class IndexTest {
     
@@ -93,6 +95,14 @@ public class IndexTest {
         assertTotalDocs ();
         // printAllTerms(indexTestSupport);
         assertPathQuery (indexTestSupport);
+    }
+    
+    @Test
+    public void testIndexPathOccurOnly () throws Exception {
+        IndexTestSupport indexTestSupport = 
+        buildIndex ("path-occurrences", INDEX_PATHS | INDEX_EACH_PATH | BUILD_DOCUMENT);
+        printAllTerms(indexTestSupport);
+        assertTotalDocs ();
     }
     
     @Test

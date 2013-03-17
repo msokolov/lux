@@ -29,7 +29,7 @@ import org.apache.lucene.index.IndexReader;
  * Not threadsafe.
  */
 public class CachingDocReader {
-    private final LRUCache<Integer, XdmNode> cache = new LRUCache<Integer, XdmNode>(1024);
+    private final LRUCache<Integer, XdmNode> cache = new LRUCache<Integer, XdmNode>(512);
     private final String xmlFieldName;
     private final String uriFieldName;
     private final HashSet<String> fieldsToRetrieve;

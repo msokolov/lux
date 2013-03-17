@@ -10,6 +10,7 @@ import org.apache.lucene.document.Field.Store;
 
 /**
  * Indexes each occurrence of each path as a separate term
+ * TODO: also store freqs (but not positions), so as to enable path-cardinality queries
  */
 public class PathOccurrenceField extends FieldDefinition {
     
@@ -57,10 +58,10 @@ public class PathOccurrenceField extends FieldDefinition {
             StringBuilder buf = new StringBuilder();
             String path = pathCount.getKey(); 
             String [] names = path.split(" ");
-            // start at 1: trim off leading "{}", reverse the names and splice with "/"
             if (names.length > 1) {
                 buf.append (names[names.length-1]);
-                for (int i = names.length-2; i >= 0; i--) {
+                // stop at 1 so we trim off leading "{}", reverse the names and splice with "/"
+                for (int i = names.length-2; i > 0; i--) {
                     // in reverse order
                     buf.append ('/');
                     buf.append (names[i]);
@@ -69,7 +70,11 @@ public class PathOccurrenceField extends FieldDefinition {
             // advance the iteration
             if (iPathCount++ >= pathCount.getValue()) {
                 iPathCount = 0;
-                pathCount = pathCounts.next();
+                if (pathCounts.hasNext()) {
+                    pathCount = pathCounts.next();
+                } else {
+                    pathCount = null;
+                }
             }
             return buf.toString();
         }

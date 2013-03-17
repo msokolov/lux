@@ -9,15 +9,15 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
     @Override
     public String getQueryXml (Q q) {
         switch (q) {
-        case ATTR: return "<RegexpQuery fieldName=\"lux_path\">@attr\\/.*</RegexpQuery>";
-        case SCENE: return "<RegexpQuery fieldName=\"lux_path\">SCENE\\/.*</RegexpQuery>";
-        case ACT: return "<RegexpQuery fieldName=\"lux_path\">ACT\\/.*</RegexpQuery>";
+        case ATTR: return "<RegexpQuery fieldName=\"lux_path\">@attr(\\/.*)?</RegexpQuery>";
+        case SCENE: return "<RegexpQuery fieldName=\"lux_path\">SCENE(\\/.*)?</RegexpQuery>";
+        case ACT: return "<RegexpQuery fieldName=\"lux_path\">ACT(\\/.*)?</RegexpQuery>";
         case LINE: return "<RegexpQuery fieldName=\"lux_path\">LINE</RegexpQuery>";
         case ACT_CONTENT:
             return "<BooleanQuery><Clause occurs=\"must\">" +
                     "<QNameTextQuery fieldName=\"lux_elt_text\" qName=\"ACT\">content</QNameTextQuery>" +
             		"</Clause><Clause occurs=\"must\">" +
-                    "<RegexpQuery fieldName=\"lux_path\">ACT\\/.*</RegexpQuery>" +
+                    "<RegexpQuery fieldName=\"lux_path\">ACT(\\/.*)?</RegexpQuery>" +
             		"</Clause></BooleanQuery>";
         case ACT1:
             return "<RegexpQuery fieldName=\"lux_path\">ACT</RegexpQuery>";
@@ -28,15 +28,15 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
             "<RegexpQuery fieldName=\"lux_path\">ACT</RegexpQuery>" +
             "</Clause></BooleanQuery>";
         case ACT2:
-            return "<RegexpQuery fieldName=\"lux_path\">ACT\\/.*</RegexpQuery>";
+            return "<RegexpQuery fieldName=\"lux_path\">ACT(\\/.*)?</RegexpQuery>";
         case ACT_SCENE_CONTENT:
             return "<BooleanQuery><Clause occurs=\"must\">" +
                     "<QNameTextQuery fieldName=\"lux_elt_text\" qName=\"SCENE\">content</QNameTextQuery>" +
                     "</Clause><Clause occurs=\"must\">" +
-                    "<RegexpQuery fieldName=\"lux_path\">SCENE\\/ACT\\/.*</RegexpQuery>" +
+                    "<RegexpQuery fieldName=\"lux_path\">SCENE\\/ACT(\\/.*)?</RegexpQuery>" +
             		"</Clause></BooleanQuery>";
         case ACT_SCENE:
-            return "<RegexpQuery fieldName=\"lux_path\">SCENE\\/ACT\\/.*</RegexpQuery>";
+            return "<RegexpQuery fieldName=\"lux_path\">SCENE\\/ACT(\\/.*)?</RegexpQuery>";
             
         case ACT_SCENE_CONTENT1:
             return "<BooleanQuery><Clause occurs=\"must\">" +
@@ -52,28 +52,28 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
             return "<RegexpQuery fieldName=\"lux_path\">SCENE\\/.*ACT</RegexpQuery>";
 
         case ACT_SCENE3:
-            return "<RegexpQuery fieldName=\"lux_path\">SCENE\\/.*ACT\\/.*</RegexpQuery>";
+            return "<RegexpQuery fieldName=\"lux_path\">SCENE\\/.*ACT(\\/.*)?</RegexpQuery>";
             
         case ACT_SCENE_SPEECH:
             return "<BooleanQuery><Clause occurs=\"should\">" +
             "<BooleanQuery><Clause occurs=\"should\">" +
-            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/ACT\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/ACT(\\/.*)?</RegexpQuery>" +
             "</Clause><Clause occurs=\"should\">" +
-            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SCENE\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SCENE(\\/.*)?</RegexpQuery>" +
             "</Clause></BooleanQuery>" + 
             "</Clause><Clause occurs=\"should\">" +
-            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SPEECH\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SPEECH(\\/.*)?</RegexpQuery>" +
             "</Clause></BooleanQuery>";
             
         case ACT_SCENE_SPEECH_AND:
             return "<BooleanQuery><Clause occurs=\"must\">" + 
-            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/ACT\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/ACT(\\/.*)?</RegexpQuery>" +
             "</Clause>" +
             "<Clause occurs=\"must\">" +
-            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SCENE\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SCENE(\\/.*)?</RegexpQuery>" +
             "</Clause>" +
             "<Clause occurs=\"must\">" +
-            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SPEECH\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SPEECH(\\/.*)?</RegexpQuery>" +
             "</Clause></BooleanQuery>";
             
         case ACT_SCENE_ID_123:
@@ -86,15 +86,15 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
             return null; // untested?
         case ACT_OR_SCENE:
             return  "<BooleanQuery><Clause occurs=\"should\">" +
-            		  "<RegexpQuery fieldName=\"lux_path\">ACT\\/.*</RegexpQuery>" +
+            		  "<RegexpQuery fieldName=\"lux_path\">ACT(\\/.*)?</RegexpQuery>" +
                       "</Clause><Clause occurs=\"should\">" +
-            		  "<RegexpQuery fieldName=\"lux_path\">SCENE\\/.*</RegexpQuery>" +
+            		  "<RegexpQuery fieldName=\"lux_path\">SCENE(\\/.*)?</RegexpQuery>" +
                       "</Clause></BooleanQuery>";
         case ACT_AND_SCENE:
             return "<BooleanQuery><Clause occurs=\"must\">" +
-            "<RegexpQuery fieldName=\"lux_path\">ACT\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">ACT(\\/.*)?</RegexpQuery>" +
             "</Clause><Clause occurs=\"must\">" +
-            "<RegexpQuery fieldName=\"lux_path\">SCENE\\/.*</RegexpQuery>" +
+            "<RegexpQuery fieldName=\"lux_path\">SCENE(\\/.*)?</RegexpQuery>" +
             "</Clause></BooleanQuery>";
         case ACT_ID_123:
             return "<BooleanQuery><Clause occurs=\"must\">" +
@@ -105,12 +105,12 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
                   "</Clause>" +
             		"</BooleanQuery>";
         case ACT_ID:
-            return "<RegexpQuery fieldName=\"lux_path\">@id\\/ACT\\/.*</RegexpQuery>";
+            return "<RegexpQuery fieldName=\"lux_path\">@id\\/ACT(\\/.*)?</RegexpQuery>";
 
         case MATCH_ALL_Q: return "<MatchAllDocsQuery />";
-        case AND: return "<RegexpQuery fieldName=\"lux_path\">AND\\/.*</RegexpQuery>";
-        case TITLE: return "<RegexpQuery fieldName=\"lux_path\">TITLE\\/.*</RegexpQuery>";
-        case LUX_FOO: return "<RegexpQuery fieldName=\"lux_path\">foo\\&#x7B;http://luxdb.net\\&#x7D;\\/.*</RegexpQuery>";
+        case AND: return "<RegexpQuery fieldName=\"lux_path\">AND(\\/.*)?</RegexpQuery>";
+        case TITLE: return "<RegexpQuery fieldName=\"lux_path\">TITLE(\\/.*)?</RegexpQuery>";
+        case LUX_FOO: return "<RegexpQuery fieldName=\"lux_path\">foo\\&#x7B;http\\:\\/\\/luxdb.net\\&#x7D;(\\/.*)?</RegexpQuery>";
         case PLAY_ACT_OR_PERSONAE_TITLE:
             return "<RegexpQuery fieldName=\"lux_path\">TITLE\\/(ACT|PERSONAE)\\/PLAY</RegexpQuery>";
         default:

@@ -26,19 +26,21 @@ import org.junit.BeforeClass;
  *
  */
 public class SearchPathQueryTest extends BasicQueryTest {
-    private static IndexTestSupport index;
+    protected static IndexTestSupport index;
+    protected static IndexTestSupport baselineIndex;
     protected static XmlIndexer indexer;
     protected static XmlIndexer baselineIndexer;
     private static long elapsed=0;
     private static long elapsedBaseline=0;
-    private static int repeatCount=5;
+    protected static int repeatCount=1;
     private static ArrayList<TestTime> baseTimes, testTimes;
     
     @BeforeClass
     public static void setupClass () throws Exception {
         indexer = new XmlIndexer(IndexConfiguration.DEFAULT_OPTIONS);
-        baselineIndexer = new XmlIndexer(0);
         index = new IndexTestSupport("lux/hamlet.xml", indexer, new RAMDirectory());
+        baselineIndexer = new XmlIndexer(0);
+        baselineIndex = index; // it's OK to share the same index - we just ignore the extra fields?
         baseTimes = new ArrayList<SearchPathQueryTest.TestTime>();
         testTimes = new ArrayList<SearchPathQueryTest.TestTime>();
     }
@@ -46,7 +48,12 @@ public class SearchPathQueryTest extends BasicQueryTest {
     @AfterClass
     public static void tearDownClass() throws Exception {
         index.close();
-        printAllTimes();
+        if (baselineIndex != index) {
+            baselineIndex.close();
+        }
+        if (repeatCount > 1) {
+            printAllTimes();
+        }
     }
     
     private static void printAllTimes() {
@@ -102,7 +109,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
             e.printStackTrace();
             fail (e.toString());
         }
-        Evaluator baselineEval = new Evaluator(new Compiler (baselineIndexer.getConfiguration()), index.searcher, null);
+        Evaluator baselineEval = new Evaluator(new Compiler (baselineIndexer.getConfiguration()), baselineIndex.searcher, null);
         if (repeatCount > 1) {
             benchmark (xpath, baselineEval, testEval);
         } else {
@@ -129,11 +136,15 @@ public class SearchPathQueryTest extends BasicQueryTest {
         TestTime testTime = new TestTime("indexed", query, repeatCount);
         testTimes.add(testTime);
         for (int i = 0; i < repeatCount; i++) {
+            
+            testEval.getDocReader().clear(); // no fair caching!
             long t0 = System.nanoTime();
             evalQuery(query, testEval);
             long t = System.nanoTime() - t0;
             testTime.times[i] = t;
             elapsed += t;
+            
+            baselineEval.getDocReader().clear(); // no fair caching!
             t0 = System.nanoTime();
             evalQuery(query, baselineEval);
             t = System.nanoTime() - t0;

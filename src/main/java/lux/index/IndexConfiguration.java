@@ -13,6 +13,7 @@ import lux.index.field.ElementQNameField;
 import lux.index.field.ElementTextField;
 import lux.index.field.FieldDefinition;
 import lux.index.field.PathField;
+import lux.index.field.PathOccurrenceField;
 import lux.index.field.PathValueField;
 import lux.index.field.QNameValueField;
 import lux.index.field.URIField;
@@ -159,7 +160,11 @@ public class IndexConfiguration {
             }
         }
         if (isOption (INDEX_PATHS)) {
-            addField(PATH);
+            if (isOption (INDEX_EACH_PATH)) {
+                addField (PathOccurrenceField.getInstance());
+            } else {
+                addField(PATH);
+            }
             if (isOption (INDEX_VALUES)) {
                 addField(PATH_VALUE);                
             }

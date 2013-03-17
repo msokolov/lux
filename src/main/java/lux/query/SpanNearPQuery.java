@@ -98,14 +98,17 @@ public class SpanNearPQuery extends ParseableQuery {
         if (clauses.length > 0) {
             buf.append (toPathOccurrenceQueryString(clauses[clauses.length-1], field, config));
             for (int i = clauses.length-2; i >= 0; i--) {
-                if (slop > 0) {
-                    buf.append("\\/.*");
-                }
+
                 ParseableQuery clause = clauses[i];
                 if (clause instanceof SpanMatchAll) {
+                    if (slop > 0) {
+                        buf.append("(\\/.*)?");
+                    }
                     continue;
                 }
-                if (slop == 0) {
+                if (slop > 0) {
+                    buf.append("\\/.*");
+                } else {
                     // don't translate a//b into b/*/a since that enforces an extra step
                     // TODO: index this differently so we can distinguish and not have names
                     // bleeding into wildcards.  Use two slashes to separate?
@@ -115,7 +118,7 @@ public class SpanNearPQuery extends ParseableQuery {
             }
             if (clauses[0] instanceof SpanTermPQuery) {
                 // the path is not rooted, append a wildcard to get a prefix query
-                buf.append ("\\/.*");
+                buf.append ("(\\/.*)?");
             }
         }
         return buf.toString();
