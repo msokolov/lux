@@ -26,12 +26,18 @@ public class SpanMatchAll extends ParseableQuery {
     }    
 
     @Override
-    public ElementConstructor toXmlNode(String field) {
+    public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
+        if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
+            return MatchAllPQuery.INSTANCE_ELEMENT_CONSTRUCTOR;
+        }
         return INSTANCE_ELEMENT_CONSTRUCTOR;
     }
 
     @Override
     public String toQueryString(String defaultField, IndexConfiguration config) {
+        if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
+            return "*:*";
+        }
         return config.getFieldName(IndexConfiguration.PATH) + ":\\{\\}";
     }
 

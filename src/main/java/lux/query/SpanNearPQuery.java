@@ -3,6 +3,8 @@ package lux.query;
 import java.util.ArrayList;
 
 import lux.index.IndexConfiguration;
+import lux.query.BooleanPQuery.Clause;
+import lux.query.parser.LuxQueryParser;
 import lux.xml.QName;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
@@ -51,33 +53,96 @@ public class SpanNearPQuery extends ParseableQuery {
     }
 
     @Override
-    public ElementConstructor toXmlNode(String field) {
+    public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
+        if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
+            String qs = toPathOccurrenceQueryString(field, config);
+            // TODO: get the path field name from config
+            AttributeConstructor fieldAtt = new AttributeConstructor(TermPQuery.FIELD_ATTR_NAME, new LiteralExpression ("lux_path"));
+            // TODO: boost (and refactor)
+            return new ElementConstructor (SpanTermPQuery.REGEXP_TERM_QNAME, new LiteralExpression(qs), fieldAtt);
+        }
         AttributeConstructor inOrderAtt=null, slopAtt;
         if (inOrder) {
             inOrderAtt = IN_ORDER_ATT;
         }
         slopAtt = new AttributeConstructor(SLOP_ATT_NAME, new LiteralExpression(slop));
         if (clauses.length == 1) {
-            return new ElementConstructor (SPAN_NEAR_QNAME, clauses[0].toXmlNode(field), inOrderAtt, slopAtt);
+            return new ElementConstructor (SPAN_NEAR_QNAME, clauses[0].toXmlNode(field, config), inOrderAtt, slopAtt);
         }
         AbstractExpression[] clauseExprs = new AbstractExpression[clauses.length];
         int i = 0;
         for (ParseableQuery q : clauses) {
-            clauseExprs [i++] = q.toXmlNode(field);
+            clauseExprs [i++] = q.toXmlNode(field, config);
         }
         return new ElementConstructor (SPAN_NEAR_QNAME, new Sequence(clauseExprs), inOrderAtt, slopAtt);
     }
 
     @Override
     public String toQueryString(String field, IndexConfiguration config) {
-        String markerName = inOrder ? "lux_within:" : "lux_near:";
         StringBuilder buf = new StringBuilder();
+        if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
+            buf.append(field).append(":/").append(toPathOccurrenceQueryString(field, config))
+                .append('/');
+        }
+        String markerName = inOrder ? "lux_within:" : "lux_near:";
         buf.append("(+").append(markerName).append(slop);
         for (ParseableQuery clause : clauses) {
             buf.append(' ').append (clause.toQueryString(field, config));
         }
         buf.append(')');
         return buf.toString();
+    }
+    
+    private String toPathOccurrenceQueryString (String field, IndexConfiguration config) {
+        StringBuilder buf = new StringBuilder();
+        if (clauses.length > 0) {
+            buf.append (toPathOccurrenceQueryString(clauses[clauses.length-1], field, config));
+            for (int i = clauses.length-2; i >= 0; i--) {
+                if (slop > 0) {
+                    buf.append("\\/.*");
+                }
+                ParseableQuery clause = clauses[i];
+                if (clause instanceof SpanMatchAll) {
+                    continue;
+                }
+                if (slop == 0) {
+                    // don't translate a//b into b/*/a since that enforces an extra step
+                    // TODO: index this differently so we can distinguish and not have names
+                    // bleeding into wildcards.  Use two slashes to separate?
+                    buf.append ("\\/"); // slash must be escaped for the LuceneQueryParser
+                }
+                buf.append (toPathOccurrenceQueryString(clause, field, config));
+            }
+            if (clauses[0] instanceof SpanTermPQuery) {
+                // the path is not rooted, append a wildcard to get a prefix query
+                buf.append ("\\/.*");
+            }
+        }
+        return buf.toString();
+    }
+    
+    // TODO: refactor this messiness
+    private String toPathOccurrenceQueryString (ParseableQuery q, String field, IndexConfiguration config) {
+        if (q instanceof SpanTermPQuery) {
+            return (LuxQueryParser.escapeQParser(((SpanTermPQuery)q).getTerm().text()));
+        } else if (q instanceof SpanNearPQuery) {
+            return (((SpanNearPQuery) q).toPathOccurrenceQueryString(field, config));
+        } else  if (q instanceof SpanBooleanPQuery) {
+            // FIXME: you can also have a SpanOrQuery here: a/(b|c)/d
+            // We'll implement using regex just as shown above
+            StringBuilder buf = new StringBuilder ();
+            Clause[] subClauses = ((SpanBooleanPQuery) q).getClauses();
+            buf.append ('(');
+            buf.append(toPathOccurrenceQueryString(subClauses[0].getQuery(), field, config));
+            for (int i = 1; i < subClauses.length; i++) {
+                buf.append ('|');
+                buf.append(toPathOccurrenceQueryString(subClauses[i].getQuery(), field, config));
+            }
+            buf.append (')');
+            return buf.toString();
+        } else {
+            throw new IllegalStateException(q.getClass().getName());
+        }
     }
 
 }

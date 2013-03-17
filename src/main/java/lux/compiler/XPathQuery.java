@@ -452,8 +452,8 @@ public class XPathQuery {
       return immutable;
   }
 
-  public AbstractExpression toXmlNode(String defaultField) {
-      return getParseableQuery().toXmlNode(defaultField);
+  public AbstractExpression toXmlNode(String defaultField, IndexConfiguration config) {
+      return getParseableQuery().toXmlNode(defaultField, config);
   }
 
   public String toQueryString(String defaultField, IndexConfiguration indexConfig) {

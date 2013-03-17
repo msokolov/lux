@@ -62,14 +62,14 @@ public class BooleanPQuery extends ParseableQuery {
     }
 
     @Override
-    public ElementConstructor toXmlNode(String field) {
+    public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
         if (clauses.length == 1 && clauses[0].occur == Occur.MUST) {
-            return clauses[0].getQuery().toXmlNode(field);
+            return clauses[0].getQuery().toXmlNode(field, config);
         }
         AbstractExpression[] clauseExprs = new AbstractExpression[clauses.length];
         int i = 0;
         for (Clause clause : clauses) {
-            AbstractExpression q = clause.getQuery().toXmlNode(field);
+            AbstractExpression q = clause.getQuery().toXmlNode(field, config);
             AttributeConstructor occurAtt = null;
             if (clause.occur == Occur.MUST) {
                 occurAtt = MUST_OCCUR_ATT;                

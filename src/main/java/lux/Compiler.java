@@ -136,11 +136,12 @@ public class Compiler {
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
-        if (searchStrategy == SearchStrategy.NONE) {
-            return xquery;
-        }
         SaxonTranslator translator = makeTranslator();
         XQuery abstractQuery = translator.queryFor (xquery);
+        /*if (searchStrategy == SearchStrategy.NONE) {
+            String expanded = new Expandifier().expandify(abstractQuery).toString();
+            return xquery;
+        }*/
         PathOptimizer optimizer = new PathOptimizer(indexConfig);
         optimizer.setSearchStrategy(searchStrategy);
         XQuery optimizedQuery = optimizer.optimize(abstractQuery);

@@ -44,7 +44,7 @@ public class NodeTextQuery extends ParseableQuery {
     }
 
     @Override
-    public ElementConstructor toXmlNode(String field) {
+    public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
         return toXmlNode(field, QUERY_QNAME);
     }
     

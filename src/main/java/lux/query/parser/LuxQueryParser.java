@@ -185,6 +185,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
 
     public final static String escapeQParser (String s) {
         if (s.indexOf(' ') >= 0) {
+            // quote phrases
             return '"' + s.replaceAll("\"", "\\\"") + '"';
         }
         return ExtendableQueryParser.escape (s);

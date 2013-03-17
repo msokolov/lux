@@ -116,8 +116,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
         AbstractExpression main = query.getBody();
         // Don't attempt to optimize if no indexes are available, or if the
         // query has no body
-        if (main != null && indexConfig.isIndexingEnabled()) {
-            main = optimize(main);
+        if (main != null) {
+            if (indexConfig.isIndexingEnabled()) {
+                main = optimize(main);
+            } else {
+                main = main.replaceRoot(new FunCall(FunCall.FN_COLLECTION, ValueType.DOCUMENT));
+            }
             return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(),
                     query.getDefaultCollation(), query.getModuleImports(), query.getNamespaceDeclarations(),
                     query.getVariableDefinitions(), optimizeFunctionDefinitions(query.getFunctionDefinitions()), main,
@@ -1036,7 +1040,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // searchCall.setFnCollection (!optimizeForOrderedResults);
             return new SearchCall(query, indexConfig);
         }
-        return new FunCall(functionName, query.getResultType(), query.toXmlNode(indexConfig.getDefaultFieldName()),
+        return new FunCall(functionName, query.getResultType(), query.toXmlNode(indexConfig.getDefaultFieldName(), indexConfig),
                 new LiteralExpression(query.getFacts()));
     }
 

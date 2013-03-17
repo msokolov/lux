@@ -27,7 +27,7 @@ public class UnOptimizer extends ExpressionVisitorBase {
     public AbstractExpression visit(FunCall func) {
         if (func.getName().equals(luxSearchQName)) {
             if (indexConfig.isOption (IndexConfiguration.INDEX_PATHS)) {
-                func.getSubs()[0] = SpanMatchAll.getInstance().toXmlNode("lux_path");
+                func.getSubs()[0] = SpanMatchAll.getInstance().toXmlNode("lux_path", indexConfig);
             } else {
                 func.getSubs()[0] = new LiteralExpression ("*:*");
             }

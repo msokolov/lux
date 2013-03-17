@@ -6,7 +6,7 @@ import lux.xquery.ElementConstructor;
 
 public final class MatchAllPQuery extends ParseableQuery {
 
-    private static final ElementConstructor INSTANCE_ELEMENT_CONSTRUCTOR = new ElementConstructor(new QName("MatchAllDocsQuery"));
+    public static final ElementConstructor INSTANCE_ELEMENT_CONSTRUCTOR = new ElementConstructor(new QName("MatchAllDocsQuery"));
     private static final MatchAllPQuery INSTANCE = new MatchAllPQuery();
     
     public static MatchAllPQuery getInstance() {
@@ -14,7 +14,7 @@ public final class MatchAllPQuery extends ParseableQuery {
     }
 
     @Override
-    public ElementConstructor toXmlNode(String field) {
+    public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
         return INSTANCE_ELEMENT_CONSTRUCTOR;
     }
 

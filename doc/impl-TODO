@@ -202,7 +202,7 @@ untokenized; the position would be the depth-first sequence, so like:
 
 a a/b a/b/c a/b/c a/z a/z/@id 
 
-except this has the real drawback that you are almost always interested in the *tail end*, so let's reverse:
+except this has the real drawback that you are almost always interested in the *tail end*, so let's reverse: 
 
 a b/a c/b/a c/b/a z/a @id/z/a
 

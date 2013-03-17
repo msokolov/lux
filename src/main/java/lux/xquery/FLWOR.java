@@ -58,6 +58,15 @@ public class FLWOR extends AbstractExpression {
     }
     
     @Override
+    public AbstractExpression replaceRoot(AbstractExpression replacement) {
+        super.replaceRoot(replacement);
+        for (FLWORClause clause : clauses) {
+            clause.getSequence().replaceRoot(replacement);
+        }
+        return this;
+    }
+    
+    @Override
     public AbstractExpression getRoot () {
         return getReturnExpression().getRoot();
     }
