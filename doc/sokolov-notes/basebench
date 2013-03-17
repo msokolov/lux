@@ -1,0 +1,84 @@
+indexed	not(/)	1	23	94.40
+indexed	not(//ACT)	9	12	20.69
+indexed	count(/)	1	375	99.47
+indexed	for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc	13	426	96.82
+indexed	//ACT|//SCENE	15	293	94.56
+indexed	not(//ACT/root())	1	466	99.71
+indexed	(/)[.//ACT]	10	588	98.21
+indexed	count(//ACT/root()//SCENE)	34	619	94.44
+indexed	/*	436	430	-1.33
+indexed	/self::node()	431	348	-24.10
+indexed	/	460	389	-18.22
+indexed	count(//ACT)	31	223	85.99
+indexed	//ACT	30	366	91.71
+indexed	//*[@attr]	17	363	95.25
+indexed	not(//ACT) and empty(//SCENE)	1	12	86.05
+indexed	not(//ACT/root()//SCENE)	8	407	98.03
+indexed	//ACT/@id	8	451	98.22
+indexed	count(//ACT/root())	1	446	99.73
+indexed	//*/ACT/SCENE	58	371	84.25
+indexed	/*/ACT	25	354	92.92
+indexed	(/)[.//ACT][.//SCENE]	23	334	92.87
+indexed	(/)[.//*/@attr]	7	381	97.92
+indexed	not((/)[.//ACT and .//SCENE])	1	23	92.60
+indexed	/node()	318	282	-12.62
+indexed	//ACT/SCENE[1]	48	456	89.33
+indexed	subsequence (//ACT, 1, 1)	18	5	-242.62
+indexed	/ACT/SCENE	55	383	85.49
+indexed	subsequence (//ACT, 1, 10)	35	475	92.49
+indexed	/ACT//*	29	324	90.99
+indexed	//ACT/@*	21	440	95.20
+indexed	count(//ACT/ancestor::document-node())	32	526	93.83
+indexed	//ACT/TITLE | //SCENE/TITLE| //SPEECH/TITLE	55	442	87.56
+indexed	//ACT/TITLE/root()//SCENE/TITLE/root()//SPEECH/TITLE/root()	18	446	95.76
+indexed	/ACT	7	364	98.03
+indexed	/descendant-or-self::SCENE[1]	38	357	89.37
+indexed	/ACT//SCENE	5	481	98.81
+indexed	/LINE	248	420	40.86
+indexed	/*[self::ACT/SCENE='content']	7	327	97.86
+indexed	count(//ACT/SCENE/ancestor::document-node())	10	285	96.44
+indexed	/ACT[.='content']	6	500	98.60
+indexed	/PLAY/(ACT|PERSONAE)/TITLE	13	476	97.26
+indexed	/ACT[@id=123]	1	405	99.53
+indexed	/ACT/text()	6	291	97.82
+indexed	number((/ACT/SCENE)[1])	2	17	83.90
+indexed	//SCENE[1]	68	426	84.05
+indexed	/*[self::ACT/SCENE/self::*='content']	36	457	92.08
+indexed	/ancestor-or-self::node()	372	385	3.47
+indexed	number((/descendant-or-self::ACT)[1])	17	353	95.14
+indexed	//*/@attr	14	361	96.12
+indexed	/ACT[SCENE='content']	29	385	92.36
+indexed	exists(/)	14	4	-188.59
+indexed	/ACT[SCENE/@id=123]	26	321	91.78
+indexed	empty(/)	0	4	79.94
+indexed	exists(//ACT)	0	8	88.34
+indexed	empty(//ACT)	0	15	93.98
+indexed	exists(//ACT/root())	17	317	94.39
+indexed	empty(//ACT/root())	24	348	92.91
+indexed	//ACT[.//SCENE]	15	395	96.12
+indexed	//ACT[not(SCENE)]	21	338	93.73
+indexed	//SCENE[last()]	47	585	91.87
+indexed	//node()/@attr	9	416	97.81
+indexed	exists(//ACT) and exists(//SCENE)	1	18	93.39
+indexed	/ACT['content'=SCENE]	3	271	98.54
+indexed	//AND	0	444	99.83
+indexed	empty(//ACT) and empty(//SCENE)	1	9	87.79
+indexed	exists(//ACT/root()//SCENE)	1	383	99.66
+indexed	empty(//ACT/root()//SCENE)	8	375	97.74
+indexed	//lux:foo	7	384	98.06
+indexed	//ACT[count(SCENE) = 0]	10	350	97.12
+indexed	//ACT[exists(.//SCENE)]	11	408	97.23
+indexed	/ACT/SCENE[.='content']	36	394	90.71
+indexed	exists((/)[.//ACT and .//SCENE])	2	8	67.39
+indexed	//ACT[exists(SCENE)]	41	389	89.33
+indexed	empty((/)[.//ACT and .//SCENE])	1	11	88.19
+indexed	for $doc in //ACT order by lux:field-values('sortkey', $doc) return $doc	36	323	88.66
+indexed	for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc	27	266	89.69
+indexed	//ACT[empty(SCENE)]	29	317	90.82
+indexed	(for $doc in collection() return string ($doc/*/TITLE))[2]	12	13	4.54
+indexed	(for $doc in collection() return data($doc//TITLE))[2]	6	5	-8.79
+indexed	//SCENE[2]	28	277	89.84
+indexed	//ACT[not(empty(.//SCENE))]	24	217	88.92
+indexed	//ACT[.='content']	8	168	94.74
+indexed	(//ACT)[1]	5	5	-8.53
+indexed	//ACT[SCENE='content']	8	153	94.20
