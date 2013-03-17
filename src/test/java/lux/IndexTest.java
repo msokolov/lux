@@ -99,9 +99,9 @@ public class IndexTest {
     
     @Test
     public void testIndexPathOccurOnly () throws Exception {
-        IndexTestSupport indexTestSupport = 
+        // IndexTestSupport indexTestSupport = 
         buildIndex ("path-occurrences", INDEX_PATHS | INDEX_EACH_PATH | BUILD_DOCUMENT);
-        printAllTerms(indexTestSupport);
+        // printAllTerms(indexTestSupport);
         assertTotalDocs ();
     }
     
