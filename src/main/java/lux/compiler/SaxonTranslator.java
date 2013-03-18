@@ -133,6 +133,7 @@ import net.sf.saxon.value.CalendarValue;
 import net.sf.saxon.value.Cardinality;
 import net.sf.saxon.value.DurationValue;
 import net.sf.saxon.value.QNameValue;
+import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.Value;
 
 import org.apache.commons.lang.StringUtils;
@@ -258,15 +259,16 @@ public class SaxonTranslator {
             GlobalVariableDefinition decl = decls.next();
             GlobalVariable global = decl.getCompiledVariable();
             String typeDesc = null;
-            if (decl.getRequiredType() != null) {
+            SequenceType requiredType = decl.getRequiredType();
+            if (requiredType != null) {
                 // typeDesc = decl.getRequiredType().getPrimaryType().toString();
-                ItemType itemType = decl.getRequiredType().getPrimaryType();
+                ItemType itemType = requiredType.getPrimaryType();
                 if (itemType.isAtomicType()) {
-                    typeDesc = decl.getRequiredType().toString();
+                    typeDesc = requiredType.toString();
                 } else {
                     // TODO: specialized element() types
                     typeDesc = itemType.getPrimitiveItemType().toString();
-                    int cardinality = decl.getRequiredType().getCardinality();
+                    int cardinality = requiredType.getCardinality();
                     if (cardinality == StaticProperty.ALLOWS_ONE_OR_MORE) {
                         typeDesc = typeDesc + '+';
                     } else if (cardinality == StaticProperty.ALLOWS_ZERO_OR_MORE) {
@@ -310,8 +312,10 @@ public class SaxonTranslator {
             }
             QName fname = qnameFor(function.getFunctionName());
             addNamespaceDeclaration(fname);
+            SequenceType resultType = function.getResultType();
             FunctionDefinition fdef = new FunctionDefinition(fname, 
-                    valueTypeForItemType(function.getResultType().getPrimaryType()), 
+                    valueTypeForItemType(resultType.getPrimaryType()), 
+                    cardinalityOf(resultType),
                     args, exprFor (function.getBody()));  
             functionDefinitions.add (fdef);
         }
@@ -1067,6 +1071,21 @@ public class SaxonTranslator {
                 (LiteralExpression) exprFor (sortKeyDef.getOrder()),
                 exprFor (sortKeyDef.getCollationNameExpression()), 
                 sortKeyDef.getEmptyLeast());
+    }
+    
+    private static int cardinalityOf (SequenceType type) {
+        int cardinality =type.getCardinality();
+        if (cardinality == StaticProperty.ALLOWS_ONE_OR_MORE) {
+            return ValueType.ONE_OR_MORE;
+        } else if (cardinality == StaticProperty.ALLOWS_ZERO_OR_MORE) {
+            return ValueType.ANY_NUMBER;
+        } else if (cardinality == StaticProperty.ALLOWS_ZERO_OR_ONE) {
+            return ValueType.ZERO_OR_ONE;
+        } else if (cardinality == StaticProperty.ALLOWS_ONE) {
+            return ValueType.EXACTLY_ONE;
+        } else {
+            return ValueType.EXACTLY_ZERO;
+        }
     }
     
     public AbstractExpression exprFor (Expression expr) {

@@ -82,8 +82,7 @@ import org.apache.lucene.search.SortField;
 public class PathOptimizer extends ExpressionVisitorBase {
 
     private final ArrayList<XPathQuery> queryStack;
-    private final HashMap<QName, XPathQuery> varQuery;
-    private final HashMap<QName, AbstractExpression> varBindings;
+    private final HashMap<QName, VarBinding> varBindings;
     private final IndexConfiguration indexConfig;
     private final XPathQuery MATCH_ALL;
 
@@ -95,8 +94,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
-        varQuery = new HashMap<QName, XPathQuery>();
-        varBindings = new HashMap<QName, AbstractExpression>();
+        varBindings = new HashMap<QName, VarBinding>();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
         this.indexConfig = indexConfig;
         attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
@@ -135,10 +133,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (AbstractExpression var : function.getSubs()) {
                 // bind the variables to null in case they are shadowed in the
                 // function body
-                setBoundExpression((Variable) var, null, null);
+                setBoundExpression((Variable) var, null, MATCH_ALL);
             }
             AbstractExpression body = optimize(function.getBody());
-            function = new FunctionDefinition(function.getName(), function.getReturnType(),
+            function = new FunctionDefinition(function.getName(), 
+                    function.getReturnType(), function.getCardinality(),
                     (Variable[]) function.getSubs(), body);
             functionDefinitions[i] = function;
             for (AbstractExpression var : function.getSubs()) {
@@ -208,9 +207,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // update variable bindings, but only if there is an (/) in there,
             // don't this for a search expression, which we sometimes consider to be a "Root"
             // of the expression tree
-            for (Map.Entry<QName, AbstractExpression> entry : varBindings.entrySet()) {
-                if (entry.getValue() == root) {
-                    varBindings.put(entry.getKey(), search);
+            for (Map.Entry<QName, VarBinding> entry : varBindings.entrySet()) {
+                VarBinding binding = entry.getValue();
+                if (binding.getExpr() == root) {
+                    varBindings.put(entry.getKey(), new VarBinding(binding.getVar(), search, binding.getQuery(), binding.getShadowedBinding()));
                 }
             }
             return expr.replaceRoot(search);
@@ -937,15 +937,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
             debug("visit", variable);
         }
         QName qName = variable.getQName();
-        XPathQuery q = varQuery.get(qName);
-        if (q != null) {
+        VarBinding varBinding = varBindings.get(qName);
+        if (varBinding != null) {
+            XPathQuery q = varBinding.getQuery();
             push(q);
+            AbstractExpression value = varBinding.getExpr();
+            variable.setValue(value);
         } else {
-            // if the variables are function arguments
+            // this happens when the variables represent function arguments
             push(MATCH_ALL);
         }
-        AbstractExpression value = varBindings.get(qName);
-        variable.setValue(value);
         return variable;
     }
 
@@ -1140,8 +1141,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     private void descopeVariable(QName varName) {
-        varQuery.remove(varName);
-        varBindings.remove(varName);
+        VarBinding binding = varBindings.remove(varName);
+        if (binding != null && binding.getShadowedBinding() != null) {
+            // time to come out from the shadows, binding!
+            varBindings.put(varName,  binding.getShadowedBinding());
+        }
     }
 
     @Override
@@ -1234,37 +1238,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private void setBoundExpression(Variable var, AbstractExpression expr, XPathQuery q) {
         // remember the variable binding for use in optimizations
         QName name = var.getQName();
-        if (varQuery.containsKey(name)) {
-            // variable is shadowing a same-named variable in an outer scope
-            name = makeUniqueName(name);
-            if (name == null) {
-                return;
-            }
-            var.setName(name);
-        }
-        varBindings.put(name, expr);
-        varQuery.put(name, q);
+        VarBinding currentBinding = varBindings.get(name);
+        VarBinding newBinding = new VarBinding (var, expr, q, currentBinding);
+        varBindings.put(name, newBinding);
     }
 
     public AbstractExpression getBoundExpression(QName name) {
-        AbstractExpression binding;
-        binding = varBindings.get(name);
-        while (binding instanceof Variable) {
+        VarBinding binding = varBindings.get(name);
+        while (binding.getExpr() instanceof Variable) {
             // variable bound to another variable?
-            binding = varBindings.get(((Variable) binding).getQName());
+            binding = varBindings.get(((Variable) binding.getExpr()).getQName());
         }
-        return binding;
-    }
-
-    private QName makeUniqueName(QName name) {
-        for (int i = 1; i < 100; i++) {
-            QName newName = new QName(name.getNamespaceURI(), name.getLocalPart() + i);
-            if (!varQuery.containsKey(newName)) {
-                return newName;
-            }
-        }
-        // degenerate case: 100 nested variables with the same name
-        return null;
+        return binding.getExpr();
     }
 
     /**

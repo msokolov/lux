@@ -84,7 +84,9 @@ easy to see where it is applying indexing optimizations, and where it is not.
 Lux provides several kinds of index: XML full-text indexes, an XML path
 index, and configurable XPath indexes.  All indexes are stored and searched
 using Lucene.  The XML full-text indexes provide the ability to query
-full-text within a particular XML context.  The path and full-text indexes
+full-text within a particular XML context.  The path index provides rapid lookup
+of element and attribute names and path fragments.  Any XPath statement can be indexed
+and used in explicit sorting and filtering expressions.
 
 ### Document storage ###
 
@@ -203,12 +205,13 @@ We have numerous ideas for improving performance, including:
 ### XQuery 3.0
 
 We will track whatever features are made available
-in the open source version of Saxon, at least to the extent of ensuring the optimizer doesn't break them. Other than that, we don't have any immediate plans to support a full range of XQuery 3.0 features, although we may add some.
+in the open source version of Saxon, at least to the extent of ensuring the optimizer doesn't break them. 
+Other than that, we don't have any immediate plans to support a full range of XQuery 3.0 features, although we may add some.
 
 ### Solr / Lucene 4.x
 
-This version of Lux works with Solr/Lucene 3.x only.  We plan to move to use the 4.x Solr/Lucene API in the next 
-major release.
+The next version of Lux will work with Solr/Lucene 4.x only.  Lux 0.6 will be the last Solr 3.x release, and unless
+there is an outcry we will probably not backport fixes in order to support Solr 3.
 
 ### Binary (XML) storage
 

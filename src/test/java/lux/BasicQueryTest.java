@@ -330,6 +330,7 @@ public class BasicQueryTest {
         assertQuery (query, null, MINIMAL|SINGULAR, ValueType.VALUE, "foo");
         assertSortKeys (query, "sortkey");
     }
+    
     @Test 
     public void testOrderBy2Keys () throws Exception {
         // two indexed sortkeys

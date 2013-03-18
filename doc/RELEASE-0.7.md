@@ -24,3 +24,11 @@ expression (like a path).
 
 Added "querybox" - a query sandbox - to the demo.
 
+Fixed bug where we dropped the return types of user-defined functions,
+ including their cardinalities
+
+Fixed a variable-shadowing bug
+
+Tested with a multi-core Solr install; seems to work OK.
+
+Use an LRUCache in CachingDocReader to limit memory usage 

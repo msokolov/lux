@@ -36,6 +36,16 @@ public enum ValueType {
     UNTYPED_ATOMIC("xs:untypedAtomic", true),
     QNAME("xs:QName", true), 
     EMPTY("empty-sequence", false, false);
+    
+    final public static int EXACTLY_ZERO = 0;
+    final public static int EXACTLY_ONE = 1;
+    final public static int ZERO_OR_ONE = 2;    // ?
+    final public static int ONE_OR_MORE = 3;    // +
+    final public static int ANY_NUMBER = 4;     // *
+    
+    final public static String[] CARDINALITY_MARKER = {
+            "", "", "?", "+", "*"
+    };
 
     public final boolean isNode;
     public final boolean isAtomic;
