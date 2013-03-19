@@ -1,23 +1,22 @@
-# Lux 0.5 Installation #
+# Lux 0.7 Installation #
 
-Lux is distributed as a compiled library, with some
-required dependent libraries, including Saxon-HE and Woodstox, designed to be
-dropped into an existing Solr installation, and as a complete
-application server bundle, including Solr and all of its dependencies.  The complete 
-source code is also available (via GitHub).
-When the library is installed in the context of a Solr installation it provides an 
-XQuery REST service.  The app server bundle wraps a Solr installation in a thin
-proxy layer (provided by embedded Jetty) and provides
-a web application server for applications written in XQuery and XSLT,
-accessing XML indexed and stored in Solr/Lucene.
+Lux is distributed as a compiled library, with its major dependent
+libraries, including Saxon-HE and Woodstox, designed to be dropped into an
+existing Solr installation, and as a complete application server bundle,
+including Solr and all of its dependencies as well.  The complete source
+code is also available (via GitHub).  When the library is installed in the
+context of a Solr installation it provides an XQuery REST service.  The app
+server bundle wraps a Solr installation in a thin proxy layer (provided by
+embedded Jetty) and provides a web application server for applications
+written in XQuery and XSLT, accessing XML indexed and stored in
+Solr/Lucene.  Finally, the app server can be run on its own, without
+embedding Solr, configured as a proxy for an external Solr installation.
 
-## Lux app server ##
-
-FIXME: fix links once we have created the artifacts.
+## Standalone Lux app server (w/Solr embedded) ##
 
 1. Download the complete server bundle as a [zip
-   file](http://luxdb.net/download/lux-server-0.5.zip) "Download Lux zip")
-   or [tar archive](http://luxdb.net/download/lux-server-0.5.tar.gz
+   file](http://luxdb.net/download/lux-server-0.7.zip) "Download Lux zip")
+   or [tar archive](http://luxdb.net/download/lux-server-0.7.tar.gz
    "Download Lux tar").
 
    This download includes the Lux application server and all of its required
@@ -32,7 +31,7 @@ Application files are set up to be read from the webapps/demo folder.
 The xrepo folder is configured as an EXPath repository from which the app server will 
 load EXPath modules.  These paths and ports are configurable by editing the lux.properties file.
 
-## Lux app server (integrate with existing Solr) ##
+## Lux query service (integrate with existing Solr) ##
 
 1. Download the library bundle as a [zip
    file](http://luxdb.net/download/lux-0.5.zip) "Download Lux zip") or [tar
@@ -94,6 +93,26 @@ load EXPath modules.  These paths and ports are configurable by editing the lux.
    automatically be indexed for fast retrieval using XQuery. You can send XQuery requests to it via HTTP, and receive
    responses using one of Solr's standard response writers, which wrap your results in one way or another, or
    you can use the LuxResponseWriter, which serializes the results directly as the response.
+
+## Lux app server (proxying existing Solr)
+
+If your Lux service is embedded in an existing Solr, as described above,
+and you also want to run the Lux application server, you will need to do
+that in a separate context from Solr, since the Solr request dispatching
+mechanism is not designed to support additional applications or services
+beyond those that ship with Solr.  
+
+We don't currently ship a bundle with *only* the app server; to install this configuration, just download the complete app-server bundle and edit the lux.properties configuration, supplying the url of the solr lux request handler as the value of `lux.solr.url`.   E.g:
+
+    lux.solr.url: http://localhost:8983/solr/lux
+
+## Linux service setup
+
+Linux init scripts, both for sysV setups and for the newer upstart
+mechanism, are provided in the etc/init folder.  You should be able to copy
+these into the relevant directory on your system (/etc/init.d for sys V
+systems, and /etc/init for upstart), and for sys V init, enable the service
+using chkconfig.
 
 ## Lux library only ##
 
