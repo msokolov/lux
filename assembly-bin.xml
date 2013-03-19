@@ -13,12 +13,13 @@
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>README*</include>
+        <include>INSTALL*</include>
         <include>LICENSE*</include>
         <include>NOTICE*</include>
       </includes>
     </fileSet>
     <fileSet>
-      <directory>${project.basedir}/solr/conf</directory>
+      <directory>${project.basedir}/solr/collection1/conf</directory>
       <outputDirectory>conf</outputDirectory>
     </fileSet>
     <fileSet>
