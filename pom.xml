@@ -4,7 +4,7 @@
   <artifactId>lux</artifactId>
   <packaging>jar</packaging>
   <version>0.7</version>
-  <name>lux</name>
+  <name>lux library</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
