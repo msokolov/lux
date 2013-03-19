@@ -32,7 +32,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
     private static XmlIndexer noindexer;
     private static long elapsed=0;
     private static long elapsedBaseline=0;
-    private static int repeatCount=5;
+    private static int repeatCount=1;
     private static ArrayList<TestTime> baseTimes, testTimes;
     
     @BeforeClass
