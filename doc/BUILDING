@@ -1,28 +1,13 @@
 We use maven to build Lux.  We provide a maven pom file; an Eclipse
-.project file is also included in the distribution.  Maven commands we use
-when building Lux:
-
-mvn clean
-mvn compile
-mvn test (runs all unit tests)
-mvn install (runs tests builds the jar, and installs in your repo)
-
-In lux-appserver:
-
-# jetty maven plugin not working currently
-# mvn jetty:run (runs the app server using jetty)
-mvn dependency:copy-dependencies
-mvn assembly:single 
-./lux
-# not working?
-# mvn verify (runs jetty app server, and then integration tests)
 
 To build a clean distribution, running all unit tests:
 
 cd lux
-mvn install (runs tests builds the jar, and installs in your repo)
-mvn assembly:single
+mvn install (runs tests, packages the jar, and installs in your repo)
 
 cd ../lux-appserver
-mvn clean package assembly:single
+mvn clean package dependency:copy-dependencies assembly:single
 
+run app server:
+
+./lux  (or ./lux.bat on Windows)

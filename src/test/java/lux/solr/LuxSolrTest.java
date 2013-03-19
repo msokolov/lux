@@ -1,21 +1,18 @@
 package lux.solr;
 
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.common.SolrInputDocument;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class LuxSolrTest extends BaseSolrTest {
     
-    private static final String LUX_XML = "lux_xml";
-    private static final String URI = "lux_uri";
     private static final String XML_TEXT = "lux_text";
     private static final String LUX_PATH = "lux_path";
     private static final String LUX_ELT_TEXT = "lux_elt_text";
@@ -24,6 +21,8 @@ public class LuxSolrTest extends BaseSolrTest {
     @BeforeClass
     public static void setup () throws Exception {
         BaseSolrTest.setup();
+        solr = new EmbeddedSolrServer(coreContainer, "");
+        solr.deleteByQuery("*:*");
         Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
         addSolrDocFromFile("src/test/resources/conf/schema.xml", docs);
         addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs);
@@ -107,8 +106,8 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test public void testCollectionFunction () throws Exception {
         assertXPathSearchCount (1, 1, "xs:string", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
         // TODO: optimize count(collection ())
-        // TODO: return an integer
-        assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())");  
+        // FIXME: return an integer
+        assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())");
     }
     
     @Test public void testQueryError () throws Exception {
@@ -120,20 +119,25 @@ public class LuxSolrTest extends BaseSolrTest {
         assertXPathSearchError("Unexpected token name \"bad\" beyond end of query; Line#: 1; Column#: 4\n", "hey bad boy");
     }
     
-    static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
-        SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField (URI, path);
-        FileInputStream in = new FileInputStream (path);
-        String buf = IOUtils.toString(in);
-        doc.addField(LUX_XML, buf);
-        docs.add(doc);
-    }
-    
-    static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
-        SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField (URI, uri);
-        doc.addField(LUX_XML, text);
-        docs.add(doc);
+    @Test
+    public void testCreateCore () throws Exception {
+        // TODO: this still doesn't reproduce the problem we saw when running solr embedded in the lux app server
+        // where we tried to create a new core interactively using the admin screen, and then the app server stopped responding
+        SolrQuery q = new SolrQuery();
+        q.setRequestHandler(coreContainer.getAdminPath());
+        q.setParam ("action", "CREATE");
+        q.setParam ("name", "core2");
+        q.setParam ("instanceDir", "core2");
+        solr.query(q);
+        SolrServer core2 = new EmbeddedSolrServer(coreContainer, "core2");
+        core2.deleteByQuery("*:*");
+        core2.commit();
+        assertQueryCount (0, "*:*", core2);
+        // main core still works
+        assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())", solr);
+        // new core working too
+        assertXPathSearchCount(1, 0, "xs:string", "0", "count(collection())", core2);
+        core2.shutdown();
     }
     
 }
