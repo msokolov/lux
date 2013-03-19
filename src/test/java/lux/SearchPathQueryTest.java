@@ -1,24 +1,23 @@
 package lux;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import lux.exception.LuxException;
-import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.saxon.Expandifier;
 import lux.xml.ValueType;
 import lux.xquery.XQuery;
-import net.sf.saxon.s9api.SaxonApiException;
-import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.store.LockObtainFailedException;
+import org.apache.lucene.store.RAMDirectory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -29,18 +28,35 @@ import org.junit.BeforeClass;
  */
 public class SearchPathQueryTest extends BasicQueryTest {
     private static IndexTestSupport index;
+    private static XmlIndexer indexer;
+    private static XmlIndexer noindexer;
     private static long elapsed=0;
     private static long elapsedBaseline=0;
-    private static int repeatCount=1;
+    private static int repeatCount=5;
+    private static ArrayList<TestTime> baseTimes, testTimes;
     
     @BeforeClass
     public static void setupClass () throws Exception {
-        index = new IndexTestSupport();
+        indexer = new XmlIndexer();
+        noindexer = new XmlIndexer(0);
+        index = new IndexTestSupport("lux/hamlet.xml", indexer, new RAMDirectory());
+        baseTimes = new ArrayList<SearchPathQueryTest.TestTime>();
+        testTimes = new ArrayList<SearchPathQueryTest.TestTime>();
     }
     
     @AfterClass
     public static void tearDownClass() throws Exception {
         index.close();
+        printAllTimes();
+    }
+    
+    private static void printAllTimes() {
+        int n = baseTimes.size();
+        for (int i = 0; i < n; i++) {
+            //System.out.println (baseTimes.get(i));
+            //System.out.println (testTimes.get(i));
+            System.out.println (testTimes.get(i).comparison(baseTimes.get(i)));
+        }
     }
     
     @Override
@@ -66,7 +82,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
 
     @Override
     public XmlIndexer getIndexer() {
-        return new XmlIndexer (IndexConfiguration.INDEX_PATHS);
+        return indexer;
     }
 
     /**
@@ -79,12 +95,19 @@ public class SearchPathQueryTest extends BasicQueryTest {
      */
     @Override
     public void assertQuery (String xpath, Integer facts, ValueType type, Q ... queries) throws IOException {
+        Evaluator testEval = null;
+        try {
+            testEval = new Evaluator(new Compiler (indexer.getConfiguration()), index.searcher, null);
+        } catch (Exception e) {
+            fail (e.getMessage());
+        }
+        Evaluator baselineEval = new Evaluator(new Compiler (noindexer.getConfiguration()), index.searcher, null);
         if (repeatCount > 1) {
-            benchmark (xpath);
+            benchmark (xpath, baselineEval, testEval);
         } else {
-            Evaluator saxon = index.makeEvaluator();
-            XdmResultSet results = evalQuery(xpath, saxon);
-            XdmValue baseResult = evalBaseline(xpath, saxon);
+            //Evaluator eval = index.makeEvaluator();
+            XdmResultSet results = evalQuery(xpath, testEval);
+            XdmValue baseResult = evalBaseline(xpath, baselineEval);
             assertEquals ("result count mismatch for: " + xpath, baseResult.size(), results.size());        
             Iterator<?> baseIter = baseResult.iterator();
             Iterator<?> resultIter = results.iterator();
@@ -97,28 +120,33 @@ public class SearchPathQueryTest extends BasicQueryTest {
         }
     }
 
-    private void benchmark (String query) throws CorruptIndexException, LockObtainFailedException, IOException {
-        Evaluator eval2 = index.makeEvaluator();
-        XdmResultSet results = evalQuery(query, eval2);
-        XdmValue baselineResult = evalBaseline(query, eval2);
+    private void benchmark (String query, Evaluator baselineEval, Evaluator testEval) throws CorruptIndexException, LockObtainFailedException, IOException {
+        XdmResultSet results = evalQuery(query, testEval);
+        XdmValue baselineResult = evalBaseline(query, baselineEval);
+        TestTime baseTime = new TestTime("baseline", query, repeatCount);
+        baseTimes.add(baseTime);
+        TestTime testTime = new TestTime("indexed", query, repeatCount);
+        testTimes.add(testTime);
         for (int i = 0; i < repeatCount; i++) {
             long t0 = System.nanoTime();
-            evalQuery(query, eval2);
+            evalQuery(query, testEval);
             long t = System.nanoTime() - t0;
+            testTime.times[i] = t;
             elapsed += t;
             t0 = System.nanoTime();
-            evalBaseline(query, eval2);
+            evalBaseline(query, baselineEval);
             t = System.nanoTime() - t0;
+            baseTime.times[i] = t;
             elapsedBaseline += t;
         }
         System.out.println (String.format("%dms using lux; %dms w/o lux", elapsed/1000000, elapsedBaseline/1000000));
         
-        results = evalQuery(query, eval2);
-        System.out.println ("lux retrieved " + results.size() + " results from " + eval2.getQueryStats());
-        printDocReaderStats(eval2);
-        baselineResult = evalBaseline(query, eval2);
-        System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + eval2.getQueryStats());
-        printDocReaderStats(eval2);
+        results = evalQuery(query, testEval);
+        System.out.println ("lux retrieved " + results.size() + " results from " + eval.getQueryStats());
+        printDocReaderStats(testEval);
+        baselineResult = evalBaseline(query, baselineEval);
+        System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + baselineEval.getQueryStats());
+        printDocReaderStats(baselineEval);
     }
 
     private void printDocReaderStats(Evaluator saxon) {
@@ -128,22 +156,12 @@ public class SearchPathQueryTest extends BasicQueryTest {
     }
 
     private XdmValue evalBaseline(String xpath, Evaluator eval2) {
-        XdmValue baseResult;
         XQuery xq = null;
         Compiler compiler2 = eval2.getCompiler();
-        try {
-            xq = compiler2.makeTranslator().queryFor(compiler2.compile(xpath));
-            xq = new Expandifier().expandify(xq);
-            String expanded = xq.toString();
-            XQueryExecutable baseline;
-            baseline = compiler2.compile(expanded, eval2.getErrorListener());
-            XQueryEvaluator baselineEval = baseline.load();
-            baselineEval.setErrorListener(eval2.getErrorListener());
-            baseResult = baselineEval.evaluate();
-        } catch (SaxonApiException e) {
-            throw new LuxException ("error evaluting query " + xq, e);
-        }
-        return baseResult;
+        xq = compiler2.makeTranslator().queryFor(compiler2.compile(xpath));
+        // Expandifier expands / into collection()
+        String expanded = new Expandifier().expandify(xq).toString();
+        return eval2.evaluate(expanded).getXdmValue();
     }
 
     private XdmResultSet evalQuery(String xpath, Evaluator eval2) {
@@ -160,6 +178,36 @@ public class SearchPathQueryTest extends BasicQueryTest {
     @Override
     protected boolean hasPathIndexes () {
         return true;
+    }
+    
+    private static class TestTime {
+        TestTime (String condition, String query, int n) {
+            this.condition = condition;
+            this.query = query;
+            this.times = new long[n];
+        }
+        
+        String condition;
+        String query;
+        long [] times;
+        
+        long meanTime() {
+            long total = 0;
+            for (long t : times) {
+                total += t;
+            }
+            return total / times.length;
+        }
+        
+        @Override public String toString () {
+            return String.format ("%s %s %d", condition, query, meanTime()/1000000);
+        }
+        
+        public String comparison (TestTime other) {
+            return String.format ("%s\t%s\t%d\t%d\t%.2f", condition, query, 
+                    meanTime()/1000000, other.meanTime()/1000000,
+                    100 * ((other.meanTime() - meanTime()) / ((double)other.meanTime())));
+        }
     }
 
 }

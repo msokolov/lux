@@ -165,14 +165,14 @@ public class IndexConfiguration {
             addField (ELEMENT_TEXT);
             addField (ATTRIBUTE_TEXT);
             /*
-                                // FIXME: do we need offsets ever?  Perhaps if we make use of a better highlighter
-                    if (
+            if (// FIXME: do we need offsets ever?  Perhaps if we make use of a better highlighter
                     XML_TEXT.getTermVector().withOffsets() || 
                     ELEMENT_TEXT.getTermVector().withOffsets() ||
                     ATTRIBUTE_TEXT.getTermVector().withOffsets()
-                    )
+                    ) {
                 // We may not need to bother computing offsets at all
                 options |= COMPUTE_OFFSETS;
+            }
             */
         }
         if (isOption (STORE_DOCUMENT)) {

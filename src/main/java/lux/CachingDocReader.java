@@ -2,8 +2,8 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import javax.xml.transform.stream.StreamSource;
 
@@ -22,14 +22,14 @@ import org.apache.lucene.index.IndexReader;
 /**
  * Reads, parses and caches XML documents from a Lucene index. Assigns Lucene
  * docIDs as Saxon document numbers. This reader is intended to survive for a
- * single query only. TODO: a nice optimization would be to maintain a global
+ * single query only, and is *not thread-safe*. TODO: a nice optimization would be to maintain a global
  * cache, shared across threads, with some tunable resource-based eviction
  * policy.
  * 
  * Not threadsafe.
  */
 public class CachingDocReader {
-    private final HashMap<Integer, XdmNode> cache = new HashMap<Integer, XdmNode>();
+    private final LRUCache<Integer, XdmNode> cache = new LRUCache<Integer, XdmNode>(1024);
     private final String xmlFieldName;
     private final String uriFieldName;
     private final HashSet<String> fieldsToRetrieve;
@@ -79,16 +79,16 @@ public class CachingDocReader {
      *             retrieved
      */
     public XdmNode get(int docID, IndexReader reader) throws IOException {
-        if (cache.containsKey(docID)) {
+        XdmNode node= cache.get(docID);
+        if (node != null) {
             ++cacheHits;
-            return cache.get(docID);
+            return node;
         }
 
         DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
         
-        XdmNode node = null;
         String xml = document.get(xmlFieldName);
         String uri = "lux:/" + document.get(uriFieldName);
         docIDNumberAllocator.setNextDocID(docID);
@@ -156,6 +156,24 @@ public class CachingDocReader {
     public void clear() {
         cache.clear();
     }
+    
+    // from org.apache.lucene.queryparser.xml.builders.CachedFilterBuilder.LRUCache
+    // TODO: limit cache by something proportional to *bytes*, rather than number of entries
+    static class LRUCache<K, V> extends java.util.LinkedHashMap<K, V> {
+
+        public LRUCache(int maxsize) {
+          super(maxsize * 4 / 3 + 1, 0.75f, true);
+          this.maxsize = maxsize;
+        }
+
+        protected int maxsize;
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+          return size() > maxsize;
+        }
+
+      }
 
 }
 
