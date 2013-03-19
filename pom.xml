@@ -3,7 +3,7 @@
   <groupId>lux</groupId>
   <artifactId>lux</artifactId>
   <packaging>jar</packaging>
-  <version>0.7-SNAPSHOT</version>
+  <version>0.7</version>
   <name>lux</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -145,34 +145,6 @@
         </execution>
       </executions>
     </plugin>
-      <plugin>
-        <groupId>org.mortbay.jetty</groupId>
-        <artifactId>maven-jetty-plugin</artifactId>
-        <version>6.1.26</version>
-        <configuration>
-          <scanIntervalSeconds>10</scanIntervalSeconds>
-          <stopPort>8000</stopPort>
-          <stopKey>STOP</stopKey>
-          <contextPath>/</contextPath> 
-          <webDefaultXml>src/test/resources/webdefault.xml</webDefaultXml>
-          <webXml>src/test/webapp/WEB-INF/web.xml</webXml>
-          <jettyConfig>src/test/resources/jetty.xml</jettyConfig>
-          <systemProperties>
-            <systemProperty>
-              <name>org.expath.pkg.saxon.repo</name>
-              <value>${basedir}/xrepo</value>
-            </systemProperty>
-          </systemProperties>
-        </configuration>
-        <dependencies>
-        <dependency>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-          <version>1.2.13</version>
-          <type>jar</type>
-        </dependency>
-        </dependencies>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
