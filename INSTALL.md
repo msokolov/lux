@@ -71,8 +71,8 @@ load EXPath modules.  These paths and ports are configurable by editing the lux.
 4. Lux requires that a unique string-valued key be defined. If no such field
    exists, add the following to the schema:
 
-        <field name="uri" type="string" indexed="true" stored="true" multiValued="false"/>
-        <uniqueKey>uri</uniqueKey>
+        <field name="lux_uri" type="string" indexed="true" stored="true" multiValued="false"/>
+        <uniqueKey>lux_uri</uniqueKey>
            
    If a unique id field is already defined, you can configure Lux to use it by editing
    the configuration element <updateRequestProcessorChain name="lux-update-chain">
