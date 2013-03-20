@@ -1,4 +1,4 @@
-This release of Lux is integrated with Solr/Lucene 4.2
+This release of Lux is integrated with Solr/Lucene 4.1
 
 Added low-level support for binary documents; you can now store images,
 xquery, and other non-XML files in a Lux index.
@@ -14,6 +14,8 @@ XmlTokenStreamBase now wraps an externally-supplied Analyzer.  We'll need
 to follow up by exposing higher-level constructs to make this more usable,
 eg: expose via configuration in schema.xml.  This may actually work already
 and just require documentation?
+
+XPathField now uses the analysis chain configured in schema.xml
 
 Optimized deep pagination: we now skip over (not load into memory and
 parse) documents we can prove to be unused.
