@@ -1245,11 +1245,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     public AbstractExpression getBoundExpression(QName name) {
         VarBinding binding = varBindings.get(name);
-        while (binding.getExpr() instanceof Variable) {
+        while (binding != null && binding.getExpr() instanceof Variable) {
             // variable bound to another variable?
             binding = varBindings.get(((Variable) binding.getExpr()).getQName());
         }
-        return binding.getExpr();
+        return binding == null ? null : binding.getExpr();
     }
 
     /**
