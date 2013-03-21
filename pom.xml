@@ -3,7 +3,7 @@
   <groupId>lux</groupId>
   <artifactId>lux</artifactId>
   <packaging>jar</packaging>
-  <version>0.7</version>
+  <version>0.7.1-SNAPSHOT</version>
   <name>lux library</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
