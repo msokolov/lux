@@ -1,10 +1,6 @@
 * bugs
-** not() optimization:
-*** invert the query:
-count(collection()[not(.//pubdate)])
-  optimize as:
-count(collection()) - count(collection()[.//pubdate])
-*** generalize
+** error on empty result?
+at least in the query box
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
@@ -12,7 +8,12 @@ of spans.
 Is there a circumstance where this is incorrect?  If not, then what is the 
 actual rule we are relying on there?
 * optimization
-
+** not() optimization:
+*** invert the query:
+count(collection()[not(.//pubdate)])
+  optimize as:
+count(collection()) - count(collection()[.//pubdate])
+*** generalize
 ** handle variables in comparisons
 at least if they're atomic?
 ** replace query stack

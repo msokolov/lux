@@ -144,7 +144,15 @@ public class Compiler {
         }*/
         PathOptimizer optimizer = new PathOptimizer(indexConfig);
         optimizer.setSearchStrategy(searchStrategy);
-        XQuery optimizedQuery = optimizer.optimize(abstractQuery);
+        XQuery optimizedQuery = null;
+        try {
+            optimizedQuery = optimizer.optimize(abstractQuery);
+        } catch (LuxException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug ("An error occurred while optimizing: " + abstractQuery.toString());
+            }
+            throw (e);
+        }
         lastOptimized = optimizedQuery;
         if (logger.isDebugEnabled()) {
             logger.debug("optimized xquery: " + optimizedQuery.toString());

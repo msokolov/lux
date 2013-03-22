@@ -54,7 +54,9 @@ public class XPathField<T> extends FieldDefinition {
         public T next() {
             XdmItem item = sequence.next();
             switch (getType()) {
-            case STRING: return (T) item.getStringValue();
+            case STRING: 
+            case TEXT:
+                return (T) item.getStringValue();
             case INT: return (T) Integer.valueOf (item.getStringValue());
             default: throw new IllegalStateException (getType() + " is not a valid type for an XPathField");
             }

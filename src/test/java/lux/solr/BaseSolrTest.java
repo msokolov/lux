@@ -4,12 +4,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Collection;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest.METHOD;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrException;
+import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.CoreContainer;
 import org.junit.AfterClass;
@@ -17,18 +25,25 @@ import org.junit.BeforeClass;
 
 public abstract class BaseSolrTest {
 
+    protected static String solrHome = "solr";
     protected static SolrServer solr;
-    private static CoreContainer coreContainer;
+    protected static CoreContainer coreContainer;
     
     public final String SOLR_QUERY_TYPE = "/xquery";
+    private static final String LUX_XML = "lux_xml";
+    private static final String URI = "lux_uri";
 
     @BeforeClass
     public static void setup() throws Exception {
-        System.setProperty("solr.solr.home", "solr");
+        System.setProperty("solr.solr.home", solrHome);
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
         solr = new EmbeddedSolrServer(coreContainer, "");
-        solr.deleteByQuery("*:*");
+        try {
+            solr.deleteByQuery("*:*");
+        } catch (SolrException e){
+            // might get "no such core" in the multi-core config
+        }
     }
     
     @AfterClass
@@ -36,10 +51,6 @@ public abstract class BaseSolrTest {
         if (coreContainer != null) {
             coreContainer.shutdown();
         }
-    }
-
-    public BaseSolrTest() {
-        super();
     }
     
     protected void assertQuery (String result, String query) throws Exception {
@@ -55,15 +66,23 @@ public abstract class BaseSolrTest {
         }
     }
 
-    protected void assertQueryCount(int count, String query) throws SolrServerException {
+    protected void assertQueryCount(int count, String query, SolrServer core) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        QueryResponse rsp = solr.query(q);
+        QueryResponse rsp = core.query(q);
         assertEquals(count, rsp.getResults().getNumFound());
     }
 
-    protected void assertXPathSearchCount(int count, int docCount, String type, String value, String query)
+    protected void assertQueryCount(int count, String query) throws SolrServerException {
+        assertQueryCount (count, query, solr); 
+    }
+
+    protected void assertXPathSearchCount(int count, int docCount, String type, String value, String query) throws SolrServerException {
+        assertXPathSearchCount (count, docCount, type, value, query, solr);
+    }
+    
+    protected void assertXPathSearchCount(int count, int docCount, String type, String value, String query, SolrServer core)
             throws SolrServerException {
-        assertXPathSearchCount(count, docCount, 10, type, value, query);
+        assertXPathSearchCount(count, docCount, 10, type, value, query, core);
     }
 
     protected void assertXPathSearchError(String error, String query) throws SolrServerException {
@@ -76,11 +95,16 @@ public abstract class BaseSolrTest {
 
     protected void assertXPathSearchCount(int count, int docCount, int maxResults, String type, String value,
             String query) throws SolrServerException {
+        assertXPathSearchCount (count, docCount, maxResults, type, value, query, solr);
+    }
+    
+    protected void assertXPathSearchCount(int count, int docCount, int maxResults, String type, String value,
+            String query, SolrServer core) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
         q.setRequestHandler(SOLR_QUERY_TYPE);
         q.setRows(maxResults);
         q.setStart(0);
-        QueryResponse rsp = solr.query(q, METHOD.POST);
+        QueryResponse rsp = core.query(q, METHOD.POST);
         NamedList<?> results = (NamedList<?>) rsp.getResponse().get("xpath-results");
         String error = (String) rsp.getResponse().get("xpath-error");
         if (type.equals("error")) {
@@ -100,5 +124,21 @@ public abstract class BaseSolrTest {
                 assertEquals(value, returnValue);
             }
         }
+    }
+    
+    static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
+        SolrInputDocument doc = new SolrInputDocument(); 
+        doc.addField (URI, path);
+        FileInputStream in = new FileInputStream (path);
+        String buf = IOUtils.toString(in);
+        doc.addField(LUX_XML, buf);
+        docs.add(doc);
+    }
+    
+    static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
+        SolrInputDocument doc = new SolrInputDocument(); 
+        doc.addField (URI, uri);
+        doc.addField(LUX_XML, text);
+        docs.add(doc);
     }
 }

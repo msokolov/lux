@@ -156,7 +156,8 @@ public class SolrIndexConfig {
             if (fieldType == null) {
                 throw new SolrException(ErrorCode.SERVER_ERROR, "Field " + f.getKey() + " declared in lux config, but not defined in schema");
             }
-            XPathField<String> xpathField = new XPathField<String>(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO, Type.STRING);
+            XPathField<String> xpathField = new XPathField<String>(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO, 
+                    Type.TEXT);
             
             indexConfig.addField(xpathField);
         }

@@ -728,7 +728,6 @@
       </analyzer>
     </fieldType>
 
-
  </types>
   
   <!-- Similarity is the scoring routine for each document vs. a query.

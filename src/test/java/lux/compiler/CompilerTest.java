@@ -62,6 +62,15 @@ public class CompilerTest {
         assertEquals ("Required item type of value of variable $local:integer is xs:integer; supplied value has item type xs:string", result.getErrors().get(0).getMessage());
     }
     
+    @Test
+    public void testExtVar () throws Exception {
+        XQueryExecutable query = compileQuery ("ext-var.xqy");
+        QueryContext context = new QueryContext ();
+        context.bindVariable(new QName("http://localhost/", "integer"), new XdmAtomicValue("1"));
+        XdmResultSet result = eval.evaluate(query, context);
+        assertEquals ("expected no results", false, result.getXdmValue().iterator().hasNext());
+    }
+    
     @Test 
     public void testCommentConstructor() throws Exception {
         assertQuery ("<!--test-->", "comment-constructor.xqy"); 

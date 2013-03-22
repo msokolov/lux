@@ -142,6 +142,7 @@ public class XPathFieldTest {
             assertResultSequence  ("for $doc in collection() order by lux:field-values('title') return $doc");
             assertFalse ("expected exception not thrown", true);
         } catch (Exception e) {
+            e.printStackTrace();
             assertTrue (e.getMessage().contains("there is no context defined"));
         }
     }
