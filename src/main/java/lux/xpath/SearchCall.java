@@ -125,4 +125,7 @@ public class SearchCall extends FunCall {
         return this;
     }
 
+    public XPathQuery getQuery () {
+    	return query;
+    }
 }
