@@ -122,8 +122,16 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             } else {
                 fieldName = eval.getCompiler().getIndexConfiguration().getFieldName(FieldName.XML_TEXT);
             }
-            // FIXME: get sub readers (using ReaderUtil (?)) and pull values
-            // from those (in parallel?)
+            // TODO: get atomic sub readers and iterate values from those 
+            /*  From: http://lucene.apache.org/core/4_0_0-BETA/MIGRATE.html
+
+                Note that the MultiFields approach entails a performance
+                hit on MultiReaders, as it must merge terms/docs/positions
+                on the fly. It's generally better to instead get the
+                sequential readers (use oal.util.ReaderUtil) and then step
+                through those readers yourself, if you can (this is how
+                Lucene drives searches).
+            */
             Fields fields = MultiFields.getFields(eval.getSearcher().getIndexReader());
             if (fields != null) {
                 terms = fields.terms(fieldName).iterator(null);
