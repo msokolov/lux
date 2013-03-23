@@ -22,8 +22,6 @@ import org.apache.lucene.search.SortField;
  * evaluation is needed.
  */
 /*
- *  * TODO: cleanup XPathQuery 
- *  
  * We could also tell: whether the query will return the correct document set;
  * it's possible that we may sometimes retrieve documents that don't match.
  * We're not allowed to miss a document, though. Some evaluators that return the
@@ -103,12 +101,8 @@ public class XPathQuery {
     
     public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL|EMPTY, ValueType.NODE, true);
-
     private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|EMPTY, ValueType.NODE, true);
-
     /**
      * @param expr an XPath 2.0 expression
      * @param query a Lucene query
@@ -258,8 +252,6 @@ public class XPathQuery {
     }
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
-        // TODO: get rid of these special cases, and the immutable queries
-        // the logic for maintaining them is tortured and the purported benefit is dubious
         if (b.isEmpty()) {
             return a.facts; 
         }

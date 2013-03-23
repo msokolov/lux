@@ -769,7 +769,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         case GT:
         case LE:
         case GE:
-        	if (argType.isNode) {
+        	if (lq.getResultType().isNode || rq.getResultType().isNode) {
         		required = true;
         		occur = Occur.MUST;
         	}
