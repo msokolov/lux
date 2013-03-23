@@ -556,6 +556,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         // a built-in XPath 2 function
         else if (isomorphs.contains(name.getLocalPart())) {
+            // for this small set of functions, the queries for its
+            // arguments MUST match a document in order for this function
+            // to return a non-empty result
             occur = Occur.MUST;
         } else {
             // for functions in fn: and xs: namespaces not listed below, we
@@ -564,16 +567,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
             occur = Occur.SHOULD;
         }
         AbstractExpression[] args = funcall.getSubs();
+        combineTopQueries(args.length, occur, funcall.getReturnType());
         if (occur == Occur.SHOULD) {
-            combineTopQueries(args.length, occur, funcall.getReturnType());
-            push(pop().setFact(IGNORABLE, true)); // FIXME?????
-            /*
-             * for (int i = args.length; i > 0; --i) { pop(); } push
-             * (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), IGNORABLE,
-             * ValueType.VALUE, indexConfig, null));
-             */
-        } else {
-            combineTopQueries(args.length, occur, funcall.getReturnType());
+            push(pop().setFact(IGNORABLE, true));
         }
         if (name.equals(FunCall.LUX_FIELD_VALUES)) {
             if (args.length > 0) {
@@ -609,6 +605,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         isomorphs.add("exists"); // FIXME - this enables optos that we like, but
                                  // it is not really an isomorph
                                  // since it returns a boolean
+        // see SearchTest.testNotExists() -- should test this?
         isomorphs.add("data");
         isomorphs.add("root");
         isomorphs.add("collection");
