@@ -33,6 +33,11 @@ public interface DocWriter {
      */
     void commit ();
 
+    /**
+     * Commits and closes the underlying IndexWriter.
+     */
+	void close();
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

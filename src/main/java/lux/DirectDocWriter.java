@@ -62,10 +62,19 @@ public class DirectDocWriter implements DocWriter {
     public void commit() {
         try {
             indexWriter.commit();
-        }  catch (IOException e) {
+        } catch (IOException e) {
             throw new LuxException (e);
         }
     }
+
+	@Override
+	public void close() {
+		try {
+			indexWriter.close();
+		} catch (IOException e) {
+			throw new LuxException (e);
+		}
+	}
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

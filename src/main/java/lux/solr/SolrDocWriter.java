@@ -120,6 +120,15 @@ public class SolrDocWriter implements DocWriter {
             throw new LuxException(e);
         }
     }
+    
+    /**
+     * commits, but does not close the underlying index
+     */
+    @Override
+    public void close() {
+    	// do not attempt to close the index; Solr will take care of that
+    	commit ();
+    }
 
 }
 
