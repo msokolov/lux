@@ -342,15 +342,6 @@ public class XPathQuery {
         return facts2 & facts3;
     }
 
-    /**
-     * Set this query's result type to be the least restrictive type encompassing its type and the given type
-     * @param type the type to restrict to
-     */
-    public void restrictType(ValueType type) {
-        if (immutable) throw new LuxException ("attempt to modify immutable query");
-        valueType = valueType.restrict(type);
-    }
-
     public boolean isEmpty() {
         return isFact(EMPTY);
     }
@@ -407,10 +398,6 @@ public class XPathQuery {
 
   public AbstractExpression toXmlNode(String defaultField, IndexConfiguration config) {
       return getParseableQuery().toXmlNode(defaultField, config);
-  }
-
-  public String toQueryString(String defaultField, IndexConfiguration indexConfig) {
-      return getParseableQuery().toQueryString(defaultField, indexConfig);
   }
   
   /**
