@@ -112,19 +112,9 @@ public class CachingDocReader {
             ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
         }
         buildTime += (System.nanoTime() - t0);
-        if (node != null) {
-            cache.put(docID, node);
-        }
+        cache.put(docID, node);
         ++cacheMisses;
         return node;
-    }
-
-    /**
-     * @param docID
-     * @return true if the a document with the given id is found in the cache
-     */
-    public final boolean isCached(final int docID) {
-        return cache.containsKey(docID);
     }
 
     /**
