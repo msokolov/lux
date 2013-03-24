@@ -22,7 +22,6 @@ public class SpanTermPQuery extends TermPQuery {
     @Override
     public ElementConstructor toXmlNode (String field, IndexConfiguration config) {
         if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
-            // FIXME: hack!
             Term wildTerm = new Term (getTerm().field(), 
                     ExtendableQueryParser.escape(getTerm().text()) + "(\\/.*)?");
             return new TermPQuery(wildTerm, getBoost()).toXmlNode(field, REGEXP_TERM_QNAME);
