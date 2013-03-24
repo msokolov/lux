@@ -1,4 +1,4 @@
-package lux.functions;
+package lux.functions.file;
 
 import static org.junit.Assert.*;
 import lux.Evaluator;
