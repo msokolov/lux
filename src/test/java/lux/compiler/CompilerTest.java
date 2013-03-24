@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import lux.Compiler;
+import lux.Compiler.SearchStrategy;
 import lux.Evaluator;
 import lux.QueryContext;
 import lux.XdmResultSet;
@@ -15,6 +16,8 @@ import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.xml.QName;
+import net.sf.saxon.lib.CollectionURIResolver;
+import net.sf.saxon.lib.StandardCollectionURIResolver;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmValue;
@@ -34,6 +37,28 @@ public class CompilerTest {
         compiler = new Compiler(indexer.getConfiguration());
         eval = new Evaluator(compiler, null, null);
         translator = compiler.makeTranslator();
+    }
+    
+    @Test
+    public void testSearchStrategy () throws Exception {
+    	assertSame (SearchStrategy.LUX_SEARCH, compiler.getSearchStrategy());
+    	compiler.setSearchStrategy(SearchStrategy.NONE);
+    	assertSame (SearchStrategy.NONE, compiler.getSearchStrategy());
+    }
+    
+    @Test
+    public void testResolver () throws Exception {
+    	CollectionURIResolver resolver = compiler.getDefaultCollectionURIResolver();
+		assertNotNull (resolver);
+		assertTrue (resolver.getClass().getName(), resolver instanceof StandardCollectionURIResolver);
+    }
+    
+    @Test
+    public void testInititalizeEXPath () throws Exception {
+    	System.setProperty("org.expath.pkg.saxon.repo", "fail");
+    	// ensure that Compiler can be created with invalid EXPath repo - just logs an error
+    	new Compiler(IndexConfiguration.DEFAULT);
+    	System.setProperty("org.expath.pkg.saxon.repo", null);
     }
     
     @Test 
