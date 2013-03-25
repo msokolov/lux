@@ -7,6 +7,10 @@ of spans.
 ** exists as an isomorph
 Is there a circumstance where this is incorrect?  If not, then what is the 
 actual rule we are relying on there?
+* enhancements
+** binary documents
+be able to write and read binary documents, incl. xquery
+*** execute app from index
 * optimization
 ** not() optimization:
 *** invert the query:
