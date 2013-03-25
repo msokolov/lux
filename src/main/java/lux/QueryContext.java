@@ -4,6 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmValue;
+
+import lux.exception.LuxException;
 import lux.xml.QName;
 
 /**
@@ -20,7 +24,8 @@ public class QueryContext {
     /**
      * bind an external variable so that it will be available in the scope of queries evaluated using this context
      * @param varName the name of the variable to bind
-     * @param value the value to bind to the variable; this must be of an appropriate type for the Evaluator,
+     * @param value the value to bind to the variable; this must be of an XdmValue, or a java primitive
+     * that can be converted to an XdmAtomicValue, 
      * or null to clear any existing binding.
      */
     public void bindVariable (QName varName, Object value) {
@@ -30,11 +35,22 @@ public class QueryContext {
         if (value == null) {
             variables.remove(varName);            
         } else {
-            variables.put(varName, value);
+        	XdmValue xdmValue = getXdmValue (value);
+            variables.put(varName, xdmValue);
         }
     }
     
-    public Map<QName, Object> getVariableBindings() {
+    private XdmValue getXdmValue(Object value) {
+    	if (value instanceof String) {
+    		return new XdmAtomicValue ((String) value);
+    	}
+    	if (value instanceof Integer) {
+    		return new XdmAtomicValue ((Integer) value);
+    	}
+    	throw new LuxException ("No automatic conversion supplied for " + value.getClass().getName());
+	}
+
+	public Map<QName, Object> getVariableBindings() {
         if (variables == null) {
             return null;
         }
