@@ -3,7 +3,6 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
-import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.XmlTextField;
 import lux.xpath.FunCall;
@@ -82,7 +81,9 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             String fieldName = null, start = "";
             if (arguments.length > 0) {
                 Item<?> arg0 = arguments[0].next();
-                fieldName = arg0.getStringValue();
+                if (arg0 != null) {
+                	fieldName = arg0.getStringValue();
+                }
                 if (arguments.length > 1) {
                     Item<?> arg1 = arguments[1].next();
                     start = arg1 == null ? "" : arg1.getStringValue();
@@ -116,12 +117,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         }
 
         private void createTermsEnum(Term t) throws IOException {
-            String fieldName;
-            if (t != null) {
-                fieldName = t.field();
-            } else {
-                fieldName = eval.getCompiler().getIndexConfiguration().getFieldName(FieldName.XML_TEXT);
-            }
+            String fieldName = t.field();
             // TODO: get atomic sub readers and iterate values from those 
             /*  From: http://lucene.apache.org/core/4_0_0-BETA/MIGRATE.html
 

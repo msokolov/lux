@@ -58,7 +58,7 @@ public class CompilerTest {
     	System.setProperty("org.expath.pkg.saxon.repo", "fail");
     	// ensure that Compiler can be created with invalid EXPath repo - just logs an error
     	new Compiler(IndexConfiguration.DEFAULT);
-    	System.setProperty("org.expath.pkg.saxon.repo", null);
+    	System.setProperty("org.expath.pkg.saxon.repo", "");
     }
     
     @Test 
@@ -135,6 +135,14 @@ public class CompilerTest {
     @Test
     public void testVariableShadowing () throws Exception {
         assertQuery ("1", "variable-shadowing.xqy");
+    }
+    
+    @Test
+    public void testWhereClause () throws Exception {
+    	// this is supposed to test the translation and optimization of where clauses (a bit)
+    	// but Saxon converts where clauses to predicates pretty much universally, so
+    	// this uses an "at" expression to force the where clause to be retained
+    	assertQuery ("4", "count-primes-less-than-10.xqy");
     }
     
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {

@@ -4,14 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import net.sf.saxon.s9api.XdmItem;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.SolrParams;
-import org.apache.solr.common.util.NamedList;
 import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.request.SolrQueryRequest;
 
@@ -50,6 +47,7 @@ public class AppServerComponent extends XQueryComponent {
                 rb.setQueryString(contents);
             }
         }
+        super.prepare(rb);
     }
     
     /**
@@ -58,11 +56,6 @@ public class AppServerComponent extends XQueryComponent {
     @Override
     public void process(ResponseBuilder rb) throws IOException {
         evaluateQuery(rb, -1, -1);
-    }
-
-    @Override
-    protected void addResult(NamedList<Object> xpathResults, XdmItem item) {
-        xpathResults.add("result", item);
     }
 
 }

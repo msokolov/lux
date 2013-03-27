@@ -39,6 +39,7 @@ import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XsltCompiler;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +179,7 @@ public class Compiler {
             }
         } catch (ClassNotFoundException e) { }
         Processor p = new Processor (new Config());
-        if (System.getProperty("org.expath.pkg.saxon.repo") != null) {
+        if (! StringUtils.isEmpty(System.getProperty("org.expath.pkg.saxon.repo"))) {
             initializeEXPath(p);
         }
         return p;

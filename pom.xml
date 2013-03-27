@@ -133,6 +133,8 @@
         <instrumentation>
             <excludes>
               <exclude>lux.xqts/**/*.class</exclude>
+              <exclude>lux.xml.EventToStaxBridge</exclude>
+              <excludes>lux.solr.MissingStringLastComparatorSource.class</excludes>
             </excludes>
         </instrumentation>
       </configuration>

@@ -41,6 +41,9 @@ public class QueryContext {
     }
     
     private XdmValue getXdmValue(Object value) {
+    	if (value instanceof XdmValue) {
+    		return (XdmValue) value;
+    	}
     	if (value instanceof String) {
     		return new XdmAtomicValue ((String) value);
     	}

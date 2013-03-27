@@ -28,7 +28,18 @@ public class EvalTest {
 		QueryContext context = new QueryContext();
 		context.bindVariable(new QName("x"), "2");
 		context.bindVariable(new QName("y"), 3);
+		context.setContextItem(null);
+		context.bindVariable(new QName("x"), null);
 		XdmResultSet result = eval.evaluate("declare variable $y external; lux:eval('declare variable $x external; $x', ('x', $y))", context);
+		if (! result.getErrors().isEmpty()) {
+			fail (result.getErrors().get(0).toString());
+		}
+		assertEquals ("3", result.getXdmValue().getUnderlyingValue().getStringValue());
+	}
+	
+	@Test
+	public void testParamNS () throws Exception {
+		XdmResultSet result = eval.evaluate("lux:eval('declare variable $lux:x external; $lux:x', ('lux:x', 3))");
 		if (! result.getErrors().isEmpty()) {
 			fail (result.getErrors().get(0).toString());
 		}
@@ -36,10 +47,17 @@ public class EvalTest {
 	}
 
 	@Test
+	public void testOddParam () throws Exception {
+		XdmResultSet result = eval.evaluate("lux:eval('2', ('lux:x'))");
+		assertTrue (! result.getErrors().isEmpty());
+		assertEquals ("Odd number of items in third argument to lux:transform, which should be parameter/value pairs", result.getErrors().get(0).getMessage());
+	}
+
+	@Test
 	public void testEvalRuntimeError () throws Exception {
-		XdmResultSet result = eval.evaluate("lux:eval('1 div 0')");
+		XdmResultSet result = eval.evaluate("lux:eval('1 div (fn:seconds-from-dateTime(current-dateTime()) - fn:seconds-from-dateTime(current-dateTime()))')");
 		assertFalse (result.getErrors().isEmpty());
-		assertEquals ("Integer division by zero", result.getErrors().get(0).getMessage());
+		assertEquals ("Decimal divide by zero", result.getErrors().get(0).getMessage());
 	}
 
 	@Test

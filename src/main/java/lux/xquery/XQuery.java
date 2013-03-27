@@ -41,21 +41,6 @@ public class XQuery {
         this.importedModules = importedModules;
     }
     
-    public XQuery (AbstractExpression body) {
-        this.namespaceDeclarations = null;
-        this.externalVariables = null;
-        this.defaultCollation = null;
-        this.defaultElementNamespace = null;
-        this.defaultFunctionNamespace = null;
-        this.functionDefinitions = null;
-        this.body = body;
-        this.baseURI = null;
-        this.inheritNamespaces = null;
-        this.preserveNamespaces = null;
-        this.emptyLeast = false;
-        this.importedModules = null;
-    }
-    
     @Override
     public String toString () {
         StringBuilder buf = new StringBuilder();
@@ -87,6 +72,9 @@ public class XQuery {
             buf.append("declare default collation ");
             LiteralExpression.quoteString(defaultCollation, buf);
             buf.append(";\n");
+        }
+        if (! emptyLeast) {
+        	buf.append ("declare default order empty greatest;\n");
         }
         if (StringUtils.isNotBlank(defaultElementNamespace)) {
             buf.append("declare default element namespace ");
