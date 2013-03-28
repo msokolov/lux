@@ -194,7 +194,11 @@ public class TestSerialization {
     			"declare default element namespace \"http://localhost/element\";\n" +
     			"declare default function namespace \"http://localhost/function\";\n" +
     			"1", xq.toString());
-    	}
+    	
+    	xq = new XQuery (null, null, null, null, null, null, null, LiteralExpression.EMPTY,
+    			null, false, false, true);
+    	assertEquals ("declare copy-namespaces no-preserve, no-inherit;\n()", xq.toString());
+    }
     
 }
 

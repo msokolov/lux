@@ -2,7 +2,6 @@
 package lux.xpath;
 
 import java.math.BigDecimal;
-import java.util.Date;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -14,20 +13,17 @@ public class LiteralExpression extends AbstractExpression {
     
     private final Object value;
     private final ValueType valueType;
-    private final String xqTypeName; // a built-in xquery type name, like xs:integer
     
     public LiteralExpression (Object value, ValueType valueType, String xqTypeName) {
         super(Type.LITERAL);
         this.value = value;
         this.valueType = valueType;
-        this.xqTypeName = xqTypeName;
     }
 
     public LiteralExpression (Object value, ValueType valueType) {
         super(Type.LITERAL);
         this.value = value;
         this.valueType = valueType;
-        this.xqTypeName = valueType.name;
     }
 
     public LiteralExpression (Object value) {
@@ -38,7 +34,6 @@ public class LiteralExpression extends AbstractExpression {
         } else {
             valueType = ValueType.VALUE;
         }
-        this.xqTypeName = valueType.name;
     }
 
     public static final LiteralExpression EMPTY = new LiteralExpression ("()", ValueType.EMPTY);
@@ -57,8 +52,8 @@ public class LiteralExpression extends AbstractExpression {
             return ValueType.DECIMAL;
         } else if (value instanceof Boolean) {
             return ValueType.BOOLEAN;
-        } else if (value instanceof Date) {
-            return ValueType.DATE;
+        } else if (value instanceof QName) {
+        	return ValueType.QNAME;
         }
         throw new LuxException ("unsupported java object type: " + value.getClass().getSimpleName());
     }
@@ -78,10 +73,6 @@ public class LiteralExpression extends AbstractExpression {
         return value;
     }
     
-    public String getXQueryTypeName() {
-        return xqTypeName;
-    }
-
     /**
      * renders the literal as parseable XQuery.  Note that 
      */
@@ -97,12 +88,15 @@ public class LiteralExpression extends AbstractExpression {
             quoteString (value.toString(), buf);
             buf.append (')');
             break;
+            
         case STRING:
             quoteString (value.toString(), buf);
             break;
+            
         case BOOLEAN:
             buf.append ("fn:").append(value).append("()");
             break;
+            
         case FLOAT:
             Float f = (Float) value;
             if (f.isInfinite()) {
@@ -137,11 +131,13 @@ public class LiteralExpression extends AbstractExpression {
         case DECIMAL:            
             buf.append("xs:decimal(").append (((BigDecimal)value).toPlainString()).append(")");
             break;
+            
         case HEX_BINARY:
             buf.append("xs:hexBinary(\"");
             appendHex(buf, (byte[])value);
             buf.append("\")");
             break;
+            
         case BASE64_BINARY:
             buf.append("xs:base64Binary(\"");
             buf.append(DatatypeConverter.printBase64Binary((byte[])value));
@@ -156,8 +152,7 @@ public class LiteralExpression extends AbstractExpression {
         case MONTH_DAY:
         case YEAR:
         case YEAR_MONTH:
-        case ATOMIC:
-            buf.append(xqTypeName).append("(\"").append(value).append("\")");
+            buf.append(valueType.name).append("(\"").append(value).append("\")");
             break;
             
         case QNAME:
@@ -168,6 +163,7 @@ public class LiteralExpression extends AbstractExpression {
             buf.append("\")");
             break;
             
+        case ATOMIC:
         default:
             // rely on the object's toString method - is it only xs:int and its ilk that do this?
             buf.append (value);
