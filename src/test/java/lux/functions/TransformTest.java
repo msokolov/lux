@@ -1,12 +1,15 @@
 package lux.functions;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import lux.Evaluator;
 import lux.QueryContext;
 import lux.XdmResultSet;
 import lux.xml.QName;
 import net.sf.saxon.s9api.XdmAtomicValue;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.lucene.store.RAMDirectory;
 import org.junit.Test;
 
 public class TransformTest extends XQueryTest {
@@ -22,6 +25,37 @@ public class TransformTest extends XQueryTest {
     public void testTransform1 () throws Exception {
         // test a query that calls lux:transform
         assertXQueryFile ("2", "transform-1.xqy");
+    }
+    
+    @Test
+    public void testOutputURIResolution() throws Exception {
+        // test a transform that writes a document using result-document
+    	assertXQueryFile (null, "transform-result-document.xqy", 
+    			"Attempted to write document /doc/1 to a read-only Evaluator");
+    	RAMDirectory dir = new RAMDirectory();
+		Evaluator writable = Evaluator.createEvaluator (dir);
+        String query = IOUtils.toString(TransformTest.class.getResourceAsStream("transform-result-document.xqy"));
+		writable.evaluate(query);
+		// TODO: make this more convenient.  Have an auto-commit at the end of each evaluation
+		// (only when there have been any writes?) and re-open the reader so we can see the results
+		// in subsequent queries
+		writable.getDocWriter().commit();
+		// re-open so that we see the results here
+		writable.reopenSearcher();
+        XdmResultSet result = writable.evaluate("collection()[1]");
+        assertEquals ("1", result.getXdmValue().getUnderlyingValue().getStringValue());
+        result = writable.evaluate("doc('/doc/1')");
+        assertEquals ("1", result.getXdmValue().getUnderlyingValue().getStringValue());
+    }
+    
+    @Test
+    public void testFileURIResolution() throws Exception {
+    	XdmResultSet result = evaluator.evaluate("doc('file:src/test/resources/lux/reader-test.xml')");
+    	assertNotNull (result.getXdmValue().itemAt(0));
+    	// TODO: enable setting the base-uri in the context and test
+    	// resolution of relative uris against that
+    	// result = evaluator.evaluate("doc('src/test/resources/lux/reader-test.xml')");
+    	// assertNotNull (result.getXdmValue().itemAt(0));
     }
     
     @Test

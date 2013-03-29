@@ -205,6 +205,8 @@ public class Evaluator {
             if (docReader != null) {
                 docReader.clear();
             }
+            // TODO: get a new reader form the docWriter (for Lucene direct writer only) to enable
+            // auto-commit via NRT
         }
     }
     
@@ -350,6 +352,9 @@ public class Evaluator {
         @Override
         public void close(Result result) throws TransformerException {
             XdmDestinationProxy receiver = (XdmDestinationProxy) result;
+            if (docWriter == null) {
+            	throw new TransformerException ("Attempted to write document " + receiver.getSystemId() + " to a read-only Evaluator");
+            }
             docWriter.write(receiver.dest.getXdmNode().getUnderlyingNode(), receiver.getSystemId());
         }
         
