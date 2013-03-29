@@ -16,6 +16,7 @@ import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmDestination;
+import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
@@ -95,7 +96,8 @@ public class Transform extends ExtensionFunctionDefinition {
                 if (!runtimeErrors.isEmpty()) {
                     throw new XPathException(runtimeErrors.get(0).getMessage(), runtimeErrors.get(0).getLocator());
                 }
-                return SingletonIterator.makeIterator(dest.getXdmNode().getUnderlyingNode());
+                XdmNode result = dest.getXdmNode();
+                return SingletonIterator.makeIterator(result == null ? null : result.getUnderlyingNode());
             } catch (SaxonApiException e) {
                 throw new XPathException (e);
             }
