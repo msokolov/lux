@@ -1,7 +1,11 @@
 package lux;
 
-import static lux.IndexTestSupport.*;
-import static org.junit.Assert.*;
+import static lux.IndexTestSupport.QUERY_CONSTANT;
+import static lux.IndexTestSupport.QUERY_EXACT;
+import static lux.IndexTestSupport.QUERY_MINIMAL;
+import static lux.IndexTestSupport.QUERY_NO_DOCS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
 
@@ -565,6 +569,12 @@ public class SearchTest extends BaseSearchTest {
         assertSearch (HAMLET_TITLE, "let $play := collection()/PLAY[starts-with(TITLE,'The ')]\n" +
                 "let $id := $play/@id\n" +
                 "return <result id='{$id}'>{if ($id) then '' else $play/TITLE}</result>/string()", null, 1);
+    }
+    
+    @Test
+    public void testDeepPagination () throws Exception {
+    	//ensure that deep pagination skips intervening documents without loading them into memory
+    	assertSearch ("1", "count(collection()[1000]/*)", null, 1);
     }
 
 }
