@@ -103,6 +103,9 @@ public class LuxQueryParser extends ExtendableQueryParser {
             return q;
         }
         BooleanQuery bq = (BooleanQuery) q;
+        if (bq.getClauses().length == 0) {
+        	return bq;
+        }
         Query q1 = bq.getClauses()[0].getQuery();
         if (q1 instanceof TermQuery) {
             Term term = ((TermQuery) q1).getTerm();

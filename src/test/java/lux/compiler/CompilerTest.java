@@ -16,8 +16,11 @@ import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.xml.QName;
+import lux.xpath.AbstractExpression;
 import net.sf.saxon.lib.CollectionURIResolver;
 import net.sf.saxon.lib.StandardCollectionURIResolver;
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmValue;
@@ -59,6 +62,14 @@ public class CompilerTest {
     	// ensure that Compiler can be created with invalid EXPath repo - just logs an error
     	new Compiler(IndexConfiguration.DEFAULT);
     	System.setProperty("org.expath.pkg.saxon.repo", "");
+    }
+    
+    @Test public void testXPathCompiler() throws SaxonApiException {
+    	XPathExecutable ex = compiler.getXPathCompiler().compile("/");
+    	AbstractExpression expr = 
+    		new SaxonTranslator(compiler.getProcessor().getUnderlyingConfiguration()).
+    			exprFor(ex.getUnderlyingExpression().getInternalExpression());
+    	assertEquals ("(/)", expr.toString());
     }
     
     @Test 
