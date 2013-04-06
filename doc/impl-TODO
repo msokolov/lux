@@ -1,4 +1,9 @@
 * bugs
+** broken where clause opto:
+for $book at $i in collection()
+  where $book//section[@id="9780465008308"]
+  return $i
+always returns 1
 ** not() optimization:
 *** invert the query:
 count(collection()[not(.//pubdate)])
