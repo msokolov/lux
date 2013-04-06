@@ -130,6 +130,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                         case LONG:
                             sortFields[i].setMissingValue(reverse ? 0 : Long.MAX_VALUE);
                             break;
+                        default:
+                        	throw new LuxException ("unsupported combination of empty greatest and sort field type: " + type);
                         }
                     }
                 } else {

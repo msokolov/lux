@@ -83,6 +83,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
             next.processDelete(cmd);
         }
     }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

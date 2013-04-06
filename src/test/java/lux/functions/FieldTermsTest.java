@@ -1,6 +1,7 @@
 package lux.functions;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,8 +49,16 @@ public class FieldTermsTest {
     @Test
     public void testFieldTermsStart () throws Exception {
         ArrayList<String> terms = getFieldTerms("lux:field-terms('lux_elt_name', 'ti')");
-        assertArrayEquals (new String[] {"title", "token"}, 
-                terms.toArray(new String[0]));
+        assertArrayEquals (new String[] {"title", "token"}, terms.toArray(new String[0]));
+        
+        terms = getFieldTerms("lux:field-terms('lux_elt_name', 'ti')[2]");
+        assertArrayEquals (new String[] {"token"}, terms.toArray(new String[0]));
+        
+        terms = getFieldTerms("lux:field-terms('lux_elt_name', 'zzz')");
+        assertTrue (terms.isEmpty());
+        
+        terms = getFieldTerms("lux:field-terms((), 'zzz')");
+        assertArrayEquals (new String[] {"ģé"}, terms.toArray(new String[0]));
     }
 
     private ArrayList<String> getFieldTerms(String xquery) throws CorruptIndexException, LockObtainFailedException, IOException {

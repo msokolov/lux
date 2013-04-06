@@ -39,6 +39,7 @@ import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XsltCompiler;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,14 +137,23 @@ public class Compiler {
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
-        if (searchStrategy == SearchStrategy.NONE) {
-            return xquery;
-        }
         SaxonTranslator translator = makeTranslator();
         XQuery abstractQuery = translator.queryFor (xquery);
+        /*if (searchStrategy == SearchStrategy.NONE) {
+            String expanded = new Expandifier().expandify(abstractQuery).toString();
+            return xquery;
+        }*/
         PathOptimizer optimizer = new PathOptimizer(indexConfig);
         optimizer.setSearchStrategy(searchStrategy);
-        XQuery optimizedQuery = optimizer.optimize(abstractQuery);
+        XQuery optimizedQuery = null;
+        try {
+            optimizedQuery = optimizer.optimize(abstractQuery);
+        } catch (LuxException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug ("An error occurred while optimizing: " + abstractQuery.toString());
+            }
+            throw (e);
+        }
         lastOptimized = optimizedQuery;
         if (logger.isDebugEnabled()) {
             logger.debug("optimized xquery: " + optimizedQuery.toString());
@@ -169,7 +179,7 @@ public class Compiler {
             }
         } catch (ClassNotFoundException e) { }
         Processor p = new Processor (new Config());
-        if (System.getProperty("org.expath.pkg.saxon.repo") != null) {
+        if (! StringUtils.isEmpty(System.getProperty("org.expath.pkg.saxon.repo"))) {
             initializeEXPath(p);
         }
         return p;

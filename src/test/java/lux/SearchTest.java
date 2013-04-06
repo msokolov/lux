@@ -89,6 +89,36 @@ public class SearchTest extends BaseSearchTest {
     }
     
     @Test
+    public void testNotExists() throws Exception {
+        
+    	// Trying to come up with a case where allowing the query from the expression inside
+    	// exists() bleeds out into the surrounding query and cause an incorrect result,
+    	// but Saxon tends to convert all these expressions:
+        //  assertSearch  ("1", "count(/FM[exists(BLAH) eq false()])", 0, 1);
+        //  assertSearch  ("1", "count(/FM[exists(BLAH) = false()])", 0, 1);
+        // into this one, which is safe because the not() is treated as a non-optimized function,
+        assertSearch  ("1", "count(/FM[not(exists(BLAH))])", 0, 1);
+        
+        // However this one exhibited the expected over-optimization failure:
+    	assertSearch  ("1", "count(/FM[exists(BLAH) eq exists(BLARG)])", 0, 1);
+    	assertSearch  ("1", "count(/FM[exists(BLAH) = exists(BLARG)])", 0, 1);
+    	assertSearch  ("0", "count(/FM[exists(BLAH) != exists(BLARG)])", 0, 1);
+    	assertSearch  ("0", "count(/FM[BLAH eq string(BLARG)])", 0, 0);
+    	assertSearch  ("0", "count(/FM[BLAH eq BLARG])", 0, 0);
+    	assertSearch  ("0", "count(/FM[BLAH = BLARG])", 0, 1);
+
+        // we don't optimize along the parent axis
+        assertSearch  ("20", "count(//SCENE[not(exists(parent::ACT))])", 0, 26);
+
+        assertSearch  ("1", "count(exists(/BLAH))", 0, 0);
+    }
+
+
+    @Test public void testLuxCount () throws Exception {
+        assertSearch ("5", "lux:count('lux_path:\"\\{\\} ACT\"')", null, 5, 0);
+    }
+
+    @Test
     public void testPathOrder () throws Exception {
         // Make sure that the Optimizer doesn't incorrectly assert 
         // order is *not* significant in the generated query; 
@@ -535,6 +565,20 @@ public class SearchTest extends BaseSearchTest {
         assertSearch (HAMLET_TITLE, "let $play := collection()/PLAY[starts-with(TITLE,'The ')]\n" +
                 "let $id := $play/@id\n" +
                 "return <result id='{$id}'>{if ($id) then '' else $play/TITLE}</result>/string()", null, 1);
+    }
+    
+    @Test
+    public void testDeepPagination () throws Exception {
+    	//ensure that deep pagination skips intervening documents without loading them into memory
+    	assertSearch ("1", "count(collection()[1000]/*)", null, 1);
+    }
+    
+    @Test
+    public void testWhereAtClause () throws Exception {
+        // return the index of the first /SCENE document ; the first SCENE is the 44th element in hamlet.xml,
+        // and therefore the root of document #44 in the test set
+        String query = "(for $doc at $i in collection() where $doc/SCENE return $i)[1]";
+        assertSearch ("44", query, null, 44);
     }
 
 }

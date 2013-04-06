@@ -3,7 +3,7 @@
   <groupId>lux</groupId>
   <artifactId>lux</artifactId>
   <packaging>jar</packaging>
-  <version>0.7</version>
+  <version>0.7.1-SNAPSHOT</version>
   <name>lux library</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -129,6 +129,15 @@
       <groupId>org.codehaus.mojo</groupId>
       <artifactId>cobertura-maven-plugin</artifactId>
       <version>2.5.1</version>
+      <configuration>
+        <instrumentation>
+            <excludes>
+              <exclude>lux/xqts/**/*.class</exclude>
+              <exclude>lux/xml/EventToStaxBridge*.class</exclude>
+              <exclude>lux/solr/TermOrdValComparator*.class</exclude>
+            </excludes>
+        </instrumentation>
+      </configuration>
     </plugin>
     <plugin>
       <groupId>org.mortbay.jetty</groupId>
@@ -173,7 +182,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.5</version>
         <configuration>
-          <argLine>-Xms256m -Xmx256m</argLine>
+          <argLine>-Xms2048m -Xmx2048m</argLine>
         </configuration>
       </plugin>
       <plugin>

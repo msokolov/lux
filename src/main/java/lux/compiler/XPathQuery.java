@@ -22,8 +22,6 @@ import org.apache.lucene.search.SortField;
  * evaluation is needed.
  */
 /*
- *  * TODO: cleanup XPathQuery 
- *  
  * We could also tell: whether the query will return the correct document set;
  * it's possible that we may sometimes retrieve documents that don't match.
  * We're not allowed to miss a document, though. Some evaluators that return the
@@ -78,23 +76,14 @@ public class XPathQuery {
      * Exact queries are all minimal.
      */
     public static final int MINIMAL=0x00000002;
-    
-
-    // FIXME: the result type flags should not be stored this way: they are not independent and combinable in a boolean
-    // manner; rather they are mutually exclusive
-    public static final int RESULT_TYPE_FLAGS = 0x00000018;
 
     /**
      * An expression is singular if it returns a single result for every matching document.
      * An XPathQuery is singular if it was generated from a singular expression, and therefore
      * its expression returns the same number of results as the lucene query.
+     * 
      */
     public static final int SINGULAR=0x00000004;
-
-    /**
-     * A query is boolean_true if its result type is boolean, and the existence of a single query result indicates a 'true()' value
-     */
-    public static final int BOOLEAN_TRUE=0x00000008;
 
     /**
      * A query is boolean_false if its result type is boolean, and the existence of a single query result indicates a 'false()' value
@@ -102,24 +91,18 @@ public class XPathQuery {
     public static final int BOOLEAN_FALSE=0x00000010;
     
     /**
-     * A query has document results if its result type is document-node()
-     */
-    public static final int DOCUMENT_RESULTS=0x00000018;
-    
-    /**
      * If a query a is ignorable, then combine(a,b) = b unless b is also ignorable,
      * in which case combine(a,b) = a|b
      */
     public static final int IGNORABLE=0x00000020;
     
-    public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL|SINGULAR, ValueType.DOCUMENT, true);
+    /** queries that match all documents (have no filter) are empty. */
+    public static final int EMPTY=0x00000040;
     
-    private final static XPathQuery MATCH_ALL_NODE = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL, ValueType.NODE, true);
-
-    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|SINGULAR, ValueType.DOCUMENT, true);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
     
-    private final static XPathQuery PATH_MATCH_ALL_NODE = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL, ValueType.NODE, true);
-
+    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
+    
     /**
      * @param expr an XPath 2.0 expression
      * @param query a Lucene query
@@ -147,23 +130,6 @@ public class XPathQuery {
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
     public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig, SortField[] sortFields) {
-        if (sortFields == null &&
-                ( (query instanceof MatchAllPQuery && resultFacts == MINIMAL && sortFields == null) ||
-                  ( query == SpanMatchAll.getInstance())) ) 
-        {
-            if (valueType == ValueType.DOCUMENT) {
-                if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
-                    return PATH_MATCH_ALL;
-                }
-                return MATCH_ALL;
-            }
-            if (valueType == ValueType.NODE) {
-                if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
-                    return PATH_MATCH_ALL_NODE;
-                }
-                return MATCH_ALL_NODE;
-            }
-        }
         XPathQuery q = new XPathQuery (query, resultFacts, valueType);
         q.setSortFields(sortFields);
         return q;
@@ -174,20 +140,6 @@ public class XPathQuery {
             return PATH_MATCH_ALL;
         }
         return MATCH_ALL;
-    }
-    
-    public static ValueType typeFromFacts (long facts) {
-        long typecode = (facts & XPathQuery.RESULT_TYPE_FLAGS); 
-        if (typecode == XPathQuery.BOOLEAN_FALSE) {
-            return ValueType.BOOLEAN_FALSE;
-        } else if (typecode == XPathQuery.BOOLEAN_TRUE) {
-            return ValueType.BOOLEAN;
-        } else if (typecode == XPathQuery.DOCUMENT_RESULTS) {
-            return ValueType.DOCUMENT;
-        } else if (typecode == XPathQuery.SINGULAR) {
-            return ValueType.INT;
-        }
-        return ValueType.VALUE;                
     }
     
     public ParseableQuery getParseableQuery() {
@@ -223,10 +175,16 @@ public class XPathQuery {
             if (precursor.isFact(IGNORABLE)) {
                 precursorOccur = occur = Occur.SHOULD;
             }
-            return precursor.setFact(MINIMAL, false);
+            if (isEmpty() && isMinimal()) {
+            	return precursor;
+            }
+            return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
         }
         else if (precursor.isFact(IGNORABLE)) {
-            return setFact (MINIMAL, false);
+        	if (precursor.isEmpty() && precursor.isMinimal()) {
+        		return this;
+        	}
+        	return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query 
         }
         long resultFacts = combineQueryFacts (this, precursor);
         result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
@@ -294,8 +252,6 @@ public class XPathQuery {
     }
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
-        // TODO: get rid of these special cases, and the immutable queries
-        // the logic for maintaining them is tortured and the purported benefit is dubious
         if (b.isEmpty()) {
             return a.facts; 
         }
@@ -386,17 +342,8 @@ public class XPathQuery {
         return facts2 & facts3;
     }
 
-    /**
-     * Set this query's result type to be the least restrictive type encompassing its type and the given type
-     * @param type the type to restrict to
-     */
-    public void restrictType(ValueType type) {
-        if (immutable) throw new LuxException ("attempt to modify immutable query");
-        valueType = valueType.restrict(type);
-    }
-
     public boolean isEmpty() {
-        return this == MATCH_ALL || this == MATCH_ALL_NODE || this == PATH_MATCH_ALL;
+        return isFact(EMPTY);
     }
     
     @Override
@@ -430,11 +377,9 @@ public class XPathQuery {
       if (type == null) {
           type = ValueType.VALUE;
       }
-      // FIXME: kill kill kill! this is so confusing and wrong - we need to extract the return type info, facts, etc this bitmask is so painful
       valueType = type;
-      facts &= (~RESULT_TYPE_FLAGS);
+      facts &= ~BOOLEAN_FALSE;
       if (valueType == ValueType.BOOLEAN) {
-          facts |= BOOLEAN_TRUE;
           facts &= ~SINGULAR;
       }
       else if (valueType == ValueType.BOOLEAN_FALSE) {
@@ -442,7 +387,6 @@ public class XPathQuery {
           facts &= ~SINGULAR;
       }
       else if (valueType == ValueType.DOCUMENT) {
-          facts |= DOCUMENT_RESULTS;
           facts |= SINGULAR;
       }
       // no other type info is stored in facts since it's not needed by search()
@@ -452,12 +396,8 @@ public class XPathQuery {
       return immutable;
   }
 
-  public AbstractExpression toXmlNode(String defaultField) {
-      return getParseableQuery().toXmlNode(defaultField);
-  }
-
-  public String toQueryString(String defaultField, IndexConfiguration indexConfig) {
-      return getParseableQuery().toQueryString(defaultField, indexConfig);
+  public AbstractExpression toXmlNode(String defaultField, IndexConfiguration config) {
+      return getParseableQuery().toXmlNode(defaultField, config);
   }
   
   /**

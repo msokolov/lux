@@ -13,6 +13,7 @@ import lux.index.field.ElementQNameField;
 import lux.index.field.ElementTextField;
 import lux.index.field.FieldDefinition;
 import lux.index.field.PathField;
+import lux.index.field.PathOccurrenceField;
 import lux.index.field.PathValueField;
 import lux.index.field.QNameValueField;
 import lux.index.field.URIField;
@@ -68,6 +69,10 @@ public class IndexConfiguration {
     
     /** causes all namespace information to be stripped from incoming documents */
     public final static int STRIP_NAMESPACES=   0x00000400;
+    
+    /** experimental: index each occurrence of each path as an unparsed string,
+     * rather than indexing unique paths and tokenizing */
+    public final static int INDEX_EACH_PATH = 0x00000800;
     
     /** mask covering all of the indexing options */
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
@@ -155,7 +160,11 @@ public class IndexConfiguration {
             }
         }
         if (isOption (INDEX_PATHS)) {
-            addField(PATH);
+            if (isOption (INDEX_EACH_PATH)) {
+                addField (PathOccurrenceField.getInstance());
+            } else {
+                addField(PATH);
+            }
             if (isOption (INDEX_VALUES)) {
                 addField(PATH_VALUE);                
             }

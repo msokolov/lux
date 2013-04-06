@@ -1,13 +1,17 @@
 package lux.solr;
 
 
+import static org.junit.Assert.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.util.NamedList;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -137,7 +141,28 @@ public class LuxSolrTest extends BaseSolrTest {
         assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())", solr);
         // new core working too
         assertXPathSearchCount(1, 0, "xs:string", "0", "count(collection())", core2);
-        core2.shutdown();
+    }
+    
+    @Test
+    public void testAppServer () throws Exception {
+        SolrQuery q = new SolrQuery();
+        q.setRequestHandler("/lux");
+    	q.setParam("test-param", "test-value");
+    	q.setParam("wt", "lux");
+    	q.setParam("lux.content-type", "text/xml");
+    	QueryResponse resp = solr.query(q);
+    	assertEquals ("query was blank", resp.getResponse().get("xpath-error"));
+    	q.setParam("lux.xquery", "file:src/test/resources/lux/solr/echo.xqy");
+    	resp = solr.query(q);
+    	NamedList<?> xpathResults = (NamedList<?>) resp.getResponse().get("xpath-results"); 
+    	assertEquals ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+    			"<http><params>" +
+    			"<param name=\"wt\"><value>lux</value></param>" +
+    			"<param name=\"qt\"><value>/lux</value></param>" +
+    			"<param name=\"test-param\"><value>test-value</value></param>" +
+    			"<param name=\"wt\"><value>lux</value></param></params></http>", 
+    			xpathResults.get("document").toString());
+    	assertTrue(resp.getResults().isEmpty());
     }
     
 }

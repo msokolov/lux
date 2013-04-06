@@ -22,9 +22,8 @@ public class SolrDocWriterTest extends BaseSolrTest {
         assertQuery ("OK", "('OK',lux:delete('/doc/2'),lux:commit())");
         assertQuery ("8", "count(collection())");
 
-        // lux:delete() with no args deletes everything.  Is this a trap or a feature?
-        // maybe we should call that um deleteAll or something.
-        assertQuery ("OK", "('OK',lux:delete(),lux:commit())");
+        // lux:delete('lux:/') deletes everything.  
+        assertQuery ("OK", "('OK',lux:delete('lux:/'),lux:commit())");
         assertQuery ("0", "count(collection())");
     }
 

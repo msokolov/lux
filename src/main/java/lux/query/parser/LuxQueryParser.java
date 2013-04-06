@@ -103,6 +103,9 @@ public class LuxQueryParser extends ExtendableQueryParser {
             return q;
         }
         BooleanQuery bq = (BooleanQuery) q;
+        if (bq.getClauses().length == 0) {
+        	return bq;
+        }
         Query q1 = bq.getClauses()[0].getQuery();
         if (q1 instanceof TermQuery) {
             Term term = ((TermQuery) q1).getTerm();
@@ -185,6 +188,7 @@ public class LuxQueryParser extends ExtendableQueryParser {
 
     public final static String escapeQParser (String s) {
         if (s.indexOf(' ') >= 0) {
+            // quote phrases
             return '"' + s.replaceAll("\"", "\\\"") + '"';
         }
         return ExtendableQueryParser.escape (s);

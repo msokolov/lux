@@ -1,4 +1,4 @@
-This release of Lux is integrated with Solr/Lucene 4.1
+This release of Lux is integrated with Solr/Lucene 4.2
 
 Added low-level support for binary documents; you can now store images,
 xquery, and other non-XML files in a Lux index.

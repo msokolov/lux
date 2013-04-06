@@ -115,16 +115,18 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     /** 
-     * If this has an absolute subexpression, replace it with the replacement expression
+     * If this has absolute subexpressions, replace them with the replacement expression
      * (see {@link Root#replaceRoot(AbstractExpression)}
      * @param replacement the expression to use in place of '/'
      * @return this 
      */
     public AbstractExpression replaceRoot(AbstractExpression replacement) {
-        if (subs != null && subs.length > 0) {
-            AbstractExpression new0 = subs[0].replaceRoot(replacement);
-            if (new0 != subs[0]) {
-                subs[0] = new0;
+        if (subs != null) {
+            for (int i = 0; i < subs.length; i++) {
+                AbstractExpression replaced = subs[i].replaceRoot(replacement);
+                if (replaced != subs[i]) {
+                    subs[i] = replaced;
+                }
             }
         }
         return this;

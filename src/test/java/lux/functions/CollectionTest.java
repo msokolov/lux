@@ -1,8 +1,6 @@
 package lux.functions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import lux.Evaluator;
 import lux.IndexTestSupport;
 import lux.XdmResultSet;
@@ -48,5 +46,39 @@ public class CollectionTest {
         assertEquals ("lux://lux/reader-test.xml-4", iter.next().getStringValue());
         assertFalse (iter.hasNext());
     }
+    
+    @Test
+    public void testParseException() throws Exception {
+        XdmResultSet result = eval.evaluate("collection('lux:cat AND')/base-uri()");
+        assertTrue(! result.getErrors().isEmpty());
+        assertEquals("Failed to parse query: cat AND", result.getErrors().get(0).getMessage());
+    }
+    
+    @Test
+    public void testEmptyQuery() throws Exception {
+        XdmResultSet result = eval.evaluate("collection('lux:<<<<')/base-uri()");
+        assertTrue(result.getErrors().isEmpty());
+        assertEquals(0, result.getXdmValue().size());
+    }
+    
+    @Test
+    public void testDefaultCollection () throws Exception {
+    	// when the arg to collection does *not* begin with lux: fall back to the default
+    	// (file system) resolver.  This must be a directory containing *only* XML files
+    	XdmResultSet result = eval.evaluate("collection('src/test/resources/conf')/base-uri()");
+        if (! result.getErrors().isEmpty()) {
+        	result.getErrors().get(0).printStackTrace();
+        	assertNull(result.getErrors().get(0).getMessage(), result.getErrors());
+        }
+        XdmSequenceIterator iter = result.getXdmValue().iterator();
+        String filename = iter.next().getStringValue();
+		assertTrue (filename, filename.endsWith("src/test/resources/conf/schema.xml"));
+		filename = iter.next().getStringValue();
+        assertTrue (filename, filename.endsWith("src/test/resources/conf/solrconfig.xml"));
+        assertFalse (iter.hasNext());
+        
+    }
+    
+    // No need to test collection() with no args here - it's tested all over the place already
 
 }

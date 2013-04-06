@@ -1,9 +1,12 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.*;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.index.IndexConfiguration.STORE_DOCUMENT;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -26,6 +29,8 @@ import lux.exception.LuxHttpException;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
@@ -68,6 +73,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
     //protected XmlIndexer indexer;
     protected SolrIndexConfig solrIndexConfig;
+    private Serializer serializer;
     
     public SolrIndexConfig getSolrIndexConfig() {
         return solrIndexConfig;
@@ -78,6 +84,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
+        serializer = new Serializer();
+        serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
     }
     
     @Override
@@ -111,6 +119,15 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         SolrParams params = req.getParams();            
         if (rb.getQueryString() == null) {
             rb.setQueryString( params.get( CommonParams.Q ) );
+        }
+        String contentType= params.get("lux.content-type");
+        if (contentType != null) {
+            if (contentType.equals ("text/xml")) {
+                serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
+            }
+        } else {
+            contentType = "text/html; charset=UTF-8";
+            serializer.setOutputProperty(Serializer.Property.METHOD, "html");
         }
     }
     
@@ -188,12 +205,17 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             evaluator.close();
         }
         if (queryResults != null) {
+        	String err = null;
             if (queryResults.getErrors().isEmpty()) {
                 for (Object xpathResult : queryResults) {
                     if (++ count < start) {
                         continue;
                     }
-                    addResult (xpathResults, (XdmItem) xpathResult);
+                    try {
+						addResult (xpathResults, (XdmItem) xpathResult);
+					} catch (SaxonApiException e) {
+						err = e.getMessage();
+					}
                     if ((len > 0 && xpathResults.size() >= len) || 
                             (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
                         break;
@@ -201,8 +223,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 }
             }
             else {
-                String err = formatError(query, queryResults.getErrors());
-                rsp.add ("xpath-error", err);
+                err = formatError(query, queryResults.getErrors());
+            }
+            if (err != null) {
+            	rsp.add ("xpath-error", err);
             }
         }
         rsp.add("xpath-results", xpathResults);
@@ -254,7 +278,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         return new Compiler(solrIndexConfig.getIndexConfig());
     }
     
-    protected void addResult(NamedList<Object> xpathResults, XdmItem item) {
+    protected void addResult(NamedList<Object> xpathResults, XdmItem item) throws SaxonApiException {
         if (item.isAtomicValue()) {
             XdmAtomicValue xdmValue = (XdmAtomicValue) item;
             Object value = xdmValue.getUnderlyingValue();
@@ -281,7 +305,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         } else {
             XdmNode node = (XdmNode) item;
             XdmNodeKind nodeKind = node.getNodeKind();
-            xpathResults.add(nodeKind.toString().toLowerCase(), node.toString());
+            StringWriter buf = new StringWriter ();
+            // assume text/html
+            serializer.setOutputWriter(buf);
+            serializer.serializeNode(node);
+            xpathResults.add(nodeKind.toString().toLowerCase(), buf.toString());
         }
     }
     
@@ -330,12 +358,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     @Override
     public String getSource() {
-        return "http://falutin.net/svn";
+        return "http://github.com/lux";
     }
 
     @Override
     public String getVersion() {
-        return "0.5";
+        return "";
     }
     
 }

@@ -37,5 +37,22 @@ public class InsertDocumentTest extends XQueryTest {
         evaluator.reopenSearcher(); // need to do this to see the updates
         assertXQuery("false", "doc-available('/test.xml')");
     }
+    
+    @Test
+    public void deleteAll () throws Exception {
+        assertXQuery(null, "lux:insert('/test.xml', <test>this is a test</test>)");
+        assertXQuery(null, "lux:commit()");
+        evaluator.reopenSearcher(); // need to do this to see the updates
+        assertXQuery("this is a test", "doc('/test.xml')/test/string()");
+
+        assertXQuery(null, "lux:delete('lux:/')"); // deletes all documents
+        // by calling evaluator.getDocWriter().deleteAll();
+        
+        assertXQuery("true", "doc-available('/test.xml')");
+        assertXQuery(null, "lux:commit()");
+        evaluator.reopenSearcher(); // need to do this to see the updates
+        assertXQuery("false", "doc-available('/test.xml')");
+    	
+    }
 
 }

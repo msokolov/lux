@@ -17,6 +17,7 @@ import lux.exception.NotFoundException;
 import lux.functions.Search;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
@@ -41,12 +42,14 @@ import net.sf.saxon.trans.XPathException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.Directory;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -98,7 +101,24 @@ public class Evaluator {
     }
     
     /**
-     * Creates a Saxon query evaluator that has no association with an index (no searcher or writer).  
+     * Creates a query evaluator that searches and writes to the given Directory (Lucene index).
+	 * The Directory is opened and locked; the Evaluator must be closed when it is no longer in use.
+     * @param dir the directory where documents are to be searched, store and retrieved  
+     * @return the new Evaluator
+     * @throws IOException if the Directory cannot be opened 
+     */
+    public static Evaluator createEvaluator (Directory dir) throws IOException {
+    	XmlIndexer indexer = new XmlIndexer();
+    	IndexWriter indexWriter = indexer.newIndexWriter(dir);
+		DirectDocWriter writer = new DirectDocWriter(indexer, indexWriter);
+    	Compiler compiler = new Compiler(indexer.getConfiguration());
+    	LuxSearcher searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
+    	Evaluator eval = new Evaluator (compiler, searcher, writer);
+    	return eval;
+    }
+    
+    /**
+     * Creates a query evaluator that has no association with an index (no searcher or writer).  
      * A searcher must be supplied in order to compile or evaluate queries that are optimized for use with a Lux (Lucene) index. 
      * This constructor is used in testing, or may be useful for compiling and executing queries that don't
      * rely on documents stored in Lucene.
@@ -117,6 +137,7 @@ public class Evaluator {
         config.setCollectionURIResolver(null);
         try {
             searcher.close();
+            docWriter.close();
         } catch (IOException e) {
             LoggerFactory.getLogger (getClass()).error ("failed to close searcher", e);
             e.printStackTrace();
@@ -187,6 +208,8 @@ public class Evaluator {
             if (docReader != null) {
                 docReader.clear();
             }
+            // TODO: get a new reader form the docWriter (for Lucene direct writer only) to enable
+            // auto-commit via NRT
         }
     }
     
@@ -332,6 +355,9 @@ public class Evaluator {
         @Override
         public void close(Result result) throws TransformerException {
             XdmDestinationProxy receiver = (XdmDestinationProxy) result;
+            if (docWriter == null) {
+            	throw new TransformerException ("Attempted to write document " + receiver.getSystemId() + " to a read-only Evaluator");
+            }
             docWriter.write(receiver.dest.getXdmNode().getUnderlyingNode(), receiver.getSystemId());
         }
         

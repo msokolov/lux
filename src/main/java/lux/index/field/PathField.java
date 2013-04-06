@@ -5,6 +5,9 @@ import lux.index.analysis.WhitespaceGapAnalyzer;
 
 import org.apache.lucene.document.Field.Store;
 
+/**
+ * Indexes each distinct path as a sequence of name tokens
+ */
 public class PathField extends FieldDefinition {
     
     private static final PathField instance = new PathField();
@@ -23,3 +26,7 @@ public class PathField extends FieldDefinition {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

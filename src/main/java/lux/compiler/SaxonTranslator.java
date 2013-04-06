@@ -232,10 +232,6 @@ public class SaxonTranslator {
             }
         }
     }
-    
-    public XQuery queryFor(AbstractExpression ex) {
-        return new XQuery(ex);
-    }
 
     private Namespace[] getNamespaceDeclarations() {
         // String defElementNS = queryModule.getDefaultElementNamespace();

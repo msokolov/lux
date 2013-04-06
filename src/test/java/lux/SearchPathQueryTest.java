@@ -7,10 +7,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import lux.exception.LuxException;
+import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
-import lux.saxon.Expandifier;
 import lux.xml.ValueType;
-import lux.xquery.XQuery;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmValue;
@@ -27,19 +26,21 @@ import org.junit.BeforeClass;
  *
  */
 public class SearchPathQueryTest extends BasicQueryTest {
-    private static IndexTestSupport index;
-    private static XmlIndexer indexer;
-    private static XmlIndexer noindexer;
+    protected static IndexTestSupport index;
+    protected static IndexTestSupport baselineIndex;
+    protected static XmlIndexer indexer;
+    protected static XmlIndexer baselineIndexer;
     private static long elapsed=0;
     private static long elapsedBaseline=0;
-    private static int repeatCount=1;
+    protected static int repeatCount=1;
     private static ArrayList<TestTime> baseTimes, testTimes;
     
     @BeforeClass
     public static void setupClass () throws Exception {
-        indexer = new XmlIndexer();
-        noindexer = new XmlIndexer(0);
+        indexer = new XmlIndexer(IndexConfiguration.DEFAULT_OPTIONS);
         index = new IndexTestSupport("lux/hamlet.xml", indexer, new RAMDirectory());
+        baselineIndexer = new XmlIndexer(0);
+        baselineIndex = index; // it's OK to share the same index - we just ignore the extra fields?
         baseTimes = new ArrayList<SearchPathQueryTest.TestTime>();
         testTimes = new ArrayList<SearchPathQueryTest.TestTime>();
     }
@@ -47,11 +48,17 @@ public class SearchPathQueryTest extends BasicQueryTest {
     @AfterClass
     public static void tearDownClass() throws Exception {
         index.close();
-        printAllTimes();
+        if (baselineIndex != index) {
+            baselineIndex.close();
+        }
+        if (repeatCount > 1) {
+            printAllTimes();
+        }
     }
     
     private static void printAllTimes() {
         int n = baseTimes.size();
+        System.out.println(String.format("query\t%s\t%s\t%%change", baseTimes.get(0).condition, testTimes.get(0).condition));
         for (int i = 0; i < n; i++) {
             //System.out.println (baseTimes.get(i));
             //System.out.println (testTimes.get(i));
@@ -99,15 +106,16 @@ public class SearchPathQueryTest extends BasicQueryTest {
         try {
             testEval = new Evaluator(new Compiler (indexer.getConfiguration()), index.searcher, null);
         } catch (Exception e) {
-            fail (e.getMessage());
+            e.printStackTrace();
+            fail (e.toString());
         }
-        Evaluator baselineEval = new Evaluator(new Compiler (noindexer.getConfiguration()), index.searcher, null);
+        Evaluator baselineEval = new Evaluator(new Compiler (baselineIndexer.getConfiguration()), baselineIndex.searcher, null);
         if (repeatCount > 1) {
             benchmark (xpath, baselineEval, testEval);
         } else {
             //Evaluator eval = index.makeEvaluator();
             XdmResultSet results = evalQuery(xpath, testEval);
-            XdmValue baseResult = evalBaseline(xpath, baselineEval);
+            XdmValue baseResult = evalQuery(xpath, baselineEval).getXdmValue();
             assertEquals ("result count mismatch for: " + xpath, baseResult.size(), results.size());        
             Iterator<?> baseIter = baseResult.iterator();
             Iterator<?> resultIter = results.iterator();
@@ -122,19 +130,23 @@ public class SearchPathQueryTest extends BasicQueryTest {
 
     private void benchmark (String query, Evaluator baselineEval, Evaluator testEval) throws CorruptIndexException, LockObtainFailedException, IOException {
         XdmResultSet results = evalQuery(query, testEval);
-        XdmValue baselineResult = evalBaseline(query, baselineEval);
+        XdmValue baselineResult = evalQuery(query, baselineEval).getXdmValue();
         TestTime baseTime = new TestTime("baseline", query, repeatCount);
         baseTimes.add(baseTime);
         TestTime testTime = new TestTime("indexed", query, repeatCount);
         testTimes.add(testTime);
         for (int i = 0; i < repeatCount; i++) {
+            
+            testEval.getDocReader().clear(); // no fair caching!
             long t0 = System.nanoTime();
             evalQuery(query, testEval);
             long t = System.nanoTime() - t0;
             testTime.times[i] = t;
             elapsed += t;
+            
+            baselineEval.getDocReader().clear(); // no fair caching!
             t0 = System.nanoTime();
-            evalBaseline(query, baselineEval);
+            evalQuery(query, baselineEval);
             t = System.nanoTime() - t0;
             baseTime.times[i] = t;
             elapsedBaseline += t;
@@ -144,7 +156,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
         results = evalQuery(query, testEval);
         System.out.println ("lux retrieved " + results.size() + " results from " + eval.getQueryStats());
         printDocReaderStats(testEval);
-        baselineResult = evalBaseline(query, baselineEval);
+        baselineResult = evalQuery(query, baselineEval).getXdmValue();
         System.out.println ("baseline (no lux): retrieved " + baselineResult.size() + " results from " + baselineEval.getQueryStats());
         printDocReaderStats(baselineEval);
     }
@@ -153,15 +165,6 @@ public class SearchPathQueryTest extends BasicQueryTest {
         System.out.println (String.format(" %d/%d cache hits/misses, %dms building docs", 
                 saxon.getDocReader().getCacheHits(), saxon.getDocReader().getCacheMisses(),
                 saxon.getDocReader().getBuildTime()/1000000));
-    }
-
-    private XdmValue evalBaseline(String xpath, Evaluator eval2) {
-        XQuery xq = null;
-        Compiler compiler2 = eval2.getCompiler();
-        xq = compiler2.makeTranslator().queryFor(compiler2.compile(xpath));
-        // Expandifier expands / into collection()
-        String expanded = new Expandifier().expandify(xq).toString();
-        return eval2.evaluate(expanded).getXdmValue();
     }
 
     private XdmResultSet evalQuery(String xpath, Evaluator eval2) {
@@ -204,8 +207,8 @@ public class SearchPathQueryTest extends BasicQueryTest {
         }
         
         public String comparison (TestTime other) {
-            return String.format ("%s\t%s\t%d\t%d\t%.2f", condition, query, 
-                    meanTime()/1000000, other.meanTime()/1000000,
+            return String.format ("%s\t%d\t%d\t%.2f", query, 
+                    other.meanTime()/1000000, meanTime()/1000000, 
                     100 * ((other.meanTime() - meanTime()) / ((double)other.meanTime())));
         }
     }

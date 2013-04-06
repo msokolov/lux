@@ -25,21 +25,21 @@ public class SpanBooleanPQuery extends BooleanPQuery {
     }
     
     @Override
-    public ElementConstructor toXmlNode(String field) {
-        if (getOccur().equals(Occur.MUST)) {
-            return super.toXmlNode(field);
-        }        
+    public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
+        if (getOccur().equals(Occur.MUST) || config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
+            return super.toXmlNode(field, config);
+        }
         Clause [] clauses = getClauses();
         AbstractExpression[] clauseExprs = new AbstractExpression[clauses.length];
         for (int i = 0; i < clauses.length; i++) {
-            clauseExprs [i] = clauses[i].getQuery().toXmlNode(field);
+            clauseExprs [i] = clauses[i].getQuery().toXmlNode(field, config);
         }
         return new ElementConstructor (SPAN_OR_QNAME, new Sequence(clauseExprs));
     }
     
     @Override
     public String toQueryString(String field, IndexConfiguration config) {
-        if (getOccur().equals(Occur.MUST)) {
+        if (getOccur().equals(Occur.MUST) || config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
             return super.toQueryString(field, config);
         }
         StringBuilder buf = new StringBuilder();

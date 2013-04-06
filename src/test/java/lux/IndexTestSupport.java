@@ -101,7 +101,7 @@ public class IndexTestSupport {
      */
     public void indexAllElements(String filename) throws XMLStreamException, IOException, SaxonApiException {
         indexAllElements(filename, SearchTest.class.getClassLoader().getResourceAsStream(filename));
-        System.out.println ("Indexed " + totalDocs + " documents from " + filename);
+        // System.out.println ("Indexed " + totalDocs + " documents from " + filename);
     }
     
     public void indexAllElements(String uri, InputStream in) throws XMLStreamException, IOException, SaxonApiException {

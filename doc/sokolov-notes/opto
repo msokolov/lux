@@ -1,0 +1,51 @@
+a, b expressions
+
+q(x) := query s.t. q(x)=() <=> x=()
+
+
+q(expr(a, b)) = some combination of q(a), q(b)?
+
+clearly works for paths q(a/b) = q(a)/q(b)
+
+works for "intersect" and "union": q(a union b) = q(a) union q(b)
+
+now regarding operators and functions that return atomic values:
+
+ exists(), empty(), not()
+ and, or
+ eq, ne, etc
+ =, !=, etc
+
+For many of the operators returning boolean, empty values lead to false results:
+
+() = x === false
+(and for other general comparisons)
+
+exists(()) === false
+
+() and x === false
+
+But note that:
+
+ () or x === boolean(x)
+
+ () eq x === ()
+ (and for other atomic comparisons)
+
+ data(()) === ()
+
+We want to optimize predicates containing such expressions directly, but
+when they are involved in more complex expressions, we may not be able to do so easily?
+
+For example, these expressions are readily optimized:
+
+[exists(A) and exists(B)] -- {A AND B}
+[A = B] -- {A AND B}[A = B]
+[A eq B] -- {A AND B][A eq B]
+
+This is a bit more involved, but still feasible:
+
+[exists(A) = exists(B)] -- {(A AND B) OR (NOT(A) AND NOT(B))}
+[exists(A) eq exists(B)] -- {(A AND B) OR (NOT(A) AND NOT(B))}
+
+

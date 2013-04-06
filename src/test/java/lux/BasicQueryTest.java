@@ -73,11 +73,11 @@ public class BasicQueryTest {
     }
     
     @Test public void testSlash() throws Exception {
-        assertQuery ("/", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
+        assertQuery ("/", MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
     }
     
     @Test public void testElementPredicate() throws Exception {
-        assertQuery ("(/)[.//ACT]", MINIMAL|DOCUMENT_RESULTS|SINGULAR, ValueType.DOCUMENT, Q.ACT); 
+        assertQuery ("(/)[.//ACT]", MINIMAL|SINGULAR, ValueType.DOCUMENT, Q.ACT); 
     }
 
     @Test public void testElementPaths () throws Exception {
@@ -94,7 +94,7 @@ public class BasicQueryTest {
         assertQuery ("/ACT", facts, ValueType.ELEMENT, Q.ACT1);
         
         // this should be ValueType.TEXT shouldn't it??
-        assertQuery ("/ACT/text()", 0, ValueType.ELEMENT, Q.ACT1);
+        assertQuery ("/ACT/text()", 0, ValueType.TEXT, Q.ACT1);
 
         assertQuery ("//*/@attr", MINIMAL, ValueType.ATTRIBUTE, Q.ATTR);
 
@@ -103,7 +103,7 @@ public class BasicQueryTest {
 
     @Test
     public void testConvertRootedPathToPredicate() throws Exception {
-        int facts = hasPathIndexes() ? DOCUMENT_RESULTS|SINGULAR|MINIMAL : DOCUMENT_RESULTS|SINGULAR;
+        int facts = hasPathIndexes() ? SINGULAR|MINIMAL : SINGULAR;
         assertQuery ("//ACT/SCENE/root()", "lux:search(" + 
                      getQueryXml(Q.ACT_SCENE) + "," + facts + ")" +
         		"[(descendant::element(ACT)/child::element(SCENE))/root(.)]", 
@@ -113,7 +113,7 @@ public class BasicQueryTest {
     @Test public void testAttributePredicates () throws Exception {
         assertQuery ("//*[@attr]", MINIMAL, ValueType.ELEMENT, Q.ATTR);
 
-        assertQuery ("(/)[.//*/@attr]", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ATTR);        
+        assertQuery ("(/)[.//*/@attr]", MINIMAL|SINGULAR, ValueType.DOCUMENT, Q.ATTR);        
     }
 
     @Test public void testElementAttributePaths () throws Exception {
@@ -131,7 +131,7 @@ public class BasicQueryTest {
     }
     
     @Test public void testTwoElementPredicates () throws Exception {
-        assertQuery ("(/)[.//ACT][.//SCENE]", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.ACT_AND_SCENE);
+        assertQuery ("(/)[.//ACT][.//SCENE]", MINIMAL|SINGULAR, ValueType.DOCUMENT, Q.ACT_AND_SCENE);
     }
     
     @Test public void testUnion () throws Exception {
@@ -178,7 +178,7 @@ public class BasicQueryTest {
         if (!hasPathIndexes()) {
             return;
         }
-        int facts = hasPathIndexes() ? MINIMAL |SINGULAR | DOCUMENT_RESULTS : SINGULAR| DOCUMENT_RESULTS;        
+        int facts = hasPathIndexes() ? MINIMAL |SINGULAR : SINGULAR;        
         assertQuery ("//ACT/TITLE/root()//SCENE/TITLE/root()//SPEECH/TITLE/root()",
                      facts,
                      ValueType.DOCUMENT, Q.ACT_SCENE_SPEECH_AND);
@@ -208,11 +208,10 @@ public class BasicQueryTest {
     }
     
     @Test public void testElementValueSelf() throws Exception {
-        int facts = hasPathIndexes() ? SINGULAR : 0;
         //assertQuery ("/ACT/SCENE[self::node()='content']", 0, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);        
         //assertQuery ("/*[self::ACT='content']", 0, ValueType.ELEMENT, Q.ACT_CONTENT1);
-        assertQuery ("/*[self::ACT/SCENE='content']", facts, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
-        assertQuery ("/*[self::ACT/SCENE/self::*='content']", facts, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
+        assertQuery ("/*[self::ACT/SCENE='content']", SINGULAR, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
+        assertQuery ("/*[self::ACT/SCENE/self::*='content']", SINGULAR, ValueType.ELEMENT, Q.ACT_SCENE_CONTENT1);
     }
     
     @Test public void testAttributeValue () throws Exception {
@@ -223,26 +222,27 @@ public class BasicQueryTest {
     }
 
     @Test public void testAncestorOrSelf () throws Exception {
-        assertQuery ("/ancestor-or-self::node()", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
+        assertQuery ("/ancestor-or-self::node()", MINIMAL|SINGULAR, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
     }
     
     @Test public void testSelf () throws Exception {
-        assertQuery ("/self::node()", MINIMAL|SINGULAR|DOCUMENT_RESULTS, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
+        assertQuery ("/self::node()", MINIMAL|SINGULAR, ValueType.DOCUMENT, Q.MATCH_ALL_Q);
     }
     
     @Test public void testAtomicResult () throws Exception {
         int facts = hasPathIndexes() ? MINIMAL : 0;
-        assertQuery ("number((/ACT/SCENE)[1])", facts, ValueType.ATOMIC, Q.ACT_SCENE1);
-        assertQuery ("number((/descendant-or-self::ACT)[1])", MINIMAL, ValueType.ATOMIC, Q.ACT);
+        assertQuery ("number((/ACT/SCENE)[1])", facts, ValueType.ELEMENT, Q.ACT_SCENE1);
+        assertQuery ("number((/descendant-or-self::ACT)[1])", MINIMAL, ValueType.ELEMENT, Q.ACT);
     }
     
     @Test public void testCounting () throws Exception {
-        assertQuery ("count(/)", SINGULAR | MINIMAL, ValueType.ATOMIC, Q.MATCH_ALL_Q);
-        assertQuery ("count(//ACT)", MINIMAL, ValueType.ATOMIC, Q.ACT);
-        assertQuery ("count(//ACT/root())", SINGULAR | MINIMAL, ValueType.ATOMIC, Q.ACT);
-        assertQuery ("count(//ACT/ancestor::document-node())", SINGULAR | MINIMAL, ValueType.ATOMIC, Q.ACT);
+    	// the return type is somewhat random...
+        assertQuery ("count(/)", SINGULAR | MINIMAL | EMPTY, ValueType.INT, Q.MATCH_ALL_Q);
+        assertQuery ("count(//ACT)", MINIMAL, ValueType.ELEMENT, Q.ACT);
+        assertQuery ("count(//ACT/root())", SINGULAR | MINIMAL, ValueType.INT, Q.ACT);
+        assertQuery ("count(//ACT/ancestor::document-node())", SINGULAR | MINIMAL, ValueType.INT, Q.ACT);
         // FIXME: the optimizer should mark this as minimal/counting too now that we have path queries
-        int facts = hasPathIndexes() ? SINGULAR | MINIMAL : SINGULAR | DOCUMENT_RESULTS;
+        int facts = hasPathIndexes() ? SINGULAR | MINIMAL : SINGULAR;
         assertQuery ("count(//ACT/SCENE/ancestor::document-node())", facts, (ValueType)null, Q.ACT_SCENE);
     }
     
@@ -251,36 +251,36 @@ public class BasicQueryTest {
     }
     
     @Test public void testExistence() throws Exception {
-        assertQuery ("exists(/)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
-        assertQuery ("exists(//ACT)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("exists(//ACT/root())", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("exists(//ACT) and exists(//SCENE)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
-        assertQuery ("exists(//ACT/root()//SCENE)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
+        assertQuery ("exists(/)", MINIMAL|EMPTY, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
+        assertQuery ("exists(//ACT)", MINIMAL, ValueType.BOOLEAN, Q.ACT);
+        assertQuery ("exists(//ACT/root())", MINIMAL, ValueType.BOOLEAN, Q.ACT);
+        assertQuery ("exists(//ACT) and exists(//SCENE)", MINIMAL, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
+        assertQuery ("exists(//ACT/root()//SCENE)", MINIMAL, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
         // TODO: merge queries such as this into one:
         // assertQuery ("exists(//ACT/root() intersect //SCENE/root())", MINIMAL, ValueType.BOOLEAN, Q.ACT_SCENE);
-        assertQuery ("exists((/)[.//ACT and .//SCENE])", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
+        assertQuery ("exists((/)[.//ACT and .//SCENE])", MINIMAL, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
         int facts = hasPathIndexes() ? MINIMAL : 0;
-        assertQuery ("//ACT[exists(SCENE)]", facts, ValueType.NODE, Q.ACT_SCENE);
+        assertQuery ("//ACT[exists(SCENE)]", facts, ValueType.ELEMENT, Q.ACT_SCENE);
     }
     
     @Test public void testNonexistence() throws Exception {
-        assertQuery ("empty(/)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
-        assertQuery ("empty(//ACT)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("empty(//ACT/root())", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("empty(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
-        assertQuery ("empty(//ACT/root()//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
-        assertQuery ("empty((/)[.//ACT and .//SCENE])", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
+        assertQuery ("empty(/)", MINIMAL|BOOLEAN_FALSE|EMPTY, ValueType.BOOLEAN_FALSE, Q.MATCH_ALL_Q);
+        assertQuery ("empty(//ACT)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT);
+        assertQuery ("empty(//ACT/root())", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT);
+        assertQuery ("empty(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT, Q.SCENE);
+        assertQuery ("empty(//ACT/root()//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT_AND_SCENE);
+        assertQuery ("empty((/)[.//ACT and .//SCENE])", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT_AND_SCENE);
 
-        assertQuery ("//ACT[empty(SCENE)]", 0, ValueType.NODE, Q.ACT);
+        assertQuery ("//ACT[empty(SCENE)]", 0, ValueType.ELEMENT, Q.ACT);
     }
     
     @Test public void testNot() throws Exception {
-        assertQuery ("not(/)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
-        assertQuery ("not(//ACT)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("not(//ACT/root())", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("not(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
-        assertQuery ("not(//ACT/root()//SCENE)", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
-        assertQuery ("not((/)[.//ACT and .//SCENE])", MINIMAL|BOOLEAN_TRUE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
+        assertQuery ("not(/)", MINIMAL|EMPTY, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
+        assertQuery ("not(//ACT)", MINIMAL, ValueType.BOOLEAN, Q.ACT);
+        assertQuery ("not(//ACT/root())", MINIMAL, ValueType.BOOLEAN, Q.ACT);
+        assertQuery ("not(//ACT) and empty(//SCENE)", MINIMAL, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
+        assertQuery ("not(//ACT/root()//SCENE)", MINIMAL, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
+        assertQuery ("not((/)[.//ACT and .//SCENE])", MINIMAL, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
     }
     @Test public void testPredicateNegation () throws Exception {
         assertQuery ("//ACT[not(SCENE)]", 0, ValueType.ELEMENT, Q.ACT);
@@ -315,13 +315,13 @@ public class BasicQueryTest {
     
     @Test public void testOrderBy () throws Exception {
         String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc";
-        assertQuery (query, MINIMAL, ValueType.ELEMENT, Q.ACT);
+        assertQuery (query, MINIMAL, ValueType.VALUE, Q.ACT);
         assertSortKeys (query, "sortkey");
     }
     
     @Test public void testOrderByContextArgument () throws Exception {
         String query = "for $doc in //ACT order by lux:field-values('sortkey', $doc) return $doc";
-        assertQuery (query, MINIMAL, ValueType.ELEMENT, Q.ACT);
+        assertQuery (query, MINIMAL, ValueType.VALUE, Q.ACT);
         assertSortKeys (query, "sortkey");
     }
 
@@ -335,7 +335,7 @@ public class BasicQueryTest {
     public void testOrderBy2Keys () throws Exception {
         // two indexed sortkeys
         String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc";
-        assertQuery (query, MINIMAL, ValueType.ELEMENT, Q.ACT);
+        assertQuery (query, MINIMAL, ValueType.VALUE, Q.ACT);
         assertSortKeys (query, "sortkey,sk2");
     }
     
@@ -365,7 +365,7 @@ public class BasicQueryTest {
         // should return the titles of the second document in document order (which is a TITLE 
         // and has no TITLE), but this was failing because we fetched only documents containing TITLE
         // TODO: should be minimal?
-        assertQuery (query, SINGULAR|DOCUMENT_RESULTS, Q.MATCH_ALL_Q);
+        assertQuery (query, SINGULAR|EMPTY, Q.MATCH_ALL_Q);
 
         query = "(for $doc in collection() return data($doc//TITLE))[2]";
         assertQuery (query, MINIMAL, Q.TITLE);
@@ -437,10 +437,6 @@ public class BasicQueryTest {
                     extractor.queries.get(0).isFact(SINGULAR));
             assertEquals ("facts don't match", facts, extractor.queries.get(0).getFacts());      
             if (type != null) {
-                if ( ! (type == ValueType.DOCUMENT || type == ValueType.BOOLEAN)) {
-                    // the other types don't get passed to lux:search as facts
-                    type = ValueType.VALUE;
-                }
                 assertSame (type, extractor.queries.get(0).getResultType());
             }
         }
@@ -580,8 +576,8 @@ public class BasicQueryTest {
     static class MockQuery extends XPathQuery {
         private final String queryString;
 
-        MockQuery (String queryString, long facts) {
-            super (null, facts, typeFromFacts (facts));
+        MockQuery (String queryString, long facts, ValueType valueType) {
+            super (null,  facts, valueType);
             this.queryString = queryString;
         }
 
@@ -590,16 +586,6 @@ public class BasicQueryTest {
             return queryString;
         }
         
-        @Override
-        public ValueType getResultType () {
-            if (isFact(DOCUMENT_RESULTS)) {
-                return ValueType.DOCUMENT;
-            }
-            if (isFact(BOOLEAN_FALSE) || isFact(BOOLEAN_TRUE)) {
-                return ValueType.BOOLEAN;
-            }
-            return ValueType.VALUE;
-        }
     }
 
     static class SearchExtractor extends ExpressionVisitorBase {
@@ -618,7 +604,7 @@ public class BasicQueryTest {
                 if (funcall.getSubs().length > 1) {
                     facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
                 }
-                queries.add( new MockQuery (q, facts));
+                queries.add( new MockQuery (q, facts, funcall.getReturnType()));
             }
             return funcall;
         }

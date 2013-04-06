@@ -1,8 +1,6 @@
 package lux.index;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;

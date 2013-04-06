@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import lux.Compiler;
+import lux.Compiler.SearchStrategy;
 import lux.Evaluator;
 import lux.QueryContext;
 import lux.XdmResultSet;
@@ -15,6 +16,11 @@ import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.xml.QName;
+import lux.xpath.AbstractExpression;
+import net.sf.saxon.lib.CollectionURIResolver;
+import net.sf.saxon.lib.StandardCollectionURIResolver;
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmValue;
@@ -23,6 +29,10 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Tests that focus on the compiler and optimizer, and do not rely on any stored
+ * documents
+ */
 public class CompilerTest {
 
     protected Compiler compiler;
@@ -34,6 +44,36 @@ public class CompilerTest {
         compiler = new Compiler(indexer.getConfiguration());
         eval = new Evaluator(compiler, null, null);
         translator = compiler.makeTranslator();
+    }
+    
+    @Test
+    public void testSearchStrategy () throws Exception {
+    	assertSame (SearchStrategy.LUX_SEARCH, compiler.getSearchStrategy());
+    	compiler.setSearchStrategy(SearchStrategy.NONE);
+    	assertSame (SearchStrategy.NONE, compiler.getSearchStrategy());
+    }
+    
+    @Test
+    public void testResolver () throws Exception {
+    	CollectionURIResolver resolver = compiler.getDefaultCollectionURIResolver();
+		assertNotNull (resolver);
+		assertTrue (resolver.getClass().getName(), resolver instanceof StandardCollectionURIResolver);
+    }
+    
+    @Test
+    public void testInititalizeEXPath () throws Exception {
+    	System.setProperty("org.expath.pkg.saxon.repo", "fail");
+    	// ensure that Compiler can be created with invalid EXPath repo - just logs an error
+    	new Compiler(IndexConfiguration.DEFAULT);
+    	System.setProperty("org.expath.pkg.saxon.repo", "");
+    }
+    
+    @Test public void testXPathCompiler() throws SaxonApiException {
+    	XPathExecutable ex = compiler.getXPathCompiler().compile("/");
+    	AbstractExpression expr = 
+    		new SaxonTranslator(compiler.getProcessor().getUnderlyingConfiguration()).
+    			exprFor(ex.getUnderlyingExpression().getInternalExpression());
+    	assertEquals ("(/)", expr.toString());
     }
     
     @Test 
@@ -110,6 +150,14 @@ public class CompilerTest {
     @Test
     public void testVariableShadowing () throws Exception {
         assertQuery ("1", "variable-shadowing.xqy");
+    }
+    
+    @Test
+    public void testWhereClause () throws Exception {
+    	// this is supposed to test the translation and optimization of where clauses (a bit)
+    	// but Saxon converts where clauses to predicates pretty much universally, so
+    	// this uses an "at" expression to force the where clause to be retained
+    	assertQuery ("4", "count-primes-less-than-10.xqy");
     }
     
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {

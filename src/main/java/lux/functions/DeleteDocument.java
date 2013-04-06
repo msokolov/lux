@@ -15,7 +15,8 @@ import net.sf.saxon.value.SequenceType;
 /** 
  * <code>function lux:delete($uri as xs:string) as empty-sequence()</code>
  * <p>
- * This function deletes a document from the index at the given uri.
+ * This function deletes a document from the index at the given uri. If the special uti value "lux:/" is passed,
+ * <em>all</em> documents are deleted.
  * </p>
  */
 public class DeleteDocument extends ExtensionFunctionDefinition {
@@ -28,18 +29,8 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
     @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] {
-                SequenceType.OPTIONAL_STRING
+                SequenceType.SINGLE_STRING
         };
-    }
-
-    @Override
-    public int getMinimumNumberOfArguments() {
-        return 0;
-    }
-
-    @Override
-    public int getMaximumNumberOfArguments() {
-        return 1;
     }
     
     @Override
@@ -67,12 +58,10 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
         @Override
         public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
                 throws XPathException {
-            String uri = null;
-            if (arguments.length > 0) {
-                uri = arguments[0].next().getStringValue();
-            }
+            String uri = arguments[0].next().getStringValue();
             Evaluator eval = SearchBase.getEvaluator(context);
-            if (uri == null) {
+            if (uri.equals("lux:/")) {
+            	// TODO: delete directories
                 eval.getDocWriter().deleteAll();
             } else {
                 eval.getDocWriter().delete(uri);

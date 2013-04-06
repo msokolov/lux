@@ -5,7 +5,6 @@ import static lux.index.IndexConfiguration.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -116,8 +115,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
         AbstractExpression main = query.getBody();
         // Don't attempt to optimize if no indexes are available, or if the
         // query has no body
-        if (main != null && indexConfig.isIndexingEnabled()) {
-            main = optimize(main);
+        if (main != null) {
+            if (indexConfig.isIndexingEnabled()) {
+                main = optimize(main);
+            } else {
+                main = main.replaceRoot(new FunCall(FunCall.FN_COLLECTION, ValueType.DOCUMENT));
+            }
             return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(),
                     query.getDefaultCollation(), query.getModuleImports(), query.getNamespaceDeclarations(),
                     query.getVariableDefinitions(), optimizeFunctionDefinitions(query.getFunctionDefinitions()), main,
@@ -261,6 +264,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 query = combineQueries(pop(), occur, query, valueType);
             }
         }
+        if (valueType == ValueType.DOCUMENT) {
+        	query.setFact(SINGULAR, true);
+        }
         push(query);
     }
 
@@ -324,7 +330,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // Allow the base expression to be optimized later so we have an
         // opportunity to combine the
         // predicate query with the base query
-        predicate.setFilter(optimizeExpression(predicate.getFilter(), peek()));
+        AbstractExpression filter = predicate.getFilter();
+		predicate.setFilter(optimizeExpression(filter, peek()));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
 
@@ -333,15 +340,15 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // and from A[B[C]/D]/E we want A/B/C AND A/B/D and A/E
         // so leave the combined query on the stack, but save the base query for
         // path combination
-        XPathQuery query = combineAdjacentQueries(predicate.getBase(), predicate.getFilter(), baseQuery, filterQuery,
+        XPathQuery query = combineAdjacentQueries(predicate.getBase(), filter, baseQuery, filterQuery,
                 ResultOrientation.LEFT);
         query.setBaseQuery(baseQuery);
         push(query);
         optimizeComparison(predicate);
-        if (indexConfig.isOption(INDEX_PATHS)) {
+        //if (indexConfig.isOption(INDEX_PATHS)) {
             // The combined query is singular if its base is
             peek().setFact(SINGULAR, baseQuery.isFact(SINGULAR));
-        }
+        //}
         return predicate;
     }
 
@@ -468,15 +475,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 } else {
                     isMinimal = true;
                 }
-                // TOOD: is counting correct? We need more tests for that I
-                // think
+                isSingular = false;
             } else {
                 // No indexes that help with preceding/following axes
                 isMinimal = false;
             }
         }
         XPathQuery query;
-        long facts = currentQuery.getFacts();
+        long facts = currentQuery.getFacts() & ~EMPTY;
         if (!isSingular) {
             facts &= ~SINGULAR;
         } else {
@@ -518,8 +524,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * Otherwise, no optimization is possible in the general case, which we
      * indicate by combining with Occur.SHOULD.
      * 
-     * count(), exists() and not() (and maybe max(), min(), and avg()?) are
-     * optimized as special cases.
+     * count(), exists() and empty() (and maybe later max(), min(), and
+     * avg()? and string()?) are optimized as special cases.
      * 
      * @param funcall
      *            the function call expression to optimize
@@ -541,35 +547,17 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // see if the function args can be converted to searches.
         optimizeSubExpressions(funcall);
         Occur occur;
-        String namespaceURI = name.getNamespaceURI();
-        if (!(namespaceURI.equals(FunCall.FN_NAMESPACE) || namespaceURI.equals(FunCall.XS_NAMESPACE) || namespaceURI
-                .equals(FunCall.LUX_NAMESPACE))) {
-            // We know nothing about this function; it's best
-            // not to attempt any optimization, so we will throw away any
-            // filters coming from the
-            // function arguments
-            occur = Occur.SHOULD;
-        }
-        // a built-in XPath 2 function
-        else if (isomorphs.contains(name.getLocalPart())) {
-            occur = Occur.MUST;
+        if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS)) {
+        	// require that the function argument's query match
+        	occur = Occur.MUST;
         } else {
-            // for functions in fn: and xs: namespaces not listed below, we
-            // assume that they
-            // are *not* optimizable, and their arguments' queries are ignored
-            occur = Occur.SHOULD;
+            // Do not to attempt any optimization; throw away any filters coming from the function arguments
+        	occur = Occur.SHOULD;
         }
         AbstractExpression[] args = funcall.getSubs();
+        combineTopQueries(args.length, occur, funcall.getReturnType());
         if (occur == Occur.SHOULD) {
-            combineTopQueries(args.length, occur, funcall.getReturnType());
-            push(pop().setFact(IGNORABLE, true)); // FIXME?????
-            /*
-             * for (int i = args.length; i > 0; --i) { pop(); } push
-             * (XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), IGNORABLE,
-             * ValueType.VALUE, indexConfig, null));
-             */
-        } else {
-            combineTopQueries(args.length, occur, funcall.getReturnType());
+            push(pop().setFact(IGNORABLE, true));
         }
         if (name.equals(FunCall.LUX_FIELD_VALUES)) {
             if (args.length > 0) {
@@ -591,27 +579,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         return funcall;
     }
-
-    // These functions are emptiness-preserving - if their argument is empty,
-    // then their
-    // result is also empty
-    // these are not
-    // isomorphs.add ("string");
-    // isomorphs.add ("exists");
-
-    protected static HashSet<String> isomorphs = new HashSet<String>();
-
-    static {
-        isomorphs.add("exists"); // FIXME - this enables optos that we like, but
-                                 // it is not really an isomorph
-                                 // since it returns a boolean
-        isomorphs.add("data");
-        isomorphs.add("root");
-        isomorphs.add("collection");
-        isomorphs.add("doc");
-        isomorphs.add("uri-collection");
-        isomorphs.add("unparsed-text");
-    };
 
     /**
      * Possibly convert this function call to a lux: function. If we do that,
@@ -669,7 +636,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 returnType = ValueType.INT;
                 qname = FunCall.LUX_COUNT;
             } else if (fname.equals(FunCall.FN_EXISTS)) {
-                functionFacts = BOOLEAN_TRUE;
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_EXISTS;
             } else if (fname.equals(FunCall.FN_EMPTY)) {
@@ -686,7 +652,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     push(query);
                     return funcall;
                 }
-                functionFacts = BOOLEAN_TRUE;
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_SEARCH;
             }
@@ -699,16 +664,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     push(MATCH_ALL);
                     return new FunCall(qname, returnType, searchArg, new LiteralExpression(MINIMAL));
                 }
-                if (query.isImmutable()) {
-                    // combine functionFacts with query
-                    if (functionFacts != 0) {
-                        query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts() | functionFacts,
-                                returnType, indexConfig, query.getSortFields());
-                    }
-                } else {
-                    query.setType(returnType);
-                    query.setFact(functionFacts, true);
-                }
+                query =  query.setFact(functionFacts, true);
+                query.setType(returnType);
                 AbstractExpression root = subs[0].getRoot();
                 if (! isSearchCall(root)) {
                     push(MATCH_ALL);
@@ -766,16 +723,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
         optimizeSubExpressions(op);
         XPathQuery rq = pop();
         XPathQuery lq = pop();
-        ValueType type = lq.getResultType().promote(rq.getResultType());
+        // only if both args are nodes will this be a node
+        ValueType argType = lq.getResultType().promote(rq.getResultType());
+        ValueType resultType = null;
         Occur occur = Occur.SHOULD;
         boolean minimal = false;
+        boolean required = false;
+        // We need to answer the question: is it possible to 
         switch (op.getOperator()) {
 
         case AND:
             occur = Occur.MUST;
         case OR:
             minimal = true;
-            type = ValueType.BOOLEAN;
+            required = true;
+            resultType = ValueType.BOOLEAN;
             break;
 
         case ADD:
@@ -784,21 +746,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         case MUL:
         case IDIV:
         case MOD:
-            type = ValueType.ATOMIC;
-            // Casting an empty sequence to an operand of an operator expecting
-            // atomic values raises an error
-            // and to be properly error-preserving we use SHOULD here
-            // occur = Occur.MUST
-            break;
-
-        case EQUALS:
-        case NE:
-        case LT:
-        case GT:
-        case LE:
-        case GE:
-            type = ValueType.BOOLEAN;
-            occur = Occur.MUST;
+            resultType = ValueType.ATOMIC;
             break;
 
         case AEQ:
@@ -807,29 +755,59 @@ public class PathOptimizer extends ExpressionVisitorBase {
         case ALE:
         case AGT:
         case AGE:
-            // atomic comparisons - see note above under arithmetic operators
-            type = ValueType.BOOLEAN;
+            // atomic comparisons 
+        	if (lq.getResultType().isNode || rq.getResultType().isNode) {
+        		required = true;
+        		occur = Occur.MUST;
+        	}
+            resultType = ValueType.BOOLEAN;
+            break;
+            
+        case EQUALS:
+        case NE:
+        case LT:
+        case GT:
+        case LE:
+        case GE:
+        	if (lq.getResultType().isNode || rq.getResultType().isNode) {
+        		required = true;
+        		occur = Occur.MUST;
+        	}
+        	resultType = ValueType.BOOLEAN;
             break;
 
         case IS:
         case BEFORE:
         case AFTER:
             // occur = Occur.MUST;
+        	required = true;
+            resultType = ValueType.BOOLEAN;
             break;
 
         case INTERSECT:
             occur = Occur.MUST;
         case UNION:
             minimal = true;
+            required = true;
+            resultType = argType;
             break;
 
         case EXCEPT:
-            push(combineQueries(lq, Occur.MUST, rq, type));
+            push(combineQueries(lq, Occur.MUST, rq, argType));
+            resultType = argType;
+            required = true;
             return op;
+            
+        case TO:
+        	resultType = ValueType.INTEGER;
+        	break;
         }
-        XPathQuery query = combineQueries(lq, occur, rq, type);
+        XPathQuery query = combineQueries(lq, occur, rq, resultType);
         if (minimal == false) {
             query = query.setFact(MINIMAL, false);
+        }
+        if (!required) {
+        	query = query.setFact(IGNORABLE, true);
         }
         push(query);
         return op;
@@ -927,7 +905,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (DEBUG) {
             debug("visit", literal);
         }
-        push(MATCH_ALL);
+        push(MATCH_ALL.setFact(IGNORABLE, true));
         return literal;
     }
 
@@ -945,7 +923,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             variable.setValue(value);
         } else {
             // this happens when the variables represent function arguments
-            push(MATCH_ALL);
+            push(MATCH_ALL.setFact(IGNORABLE, true));
         }
         return variable;
     }
@@ -1036,7 +1014,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // searchCall.setFnCollection (!optimizeForOrderedResults);
             return new SearchCall(query, indexConfig);
         }
-        return new FunCall(functionName, query.getResultType(), query.toXmlNode(indexConfig.getDefaultFieldName()),
+        return new FunCall(functionName, query.getResultType(), query.toXmlNode(indexConfig.getDefaultFieldName(), indexConfig),
                 new LiteralExpression(query.getFacts()));
     }
 
@@ -1215,7 +1193,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public WhereClause visit(WhereClause whereClause) {
-        peek().setSortFields(null);
+        // Do not use the where clause expression to filter the enclosing 
+        // FLWOR!  Our assumption is that Saxon will already have converted any
+        // optimizable where clauses into XPath predicate expressions
+        pop();
+        push (MATCH_ALL);
         return whereClause;
     }
 

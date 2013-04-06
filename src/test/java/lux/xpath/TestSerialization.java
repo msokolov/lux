@@ -11,6 +11,7 @@ import lux.xpath.BinaryOperation.Operator;
 import lux.xpath.PathStep.Axis;
 import lux.xquery.ElementConstructor;
 import lux.xquery.Let;
+import lux.xquery.XQuery;
 
 import org.junit.Test;
 
@@ -180,6 +181,23 @@ public class TestSerialization {
         assertEquals ("\"1\"", new LiteralExpression("1").toString());
         assertEquals ("\"&amp;\"", new LiteralExpression("&").toString());
         assertEquals ("\"&lt;\"", new LiteralExpression("<").toString());
+    }
+    
+    @Test public void testXQueryToString() {
+    	XQuery xq = new XQuery ("http://localhost/element", "http://localhost/function", 
+    			"http://localhost/collation", null, null, null, null, LiteralExpression.ONE, 
+    			"http://localhost/base", true, true, false);
+    	assertEquals ("declare copy-namespaces preserve, inherit;\n" +
+    			"declare base-uri \"http://localhost/base\";\n" +
+    			"declare default collation \"http://localhost/collation\";\n" +
+    			"declare default order empty greatest;\n" +
+    			"declare default element namespace \"http://localhost/element\";\n" +
+    			"declare default function namespace \"http://localhost/function\";\n" +
+    			"1", xq.toString());
+    	
+    	xq = new XQuery (null, null, null, null, null, null, null, LiteralExpression.EMPTY,
+    			null, false, false, true);
+    	assertEquals ("declare copy-namespaces no-preserve, no-inherit;\n()", xq.toString());
     }
     
 }
