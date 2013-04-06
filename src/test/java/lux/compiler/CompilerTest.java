@@ -160,6 +160,16 @@ public class CompilerTest {
     	assertQuery ("4", "count-primes-less-than-10.xqy");
     }
     
+    @Test
+    public void testParentExpression () throws Exception {
+        assertQuery ("2", "count-parents.xqy");
+    }
+    
+    @Test
+    public void testComputedAttributeName () throws Exception {
+        assertQueryError (null, "computed-attribute-name.xqy");
+    }
+    
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
         XdmResultSet resultSet = evalQuery(queryFileName);
         if (resultSet.getErrors().size() > 0) {
@@ -188,7 +198,9 @@ public class CompilerTest {
         XdmResultSet result = evalQuery (queryFileName);
         assertFalse ("expected exception '" + error + "' not thrown; got results=" + result.getXdmValue(), 
                     result.getErrors().isEmpty());
-        assertEquals (error, result.getErrors().get(0).getMessage());
+        if (error != null) {
+            assertEquals (error, result.getErrors().get(0).getMessage());
+        }
     }
     
 }
