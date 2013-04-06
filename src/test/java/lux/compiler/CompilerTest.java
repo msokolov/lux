@@ -29,6 +29,10 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Tests that focus on the compiler and optimizer, and do not rely on any stored
+ * documents
+ */
 public class CompilerTest {
 
     protected Compiler compiler;
