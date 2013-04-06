@@ -163,7 +163,7 @@ public class CompilerTest {
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
         XdmResultSet resultSet = evalQuery(queryFileName);
         if (resultSet.getErrors().size() > 0) {
-            fail ("Got unexpected error: " + resultSet.getErrors().get(0).getMessage());
+            fail ("Got unexpected error: " + resultSet.getErrors().get(0).getMessageAndLocation());
         }
         XdmValue value = resultSet.getXdmValue();
         assertEquals (result, value.toString());

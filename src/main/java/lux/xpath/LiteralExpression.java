@@ -14,12 +14,6 @@ public class LiteralExpression extends AbstractExpression {
     private final Object value;
     private final ValueType valueType;
     
-    public LiteralExpression (Object value, ValueType valueType, String xqTypeName) {
-        super(Type.LITERAL);
-        this.value = value;
-        this.valueType = valueType;
-    }
-
     public LiteralExpression (Object value, ValueType valueType) {
         super(Type.LITERAL);
         this.value = value;
@@ -112,6 +106,7 @@ public class LiteralExpression extends AbstractExpression {
                 buf.append ("xs:float(").append(f).append(')');
             }
             break;
+            
         case DOUBLE:
             Double d = (Double) value;
             if (d.isInfinite()) {
@@ -161,6 +156,10 @@ public class LiteralExpression extends AbstractExpression {
             buf.append (",\"");
             ((QName)value).toString(buf);
             buf.append("\")");
+            break;
+            
+        case INT:
+            buf.append(valueType.name).append("(").append(value).append(")");
             break;
             
         case ATOMIC:

@@ -791,6 +791,9 @@ public class SaxonTranslator {
             case StandardNames.XS_INT:
                 return ValueType.INT;
             case StandardNames.XS_INTEGER:
+                if (itemType.equals(BuiltInAtomicType.INT)) {
+                    return ValueType.INT;
+                }
                 return ValueType.INTEGER;
             case StandardNames.XS_DOUBLE:
                 return ValueType.DOUBLE;
@@ -870,18 +873,19 @@ public class SaxonTranslator {
     }
 
     public LiteralExpression exprFor (AtomicValue value) {
-        ValueType type = valueTypeForItemType(value.getPrimitiveType());
+        ValueType type = valueTypeForItemType(value.getItemType(config.getTypeHierarchy()));
         if (value instanceof CalendarValue || value instanceof DurationValue || 
             value instanceof BigIntegerValue) {
             //return new LiteralExpression(((CalendarValue)value).getCalendar(), type);
-            return new LiteralExpression(value.getStringValue(), type, value.getPrimitiveType().getQualifiedName().toString());
+            // , value.getPrimitiveType().getQualifiedName().toString()
+            return new LiteralExpression(value.getStringValue(), type);
         }
         if (value instanceof QNameValue) {
             return new LiteralExpression (qnameFor (((QNameValue) value).getStructuredQName()), type);
         }
         try {
             Object oval = Value.convertToJava(value.asItem());
-            return new LiteralExpression(oval, type, value.getPrimitiveType().getQualifiedName().toString());
+            return new LiteralExpression(oval, type);
         } catch (XPathException e) {
             throw new LuxException (e);
         }

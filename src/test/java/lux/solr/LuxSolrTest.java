@@ -4,7 +4,9 @@ package lux.solr;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.TimeZone;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
@@ -62,12 +64,12 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test public void testAtomicResult () throws Exception {
         // This also tests lazy evaluation - like paging within xpath.  Because we only retrieve
         // the first value (in document order), we only need to retrieve one value.
-        assertXPathSearchCount (1, 1, "xs:double", "100", "number((/doc/title)[1])");
+        assertXPathSearchCount (1, 1, "xs:double", "100.0", "number((/doc/title)[1])");
     }
     
     @Test public void testLiteral () throws Exception {
         // no documents were retrieved, 1 result returned = 12
-        assertXPathSearchCount(1, 0, "xs:double", "12", "xs:double(12.0)");
+        assertXPathSearchCount(1, 0, "xs:double", "12.0", "xs:double(12.0)");
     }
     
     @Test public void testFirstPage () throws Exception {
@@ -108,10 +110,8 @@ public class LuxSolrTest extends BaseSolrTest {
     }
     
     @Test public void testCollectionFunction () throws Exception {
-        assertXPathSearchCount (1, 1, "xs:string", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
-        // TODO: optimize count(collection ())
-        // FIXME: return an integer
-        assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())");
+        assertXPathSearchCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
+        assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())");
     }
     
     @Test public void testQueryError () throws Exception {
@@ -138,9 +138,9 @@ public class LuxSolrTest extends BaseSolrTest {
         core2.commit();
         assertQueryCount (0, "*:*", core2);
         // main core still works
-        assertXPathSearchCount (1, 102, "xs:string", "102", "count(collection())", solr);
+        assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())", solr);
         // new core working too
-        assertXPathSearchCount(1, 0, "xs:string", "0", "count(collection())", core2);
+        assertXPathSearchCount(1, 0, "xs:integer", "0", "count(collection())", core2);
     }
     
     @Test
@@ -163,6 +163,32 @@ public class LuxSolrTest extends BaseSolrTest {
     			"<param name=\"wt\"><value>lux</value></param></params></http>", 
     			xpathResults.get("document").toString());
     	assertTrue(resp.getResults().isEmpty());
+    }
+    
+    @Test
+    public void testPrimitiveValues () throws Exception {
+        assertQuery (1L, "xs:integer", "xs:integer(1)");
+        assertQuery (1L, "xs:integer", "1");
+        assertQuery (1L, "xs:int", "xs:int(1)");
+        assertQuery (1.0, "xs:decimal", "1.0");
+        assertQuery (1.0, "xs:double", "xs:double(1.0)");
+        assertQuery (1.0f, "xs:float", "xs:float(1.0)");
+        assertQuery ("1", "xs:string", "'1'");
+        assertQuery ("1", "xs:string", "xs:anyURI('1')");
+        
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        cal.set(2013,3,6,0,0,0);
+        cal.set(Calendar.MILLISECOND, 0);
+        assertQuery (cal.getTime(), "xs:date", "xs:date('2013-04-06')");
+        assertQuery (cal.getTime(), "xs:dateTime", "xs:dateTime('2013-04-06T00:00:00')");
+        
+        assertQuery (true, "xs:boolean", "true()");
+        assertQuery (false, "xs:boolean", "false()");
+        
+        assertQuery ("{local}name", "xs:QName", "fn:QName('local','l:name')");
+        
+        assertQuery (null, null, "()");
+        
     }
     
 }

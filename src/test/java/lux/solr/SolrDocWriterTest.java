@@ -10,21 +10,21 @@ public class SolrDocWriterTest extends BaseSolrTest {
             assertQuery ("OK", "('OK',lux:insert('/doc/" + i + "'," + makeTestDocument(i) + "))");
         }
         assertQuery ("OK", "('OK',lux:commit())");
-        assertQuery ("10", "count(collection())");
+        assertQuery (10L, "count(collection())");
         
         // This kind of thing sometimes fails now b/c Saxon optimizes 
         // away these functions that return (), but seems to work here.
         // perhaps because their values are being "returned"?
         assertQuery (null, "(lux:delete('/doc/1'),lux:commit())");
-        assertQuery ("9", "count(collection())");
+        assertQuery (9L, "count(collection())");
 
         // This fools the optimizer just enough
         assertQuery ("OK", "('OK',lux:delete('/doc/2'),lux:commit())");
-        assertQuery ("8", "count(collection())");
+        assertQuery (8L, "count(collection())");
 
         // lux:delete('lux:/') deletes everything.  
         assertQuery ("OK", "('OK',lux:delete('lux:/'),lux:commit())");
-        assertQuery ("0", "count(collection())");
+        assertQuery (0L, "count(collection())");
     }
 
     private String makeTestDocument(int i) {

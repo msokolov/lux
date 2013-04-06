@@ -1,8 +1,6 @@
 package lux.solr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -53,7 +51,11 @@ public abstract class BaseSolrTest {
         }
     }
     
-    protected void assertQuery (String result, String query) throws Exception {
+    protected void assertQuery (Object result, String query) throws Exception {
+        assertQuery (result, null, query);
+    }
+
+    protected void assertQuery (Object result, String type, String query) throws Exception {
         SolrQuery q = new SolrQuery(query);
         q.setRequestHandler(SOLR_QUERY_TYPE);
         QueryResponse rsp = solr.query(q, METHOD.POST);
@@ -63,6 +65,9 @@ public abstract class BaseSolrTest {
             assertEquals (0, actual.size());
         } else {
             assertEquals (result, actual.getVal(0));
+        }
+        if (type != null) {
+            assertEquals (type, actual.getName(0));
         }
     }
 

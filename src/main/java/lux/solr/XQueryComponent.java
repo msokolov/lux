@@ -1,14 +1,10 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
-import static lux.index.IndexConfiguration.STORE_DOCUMENT;
+import static lux.index.IndexConfiguration.*;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,10 +33,11 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.value.BooleanValue;
-import net.sf.saxon.value.DoubleValue;
-import net.sf.saxon.value.FloatValue;
+import net.sf.saxon.type.TypeHierarchy;
+import net.sf.saxon.value.AtomicValue;
+import net.sf.saxon.value.DecimalValue;
 import net.sf.saxon.value.QNameValue;
+import net.sf.saxon.value.Value;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.params.CommonParams;
@@ -70,6 +67,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     private static final QName LUX_HTTP = new QName (Evaluator.LUX_NAMESPACE, "http");
     protected Set<String> fields = new HashSet<String>();
     protected Compiler compiler;
+    private TypeHierarchy typeHierarchy;
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
     //protected XmlIndexer indexer;
     protected SolrIndexConfig solrIndexConfig;
@@ -96,6 +94,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT, info.initArgs);
         solrIndexConfig.inform(core);
         compiler = createXCompiler();
+        typeHierarchy = compiler.getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
     }
     
     public XmlIndexer checkoutXmlIndexer () {
@@ -280,28 +279,25 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) throws SaxonApiException {
         if (item.isAtomicValue()) {
+            // We need to get Java primitive values that Solr knows how to marshal
             XdmAtomicValue xdmValue = (XdmAtomicValue) item;
-            Object value = xdmValue.getUnderlyingValue();
-            if (value instanceof String) {
-                xpathResults.add ("xs:string", xdmValue.toString());
-            } else if (value instanceof Integer) {
-                xpathResults.add ("xs:int", xdmValue.getValue());
-            } else if (value instanceof BigInteger || value instanceof Long) {
-                xpathResults.add ("xs:integer", xdmValue.getValue());
-            } else if (value instanceof DoubleValue) {
-                xpathResults.add ("xs:double", xdmValue.toString());
-            } else if (value instanceof FloatValue) {
-                xpathResults.add ("xs:float", xdmValue.toString());
-            } else if (value instanceof BooleanValue) {
-                xpathResults.add ("xs:boolean", xdmValue.toString());
-            } else if (value instanceof BigDecimal) {
-                xpathResults.add ("xs:decimal", xdmValue.toString());
-            } else if (value instanceof QNameValue) {
-                xpathResults.add ("xs:QName", xdmValue.toString());
-            } else  {
-                // no way to distinguish xs:anyURI, xs:untypedAtomic or um something else
-                xpathResults.add ("xs:string", xdmValue.toString());
-            } 
+            AtomicValue value = (AtomicValue) xdmValue.getUnderlyingValue();
+            try {
+                String typeName = value.getItemType(typeHierarchy).toString();
+                Object javaValue;
+                if (value instanceof DecimalValue) {
+                    javaValue = ((DecimalValue) value).getDoubleValue();
+                    // TODO - NaN if value could not be converted
+                } else if (value instanceof QNameValue) {
+                    javaValue = ((QNameValue) value).getClarkName();
+                } else {
+                    javaValue = Value.convertToJava(value);
+                }
+                // TODO hexBinary and base64Binary
+                xpathResults.add (typeName, javaValue);
+            } catch (XPathException e) {
+                xpathResults.add (value.getPrimitiveType().getDisplayName(), value.toString());
+            }
         } else {
             XdmNode node = (XdmNode) item;
             XdmNodeKind nodeKind = node.getNodeKind();

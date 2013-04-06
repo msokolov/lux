@@ -50,8 +50,8 @@ public class SolrMultiCoreTest extends BaseSolrTest {
         assertQueryCount (0, "lux_uri:test1", core2);
         // We can run xquery against them:
         // relies on documents like: <doc id="1">100</doc>, <doc id="2">99</doc>
-        assertXPathSearchCount (1, 1, "xs:double", "99", "number((/doc/title)[1])", core2);
-        assertXPathSearchCount (1, 1, "xs:double", "100", "number((/doc/title)[1])", core1);
+        assertXPathSearchCount (1, 1, "xs:double", "99.0", "number((/doc/title)[1])", core2);
+        assertXPathSearchCount (1, 1, "xs:double", "100.0", "number((/doc/title)[1])", core1);
     }
     
 }
