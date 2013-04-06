@@ -1,11 +1,7 @@
 package lux;
 
-import static lux.IndexTestSupport.QUERY_CONSTANT;
-import static lux.IndexTestSupport.QUERY_EXACT;
-import static lux.IndexTestSupport.QUERY_MINIMAL;
-import static lux.IndexTestSupport.QUERY_NO_DOCS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static lux.IndexTestSupport.*;
+import static org.junit.Assert.*;
 
 import java.util.Iterator;
 
@@ -575,6 +571,14 @@ public class SearchTest extends BaseSearchTest {
     public void testDeepPagination () throws Exception {
     	//ensure that deep pagination skips intervening documents without loading them into memory
     	assertSearch ("1", "count(collection()[1000]/*)", null, 1);
+    }
+    
+    @Test
+    public void testWhereAtClause () throws Exception {
+        // return the index of the first /SCENE document ; the first SCENE is the 44th element in hamlet.xml,
+        // and therefore the root of document #44 in the test set
+        String query = "(for $doc at $i in collection() where $doc/SCENE return $i)[1]";
+        assertSearch ("44", query, null, 44);
     }
 
 }

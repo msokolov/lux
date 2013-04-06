@@ -1193,7 +1193,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public WhereClause visit(WhereClause whereClause) {
-        peek().setSortFields(null);
+        // Do not use the where clause expression to filter the enclosing 
+        // FLWOR!  Our assumption is that Saxon will already have converted any
+        // optimizable where clauses into XPath predicate expressions
+        pop();
+        push (MATCH_ALL);
         return whereClause;
     }
 
