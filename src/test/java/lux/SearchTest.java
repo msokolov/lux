@@ -372,6 +372,17 @@ public class SearchTest extends BaseSearchTest {
         // no result, but we can't tell from the query and have to retrieve the document and process it
         assertSearch (null, "/PLAY/ACT[4]/*/*/*/*/LINE", null, 1);
     }
+    
+    @Test
+    public void testReversePaths () throws Exception {
+        assertSearch ("Where is your son?", "string(//LINE[3]" +
+                "[parent::SPEECH[not(preceding-sibling::SPEECH)]]" +
+                "[ancestor::SCENE[count(preceding-sibling::SCENE)=0]]" +
+                "[ancestor::ACT[count(preceding-sibling::ACT)=3]]" +
+                "[ancestor::PLAY])", null, 1);
+        assertSearch ("Where is your son?", "string(//ACT[4]/SCENE[1]/SPEECH[1]/LINE[3]" +
+        		"[../../../../self::PLAY[.. is root()]])", null, 1);
+    }
 
     @Test
     public void testElementFullTextPhrase () throws Exception {
@@ -380,7 +391,10 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("5", "count(//LINE[.='Holla! Bernardo!'])", null, 5, 5);
         assertSearch ("0", "count(//LINE[.='Holla!'])", null, 5, 5);
         assertSearch ("0", "count(//LINE[.='Holla Bernardo'])", null, 5, 5);
-        assertSearch ("5", "count(//LINE[lower-case(.)='holla! bernardo!'])", null, 5, 5);
+        // We cannot optimize this one due to the function call around (.):
+        assertSearch ("1", "count(/ACT//LINE[lower-case(.)='holla! bernardo!'])", null, 5, 5);
+        // ensure that paths ending in Dot don't accidentally reference the outer context
+        assertSearch ("0", "count(/ACT//LINE[FOO//.='holla! bernardo!'])", null, 0, 0);
         // check stop word handling
         assertSearch ("<LINE>Where is your son?</LINE>", "//LINE[.='Where is your son?']", null, 5, 5);
     }

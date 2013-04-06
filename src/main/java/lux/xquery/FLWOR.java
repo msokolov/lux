@@ -77,6 +77,14 @@ public class FLWOR extends AbstractExpression {
     public int getPrecedence () {
         return 3;
     }
+    
+    /**
+     * @return the last context step of the return expression.
+     */
+    @Override
+    public AbstractExpression getLastContextStep () {
+        return getReturnExpression().getLastContextStep();
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

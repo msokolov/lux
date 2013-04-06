@@ -845,10 +845,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return;
         }
         AbstractExpression last = path.getLastContextStep();
-        if (last.getType() != Type.PATH_STEP) {
-            // get the context from the base of the predicate if the filter
-            // doesn't
-            // contain any path steps
+        if (last.getType() == Type.DOT) {
+            // NOTE: we rely on Saxon to collapse paths s.t. a path *only ends in Dot if
+            // the entire path is Dot.*  In this case we get the context from the base 
+            // of the predicate.
             last = predicate.getBase().getLastContextStep();
         }
         if (last.getType() == Type.PATH_STEP) {

@@ -59,6 +59,14 @@ public class Variable extends AbstractExpression {
         }
         return value.getRoot();
     }
+    
+    /**
+     * @return the last context step of the value expression.
+     */
+    @Override
+    public AbstractExpression getLastContextStep () {
+        return getValue().getLastContextStep();
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
