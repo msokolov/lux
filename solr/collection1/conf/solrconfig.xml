@@ -35,7 +35,7 @@
        that you fully re-index after changing this setting as it can
        affect both how text is indexed and queried.
   -->
-  <luceneMatchVersion>LUCENE_41</luceneMatchVersion>
+  <luceneMatchVersion>LUCENE_42</luceneMatchVersion>
 
   <!-- lib directives can be used to instruct Solr to load an Jars identified
        and use them to resolve any "plugins" specified in your solrconfig.xml or
@@ -308,11 +308,9 @@
          but does not ensure that data is synced to disk.  This is
          faster and more near-realtime friendly than a hard commit.
       -->
-     <!--
        <autoSoftCommit> 
          <maxTime>1000</maxTime> 
        </autoSoftCommit>
-      -->
 
     <!-- Update Related Event Listeners
          
@@ -783,7 +781,6 @@
       -->
   </requestHandler>
 
-
   <!-- A request handler that returns indented JSON by default -->
   <requestHandler name="/query" class="solr.SearchHandler">
      <lst name="defaults">
@@ -829,7 +826,6 @@
       <str name="update.chain">lux-update-chain</str>
     </lst>                  
   </requestHandler>
-
 
   <!-- Solr Cell Update Request Handler
 
@@ -917,6 +913,7 @@
     -->
   <requestHandler name="/admin/" 
                   class="solr.admin.AdminHandlers" />
+
   <!-- This single handler is equivalent to the following... -->
   <!--
      <requestHandler name="/admin/luke"       class="solr.admin.LukeRequestHandler" />
