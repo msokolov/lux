@@ -167,6 +167,14 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test
     public void testPrimitiveValues () throws Exception {
+        assertQuery (true, "xs:boolean", "true()");
+        assertQuery (false, "xs:boolean", "false()");
+        
+        assertQuery ("{local}name", "xs:QName", "fn:QName('local','l:name')");
+        
+        assertQuery (null, null, "()");
+        assertQuery ("x", "xs:untypedAtomic", "xs:untypedAtomic('x')");
+        
         assertQuery (1L, "xs:integer", "xs:integer(1)");
         assertQuery (1L, "xs:integer", "1");
         assertQuery (1L, "xs:int", "xs:int(1)");
@@ -181,13 +189,13 @@ public class LuxSolrTest extends BaseSolrTest {
         cal.set(Calendar.MILLISECOND, 0);
         assertQuery (cal.getTime(), "xs:date", "xs:date('2013-04-06')");
         assertQuery (cal.getTime(), "xs:dateTime", "xs:dateTime('2013-04-06T00:00:00')");
+        assertQuery ("00:00:00", "xs:time", "xs:time('00:00:00')");
         
-        assertQuery (true, "xs:boolean", "true()");
-        assertQuery (false, "xs:boolean", "false()");
-        
-        assertQuery ("{local}name", "xs:QName", "fn:QName('local','l:name')");
-        
-        assertQuery (null, null, "()");
+        assertQuery ("0900", "xs:gYear", "xs:gYear('0900')");
+        assertQuery ("--11", "xs:gMonth", "xs:gMonth('--11')");
+        assertQuery ("2012-12", "xs:gYearMonth", "xs:gYearMonth('2012-12')");
+        assertQuery ("---01", "xs:gDay", "xs:gDay('---01')");
+        assertQuery ("--12-01", "xs:gMonthDay", "xs:gMonthDay('--12-01')");
         
     }
     

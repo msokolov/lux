@@ -36,6 +36,12 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.type.TypeHierarchy;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.DecimalValue;
+import net.sf.saxon.value.GDateValue;
+import net.sf.saxon.value.GDayValue;
+import net.sf.saxon.value.GMonthDayValue;
+import net.sf.saxon.value.GMonthValue;
+import net.sf.saxon.value.GYearMonthValue;
+import net.sf.saxon.value.GYearValue;
 import net.sf.saxon.value.QNameValue;
 import net.sf.saxon.value.Value;
 
@@ -290,6 +296,20 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     // TODO - NaN if value could not be converted
                 } else if (value instanceof QNameValue) {
                     javaValue = ((QNameValue) value).getClarkName();
+                } else if (value instanceof GDateValue) { 
+                    if (value instanceof GMonthValue) {
+                        javaValue = ((GMonthValue) value).getPrimitiveStringValue().toString();
+                    } else if (value instanceof GYearValue) {
+                        javaValue = ((GYearValue) value).getPrimitiveStringValue().toString();
+                    } else if (value instanceof GDayValue) {
+                        javaValue = ((GDayValue) value).getPrimitiveStringValue().toString();
+                    } else if (value instanceof GMonthDayValue) {
+                        javaValue = ((GMonthDayValue) value).getPrimitiveStringValue().toString();
+                    } else if (value instanceof GYearMonthValue) {
+                        javaValue = ((GYearMonthValue) value).getPrimitiveStringValue().toString();
+                    } else {
+                        javaValue = Value.convertToJava(value);
+                    }
                 } else {
                     javaValue = Value.convertToJava(value);
                 }
