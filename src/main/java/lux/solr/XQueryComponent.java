@@ -260,8 +260,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             Object value = xdmValue.getUnderlyingValue();
             if (value instanceof String) {
                 xpathResults.add ("xs:string", xdmValue.toString());
-            } else if (value instanceof BigInteger) {
+            } else if (value instanceof Integer) {
                 xpathResults.add ("xs:int", xdmValue.getValue());
+            } else if (value instanceof BigInteger || value instanceof Long) {
+                xpathResults.add ("xs:integer", xdmValue.getValue());
             } else if (value instanceof DoubleValue) {
                 xpathResults.add ("xs:double", xdmValue.toString());
             } else if (value instanceof FloatValue) {
