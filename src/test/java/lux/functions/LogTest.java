@@ -2,11 +2,11 @@ package lux.functions;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.StringWriter;
 
 import lux.Evaluator;
 import lux.XdmResultSet;
-
 import net.sf.saxon.s9api.XdmEmptySequence;
 
 import org.apache.log4j.Level;
@@ -39,8 +39,12 @@ public class LogTest {
 				"lux:log('debug', 'debug'), lux:log('error', 'error'), lux:log('warn', 'warn')," +
 				"lux:log(('fatal', 'error'), 'fatal'), lux:log('trace', 'trace'))");
 		assertEquals (XdmEmptySequence.getInstance(), result.getXdmValue());
-		assertEquals ("INFO - info\nINFO - info2\nERROR - error\nWARN - warn\nERROR - fatalerror\n", buf.getBuffer().toString());
-		
+		if (File.separatorChar == '\\') {
+		    // ie Windows
+	        assertEquals ("INFO - info\r\nINFO - info2\r\nERROR - error\r\nWARN - warn\r\nERROR - fatalerror\r\n", buf.getBuffer().toString());
+		} else {
+	        assertEquals ("INFO - info\nINFO - info2\nERROR - error\nWARN - warn\nERROR - fatalerror\n", buf.getBuffer().toString());
+		}		
 		result = eval.evaluate("lux:log('bogus','bobo')");
 		assertTrue (! result.getErrors().isEmpty());
 	}
