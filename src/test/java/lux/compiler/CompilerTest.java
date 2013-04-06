@@ -23,6 +23,7 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.commons.io.IOUtils;
@@ -89,6 +90,11 @@ public class CompilerTest {
     @Test 
     public void testTypedFunction() throws Exception {
         assertQueryError ("A sequence of more than one item is not allowed as the result of function local:int-sequence() (1, 2) ", "typed-function.xqy"); 
+    }
+    
+    @Test
+    public void testTypedNodes() throws Exception {
+        assertQuery ("2", "typed-nodes.xqy");
     }
     
     @Test 
@@ -170,13 +176,24 @@ public class CompilerTest {
         assertQueryError (null, "computed-attribute-name.xqy");
     }
     
+    @Test
+    public void testK2ForExprWithout10 () throws Exception {
+        // exercise some obscure Saxon code rewriting path involving LetClause
+        assertQuery ("111222333", "K2-ForExprWithout-10.xqy");
+    }
+    
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
         XdmResultSet resultSet = evalQuery(queryFileName);
         if (resultSet.getErrors().size() > 0) {
             fail ("Got unexpected error: " + resultSet.getErrors().get(0).getMessageAndLocation());
         }
         XdmValue value = resultSet.getXdmValue();
-        assertEquals (result, value.toString());
+        StringBuilder buf = new StringBuilder();
+        XdmSequenceIterator iter = value.iterator();
+        while (iter.hasNext()) {
+            buf.append(iter.next());
+        }
+        assertEquals (result, buf.toString());
     }
 
     private XdmResultSet evalQuery(String queryFileName) throws IOException, URISyntaxException {
