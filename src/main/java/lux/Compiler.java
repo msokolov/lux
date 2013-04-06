@@ -1,11 +1,10 @@
 package lux;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URI;
 
 import javax.xml.transform.ErrorListener;
 
+import lux.compiler.EXPathSupport;
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
@@ -180,44 +179,11 @@ public class Compiler {
         } catch (ClassNotFoundException e) { }
         Processor p = new Processor (new Config());
         if (! StringUtils.isEmpty(System.getProperty("org.expath.pkg.saxon.repo"))) {
-            initializeEXPath(p);
+            EXPathSupport.initializeEXPath(p);
         }
         return p;
     }
 
-    private static void initializeEXPath(Processor p) {
-        Logger log = LoggerFactory.getLogger(Compiler.class);
-        // initialize the EXPath package manager
-        Class<?> pkgInitializerClass;
-        try {
-            pkgInitializerClass = Class.forName("org.expath.pkg.saxon.PkgInitializer");
-            Object pkgInitializer = null;
-            try {
-                pkgInitializer = pkgInitializerClass.newInstance();
-            } catch (InstantiationException e) {
-                log.error (e.getMessage());
-                return;
-            } catch (IllegalAccessException e) {
-                log.error (e.getMessage());
-                return;
-            }
-            Method initialize = pkgInitializerClass.getMethod("initialize", Configuration.class);
-            initialize.invoke(pkgInitializer, p.getUnderlyingConfiguration());
-        } catch (ClassNotFoundException e) {
-            log.error("EXPath repository declared, but EXPath Saxon package support classes are not available");
-        } catch (SecurityException e) {
-            log.error (e.getMessage());
-        } catch (NoSuchMethodException e) {
-            log.error (e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.error (e.getMessage());
-        } catch (IllegalAccessException e) {
-            log.error (e.getMessage());
-        } catch (InvocationTargetException e) {
-            log.error (e.getMessage());
-        }
-    }
-    
     private void registerExtensionFunctions() {
         // TODO: move this list into a single class in the lux.functions package
         processor.registerExtensionFunction(new Search());
