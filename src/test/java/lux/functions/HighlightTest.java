@@ -2,15 +2,15 @@ package lux.functions;
 
 import static org.junit.Assert.*;
 import lux.Evaluator;
+import lux.SearchTest;
 import lux.XdmResultSet;
-
 import net.sf.saxon.s9api.XdmEmptySequence;
 
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * A few edge cases are tests here.  There are a bunch of tests of lux:highlight in
+ * A few edge cases are tested here.  There are a bunch of tests of lux:highlight in
  * {@link SearchTest}
  */
 public class HighlightTest {

@@ -103,6 +103,9 @@ public class Evaluator {
     /**
      * Creates a query evaluator that searches and writes to the given Directory (Lucene index).
 	 * The Directory is opened and locked; the Evaluator must be closed when it is no longer in use.
+     * @param dir the directory where documents are to be searched, store and retrieved  
+     * @return the new Evaluator
+     * @throws IOException if the Directory cannot be opened 
      */
     public static Evaluator createEvaluator (Directory dir) throws IOException {
     	XmlIndexer indexer = new XmlIndexer();
