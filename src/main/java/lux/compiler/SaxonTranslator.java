@@ -498,8 +498,8 @@ public class SaxonTranslator {
         BinaryOperation.Operator op = operatorFor(expr.getOperator());
         if (operands[0] instanceof AtomicSequenceConverter || operands[1] instanceof AtomicSequenceConverter) {
             // Saxon optimizes some general sequences into atomic sequences in a way that 
-            // we can't represent in XQuery directly.  So we use a General Comparison in that case,
-            // and reduce the AtomicSequenceConverter to its argument sequence (losing the type cast)
+            // we can't represent in XQuery directly.  So we use a General Comparison in that case
+            // which we *think* will mimic Saxon's behavior
             op = generalizeOperator (op);
         }
         return new BinaryOperation (exprFor(operands[0]), op, exprFor(operands[1]));

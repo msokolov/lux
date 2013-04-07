@@ -3,9 +3,12 @@ package lux.compiler;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+
+import javax.xml.transform.stream.StreamSource;
 
 import lux.Compiler;
 import lux.Compiler.SearchStrategy;
@@ -23,6 +26,7 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XdmValue;
 
@@ -197,8 +201,35 @@ public class CompilerTest {
         assertQuery ("b", "optional-variable.xqy");
     }
     
+    @Test
+    public void testNodeNameWildcards () throws Exception {
+        assertQuery ("a xs:bxs:ba", "node-wildcard.xqy");
+    }
+    
+    @Test
+    public void testGeneralizeOperator() throws Exception {
+        QueryContext context = new QueryContext();
+        String input = "<works><employee name='Jane Doe 1' gender='female'><empnum>E1</empnum><pnum>P1</pnum><hours>40</hours></employee></works>";
+        XdmNode inputDoc = compiler.getProcessor().newDocumentBuilder().build(new StreamSource (new StringReader (input)));
+        context.bindVariable(new QName("input-context1"), inputDoc);
+        assertQuery ("true", "generalize-operator.xqy", context);
+    }
+    
+    @Test
+    public void testReturnExpr018() throws Exception {
+        QueryContext context = new QueryContext();
+        String input = "<Drive id='0'><Folder><File><Stream><StreamSize>10</StreamSize></Stream></File></Folder></Drive>";
+        XdmNode inputDoc = compiler.getProcessor().newDocumentBuilder().build(new StreamSource (new StringReader (input)));
+        context.bindVariable(new QName("input-context"), inputDoc);
+        assertQuery ("falsetruefalsetruefalsetrue", "ReturnExpr018.xqy", context);
+    }
+    
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
-        XdmResultSet resultSet = evalQuery(queryFileName);
+        assertQuery (result, queryFileName, null);
+    }
+    
+    private void assertQuery (String result, String queryFileName, QueryContext context) throws IOException, LuxException, URISyntaxException {
+        XdmResultSet resultSet = evalQuery(queryFileName, context);
         if (resultSet.getErrors().size() > 0) {
             fail ("Got unexpected error: " + resultSet.getErrors().get(0).getMessageAndLocation());
         }
@@ -210,10 +241,10 @@ public class CompilerTest {
         }
         assertEquals (result, buf.toString());
     }
-
-    private XdmResultSet evalQuery(String queryFileName) throws IOException, URISyntaxException {
+    
+    private XdmResultSet evalQuery(String queryFileName, QueryContext context) throws IOException, URISyntaxException {
         XQueryExecutable cq = compileQuery(queryFileName);
-        return eval.evaluate(cq);
+        return eval.evaluate(cq, context);
     }
 
     private XQueryExecutable compileQuery(String queryFileName) throws IOException, URISyntaxException {
@@ -227,7 +258,11 @@ public class CompilerTest {
     }
     
     private void assertQueryError (String error, String queryFileName) throws IOException, URISyntaxException {
-        XdmResultSet result = evalQuery (queryFileName);
+        assertQueryError (error, queryFileName, null);
+    }
+    
+    private void assertQueryError (String error, String queryFileName, QueryContext context) throws IOException, URISyntaxException {
+        XdmResultSet result = evalQuery (queryFileName, context);
         assertFalse ("expected exception '" + error + "' not thrown; got results=" + result.getXdmValue(), 
                     result.getErrors().isEmpty());
         if (error != null) {

@@ -122,6 +122,16 @@ public class Compiler {
         return compile (exprString, errorListener, null);
     }
     
+    /**
+     * Compiles an XQuery expression, returning a Saxon XQueryExecutable.
+     * @param exprString the expression to compile
+     * @param errorListener receives any errors generated while compiling; may be null, in which case
+     * any errors generated will be lost
+     * @param baseURI the base URI of the compiled query
+     * @return the compiled, executable query object
+     * @throws LuxException when a compilation error occurs.  The message is typically unhelpful; meaningful errors
+     * are stored in the errorListener
+     */
     public XQueryExecutable compile(String exprString, ErrorListener errorListener, URI baseURI) throws LuxException {
         XQueryExecutable xquery;
         XQueryCompiler xQueryCompiler = getXQueryCompiler();
