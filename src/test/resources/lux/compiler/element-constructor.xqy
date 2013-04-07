@@ -1,3 +1,4 @@
+declare copy-namespaces preserve, inherit;
 declare namespace local="http://localhost/";
 
 declare function local:element ($name, $id, $text)

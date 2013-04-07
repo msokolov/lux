@@ -8,10 +8,17 @@ public class Variable extends AbstractExpression {
     
     private QName name;
     private AbstractExpression value;
+    private String typeDesc;
     
     public Variable (QName qname) {
         super (Type.VARIABLE);
         name = qname;
+    }
+
+    public Variable (QName qname, String typeDesc) {
+        super (Type.VARIABLE);
+        name = qname;
+        this.typeDesc = typeDesc;
     }
     
     @Override
@@ -23,6 +30,9 @@ public class Variable extends AbstractExpression {
     public void toString(StringBuilder buf) {
         buf.append ('$');
         name.toString(buf);
+        if (typeDesc != null) {
+            buf.append (" as ").append(typeDesc);
+        }
     }
     
     public QName getQName() {

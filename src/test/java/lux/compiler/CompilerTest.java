@@ -84,7 +84,7 @@ public class CompilerTest {
     
     @Test 
     public void testTypedVariable() throws Exception {
-        assertQuery ("5", "typed-variable.xqy"); 
+        assertQuery ("13", "typed-variable.xqy"); 
     }
     
     @Test 
