@@ -1,0 +1,85 @@
+query	qname	path	%change
+not(/)	1	2	-35.76
+count(/)	0	1	-197.15
+(/)[.//ACT]	35	33	7.07
+count(//ACT/root()//SCENE)	34	35	-3.99
+for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc	24	24	0.84
+//ACT|//SCENE	37	35	7.69
+count(//ACT)	19	21	-12.14
+not(//ACT)	1	1	18.88
+/	347	362	-4.45
+/*	310	312	-0.73
+/self::node()	309	314	-1.58
+not(//ACT/root())	0	0	-17.33
+not(//ACT) and empty(//SCENE)	0	1	-205.65
+not(//ACT/root()//SCENE)	1	0	50.89
+not((/)[.//ACT and .//SCENE])	0	0	4.59
+//ACT	24	21	11.47
+count(//ACT/root())	0	0	-49.56
+count(//ACT/ancestor::document-node())	0	0	66.07
+count(//ACT/SCENE/ancestor::document-node())	20	0	95.59
+//*[@attr]	0	0	-6.53
+(/)[.//*/@attr]	0	0	-180.29
+//ACT/@id	0	0	27.49
+//ACT/@*	21	20	6.27
+/*/ACT	22	21	0.15
+//*/ACT/SCENE	35	35	-1.40
+(/)[.//ACT][.//SCENE]	24	24	-2.89
+//ACT/SCENE[1]	22	21	1.08
+subsequence (//ACT, 1, 1)	11	11	-1.52
+//ACT/TITLE | //SCENE/TITLE| //SPEECH/TITLE	55	57	-3.87
+subsequence (//ACT, 1, 10)	18	17	5.96
+/ACT//*	20	10	47.62
+/descendant-or-self::SCENE[1]	26	30	-13.43
+//ACT/TITLE/root()//SCENE/TITLE/root()//SPEECH/TITLE/root()	31	2	92.01
+/LINE	262	185	29.19
+/ACT	17	9	46.84
+/ACT/SCENE	35	15	55.61
+/ACT[.='content']	30	9	68.08
+/ACT/text()	18	8	56.25
+//SCENE[1]	37	39	-4.57
+/ACT//SCENE	40	18	55.62
+//*/@attr	0	0	53.42
+//node()/@attr	0	0	32.51
+/*[self::ACT/SCENE='content']	13	5	60.95
+/ACT[SCENE='content']	29	8	70.46
+/PLAY/(ACT|PERSONAE)/TITLE	19	21	-11.31
+/*[self::ACT/SCENE/self::*='content']	16	6	60.85
+/ACT['content'=SCENE]	32	8	75.12
+/ACT[@id=123]	0	1	-135.83
+/ACT[SCENE/@id=123]	0	0	-24.56
+/ancestor-or-self::node()	239	241	-0.77
+number((/ACT/SCENE)[1])	23	5	74.62
+exists(/)	0	0	69.54
+exists(//ACT)	0	0	-53.78
+//SCENE[last()]	45	46	-3.24
+exists(//ACT/root())	0	0	0.86
+exists(//ACT) and exists(//SCENE)	0	0	64.64
+exists(//ACT/root()//SCENE)	0	0	79.15
+exists((/)[.//ACT and .//SCENE])	0	0	-185.37
+//ACT[exists(SCENE)]	21	18	11.97
+/ACT/SCENE[.='content']	29	9	67.47
+number((/descendant-or-self::ACT)[1])	19	25	-30.09
+empty(/)	0	0	-176.63
+empty(//ACT)	0	0	-377.25
+empty(//ACT/root())	0	0	37.91
+empty(//ACT) and empty(//SCENE)	0	0	-67.50
+empty(//ACT/root()//SCENE)	0	0	-78.32
+empty((/)[.//ACT and .//SCENE])	0	0	67.55
+//ACT[empty(SCENE)]	27	24	8.86
+//ACT[.='content']	27	31	-13.13
+//ACT[not(SCENE)]	19	18	4.51
+//SCENE[2]	57	60	-4.65
+//ACT[.//SCENE]	37	36	4.17
+//ACT[count(SCENE) = 0]	18	21	-17.20
+//ACT[SCENE='content']	32	33	-4.30
+//AND	0	0	-18.86
+//lux:foo	0	0	75.42
+for $doc in //ACT order by lux:field-values('sortkey', $doc) return $doc	39	37	5.27
+//ACT[exists(.//SCENE)]	34	35	-0.90
+for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc	26	24	7.00
+(//ACT)[1]	14	13	7.54
+(for $doc in collection() return string ($doc/*/TITLE))[2]	10	10	3.90
+//ACT[not(empty(.//SCENE))]	23	23	-1.84
+(for $doc in collection() return data($doc//TITLE))[2]	9	9	-0.69
+/node()	157	157	0.10

@@ -1,4 +1,11 @@
 * optimization fixes
+** //foo[non-path-expr = 'foo']
+was generating query(foo:foo); we now do this only for [. = 'foo']
+** broken where clause opto:
+for $book at $i in collection()
+  where $book//section[@id="9780465008308"]
+  return $i
+always returns 1
 ** stopped queries from let clause expressions from bleeding
 These were contributing to the filtering of enclosing expressions and could
 cause some documents to be missed.
