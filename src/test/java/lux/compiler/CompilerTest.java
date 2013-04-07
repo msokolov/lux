@@ -182,6 +182,21 @@ public class CompilerTest {
         assertQuery ("111222333", "K2-ForExprWithout-10.xqy");
     }
     
+    @Test
+    public void testFollowing () throws Exception {
+        assertQuery ("true", "following.xqy");
+    }
+    
+    @Test
+    public void testEmptyVariable() throws Exception {
+        assertQuery ("", "empty-variable.xqy");
+    }
+    
+    @Test
+    public void testOptionalVariable() throws Exception {
+        assertQuery ("b", "optional-variable.xqy");
+    }
+    
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
         XdmResultSet resultSet = evalQuery(queryFileName);
         if (resultSet.getErrors().size() > 0) {

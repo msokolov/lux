@@ -847,7 +847,7 @@ public class SaxonTranslator {
         StructuredQName var = let.getVariableQName();
         Expression seq = let.getSequence();
         Expression returns = let.getAction();
-        return new FLWOR(exprFor(returns), new LetClause (new Variable(qnameFor(var)), exprFor(seq)));
+        return new FLWOR(exprFor(returns), new LetClause (new Variable(qnameFor(var), getTypeDescription(let.getRequiredType())), exprFor(seq)));
     }
     
     public AbstractExpression exprFor (Literal literal) {
