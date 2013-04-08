@@ -1,17 +1,9 @@
 * coverage 
 SaxonTranslator: 85,87
-** node tests with wildcards:
-'*:foo', 'foo:*'
-** generalizeOperator
-check w/XQTS
+** getTypeDescription 
+with ?
 ** namespace lookup failure during document ordering analysis
 check w/XQTS
-** operators:
-except, div, negate
-** for clause w/position variable
-** fn:reverse()
-reverse a singleton? reverse something that is in forward document order
-** fn:subsequence($sec,$start) ( with 2 args )
 ** IntegerRangeTest
 ** instance of element(foo)
 ** types

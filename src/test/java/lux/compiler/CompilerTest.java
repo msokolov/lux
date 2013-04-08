@@ -207,6 +207,26 @@ public class CompilerTest {
     }
     
     @Test
+    public void testStrayOperators () throws Exception {
+    	assertQuery ("-2", "stray-operators.xqy");
+    }
+
+    @Test
+    public void testForAt() throws Exception {
+    	assertQuery ("1148", "for-at.xqy");
+    }
+
+    @Test
+    public void testReverse() throws Exception {
+    	assertQuery ("10", "reverse.xqy");
+    }
+    
+    @Test
+    public void testIntegerRange() throws Exception {
+    	assertQuery ("true", "integer-range.xqy");
+    }
+    
+    @Test
     public void testGeneralizeOperator() throws Exception {
         QueryContext context = new QueryContext();
         String input = "<works><employee name='Jane Doe 1' gender='female'><empnum>E1</empnum><pnum>P1</pnum><hours>40</hours></employee></works>";
