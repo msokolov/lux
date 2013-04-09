@@ -1,18 +1,9 @@
 * coverage 
-SaxonTranslator: 85,87
-** node tests with wildcards:
-'*:foo', 'foo:*'
-** generalizeOperator
-check w/XQTS
+SaxonTranslator: 85,87,90
 ** namespace lookup failure during document ordering analysis
 check w/XQTS
 ** operators:
-except, div, negate
-** for clause w/position variable
-** fn:reverse()
-reverse a singleton? reverse something that is in forward document order
-** fn:subsequence($sec,$start) ( with 2 args )
-** IntegerRangeTest
+negate
 ** instance of element(foo)
 ** types
 xs:hexBinary, xs:base64Binary, comment(), empty()
@@ -22,7 +13,6 @@ try w/XQTS
 ** funky flwor expression with leading where clause?
 see exprFor(FLWORExpression)
 try w/XQTS
-** declare an empty type (cardinality = 0)
 * bugs
 ** not() optimization:
 *** invert the query:
