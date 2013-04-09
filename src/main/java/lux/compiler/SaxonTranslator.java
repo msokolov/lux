@@ -690,7 +690,7 @@ public class SaxonTranslator {
         if (funcall.getFunctionName().equals(itemAtQName)) {
             return new Subsequence(exprFor (funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]), LiteralExpression.ONE);
         }
-        if (functionEqualsBuiltin(funcall, "reverse")) {
+        else if (functionEqualsBuiltin(funcall, "reverse")) {
             // Saxon wraps a call to reverse() around reverse axis expressions; its axis expression
             // always returns items in axis (reverse) order, unlike an xpath axis expression, whose results
             // are returned in different order depending on the context
@@ -703,8 +703,10 @@ public class SaxonTranslator {
                 return new Sequence (exprFor (arg));
             }        
         }
-        if (functionEqualsBuiltin(funcall, "subsequence")) {
+        else if (functionEqualsBuiltin(funcall, "subsequence")) {
             if (funcall.getNumberOfArguments() == 2) {
+            	// This is actually dead code, since Saxon always creates a TailExpression, but we have no guarantee,
+            	// so we keep this just in case that should change
                 return new Subsequence (exprFor(funcall.getArguments()[0]), exprFor(funcall.getArguments()[1]));
             } else {
                 if (funcall.getNumberOfArguments() != 3) {

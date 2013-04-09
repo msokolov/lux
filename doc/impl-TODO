@@ -4,6 +4,8 @@ SaxonTranslator: 85,87,90
 check w/XQTS
 ** operators:
 negate
+** getTypeDescription 
+with ?
 ** instance of element(foo)
 ** types
 xs:hexBinary, xs:base64Binary, comment(), empty()
