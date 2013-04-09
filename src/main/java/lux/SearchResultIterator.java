@@ -77,10 +77,10 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     }
 
     private Sort makeSortFromCriteria() {
-        String[] fields = sortCriteria.split(",");
+        String[] fields = sortCriteria.split("\\s*,\\s*");
         SortField[] sortFields = new SortField [fields.length];
-        SortField.Type type = SortField.Type.STRING;
         for (int i = 0; i < fields.length; i++) {
+            SortField.Type type = SortField.Type.STRING;
             String [] tokens = fields[i].split("\\s+");
             String field = tokens[0];
             Boolean reverse = null;
@@ -108,6 +108,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                     type = SortField.Type.INT;
                 } else if (tokens[j].equals("long")) {
                     type = SortField.Type.LONG;
+                } else if (tokens[j].equals("string")) {
+                    type = SortField.Type.STRING;
                 } else {
                     throw new LuxException ("invalid keyword '" + tokens[j] + "' in sort criterion: " + sortCriteria);
                 }
@@ -125,10 +127,10 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                         sortFields[i] = new SortField(field, type, reverse == Boolean.TRUE);
                         switch (type) {
                         case INT:
-                            sortFields[i].setMissingValue(reverse ? 0 : Integer.MAX_VALUE);
+                            sortFields[i].setMissingValue(reverse == Boolean.TRUE ? 0 : Integer.MAX_VALUE);
                             break;
                         case LONG:
-                            sortFields[i].setMissingValue(reverse ? 0 : Long.MAX_VALUE);
+                            sortFields[i].setMissingValue(reverse == Boolean.TRUE ? 0 : Long.MAX_VALUE);
                             break;
                         default:
                         	throw new LuxException ("unsupported combination of empty greatest and sort field type: " + type);
