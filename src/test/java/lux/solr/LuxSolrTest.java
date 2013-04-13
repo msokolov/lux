@@ -27,8 +27,6 @@ public class LuxSolrTest extends BaseSolrTest {
     @BeforeClass
     public static void setup () throws Exception {
         BaseSolrTest.setup();
-        solr = new EmbeddedSolrServer(coreContainer, "");
-        solr.deleteByQuery("*:*");
         Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
         addSolrDocFromFile("src/test/resources/conf/schema.xml", docs);
         addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs);

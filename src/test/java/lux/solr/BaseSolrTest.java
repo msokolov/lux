@@ -18,14 +18,15 @@ import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.CoreContainer;
+import org.apache.solr.core.SolrCore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 public abstract class BaseSolrTest {
 
-    protected static String solrHome = "solr";
     protected static SolrServer solr;
     protected static CoreContainer coreContainer;
+    protected static SolrCore solrCore;
     
     public final String SOLR_QUERY_TYPE = "/xquery";
     private static final String LUX_XML = "lux_xml";
@@ -33,12 +34,19 @@ public abstract class BaseSolrTest {
 
     @BeforeClass
     public static void setup() throws Exception {
+       setup ("solr");
+    }
+    
+    protected static void setup(String solrHome) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
-        solr = new EmbeddedSolrServer(coreContainer, "");
+        String defaultCoreName = coreContainer.getDefaultCoreName();
+        solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
+        solrCore = coreContainer.getCore(defaultCoreName);
         try {
             solr.deleteByQuery("*:*");
+            solr.commit();
         } catch (SolrException e){
             // might get "no such core" in the multi-core config
         }
@@ -46,6 +54,13 @@ public abstract class BaseSolrTest {
     
     @AfterClass
     public static void tearDown() throws Exception {
+        try {
+            solr.rollback();
+        } catch (SolrException e) {
+        }
+        while (solrCore != null && ! solrCore.isClosed()) {
+            solrCore.close();
+        }
         if (coreContainer != null) {
             coreContainer.shutdown();
         }

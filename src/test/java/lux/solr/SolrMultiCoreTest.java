@@ -17,8 +17,8 @@ public class SolrMultiCoreTest extends BaseSolrTest {
 
     @BeforeClass 
     public static void setup() throws Exception {
-        solrHome = "solr-multi";
-        BaseSolrTest.setup();
+
+        BaseSolrTest.setup("solr-multi");
         
         core1 = new EmbeddedSolrServer(coreContainer, "core1");
         core1.deleteByQuery("*:*");
