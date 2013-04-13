@@ -21,7 +21,6 @@ import lux.QueryContext;
 import lux.TransformErrorListener;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
-import lux.exception.LuxHttpException;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
@@ -199,13 +198,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         XdmResultSet queryResults = null;
         try {
             queryResults = evaluator.evaluate(expr, context);
-        } catch (LuxHttpException e) {
-            // TODO: finish this implementation somehow
-            // Solr doesn't provide the ability for us to control the HTTP status
-            // so we would have to pass back a message to the app server???
-            rsp.add ("http-code", e.getCode());
-            rsp.add ("http-message", e.getMessage());
-            logger.debug ("caught http error: " + e.getCode() + " " + e.getMessage());
         } finally {
             evaluator.close();
         }
