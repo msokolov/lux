@@ -21,6 +21,16 @@ public class XPathField<T> extends FieldDefinition {
     
     private final String xpath;
     
+    /**
+     * create a new indexed field whose values are given by evaluating an XPath expression
+     * @param name the name of the field; although Lucene naming conventions are fairly loose,
+     * it will go easier if you restrict yourself to [A-Za-z0-9_.-]
+     * @param xpath the xpath to evaluate
+     * @param analyzer String-valued fields may be subject to further textual analysis, or pass null
+     * if the field is not to be analyzed.
+     * @param isStored whether the field values are stored (and may be retrieved)
+     * @param type the type of data indexed by the field
+     */
     public XPathField (String name, String xpath, Analyzer analyzer, Store isStored, Type type) {
         super (name, analyzer, isStored, type);
         this.xpath = xpath;
@@ -58,6 +68,7 @@ public class XPathField<T> extends FieldDefinition {
             case TEXT:
                 return (T) item.getStringValue();
             case INT: return (T) Integer.valueOf (item.getStringValue());
+            case LONG: return (T) Long.valueOf (item.getStringValue());
             default: throw new IllegalStateException (getType() + " is not a valid type for an XPathField");
             }
         }

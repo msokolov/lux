@@ -75,14 +75,15 @@ public class IndexTestSupport {
             for (String file : xmlFiles) {
                 indexAllElements (file);
             }
-            indexWriter.close(true);
-        } else {
-            // initialize an empty index
-            indexer.newIndexWriter(dir).close();
         }
+        reopen();
+        compiler = new Compiler (indexer.getConfiguration());
+    }
+    
+    public void reopen () throws IOException {
+        indexWriter.close(true);
         indexWriter = indexer.newIndexWriter(dir);
         searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
-        compiler = new Compiler (indexer.getConfiguration());
     }
 
     public void close() throws Exception {

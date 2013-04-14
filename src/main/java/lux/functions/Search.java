@@ -1,7 +1,5 @@
 package lux.functions;
 
-import java.io.IOException;
-
 import lux.Evaluator;
 import lux.SearchResultIterator;
 import lux.query.parser.LuxQueryParser;
@@ -73,7 +71,7 @@ public class Search extends SearchBase {
     public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, long facts, String sortCriteria, int start) throws XPathException {        
         try {
             return new SearchResultIterator (eval, query, sortCriteria, start);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new XPathException (e);
         }
     }

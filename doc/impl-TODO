@@ -1,10 +1,11 @@
 * coverage 
-SaxonTranslator: 85,87
-** getTypeDescription 
-with ?
+SaxonTranslator: 85,87,90
 ** namespace lookup failure during document ordering analysis
 check w/XQTS
-** IntegerRangeTest
+** operators:
+negate
+** getTypeDescription 
+with ?
 ** instance of element(foo)
 ** types
 xs:hexBinary, xs:base64Binary, comment(), empty()
@@ -14,7 +15,6 @@ try w/XQTS
 ** funky flwor expression with leading where clause?
 see exprFor(FLWORExpression)
 try w/XQTS
-** declare an empty type (cardinality = 0)
 * bugs
 ** not() optimization:
 *** invert the query:
