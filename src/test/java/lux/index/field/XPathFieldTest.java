@@ -14,7 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test lux:search() 
+ * Tests for features related to XPathFields.
  */
 public class XPathFieldTest {
     
@@ -75,15 +75,47 @@ public class XPathFieldTest {
         // default is 'empty least'
         String s = getStringResult("for $doc in lux:search('*:*', (), 'id int, name ascending') return (name($doc/*), lux:field-values('id', $doc))");
         assertEquals("entities title token entities 2 test 95", s);
+        // explicit 'empty least'
+        s = getStringResult("for $doc in lux:search('*:*', (), 'id int, name ascending empty least') return (name($doc/*), lux:field-values('id', $doc))");
+        assertEquals("entities title token entities 2 test 95", s);
+    }
+    
+    @Test
+    public void testSortEmptyGreatest () throws Exception {
+        // 'empty greatest'
         String s1 = getStringResult("for $doc in lux:search('*:*', (), 'id int empty greatest, name ascending') return (name($doc/*), lux:field-values('id', $doc))");
         assertEquals("entities 2 test 95 entities title token", s1);
+        // 'empty greatest' long
+        s1 = getStringResult("for $doc in lux:search('*:*', (), 'string-length-long long empty greatest, name ascending') return (name($doc/*), lux:field-values('string-length-long', $doc))");
+        assertEquals("entities 2 entities 3 title 4 token 16 test 95", s1);
     }
     
     @Test
     public void testInvalidSortBy() throws Exception {
-        // treat int field as long - generates an error
+        // unknown ordering keyword xxx
         XdmResultSet result = eval.evaluate("for $doc in lux:search('*:*', (), 'string-length-string xxx') return lux:field-values('string-length', $doc)");
         assertEquals (1, result.getErrors().size());
+        assertEquals ("lux.exception.LuxException: invalid keyword 'xxx' in: string-length-string xxx", result.getErrors().get(0).getMessage());
+
+        // conflicting ordering keywords "ascending descending"
+        result = eval.evaluate("for $doc in lux:search('*:*', (), 'string-length-string ascending descending') return lux:field-values('string-length', $doc)");
+        assertEquals (1, result.getErrors().size());
+        assertEquals ("lux.exception.LuxException: too many ordering keywords in: string-length-string ascending descending", result.getErrors().get(0).getMessage());
+
+        // missing keyword after empty
+        result = eval.evaluate("for $doc in lux:search('*:*', (), 'string-length-string empty') return lux:field-values('string-length', $doc)");
+        assertEquals (1, result.getErrors().size());
+        assertEquals ("lux.exception.LuxException: missing keyword after 'empty' in: string-length-string empty", result.getErrors().get(0).getMessage());
+    
+        // bad keyword after empty
+        result = eval.evaluate("for $doc in lux:search('*:*', (), 'string-length-string empty blah') return lux:field-values('string-length', $doc)");
+        assertEquals (1, result.getErrors().size());
+        assertEquals ("lux.exception.LuxException: missing or invalid keyword after 'empty' in: string-length-string empty blah", result.getErrors().get(0).getMessage());
+    
+        // reverse relevance
+        result = eval.evaluate("for $doc in lux:search('*:*', (), 'lux:score ascending') return lux:field-values('string-length', $doc)");
+        assertEquals (1, result.getErrors().size());
+        assertEquals ("lux.exception.LuxException: not countenanced: attempt to sort by irrelevance", result.getErrors().get(0).getMessage());
     }
 
     @Test

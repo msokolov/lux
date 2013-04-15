@@ -1,17 +1,18 @@
-package lux;
+package lux.index.field;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Iterator;
 
 import javax.xml.transform.TransformerException;
 
+import lux.Evaluator;
+import lux.IndexTestSupport;
+import lux.MultiThreadedRunner;
+import lux.XdmResultSet;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition.Type;
-import lux.index.field.XPathField;
 import net.sf.saxon.s9api.XdmItem;
 
 import org.apache.lucene.document.Field.Store;
@@ -24,12 +25,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
 /**
- * Tests for features related to XPathFields.
+ * Tests for features related to XPathFields using the hamlet.xml dataset.
  */
 @RunWith (MultiThreadedRunner.class)
-public class XPathFieldTest {
+public class HamletXPathFieldTest {
     
     private static RAMDirectory dir;
     private static IndexTestSupport indexTestSupport;

@@ -20,7 +20,6 @@ import org.apache.solr.request.SolrQueryRequestBase;
 import org.apache.solr.response.SolrQueryResponse;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class ResponseWriterTest extends BaseSolrTest {
@@ -58,6 +57,7 @@ public class ResponseWriterTest extends BaseSolrTest {
         response.add("xpath-results", results);
         responseWriter.write(writer, request, response);
         assertEquals ("Hello, World", writer.getBuffer().toString());
+        assertEquals ("text/html; charset=UTF-8", responseWriter.getContentType(request, response));
     }
 
     // return a single string with the text/xml content type
@@ -70,7 +70,7 @@ public class ResponseWriterTest extends BaseSolrTest {
         response.add("xpath-results", results);
         responseWriter.write(writer, request, response);
         assertEquals ("<results>Hello, World</results>", writer.getBuffer().toString());
-        
+        assertEquals ("text/xml", responseWriter.getContentType(request, response));
     }
     
     // return a single xml result with the text/xml content type
@@ -128,7 +128,7 @@ public class ResponseWriterTest extends BaseSolrTest {
     }
     
     // if an internal, fatal error of some kind occurred, we generate an html response
-    @Test @Ignore
+    @Test
     public void testExceptionResponse() throws Exception {
         SolrQueryRequest request = makeRequest();
         SolrQueryResponse response = new SolrQueryResponse();

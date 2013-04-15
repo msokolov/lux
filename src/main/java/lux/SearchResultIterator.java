@@ -92,7 +92,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                     reverse = setBooleanOnce (reverse, false, sortCriteria);
                 } else if (tokens[j].equals("empty")) {
                     if (j == tokens.length-1) {
-                        throw new LuxException ("missing keyword after 'empty' in sort criterion: " + sortCriteria);
+                        throw new LuxException ("missing keyword after 'empty' in: " + sortCriteria);
                     }
                     j = j + 1;
                     if (tokens[j].equals("least")) {
@@ -102,7 +102,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                         emptyGreatest = setBooleanOnce(emptyGreatest, true, sortCriteria);
                     }
                     else {
-                        throw new LuxException ("missing or invalid keyword after 'empty' in sort criterion: " + sortCriteria);
+                        throw new LuxException ("missing or invalid keyword after 'empty' in: " + sortCriteria);
                     }
                 } else if (tokens[j].equals("int")) {
                     type = SortField.Type.INT;
@@ -111,34 +111,33 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 } else if (tokens[j].equals("string")) {
                     type = SortField.Type.STRING;
                 } else {
-                    throw new LuxException ("invalid keyword '" + tokens[j] + "' in sort criterion: " + sortCriteria);
+                    throw new LuxException ("invalid keyword '" + tokens[j] + "' in: " + sortCriteria);
                 }
             }
             if (field.equals("lux:score")) {
                 if (reverse == Boolean.FALSE) {
-                    throw new LuxException ("Not countenanced: attempt to sort by irrelevance");
+                    throw new LuxException ("not countenanced: attempt to sort by irrelevance");
                 }
                 sortFields[i] = SortField.FIELD_SCORE;
-            } else {
-                if (emptyGreatest == Boolean.TRUE) {
-                    if (type == SortField.Type.STRING) {
-                        sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);
-                    } else {
-                        sortFields[i] = new SortField(field, type, reverse == Boolean.TRUE);
-                        switch (type) {
-                        case INT:
-                            sortFields[i].setMissingValue(reverse == Boolean.TRUE ? 0 : Integer.MAX_VALUE);
-                            break;
-                        case LONG:
-                            sortFields[i].setMissingValue(reverse == Boolean.TRUE ? 0 : Long.MAX_VALUE);
-                            break;
-                        default:
-                        	throw new LuxException ("unsupported combination of empty greatest and sort field type: " + type);
-                        }
-                    }
+            } 
+            else if (emptyGreatest == Boolean.TRUE) {
+                if (type == SortField.Type.STRING) {
+                    sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);
                 } else {
                     sortFields[i] = new SortField(field, type, reverse == Boolean.TRUE);
+                    switch (type) {
+                    case INT:
+                        sortFields[i].setMissingValue(reverse == Boolean.TRUE ? 0 : Integer.MAX_VALUE);
+                        break;
+                    case LONG:
+                        sortFields[i].setMissingValue(reverse == Boolean.TRUE ? 0 : Long.MAX_VALUE);
+                        break;
+                    default:
+                        throw new LuxException ("unsupported combination of empty greatest and sort field type: " + type);
+                    }
                 }
+            } else {
+                sortFields[i] = new SortField(field, type, reverse == Boolean.TRUE);
             }
         }
         return new Sort(sortFields);
@@ -146,7 +145,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
 
     private final Boolean setBooleanOnce (Boolean current, boolean value, String sortCriteria) {
         if (current != null) {
-            throw new LuxException ("Too many sort ordering keywords in: " + sortCriteria);
+            throw new LuxException ("too many ordering keywords in: " + sortCriteria);
         }
         return value;
     }
