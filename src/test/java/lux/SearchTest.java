@@ -467,8 +467,6 @@ public class SearchTest extends BaseSearchTest {
         
     @Test
     public void testOrderByPagination () throws Exception {
-        // TODO: optimize so we can skip over the unused results - should be able 
-        // to reduce to doc-count = 1
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
             " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 1);
     }
