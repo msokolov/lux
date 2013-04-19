@@ -255,7 +255,7 @@ public class SaxonTranslator {
             GlobalVariableDefinition decl = decls.next();
             GlobalVariable global = decl.getCompiledVariable();
             String typeDesc = getTypeDescription (decl.getRequiredType());
-            AbstractExpression var = global != null ? exprFor(global) : new Variable(qnameFor(decl.getVariableQName()));
+            Variable var = global != null ? (Variable) exprFor(global) : new Variable(qnameFor(decl.getVariableQName()));
             int order = decl.getLineNumber() * 1000000 + decl.getColumnNumber();
             VariableDefinition def = new VariableDefinition(var, exprFor(decl.getValueExpression()), typeDesc, order);
             defs.add(def);

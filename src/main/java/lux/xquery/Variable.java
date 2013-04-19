@@ -9,6 +9,7 @@ public class Variable extends AbstractExpression {
     private QName name;
     private AbstractExpression value;
     private String typeDesc;
+    private VariableContext context;
     
     public Variable (QName qname) {
         super (Type.VARIABLE);
@@ -77,6 +78,14 @@ public class Variable extends AbstractExpression {
     public AbstractExpression getLastContextStep () {
         return getValue().getLastContextStep();
     }
+
+	public VariableContext getContext() {
+		return context;
+	}
+
+	public void setContext(VariableContext context) {
+		this.context = context;
+	}
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

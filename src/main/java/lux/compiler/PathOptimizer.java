@@ -49,6 +49,8 @@ import lux.xquery.VariableBindingClause;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
 
+import org.slf4j.LoggerFactory;
+
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.SortField;
@@ -136,7 +138,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (AbstractExpression var : function.getSubs()) {
                 // bind the variables to null in case they are shadowed in the
                 // function body
-                setBoundExpression((Variable) var, null, MATCH_ALL);
+                setUnboundVariable((Variable) var);
             }
             AbstractExpression body = optimize(function.getBody());
             function = new FunctionDefinition(function.getName(), 
@@ -213,7 +215,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             for (Map.Entry<QName, VarBinding> entry : varBindings.entrySet()) {
                 VarBinding binding = entry.getValue();
                 if (binding.getExpr() == root) {
-                    varBindings.put(entry.getKey(), new VarBinding(binding.getVar(), search, binding.getQuery(), binding.getShadowedBinding()));
+                    varBindings.put(entry.getKey(), new VarBinding(binding.getVar(), search, binding.getQuery(), binding.getContext(), binding.getShadowedBinding()));
                 }
             }
             return expr.replaceRoot(search);
@@ -562,6 +564,24 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (name.equals(FunCall.LUX_FIELD_VALUES)) {
             if (args.length > 0) {
                 AbstractExpression arg = args[0];
+                AbstractExpression sortContext;
+                if (args.length > 1) {
+                	sortContext = args[1];
+                } else {
+                	sortContext = funcall.getSuper();
+                }
+                if (sortContext.getType() == Type.TREAT) {
+                	// ugly hack, but I guess that's what optimization is all about :)
+                	sortContext = sortContext.getSubs()[0];
+                }
+                // Don't record this sort field for later optimization unless its context is a for-variable
+                if (sortContext.getType() != Type.VARIABLE) {
+                	return funcall;
+                }
+                Variable var = (Variable) sortContext;
+                if (! (var.getContext() instanceof ForClause)) {
+                	return funcall;
+                }
                 if (arg.getType() == Type.LITERAL) {
                     // save away the field name as a possible sort key
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
@@ -571,7 +591,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                         sortType = fieldDefinition.getType().getLuceneSortFieldType();
                     } else {
                         sortType = FieldDefinition.Type.STRING.getLuceneSortFieldType();
-                        // TODO: log a warning
+                        LoggerFactory.getLogger(PathOptimizer.class).warn("Sorting by unknown field: {}", fieldName);
                     }
                     peek().setSortFields(new SortField[] { new SortField(fieldName, sortType) });
                 }
@@ -921,6 +941,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             push(q);
             AbstractExpression value = varBinding.getExpr();
             variable.setValue(value);
+            variable.setContext(varBinding.getContext());
         } else {
             // this happens when the variables represent function arguments
             push(MATCH_ALL.setFact(IGNORABLE, true));
@@ -1153,9 +1174,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     // special case - it would be nice if Saxon figured this out
                     // when compiling
                     FunCall keyFun = (FunCall) key;
-                    if (keyFun.getName().equals(FunCall.LUX_FIELD_VALUES) && keyFun.getSubs().length < 2) {
-                        throw new LuxException(
-                                "lux:field-values($key) depends on the context where there is no context defined");
+                    if (keyFun.getName().equals(FunCall.LUX_FIELD_VALUES)) { 
+                    	if (keyFun.getSubs().length < 2) {
+                    		throw new LuxException(
+                    				"lux:field-values($key) depends on the context where there is no context defined");
+                    	}
+                    	// TODO: support "order by $doc/lux:field-values('sort-field') 
                     }
                 }
                 String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();
@@ -1187,7 +1211,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public ForClause visit(ForClause forClause) {
-        visitVariableBinding(forClause.getVariable(), forClause.getSequence());
+        visitVariableBinding(forClause);
         return forClause;
     }
 
@@ -1203,7 +1227,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     @Override
     public LetClause visit(LetClause letClause) {
-        visitVariableBinding(letClause.getVariable(), letClause.getSequence());
+        visitVariableBinding(letClause);
         // Mark let clause queries as ignorable so that expressions that depend
         // on the let variable don't require the variable to be non-empty by
         // default
@@ -1211,17 +1235,25 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return letClause;
     }
 
-    private void visitVariableBinding(Variable var, AbstractExpression binding) {
+    private void visitVariableBinding(VariableBindingClause clause) {
         XPathQuery q = peek();
         q.setSortFields(null);
-        setBoundExpression(var, binding, q);
+        setBoundExpression(clause, q);
     }
 
-    private void setBoundExpression(Variable var, AbstractExpression expr, XPathQuery q) {
-        // remember the variable binding for use in optimizations
-        QName name = var.getQName();
+    private void setUnboundVariable (Variable var) {
+    	QName name = var.getQName();
         VarBinding currentBinding = varBindings.get(name);
-        VarBinding newBinding = new VarBinding (var, expr, q, currentBinding);
+        VarBinding newBinding = new VarBinding (var, null, MATCH_ALL, null, currentBinding);
+        varBindings.put(name, newBinding);
+    }
+    
+    private void setBoundExpression(VariableBindingClause clause, XPathQuery q) {
+        // remember the variable binding for use in optimizations
+    	Variable var = clause.getVariable();
+    	QName name = var.getQName();
+        VarBinding currentBinding = varBindings.get(name);
+        VarBinding newBinding = new VarBinding (var, clause.getSequence(), q, clause, currentBinding);
         varBindings.put(name, newBinding);
     }
 

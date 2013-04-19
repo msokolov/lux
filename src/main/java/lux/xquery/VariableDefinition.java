@@ -2,17 +2,18 @@ package lux.xquery;
 
 import lux.xpath.AbstractExpression;
 
-public class VariableDefinition implements Comparable<VariableDefinition> {
-    private final AbstractExpression variable;
+public class VariableDefinition implements Comparable<VariableDefinition>, VariableContext {
+    private final Variable variable;
     private final AbstractExpression value;
     private final String typeDesc;
     private final int order;
     
-    public VariableDefinition (AbstractExpression var, AbstractExpression value, String typeDesc, int order) {
+    public VariableDefinition (Variable var, AbstractExpression value, String typeDesc, int order) {
         this.variable = var;
         this.value = value;
         this.typeDesc = typeDesc;
         this.order = order;
+        var.setContext(this);
     }
     
     public void toString (StringBuilder buf) {

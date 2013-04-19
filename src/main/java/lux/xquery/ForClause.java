@@ -16,6 +16,7 @@ public class ForClause extends VariableBindingClause {
     public ForClause(Variable var, Variable pos, AbstractExpression seq) {
         super (var, seq);
         this.pos = pos;
+        var.setContext(this);
     }
     
     @Override

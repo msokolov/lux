@@ -2,7 +2,7 @@ package lux.xquery;
 
 import lux.xpath.AbstractExpression;
 
-public abstract class VariableBindingClause extends FLWORClause {
+public abstract class VariableBindingClause extends FLWORClause implements VariableContext{
 
     private Variable var;
     private AbstractExpression seq;
