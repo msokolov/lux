@@ -25,9 +25,6 @@ count(collection()) - count(collection()[.//pubdate])
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
-** exists as an isomorph
-Is there a circumstance where this is incorrect?  If not, then what is the 
-actual rule we are relying on there?
 * enhancements
 ** binary documents
 be able to write and read binary documents, incl. xquery
