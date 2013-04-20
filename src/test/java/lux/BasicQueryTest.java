@@ -276,15 +276,16 @@ public class BasicQueryTest {
 
         assertQuery ("//ACT[empty(SCENE)]", 0, ValueType.ELEMENT, Q.ACT);
     }
-    
+
     @Test public void testNot() throws Exception {
-        assertQuery ("not(/)", MINIMAL|EMPTY, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
-        assertQuery ("not(//ACT)", MINIMAL, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("not(//ACT/root())", MINIMAL, ValueType.BOOLEAN, Q.ACT);
-        assertQuery ("not(//ACT) and empty(//SCENE)", MINIMAL, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
-        assertQuery ("not(//ACT/root()//SCENE)", MINIMAL, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
-        assertQuery ("not((/)[.//ACT and .//SCENE])", MINIMAL, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
+        assertQuery ("not(/)", MINIMAL|EMPTY|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.MATCH_ALL_Q);
+        assertQuery ("not(//ACT)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT);
+        assertQuery ("not(//ACT/root())", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT);
+        assertQuery ("not(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT, Q.SCENE);
+        assertQuery ("not(//ACT/root()//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT_AND_SCENE);
+        assertQuery ("not((/)[.//ACT and .//SCENE])", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT_AND_SCENE);
     }
+
     @Test public void testPredicateNegation () throws Exception {
         assertQuery ("//ACT[not(SCENE)]", 0, ValueType.ELEMENT, Q.ACT);
         assertQuery ("//ACT[count(SCENE) = 0]", 0, ValueType.ELEMENT, Q.ACT);
