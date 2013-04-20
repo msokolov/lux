@@ -295,9 +295,7 @@ public class BasicQueryTest {
         // This should depend on having both ACT and SCENE
         assertQuery ("//ACT[.//SCENE]", MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);
         assertQuery ("//ACT[exists(.//SCENE)]", MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);        
-        // TODO: optimize not() expressions involving exists() and empty()
-        // This should depend on having a SCENE!
-        assertQuery ("//ACT[not(empty(.//SCENE))]", 0, ValueType.ELEMENT, Q.ACT); 
+        assertQuery ("//ACT[not(empty(.//SCENE))]", MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);
     }
     
     @Test public void testReservedWords () throws Exception {
