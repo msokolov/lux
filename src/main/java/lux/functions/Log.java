@@ -5,6 +5,7 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
@@ -24,20 +25,17 @@ import org.slf4j.LoggerFactory;
  */
 public class Log extends ExtensionFunctionDefinition {
 
-	private enum LogLevel { TRACE, DEBUG, INFO, WARN, ERROR, FATAL };
+	private enum LogLevel { TRACE, DEBUG, INFO, WARN, ERROR, FATAL }
     
 	class LogCall extends ExtensionFunctionCall {
 
-		@SuppressWarnings("rawtypes")
 		@Override
-		public SequenceIterator<? extends Item> call(
-				SequenceIterator<? extends Item>[] arguments,
-				XPathContext context) throws XPathException 
+		public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException
 		{
 	    	Logger logger = LoggerFactory.getLogger("lux.functions");
 	    	LogLevel level;
 	    	if (arguments.length > 1) {
-	    		String lvl = arguments[1].next().getStringValue();
+	    		String lvl = arguments[1].head().getStringValue();
 	    		try {
 	    			level = LogLevel.valueOf(lvl.toUpperCase());
 	    		} catch (IllegalArgumentException e) {
@@ -47,21 +45,19 @@ public class Log extends ExtensionFunctionDefinition {
 	    		level = LogLevel.INFO;
 	    	}
 	    	if (! isLogEnabled(logger, level)) {
-	    		return EmptySequence.asIterator(null);
+	    		return EmptySequence.getInstance();
 	    	}
-	    	SequenceIterator <? extends Item> tokens = arguments[0];
+	    	Sequence tokens = arguments[0];
 	    	StringBuilder message = new StringBuilder();
-	    	Item<?> item;
-	    	if ((item = tokens.next()) != null) {
-	    		message.append(item.getStringValue());
-	    	}
-	    	while ((item = tokens.next()) != null) {
+	    	Item item;
+            SequenceIterator tokenIter = tokens.iterate();
+	    	while ((item = tokenIter.next()) != null) {
 	    		message.append(item.getStringValue());
 	    	}
 	    	log (logger, level, message.toString());
-	    	return EmptySequence.asIterator(null);
+	    	return EmptySequence.getInstance();
 		}
-		
+
 	}
             
     private void log (Logger logger, LogLevel level, String message) {

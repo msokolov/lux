@@ -11,16 +11,12 @@ import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.EmptyIterator;
-import net.sf.saxon.tree.iter.SingletonIterator;
+import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -61,14 +57,13 @@ public class Highlight extends ExtensionFunctionDefinition {
     
     class HighlightCall extends NamespaceAwareFunctionCall {
 
-        @SuppressWarnings("rawtypes")
         @Override
-        public SequenceIterator<? extends Item> call(SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            Item queryArg = arguments[0].next(); 
-            NodeInfo docArg = (NodeInfo) arguments[1].next();
+            Item queryArg = arguments[0].head();
+            NodeInfo docArg = (NodeInfo) arguments[1].head();
             if (docArg == null) {
-                return EmptyIterator.emptyIterator();
+                return EmptySequence.getInstance();
             }
             Query query;
             Evaluator eval = SearchBase.getEvaluator(context);
@@ -83,7 +78,7 @@ public class Highlight extends ExtensionFunctionDefinition {
             XmlHighlighter xmlHighlighter = new XmlHighlighter(eval.getCompiler().getProcessor(), indexConfiguration, new HtmlBoldFormatter());
             try {
                 XdmNode highlighted = xmlHighlighter.highlight(query, docArg);
-                return SingletonIterator.makeIterator(highlighted.getUnderlyingNode());
+                return highlighted.getUnderlyingNode();
             } catch (XMLStreamException e) {
                 throw new XPathException(e);
             } catch (SaxonApiException e) {

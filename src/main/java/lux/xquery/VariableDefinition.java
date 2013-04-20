@@ -13,7 +13,7 @@ public class VariableDefinition implements Comparable<VariableDefinition>, Varia
         this.value = value;
         this.typeDesc = typeDesc;
         this.order = order;
-        var.setContext(this);
+        var.setBindingContext(this);
     }
     
     public void toString (StringBuilder buf) {

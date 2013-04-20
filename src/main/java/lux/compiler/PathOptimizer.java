@@ -37,17 +37,7 @@ import lux.xpath.Root;
 import lux.xpath.SearchCall;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
-import lux.xquery.FLWOR;
-import lux.xquery.FLWORClause;
-import lux.xquery.ForClause;
-import lux.xquery.FunctionDefinition;
-import lux.xquery.LetClause;
-import lux.xquery.OrderByClause;
-import lux.xquery.SortKey;
-import lux.xquery.Variable;
-import lux.xquery.VariableBindingClause;
-import lux.xquery.WhereClause;
-import lux.xquery.XQuery;
+import lux.xquery.*;
 
 import org.slf4j.LoggerFactory;
 
@@ -175,10 +165,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     /**
      * @param expr
      *            the expression to optimize
-     * @param j
+     * @param i
      *            the query stack depth at which expr's query is to be found
-     * @param facts
-     *            additional facts to apply to the query
      */
     private AbstractExpression optimizeExpression(AbstractExpression expr, int i) {
         int j = queryStack.size() - i - 1;
@@ -356,7 +344,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private enum ResultOrientation {
         LEFT, RIGHT
-    };
+    }
 
     /**
      * Combine queries from two adjacent subexpressions
@@ -570,16 +558,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 } else {
                 	sortContext = funcall.getSuper();
                 }
-                if (sortContext.getType() == Type.TREAT) {
-                	// ugly hack, but I guess that's what optimization is all about :)
-                	sortContext = sortContext.getSubs()[0];
-                }
-                // Don't record this sort field for later optimization unless its context is a for-variable
-                if (sortContext.getType() != Type.VARIABLE) {
-                	return funcall;
-                }
-                Variable var = (Variable) sortContext;
-                if (! (var.getContext() instanceof ForClause)) {
+                VariableContext binding = sortContext.getBindingContext();
+                if (binding == null || ! (binding instanceof ForClause)) {
                 	return funcall;
                 }
                 if (arg.getType() == Type.LITERAL) {
@@ -814,8 +794,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
         case EXCEPT:
             push(combineQueries(lq, Occur.MUST, rq, argType));
-            resultType = argType;
-            required = true;
             return op;
             
         case TO:
@@ -823,7 +801,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         	break;
         }
         XPathQuery query = combineQueries(lq, occur, rq, resultType);
-        if (minimal == false) {
+        if (!minimal) {
             query = query.setFact(MINIMAL, false);
         }
         if (!required) {
@@ -839,8 +817,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         // TODO: test different literal values to ensure we don't run into
         // trouble during text analysis
-        LiteralExpression value = null;
-        AbstractExpression path = null;
+        LiteralExpression value;
+        AbstractExpression path;
         AbstractExpression filter = predicate.getFilter();
         if (filter.getType() == Type.BINARY_OPERATION) {
             BinaryOperation op = (BinaryOperation) predicate.getFilter();
@@ -941,7 +919,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             push(q);
             AbstractExpression value = varBinding.getExpr();
             variable.setValue(value);
-            variable.setContext(varBinding.getContext());
+            variable.setBindingContext(varBinding.getContext());
         } else {
             // this happens when the variables represent function arguments
             push(MATCH_ALL.setFact(IGNORABLE, true));
@@ -965,7 +943,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         pop(); // pop the query from the start expression
         if (start == FunCall.LastExpression
-                || (start.equals(LiteralExpression.ONE) && length.equals(LiteralExpression.ONE))) {
+                || (LiteralExpression.ONE.equals(start) && LiteralExpression.ONE.equals(length))) {
             // selecting the first or last item from a sequence - this has
             // no effect on the query, its minimality or return type, so
             // just leave the main sub-expression query; don't combine with
@@ -1182,13 +1160,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     	// TODO: support "order by $doc/lux:field-values('sort-field') 
                     }
                 }
-                String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();
+                String order = sortKey.getOrder().getValue().toString();
                 SortField sortField = q.getSortFields()[0];
                 if (!sortKey.isEmptyLeast()) {
                     // empty greatest
-                    sortField = new SortField(sortField.getField(), SearchResultIterator.MISSING_LAST, order.toString()
-                            .equals("descending"));
-                } else if (order.toString().equals("descending")) {
+                    sortField = new SortField(sortField.getField(), SearchResultIterator.MISSING_LAST,
+                            order.equals("descending"));
+                } else if (order.equals("descending")) {
                     // reverse sort order
                     sortField = new SortField(sortField.getField(), sortField.getType(), true);
                 }

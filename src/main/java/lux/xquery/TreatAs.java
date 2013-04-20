@@ -50,6 +50,11 @@ public class TreatAs extends AbstractExpression {
         return 13;
     }
 
+    @Override
+    public VariableContext getBindingContext () {
+        return subs[0].getBindingContext();
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

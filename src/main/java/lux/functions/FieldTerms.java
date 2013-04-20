@@ -10,10 +10,12 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
+import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.index.Fields;
@@ -75,17 +77,15 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     class FieldTermsCall extends ExtensionFunctionCall {
 
         @Override
-        public SequenceIterator<AtomicValue> call(
-                @SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
-                throws XPathException {
+        public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             String fieldName = null, start = "";
             if (arguments.length > 0) {
-                Item<?> arg0 = arguments[0].next();
+                Item arg0 = arguments[0].head();
                 if (arg0 != null) {
                 	fieldName = arg0.getStringValue();
                 }
                 if (arguments.length > 1) {
-                    Item<?> arg1 = arguments[1].next();
+                    Item arg1 = arguments[1].head();
                     start = arg1 == null ? "" : arg1.getStringValue();
                 }
             }
@@ -94,7 +94,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                 if (fieldName == null) {
                     fieldName = eval.getCompiler().getIndexConfiguration().getDefaultFieldName();
                 }
-                return new TermsIterator(eval, new Term(fieldName, start));
+                return new SequenceExtent(new TermsIterator(eval, new Term(fieldName, start)));
             } catch (IOException e) {
                 throw new XPathException("failed getting terms from field " + fieldName, e);
             }
@@ -131,12 +131,10 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             Fields fields = MultiFields.getFields(eval.getSearcher().getIndexReader());
             if (fields != null) {
                 terms = fields.terms(fieldName).iterator(null);
-                if (t != null) {
-                    if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
-                        pos = -1;
-                    } else {
-                        current = terms.term().utf8ToString();
-                    }
+                if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
+                    pos = -1;
+                } else {
+                    current = terms.term().utf8ToString();
                 }
             }
         }
@@ -164,7 +162,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
         @Override
         public AtomicValue current() {
-            return new net.sf.saxon.value.StringValue(current.toString());
+            return new net.sf.saxon.value.StringValue(current);
         }
 
         @Override

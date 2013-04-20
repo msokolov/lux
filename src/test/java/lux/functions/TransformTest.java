@@ -43,9 +43,9 @@ public class TransformTest extends XQueryTest {
 		// re-open so that we see the results here
 		writable.reopenSearcher();
         XdmResultSet result = writable.evaluate("collection()[1]");
-        assertEquals ("1", result.getXdmValue().getUnderlyingValue().getStringValue());
+        assertEquals ("1", result.getXdmValue().itemAt(0).getStringValue());
         result = writable.evaluate("doc('/doc/1')");
-        assertEquals ("1", result.getXdmValue().getUnderlyingValue().getStringValue());
+        assertEquals ("1", result.getXdmValue().itemAt(0).getStringValue());
     }
     
     @Test

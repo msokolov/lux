@@ -16,9 +16,9 @@ import net.sf.saxon.trans.XPathException;
 public class LuxFunctionLibrary extends IntegratedFunctionLibrary {
 
     @Override
-    public Expression bind(StructuredQName functionName, Expression[] staticArgs, StaticContext env, Container container)
+    public Expression bind(StructuredQName functionName, int arity, Expression[] staticArgs, StaticContext env, Container container)
             throws XPathException {
-        IntegratedFunctionCall ifc = (IntegratedFunctionCall) super.bind(functionName, staticArgs, env, container);
+        IntegratedFunctionCall ifc = (IntegratedFunctionCall) super.bind(functionName, arity, staticArgs, env, container);
         if (ifc == null) {
             return null;
         }

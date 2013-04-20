@@ -1,16 +1,18 @@
 package lux.functions;
 
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 
 public abstract class InterpreterCall extends NamespaceAwareFunctionCall {
 
-    protected void bindParameters (@SuppressWarnings("rawtypes") SequenceIterator<? extends Item> params) throws XPathException {
-        Item<?> param;
-        while ((param = params.next()) != null) {
-            Item<?> value = params.next();
+    protected void bindParameters (Sequence params) throws XPathException {
+        Item param;
+        SequenceIterator<?> paramIter = params.iterate();
+        while ((param = paramIter.next()) != null) {
+            Item value = paramIter.next();
             if (value == null) {
                 throw new XPathException ("Odd number of items in third argument to lux:transform, which should be parameter/value pairs");
             }
@@ -29,5 +31,5 @@ public abstract class InterpreterCall extends NamespaceAwareFunctionCall {
         }
     }
     
-    protected abstract void setParameter (StructuredQName name, Item<?> value);
+    protected abstract void setParameter (StructuredQName name, Item value);
 }

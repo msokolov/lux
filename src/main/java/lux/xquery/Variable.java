@@ -51,10 +51,6 @@ public class Variable extends AbstractExpression {
         return false;
     }
 
-    public void setName(QName name2) {
-        name = name2;
-    }
-
     public void setValue(AbstractExpression value) {
         this.value = value;
     }
@@ -79,13 +75,19 @@ public class Variable extends AbstractExpression {
         return getValue().getLastContextStep();
     }
 
-	public VariableContext getContext() {
-		return context;
-	}
-
-	public void setContext(VariableContext context) {
+	public void setBindingContext(VariableContext context) {
 		this.context = context;
 	}
+
+    /**
+     * This method is used to determine whether a given expression was bound as a for-variable, to decide
+     * whether to use it in a sorting optimization.
+     * @return the binding expression for this variable
+     */
+    public VariableContext getBindingContext() {
+        return context;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

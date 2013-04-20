@@ -1,6 +1,8 @@
 package lux.xpath;
 
 
+import lux.xquery.VariableContext;
+
 /**
  * An abstract XPath or XQuery expression.
  * 
@@ -18,7 +20,7 @@ public abstract class AbstractExpression implements Visitable {
         LITERAL, ROOT, DOT, FUNCTION_CALL, SEQUENCE, UNARY_MINUS, SUBSEQUENCE,
         LET, VARIABLE, COMPUTED_ELEMENT, ELEMENT, ATTRIBUTE, TEXT, FLWOR, CONDITIONAL, COMMENT,
         DOCUMENT_CONSTRUCTOR, PROCESSING_INSTRUCTION, SATISFIES, INSTANCE_OF, CASTABLE, TREAT
-    };
+    }
 
     private final Type type;
     
@@ -69,9 +71,9 @@ public abstract class AbstractExpression implements Visitable {
     }
 
     /** Each subclass must implement the toString(StringBuilder) method by
-     * rendering itself as a syntatically valid XPath/XQuery expression in
+     * appending itself as a syntatically valid XPath/XQuery expression in
      * the given buffer.
-     * @param buf
+     * @param buf the buffer to append to
      */
     public abstract void toString(StringBuilder buf);
 
@@ -181,6 +183,16 @@ public abstract class AbstractExpression implements Visitable {
      * to their sub-expressions, the arguments, and like parentheses to their enclosing expression.
      */
     public abstract int getPrecedence ();
+
+    /**
+     * This method is used to determine whether a given expression was bound as a for-variable, to decide
+     * whether to use it in a sorting optimization.
+     * @return the binding expression for the variable on which this expression depends, if any, or null
+     */
+    public VariableContext getBindingContext() {
+        // return sup == null ? null : sup.getBindingContext();
+        return null;
+    }
 
 }
 

@@ -5,8 +5,7 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.EmptySequence;
@@ -51,11 +50,11 @@ public class Commit extends ExtensionFunctionDefinition {
     class CommitCall extends ExtensionFunctionCall {
 
         @Override
-        public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
             Evaluator eval = SearchBase.getEvaluator(context);
             eval.getDocWriter().commit();
-            return EmptySequence.asIterator(EmptySequence.getInstance());
+            return EmptySequence.getInstance();
         }
         
     }
@@ -65,4 +64,3 @@ public class Commit extends ExtensionFunctionDefinition {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-

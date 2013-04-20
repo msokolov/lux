@@ -13,7 +13,10 @@
     <dependency>
         <groupId>net.sf.saxon</groupId>
         <artifactId>Saxon-HE</artifactId>
-        <version>9.4.0.7</version>
+        <!--<version>9.4.0.7</version>-->
+        <version>9.5.0.1</version>
+        <scope>system</scope>
+        <systemPath>/home/sokolov/workspace/lux/lib/saxon9he.jar</systemPath>
         <exclusions>
         	<exclusion>
         		<artifactId>xom</artifactId>
@@ -130,6 +133,9 @@
       <artifactId>cobertura-maven-plugin</artifactId>
       <version>2.5.1</version>
       <configuration>
+        <check>
+            <lineRate>90</lineRate>
+        </check>
         <instrumentation>
             <excludes>
               <exclude>lux/xqts/**/*.class</exclude>

@@ -7,12 +7,9 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.ArrayIterator;
+import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.StringValue;
 
@@ -84,11 +81,10 @@ public class FieldValues extends ExtensionFunctionDefinition {
     
     class FieldValuesCall extends ExtensionFunctionCall {
 
-        @SuppressWarnings({ "rawtypes" })
         @Override
-        public SequenceIterator<? extends Item> call(SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            String fieldName = arguments[0].next().getStringValue();
+            String fieldName = arguments[0].head().getStringValue();
             NodeInfo node;
             if (arguments.length == 1) {
                 Item contextItem = context.getContextItem();
@@ -97,7 +93,7 @@ public class FieldValues extends ExtensionFunctionDefinition {
                 }
                 node = (NodeInfo) contextItem;
             } else {
-                node = (NodeInfo) arguments[1].next();
+                node = (NodeInfo) arguments[1].head();
             }
             long docID = node.getDocumentNumber();  
             Evaluator eval = SearchBase.getEvaluator(context);
@@ -112,7 +108,7 @@ public class FieldValues extends ExtensionFunctionDefinition {
             for (int i = 0; i < values.length; i++) {
                 valueItems[i] = new StringValue (values[i]);
             }
-            return new ArrayIterator<StringValue>(valueItems);
+            return new SequenceExtent(valueItems);
         }
         
     }

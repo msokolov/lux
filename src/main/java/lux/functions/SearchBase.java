@@ -6,9 +6,11 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
+import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -60,29 +62,29 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     public class SearchCall extends NamespaceAwareFunctionCall {
         
         @SuppressWarnings("rawtypes") @Override
-        public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
+        public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
             if (arguments.length == 0 || arguments.length > 4) {
                 throw new XPathException ("wrong number of arguments for " + getFunctionQName());
             }
-            Item queryArg = arguments[0].next();
+            Item queryArg = arguments[0].head();
             long facts=0;
             if (arguments.length >= 2) {
-                IntegerValue num  = (IntegerValue) arguments[1].next();
+                IntegerValue num  = (IntegerValue) arguments[1].head();
                 if (num != null) {
                     facts = num.longValue();
                 }
             }
             String sortCriteria = null;
             if (arguments.length >= 3) {
-                Item sortArg = arguments[2].next();
+                Item sortArg = arguments[2].head();
                 if (sortArg != null) {
                     sortCriteria = sortArg.getStringValue();
                 }
             }
             int start = 1;
             if (arguments.length >= 4) {
-                Item startArg = arguments[3].next();
+                Item startArg = arguments[3].head();
                 if (startArg != null) {
                     IntegerValue integerValue = (IntegerValue)startArg;
                     if (integerValue.longValue() > Integer.MAX_VALUE) {
@@ -101,9 +103,9 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
-            return iterate (query, eval, facts, sortCriteria, start);
+            return new SequenceExtent(iterate (query, eval, facts, sortCriteria, start));
         }
-        
+
     }
     
     

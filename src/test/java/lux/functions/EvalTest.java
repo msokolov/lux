@@ -20,7 +20,7 @@ public class EvalTest {
 	@Test
 	public void testEval () throws Exception {
 		XdmResultSet result = eval.evaluate("lux:eval('1 + 1')");
-		assertEquals ("2", result.getXdmValue().getUnderlyingValue().getStringValue());
+		assertEquals ("2", result.getXdmValue().itemAt(0).getStringValue());
 	}
 
 	@Test
@@ -34,7 +34,7 @@ public class EvalTest {
 		if (! result.getErrors().isEmpty()) {
 			fail (result.getErrors().get(0).toString());
 		}
-		assertEquals ("3", result.getXdmValue().getUnderlyingValue().getStringValue());
+		assertEquals ("3", result.getXdmValue().itemAt(0).getStringValue());
 	}
 	
 	@Test
@@ -43,7 +43,7 @@ public class EvalTest {
 		if (! result.getErrors().isEmpty()) {
 			fail (result.getErrors().get(0).toString());
 		}
-		assertEquals ("3", result.getXdmValue().getUnderlyingValue().getStringValue());
+		assertEquals ("3", result.getXdmValue().itemAt(0).getStringValue());
 	}
 
 	@Test

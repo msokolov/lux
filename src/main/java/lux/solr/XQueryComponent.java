@@ -24,6 +24,7 @@ import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
+import net.sf.saxon.om.SequenceTool;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XQueryExecutable;
@@ -42,7 +43,6 @@ import net.sf.saxon.value.GMonthValue;
 import net.sf.saxon.value.GYearMonthValue;
 import net.sf.saxon.value.GYearValue;
 import net.sf.saxon.value.QNameValue;
-import net.sf.saxon.value.Value;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.params.CommonParams;
@@ -72,7 +72,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     private static final QName LUX_HTTP = new QName (Evaluator.LUX_NAMESPACE, "http");
     protected Set<String> fields = new HashSet<String>();
     protected Compiler compiler;
-    private TypeHierarchy typeHierarchy;
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
     //protected XmlIndexer indexer;
     protected SolrIndexConfig solrIndexConfig;
@@ -99,7 +98,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT, info.initArgs);
         solrIndexConfig.inform(core);
         compiler = createXCompiler();
-        typeHierarchy = compiler.getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
     }
     
     public XmlIndexer checkoutXmlIndexer () {
@@ -130,7 +128,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             }
         } else {
-            contentType = "text/html; charset=UTF-8";
+            //contentType = "text/html; charset=UTF-8";
             serializer.setOutputProperty(Serializer.Property.METHOD, "html");
         }
     }
@@ -230,7 +228,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);
-        logger.debug ("retrieved: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
+        logger.debug ("retrieved: " + evaluator.getDocReader().getCacheMisses() + " docs, " +
                     xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
     }
 
@@ -268,7 +266,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
 
     private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, String path) {
-        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params)), path);
+        return evaluator.build(new StringReader(buildHttpInfo(params)), path);
     }
 
     private Compiler createXCompiler() {
@@ -281,7 +279,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             XdmAtomicValue xdmValue = (XdmAtomicValue) item;
             AtomicValue value = (AtomicValue) xdmValue.getUnderlyingValue();
             try {
-                String typeName = value.getItemType(typeHierarchy).toString();
+                String typeName = value.getItemType().toString();
                 Object javaValue;
                 if (value instanceof DecimalValue) {
                     javaValue = ((DecimalValue) value).getDoubleValue();
@@ -300,10 +298,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     } else if (value instanceof GYearMonthValue) {
                         javaValue = ((GYearMonthValue) value).getPrimitiveStringValue().toString();
                     } else {
-                        javaValue = Value.convertToJava(value);
+                        javaValue = SequenceTool.convertToJava(value);
                     }
                 } else {
-                    javaValue = Value.convertToJava(value);
+                    javaValue = SequenceTool.convertToJava(value);
                 }
                 // TODO hexBinary and base64Binary
                 xpathResults.add (typeName, javaValue);

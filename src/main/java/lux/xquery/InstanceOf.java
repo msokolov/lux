@@ -30,4 +30,9 @@ public class InstanceOf extends AbstractExpression {
         return 12;
     }
 
+    @Override
+    public VariableContext getBindingContext () {
+        return subs[0].getBindingContext();
+    }
+
 }

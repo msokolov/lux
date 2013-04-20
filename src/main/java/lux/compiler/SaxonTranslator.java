@@ -49,37 +49,7 @@ import lux.xquery.VariableDefinition;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
 import net.sf.saxon.Configuration;
-import net.sf.saxon.expr.AtomicSequenceConverter;
-import net.sf.saxon.expr.Atomizer;
-import net.sf.saxon.expr.AxisExpression;
-import net.sf.saxon.expr.BinaryExpression;
-import net.sf.saxon.expr.CastExpression;
-import net.sf.saxon.expr.CastableExpression;
-import net.sf.saxon.expr.CompareToIntegerConstant;
-import net.sf.saxon.expr.ContextItemExpression;
-import net.sf.saxon.expr.ErrorExpression;
-import net.sf.saxon.expr.Expression;
-import net.sf.saxon.expr.FilterExpression;
-import net.sf.saxon.expr.FirstItemExpression;
-import net.sf.saxon.expr.ForExpression;
-import net.sf.saxon.expr.FunctionCall;
-import net.sf.saxon.expr.InstanceOfExpression;
-import net.sf.saxon.expr.IntegerRangeTest;
-import net.sf.saxon.expr.ItemChecker;
-import net.sf.saxon.expr.LastItemExpression;
-import net.sf.saxon.expr.LetExpression;
-import net.sf.saxon.expr.Literal;
-import net.sf.saxon.expr.NegateExpression;
-import net.sf.saxon.expr.ParentNodeExpression;
-import net.sf.saxon.expr.PositionVariable;
-import net.sf.saxon.expr.QuantifiedExpression;
-import net.sf.saxon.expr.RootExpression;
-import net.sf.saxon.expr.SlashExpression;
-import net.sf.saxon.expr.StaticProperty;
-import net.sf.saxon.expr.TailCallLoop;
-import net.sf.saxon.expr.TailExpression;
-import net.sf.saxon.expr.UnaryExpression;
-import net.sf.saxon.expr.VariableReference;
+import net.sf.saxon.expr.*;
 import net.sf.saxon.expr.flwor.Clause;
 import net.sf.saxon.expr.flwor.FLWORExpression;
 import net.sf.saxon.expr.flwor.LocalVariableBinding;
@@ -97,27 +67,18 @@ import net.sf.saxon.expr.instruct.ProcessingInstruction;
 import net.sf.saxon.expr.instruct.UserFunctionParameter;
 import net.sf.saxon.expr.instruct.ValueOf;
 import net.sf.saxon.expr.parser.Token;
-import net.sf.saxon.expr.sort.IntSet;
-import net.sf.saxon.expr.sort.IntUniversalSet;
+import net.sf.saxon.expr.sort.DocumentSorter;
 import net.sf.saxon.expr.sort.SortKeyDefinition;
 import net.sf.saxon.functions.StandardFunction;
 import net.sf.saxon.functions.StandardFunction.Entry;
 import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.lib.NamespaceConstant;
-import net.sf.saxon.om.Axis;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.NamespaceBinding;
-import net.sf.saxon.om.NamespaceResolver;
-import net.sf.saxon.om.NodeName;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StandardNames;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.DocumentNodeTest;
 import net.sf.saxon.pattern.LocalNameTest;
 import net.sf.saxon.pattern.NamespaceTest;
 import net.sf.saxon.pattern.NodeTest;
-import net.sf.saxon.query.GlobalVariableDefinition;
 import net.sf.saxon.query.QueryModule;
 import net.sf.saxon.query.XQueryExpression;
 import net.sf.saxon.query.XQueryFunction;
@@ -134,9 +95,14 @@ import net.sf.saxon.value.Cardinality;
 import net.sf.saxon.value.DurationValue;
 import net.sf.saxon.value.QNameValue;
 import net.sf.saxon.value.SequenceType;
-import net.sf.saxon.value.Value;
 
+import net.sf.saxon.z.IntSet;
+import net.sf.saxon.z.IntUniversalSet;
 import org.apache.commons.lang.StringUtils;
+
+/*
+TODO: AdjacentTextNodeMerger, EmptyTextNodeRemover, DocumentSorter, CastToList, CastableToList, SingletonAtomizer,
+ */
 
 /**
  * Translates Saxon XPath 2.0 Expressions into Lux AbstractExpressions.
@@ -250,14 +216,14 @@ public class SaxonTranslator {
     private VariableDefinition[] getVariableDefinitions(QueryModule module) {
         ArrayList<VariableDefinition> defs = new ArrayList<VariableDefinition>();
         @SuppressWarnings("unchecked")
-        Iterator<GlobalVariableDefinition> decls = module.getModuleVariables();
+        Iterator<GlobalVariable> decls = module.getModuleVariables();
         while (decls.hasNext()) {
-            GlobalVariableDefinition decl = decls.next();
-            GlobalVariable global = decl.getCompiledVariable();
+            GlobalVariable decl = decls.next();
+            GlobalVariable global = decl.getUltimateOriginalVariable();
             String typeDesc = getTypeDescription (decl.getRequiredType());
             Variable var = global != null ? (Variable) exprFor(global) : new Variable(qnameFor(decl.getVariableQName()));
             int order = decl.getLineNumber() * 1000000 + decl.getColumnNumber();
-            VariableDefinition def = new VariableDefinition(var, exprFor(decl.getValueExpression()), typeDesc, order);
+            VariableDefinition def = new VariableDefinition(var, exprFor(decl.getSelectExpression()), typeDesc, order);
             defs.add(def);
         }
         VariableDefinition [] orderedDefs = defs.toArray(new VariableDefinition[0]);
@@ -296,8 +262,7 @@ public class SaxonTranslator {
                     args, exprFor (function.getBody()));  
             functionDefinitions.add (fdef);
         }
-        FunctionDefinition[] defs = functionDefinitions.toArray(new FunctionDefinition[0]);
-        return defs;
+        return functionDefinitions.toArray(new FunctionDefinition[0]);
     }
     
     private String getTypeDescription (SequenceType sequenceType) {
@@ -328,8 +293,11 @@ public class SaxonTranslator {
         // This is a painful hack - we can't tell for sure in some cases which type is intended
         // because the ASC doesn't expose it, so in those cases we rely on a type we may
         // have just seen in an ItemChecker
-        ItemType type = (atomizer.isAllItemsConverted() || lastTypeSeen == null) ?
+        ItemType type = atomizer.getRequiredItemType();
+        /*
+            (atomizer.isAllItemsConverted() || lastTypeSeen == null) ?
                 atomizer.getItemType(config.getTypeHierarchy()) : lastTypeSeen;
+        */
         if (!type.isAtomicType()) {
             throw new LuxException ("AtomicSequenceConverter converting to non-atomic type: " + type);
         }
@@ -377,18 +345,18 @@ public class SaxonTranslator {
     public AbstractExpression exprFor (AxisExpression expr) {
         PathStep.Axis axis;
         switch (expr.getAxis()) {
-        case Axis.ANCESTOR: axis = PathStep.Axis.Ancestor; break;
-        case Axis.PARENT: axis = PathStep.Axis.Parent; break;
-        case Axis.DESCENDANT: axis = PathStep.Axis.Descendant; break;
-        case Axis.PRECEDING: axis = PathStep.Axis.Preceding; break;
-        case Axis.FOLLOWING: axis = PathStep.Axis.Following; break;
-        case Axis.SELF: axis = PathStep.Axis.Self; break;
-        case Axis.PRECEDING_SIBLING: axis = PathStep.Axis.PrecedingSibling; break;
-        case Axis.FOLLOWING_SIBLING: axis = PathStep.Axis.FollowingSibling; break;
-        case Axis.ANCESTOR_OR_SELF: axis = PathStep.Axis.AncestorSelf; break;
-        case Axis.DESCENDANT_OR_SELF: axis = PathStep.Axis.DescendantSelf; break;
-        case Axis.ATTRIBUTE: axis = PathStep.Axis.Attribute; break;
-        case Axis.CHILD: axis = PathStep.Axis.Child; break;
+        case AxisInfo.ANCESTOR: axis = PathStep.Axis.Ancestor; break;
+        case AxisInfo.PARENT: axis = PathStep.Axis.Parent; break;
+        case AxisInfo.DESCENDANT: axis = PathStep.Axis.Descendant; break;
+        case AxisInfo.PRECEDING: axis = PathStep.Axis.Preceding; break;
+        case AxisInfo.FOLLOWING: axis = PathStep.Axis.Following; break;
+        case AxisInfo.SELF: axis = PathStep.Axis.Self; break;
+        case AxisInfo.PRECEDING_SIBLING: axis = PathStep.Axis.PrecedingSibling; break;
+        case AxisInfo.FOLLOWING_SIBLING: axis = PathStep.Axis.FollowingSibling; break;
+        case AxisInfo.ANCESTOR_OR_SELF: axis = PathStep.Axis.AncestorSelf; break;
+        case AxisInfo.DESCENDANT_OR_SELF: axis = PathStep.Axis.DescendantSelf; break;
+        case AxisInfo.ATTRIBUTE: axis = PathStep.Axis.Attribute; break;
+        case AxisInfo.CHILD: axis = PathStep.Axis.Child; break;
         default: throw new IllegalArgumentException("Unsupported axis in expression: " + expr.toString());
         }
         AbstractExpression ae = exprFor (axis, expr.getNodeTest());
@@ -401,9 +369,8 @@ public class SaxonTranslator {
     }
     
     private BinaryOperation exprFor (PathStep.Axis axis, CombinedNodeTest nodeTest) {
-        CombinedNodeTest combinedNodeTest = (CombinedNodeTest) nodeTest;
-        NodeTest[] tests = combinedNodeTest.getComponentNodeTests();
-        BinaryOperation.Operator op = operatorFor(combinedNodeTest.getOperator());            
+        NodeTest[] tests = nodeTest.getComponentNodeTests();
+        BinaryOperation.Operator op = operatorFor(nodeTest.getOperator());
         return new BinaryOperation (exprFor(axis, tests[0]), op, exprFor(axis, tests[1]));
     }
     
@@ -420,8 +387,7 @@ public class SaxonTranslator {
         if (StringUtils.isBlank(prefix) && StringUtils.isNotBlank(namespace)) {
             prefix = getPrefixForNamespace(namespace);
         }
-        QName name = new QName (namespace, sqname.getLocalPart(), prefix);
-        return name;
+        return new QName (namespace, sqname.getLocalPart(), prefix);
     }
     
     public AbstractExpression exprFor (PathStep.Axis axis, NodeTest nodeTest) {
@@ -621,7 +587,7 @@ public class SaxonTranslator {
     }
 
     public AbstractExpression exprFor (Comment expr) {
-        return new CommentConstructor(exprFor(((Comment)expr).getContentExpression()));
+        return new CommentConstructor(exprFor(expr.getContentExpression()));
     }
     
     public AbstractExpression exprFor (ComputedAttribute expr) {
@@ -670,8 +636,7 @@ public class SaxonTranslator {
         QName qname = qnameFor (name.getStructuredQName());
         AbstractExpression content = exprFor (element.getContentExpression());
         Namespace [] namespaces = namespacesFor (element.getActiveNamespaces());
-        ElementConstructor elcon = new ElementConstructor(qname, namespaces, content);
-        return elcon;
+        return new ElementConstructor(qname, namespaces, content);
     }
 
     public AbstractExpression exprFor (ForExpression forExpr) {
@@ -854,7 +819,7 @@ public class SaxonTranslator {
     
     public AbstractExpression exprFor (Literal literal) {
         // This could be a sequence!!
-        Value<?> value = literal.getValue();
+        GroundedValue value = literal.getValue();
         try {
             int len = value.getLength();
             if (len == 0) {
@@ -863,7 +828,7 @@ public class SaxonTranslator {
             SequenceIterator<?> iter = value.iterate();
             if (len > 1) {
                 ArrayList<LiteralExpression> items = new ArrayList<LiteralExpression>();
-                Item<?> member;
+                Item member;
                 while ((member = iter.next()) != null) {
                     if (member instanceof AtomicValue) {
                         items.add (exprFor ((AtomicValue) member));
@@ -880,7 +845,7 @@ public class SaxonTranslator {
     }
 
     public LiteralExpression exprFor (AtomicValue value) {
-        ValueType type = valueTypeForItemType(value.getItemType(config.getTypeHierarchy()));
+        ValueType type = valueTypeForItemType(value.getItemType());
         if (value instanceof CalendarValue || value instanceof DurationValue || 
             value instanceof BigIntegerValue) {
             //return new LiteralExpression(((CalendarValue)value).getCalendar(), type);
@@ -891,7 +856,7 @@ public class SaxonTranslator {
             return new LiteralExpression (qnameFor (((QNameValue) value).getStructuredQName()), type);
         }
         try {
-            Object oval = Value.convertToJava(value.asItem());
+            Object oval = SequenceTool.convertToJava(value);
             return new LiteralExpression(oval, type);
         } catch (XPathException e) {
             throw new LuxException (e);
@@ -923,15 +888,22 @@ public class SaxonTranslator {
         AbstractExpression rq = exprFor (expr.getControlledExpression());
         return new PathExpression(lq, rq);
     }
-    
+
+    public AbstractExpression exprFor (SubscriptExpression expr) {
+        return new Subsequence (exprFor (expr.getBaseExpression()), exprFor(expr.getSubscriptExpression()), LiteralExpression.ONE);
+    }
+
     public AbstractExpression exprFor (TailExpression expr) {
         return new Subsequence (exprFor (expr.getBaseExpression()), new LiteralExpression(expr.getStart()));
     }
-    
+
+    /*
+     * just a kind of UnaryExpression?
     public AbstractExpression exprFor (TailCallLoop expr) {
         return exprFor (expr.getBaseExpression());
     }
-    
+    */
+
     public AbstractExpression exprFor (UnaryExpression expr) {
         return exprFor (expr.getBaseExpression());
     }
@@ -1132,7 +1104,9 @@ public class SaxonTranslator {
         case CopyOf:
             return exprFor ((CopyOf) expr);
         case DocumentInstr:
-            return exprFor ((DocumentInstr) expr);            
+            return exprFor ((DocumentInstr) expr);
+        case DocumentSorter:
+            return exprFor ((DocumentSorter) expr);
         case FilterExpression:
             return exprFor ((FilterExpression) expr);
         case FirstItemExpression:
@@ -1169,8 +1143,12 @@ public class SaxonTranslator {
             return exprFor ((QuantifiedExpression) expr);
         case RootExpression:
             return exprFor ((RootExpression) expr);
+        case SingletonAtomizer:
+            return exprFor ((SingletonAtomizer) expr);
         case SlashExpression:
             return exprFor ((SlashExpression) expr);
+        case SubscriptExpression:
+            return exprFor ((SubscriptExpression) expr);
         case TailExpression:
             return exprFor ((TailExpression) expr);
         case TreatAs:
@@ -1183,7 +1161,8 @@ public class SaxonTranslator {
         case VariableReference:
             return exprFor ((VariableReference) expr);
         case ErrorExpression:
-           throw new LuxException ("A potential run-time error was detected during compilation: " + ((ErrorExpression) expr).getException().getMessageAndLocation());
+           throw new LuxException ("A potential run-time error was detected during compilation: " + ((ErrorExpression) expr).getException().getMessageAndLocation(),
+                   ((ErrorExpression) expr).getException());
         default:
             throw new UnsupportedOperationException("unhandled expression type: " + expr.getClass().getSimpleName() + " in " + expr.toString());
         }
@@ -1205,6 +1184,7 @@ public class SaxonTranslator {
         ComputedElement,
         ContextItemExpression,
         CopyOf,
+        DocumentSorter,
         ErrorExpression,
         Expression,
         FilterExpression,
@@ -1222,7 +1202,9 @@ public class SaxonTranslator {
         ParentNodeExpression,
         QuantifiedExpression,
         RootExpression,
+        SingletonAtomizer,
         SlashExpression,
+        SubscriptExpression,
         TailExpression,
         TreatAs,
         UnaryExpression,

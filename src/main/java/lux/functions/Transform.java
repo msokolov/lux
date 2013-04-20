@@ -10,10 +10,7 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmDestination;
 import net.sf.saxon.s9api.XdmNode;
@@ -22,7 +19,7 @@ import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
-import net.sf.saxon.tree.iter.UnfailingIterator;
+import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.SequenceType;
 
 /**
@@ -72,10 +69,10 @@ public class Transform extends ExtensionFunctionDefinition {
         private XsltTransformer transformer;
 
         @Override
-        public UnfailingIterator<NodeInfo> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            NodeInfo stylesheet = (NodeInfo) arguments[0].next();
-            NodeInfo node = (NodeInfo) arguments[1].next();
+            NodeInfo stylesheet = (NodeInfo) arguments[0].head();
+            NodeInfo node = (NodeInfo) arguments[1].head();
 
             Evaluator eval = SearchBase.getEvaluator(context);
             XsltCompiler xsltCompiler = eval.getCompiler().getXsltCompiler();
@@ -94,17 +91,17 @@ public class Transform extends ExtensionFunctionDefinition {
                 transformer.transform();
                 ArrayList<TransformerException> runtimeErrors = ((TransformErrorListener)transformer.getErrorListener()).getErrors();
                 if (!runtimeErrors.isEmpty()) {
-                    throw new XPathException(runtimeErrors.get(0).getMessage(), runtimeErrors.get(0).getLocator());
+                    throw new XPathException(runtimeErrors.get(0).getMessage(), runtimeErrors.get(0).getLocator(), runtimeErrors.get(0));
                 }
                 XdmNode result = dest.getXdmNode();
-                return SingletonIterator.makeIterator(result == null ? null : result.getUnderlyingNode());
+                return new SequenceExtent(SingletonIterator.makeIterator(result == null ? null : result.getUnderlyingNode()));
             } catch (SaxonApiException e) {
                 throw new XPathException (e);
             }
         }
 
         @Override
-        protected void setParameter(StructuredQName name, Item<?> value) {
+        protected void setParameter(StructuredQName name, Item value) {
             transformer.getUnderlyingController().setParameter(name, value);
         }
         
@@ -115,4 +112,3 @@ public class Transform extends ExtensionFunctionDefinition {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-

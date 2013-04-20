@@ -33,7 +33,7 @@ public class BasicQueryTest {
             ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
             MATCH_ALL_Q, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
             LUX_FOO, LINE, TITLE, ACT_SCENE_SPEECH_AND, 
-    };
+    }
     
     protected Compiler compiler;
     protected Evaluator eval;
@@ -148,12 +148,15 @@ public class BasicQueryTest {
         assertQuery ("//SCENE[1]", MINIMAL, ValueType.ELEMENT, Q.SCENE);        
         assertQuery ("//SCENE[last()]", MINIMAL, ValueType.ELEMENT, Q.SCENE);
 
+        assertQuery ("(//ACT)[1]", MINIMAL, ValueType.ELEMENT, Q.ACT);
+    }
+
+    @Test public void testPositionalPredicate2 () throws Exception {
         // not minimal, since there may not be a second SCENE element
         assertQuery ("//SCENE[2]", 0, ValueType.ELEMENT, Q.SCENE);
-        
-        assertQuery ("(//ACT)[1]", MINIMAL, ValueType.ELEMENT, Q.ACT); 
+
     }
-    
+
     @Test public void testSubsequence () throws Exception {
         assertQuery ("subsequence (//ACT, 1, 1)", MINIMAL, ValueType.ELEMENT, Q.ACT);
         // save this until we have implemented some kind of pagination in XPathQuery
@@ -354,7 +357,7 @@ public class BasicQueryTest {
 
         // one xpath sort, one indexed sortkey
         query = "for $doc in //ACT order by $doc/date, $doc/lux:field-values('sortkey') ascending return $doc";
-        assertSortKeys (query, new String[0]);
+        assertSortKeys (query);
     }
     
     // This test ensures that the optimizer ignores the argument of string(), and does not 

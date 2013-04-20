@@ -10,9 +10,7 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryEvaluator;
@@ -20,7 +18,6 @@ import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.SequenceType;
-import net.sf.saxon.value.Value;
 
 /**
  * <code>lux:eval($query as xs:string, $params as item()*) as item()*</code>
@@ -68,9 +65,9 @@ public class Eval extends ExtensionFunctionDefinition {
         private XQueryEvaluator evaluator;
         
         @Override
-        public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            String query = arguments[0].next().getStringValue();
+            String query = arguments[0].head().getStringValue();
             Evaluator eval = SearchBase.getEvaluator(context);
             XQueryCompiler xqueryCompiler = eval.getCompiler().getXQueryCompiler();
             xqueryCompiler.setErrorListener(eval.getErrorListener());
@@ -83,18 +80,18 @@ public class Eval extends ExtensionFunctionDefinition {
                     bindParameters(arguments[1]);
                 }
                 XdmValue result = evaluator.evaluate();
-                ArrayList<TransformerException> runtimeErrors = ((TransformErrorListener)eval.getErrorListener()).getErrors();
+                ArrayList<TransformerException> runtimeErrors = eval.getErrorListener().getErrors();
                 if (!runtimeErrors.isEmpty()) {
-                    throw new XPathException(runtimeErrors.get(0).getMessage(), runtimeErrors.get(0).getLocator());
+                    throw new XPathException(runtimeErrors.get(0).getMessage(), runtimeErrors.get(0).getLocator(), runtimeErrors.get(0));
                 }
-                return Value.asIterator(result.getUnderlyingValue());
+                return result.getUnderlyingValue();
             } catch (SaxonApiException e) {
                 throw new XPathException (e);
             }
         }
 
         @Override
-        protected void setParameter(StructuredQName name, Item<?> value) {
+        protected void setParameter(StructuredQName name, Item value) {
             evaluator.getUnderlyingQueryContext().setParameterValue (name.getClarkName(), value);
         }
 
@@ -105,4 +102,3 @@ public class Eval extends ExtensionFunctionDefinition {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
