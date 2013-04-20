@@ -26,22 +26,21 @@ public class FileTest {
     public void testIsDir() throws Exception {
     	XdmResultSet result = eval.evaluate ("declare namespace file='http://expath.org/ns/file';" +
     			"(file:is-dir('.'), file:is-dir('xxx'), file:is-dir('./src/test/resources/conf/schema.xml'))");
-    	assertEquals ("true false false", result.getXdmValue().itemAt(0).getStringValue());
+    	assertEquals ("(true(), false(), false())", result.getXdmValue().getUnderlyingValue().toString());
     }
 
     @Test
     public void testExists() throws Exception {
     	XdmResultSet result = eval.evaluate ("declare namespace file='http://expath.org/ns/file';" +
     			"(file:exists('.'), file:exists('xxx'), file:exists('./src/test/resources/conf/schema.xml'))");
-    	assertEquals ("true false true", result.getXdmValue().itemAt(0).getStringValue());
+    	assertEquals ("(true(), false(), true())", result.getXdmValue().getUnderlyingValue().toString());
     }
 
     @Test
     public void testListFiles() throws Exception {
     	XdmResultSet result = eval.evaluate ("declare namespace file='http://expath.org/ns/file';" +
     			"(file:list('./src/test/resources/conf'))");
-    	assertEquals ("schema.xml solrconfig.xml", result.getXdmValue().itemAt(0).getStringValue());
+    	assertEquals ("(\"schema.xml\", \"solrconfig.xml\")", result.getXdmValue().getUnderlyingValue().toString());
     }
-
 
 }
