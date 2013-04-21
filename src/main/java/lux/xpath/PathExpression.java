@@ -4,6 +4,8 @@
 
 package lux.xpath;
 
+import lux.xquery.VariableContext;
+
 
 /**
  * A path expression represents two expressions joined with a "/"
@@ -81,6 +83,16 @@ public class PathExpression extends AbstractExpression {
         }
         return subs[0].getLastContextStep();
     }
+    
+
+    /**
+     * @return the context in which a variable in the LHS of the path is bound, if any
+     */
+    @Override
+    public VariableContext getBindingContext () {
+        return subs[0].getBindingContext();
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

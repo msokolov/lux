@@ -46,14 +46,14 @@ import lux.xquery.OrderByClause;
 import lux.xquery.SortKey;
 import lux.xquery.Variable;
 import lux.xquery.VariableBindingClause;
+import lux.xquery.VariableContext;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
-
-import org.slf4j.LoggerFactory;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.SortField;
+import org.slf4j.LoggerFactory;
 
 /**
  * Prepares an XPath expression tree for indexed execution against a Lux data
@@ -569,18 +569,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 	sortContext = args[1];
                 } else {
                 	sortContext = funcall.getSuper();
+                	if (sortContext == null) {
+                	    return funcall;
+                	}
                 }
-                if (sortContext.getType() == Type.TREAT) {
-                	// ugly hack, but I guess that's what optimization is all about :)
-                	sortContext = sortContext.getSubs()[0];
-                }
-                // Don't record this sort field for later optimization unless its context is a for-variable
-                if (sortContext.getType() != Type.VARIABLE) {
-                	return funcall;
-                }
-                Variable var = (Variable) sortContext;
-                if (! (var.getContext() instanceof ForClause)) {
-                	return funcall;
+                VariableContext binding = sortContext.getBindingContext();
+                if (binding == null || ! (binding instanceof ForClause)) {
+                    return funcall;
                 }
                 if (arg.getType() == Type.LITERAL) {
                     // save away the field name as a possible sort key
@@ -941,7 +936,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             push(q);
             AbstractExpression value = varBinding.getExpr();
             variable.setValue(value);
-            variable.setContext(varBinding.getContext());
+            variable.setBindingContext(varBinding.getContext());
         } else {
             // this happens when the variables represent function arguments
             push(MATCH_ALL.setFact(IGNORABLE, true));

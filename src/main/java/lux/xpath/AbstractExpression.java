@@ -1,5 +1,7 @@
 package lux.xpath;
 
+import lux.xquery.VariableContext;
+
 
 /**
  * An abstract XPath or XQuery expression.
@@ -18,7 +20,7 @@ public abstract class AbstractExpression implements Visitable {
         LITERAL, ROOT, DOT, FUNCTION_CALL, SEQUENCE, UNARY_MINUS, SUBSEQUENCE,
         LET, VARIABLE, COMPUTED_ELEMENT, ELEMENT, ATTRIBUTE, TEXT, FLWOR, CONDITIONAL, COMMENT,
         DOCUMENT_CONSTRUCTOR, PROCESSING_INSTRUCTION, SATISFIES, INSTANCE_OF, CASTABLE, TREAT
-    };
+    }
 
     private final Type type;
     
@@ -169,6 +171,17 @@ public abstract class AbstractExpression implements Visitable {
      */
     public AbstractExpression getLastContextStep () {
         return this;
+    }
+    
+    /**
+     * If this expression depends "directly" on a variable, return that variable's binding context: a for or let clause,
+     * or a global variable definition. This recurses through variables, so if there are aliases it retrieves the ultimate
+     * context.  We need to define directly dependent precisely; what it's used for is to determine with an order by 
+     * expression is dependent on a for-variable, and ultimately whether an order by optimization can be applied. 
+     * @return the binding context of the variable on which this expression depends, or null
+     */
+    public VariableContext getBindingContext () {
+        return null;
     }
 
     /**
