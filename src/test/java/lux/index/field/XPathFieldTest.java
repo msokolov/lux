@@ -106,7 +106,7 @@ public class XPathFieldTest {
         assertEquals (1, eval.getQueryStats().docCount);
     }
     
-    @Test @Ignore
+    @Test
     public void testSortContextOptimization () throws Exception {
         // order by an int field
     	String s = getStringResult("(for $doc in collection() order by $doc/lux:field-values('string-length') return name($doc/*))[1]");
