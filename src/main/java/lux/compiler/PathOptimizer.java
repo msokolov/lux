@@ -1163,23 +1163,23 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // Pull queries from middle of stack since they get pushed in
             // reverse order
             XPathQuery q = queryStack.remove(stackOffset);
+            SortKey sortKey = sortKeys.get(i);
+            AbstractExpression key = sortKey.getKey();
             if (q.getSortFields() == null) {
+            	// TODO: analyze the expression, matching against xpath indexes 
                 // once we find an unindexed sort field, stop adding sort
                 // indexes to the query
                 foundUnindexedSort = true;
             } else if (!foundUnindexedSort) {
-                SortKey sortKey = sortKeys.get(i);
-                AbstractExpression key = sortKey.getKey();
+            	// previous analysis determined this order by clause should be optimized
                 if (key instanceof FunCall) {
-                    // special case - it would be nice if Saxon figured this out
-                    // when compiling
+                    // field-values() with one argument depends on context 
                     FunCall keyFun = (FunCall) key;
                     if (keyFun.getName().equals(FunCall.LUX_FIELD_VALUES)) { 
                     	if (keyFun.getSubs().length < 2) {
                     		throw new LuxException(
                     				"lux:field-values($key) depends on the context where there is no context defined");
                     	}
-                    	// TODO: support "order by $doc/lux:field-values('sort-field') 
                     }
                 }
                 String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();
