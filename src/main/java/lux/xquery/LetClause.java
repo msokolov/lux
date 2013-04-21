@@ -7,7 +7,7 @@ public class LetClause extends VariableBindingClause {
 
     public LetClause(Variable var, AbstractExpression seq) {
         super (var, seq);
-        var.setContext(this);
+        var.setBindingContext(this);
     }
     
     @Override

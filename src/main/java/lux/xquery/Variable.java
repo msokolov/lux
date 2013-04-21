@@ -79,11 +79,16 @@ public class Variable extends AbstractExpression {
         return getValue().getLastContextStep();
     }
 
-	public VariableContext getContext() {
+    /**
+     * @return the binding context (for or let clause, or global definition) of this variable.
+     * Will be null if the variable represents a function argument.
+     */
+	@Override
+    public VariableContext getBindingContext() {
 		return context;
 	}
 
-	public void setContext(VariableContext context) {
+	public void setBindingContext(VariableContext context) {
 		this.context = context;
 	}
 }

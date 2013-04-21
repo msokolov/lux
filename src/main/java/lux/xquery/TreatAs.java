@@ -49,6 +49,14 @@ public class TreatAs extends AbstractExpression {
     public int getPrecedence() {
         return 13;
     }
+    
+    /**
+     * @return the binding context of the base expression
+     */
+    @Override
+    public VariableContext getBindingContext () {
+        return subs[0].getBindingContext();
+    }
 
 }
 
