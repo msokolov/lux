@@ -981,42 +981,41 @@ public class PathOptimizer extends ExpressionVisitorBase {
         AbstractExpression length = subsequence.getLengthExpr();
         // Any (/) in the expression will have been replaced with a search, 
         // unless this expression is inside a user-defined function.
-        if (sequence.getRoot().getType() != Type.FUNCTION_CALL) {
+        AbstractExpression root = sequence.getRoot();
+		if (root == null || root.getType() != Type.FUNCTION_CALL || LiteralExpression.ONE.equals(start)) {
         	return subsequence;
         }
-        FunCall search = (FunCall) sequence.getRoot();
-        if (search != null && !start.equals(LiteralExpression.ONE)) {
-            AbstractExpression[] args = search.getSubs();
-            if (args.length >= 4) {
-                // there is already a start arg provided
-                return subsequence;
-            }
-            boolean isSingular;
-            if (args.length < 1) {
-                isSingular = true; // this must be a user-supplied search call
-            } else {
-                LiteralExpression factsArg = (LiteralExpression) args[1];
-                long facts = factsArg.equals(LiteralExpression.EMPTY) ? 0 :
-                    ((Long) factsArg.getValue());
-                isSingular = (facts & SINGULAR) != 0;
-            }
-            if (isSingular) {
-                AbstractExpression[] newArgs = new AbstractExpression[4];
-                int i = 0;
-                while (i < args.length) {
-                    newArgs[i] = args[i];
-                    ++i;
-                }
-                while (i < 3) {
-                    newArgs[i++] = LiteralExpression.EMPTY;
-                }
-                newArgs[i] = start;
-                search.setArguments(newArgs);
-                if (length == null || length.equals(LiteralExpression.EMPTY)) {
-                    return search;
-                }
-                subsequence.setStartExpr(LiteralExpression.ONE);
-            }
+        FunCall search = (FunCall) root;
+        AbstractExpression[] args = search.getSubs();
+        if (args.length >= 4) {
+        	// there is already a start arg provided
+        	return subsequence;
+        }
+        boolean isSingular;
+        if (args.length < 1) {
+        	isSingular = true; // this must be a user-supplied search call
+        } else {
+        	LiteralExpression factsArg = (LiteralExpression) args[1];
+        	long facts = factsArg.equals(LiteralExpression.EMPTY) ? 0 :
+        		((Long) factsArg.getValue());
+        	isSingular = (facts & SINGULAR) != 0;
+        }
+        if (isSingular) {
+        	AbstractExpression[] newArgs = new AbstractExpression[4];
+        	int i = 0;
+        	while (i < args.length) {
+        		newArgs[i] = args[i];
+        		++i;
+        	}
+        	while (i < 3) {
+        		newArgs[i++] = LiteralExpression.EMPTY;
+        	}
+        	newArgs[i] = start;
+        	search.setArguments(newArgs);
+        	if (length == null || length.equals(LiteralExpression.EMPTY)) {
+        		return search;
+        	}
+        	subsequence.setStartExpr(LiteralExpression.ONE);
         }
         return subsequence;
     }
