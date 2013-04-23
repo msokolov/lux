@@ -89,6 +89,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
         serializer = new Serializer();
         serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
+        serializer.setOutputProperty(Serializer.Property.BYTE_ORDER_MARK, "no");
+        serializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
     }
     
     @Override
@@ -130,7 +132,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             }
         } else {
-            contentType = "text/html; charset=UTF-8";
             serializer.setOutputProperty(Serializer.Property.METHOD, "html");
         }
     }
