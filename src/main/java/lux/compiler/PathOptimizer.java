@@ -979,7 +979,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         AbstractExpression sequence = subsequence.getSequence();
         AbstractExpression start = subsequence.getStartExpr();
         AbstractExpression length = subsequence.getLengthExpr();
-        // Any (/) in the expression must have been replaced with a search
+        // Any (/) in the expression will have been replaced with a search, 
+        // unless this expression is inside a user-defined function.
+        if (sequence.getRoot().getType() != Type.FUNCTION_CALL) {
+        	return subsequence;
+        }
         FunCall search = (FunCall) sequence.getRoot();
         if (search != null && !start.equals(LiteralExpression.ONE)) {
             AbstractExpression[] args = search.getSubs();
