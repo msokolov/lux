@@ -153,7 +153,7 @@ public class LuxSolrTest extends BaseSolrTest {
     	q.setParam("lux.xquery", "file:src/test/resources/lux/solr/echo.xqy");
     	resp = solr.query(q);
     	NamedList<?> xpathResults = (NamedList<?>) resp.getResponse().get("xpath-results"); 
-    	assertEquals ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+    	assertEquals (
     			"<http><params>" +
     			"<param name=\"wt\"><value>lux</value></param>" +
     			"<param name=\"qt\"><value>/lux</value></param>" +
