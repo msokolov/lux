@@ -39,7 +39,7 @@ public class AppServerComponent extends XQueryComponent {
                     if (absolutePath.getProtocol().equals("file")) {
                         File f = new File(absolutePath.getPath());
                         if (f.isDirectory() || ! f.canRead()) {
-                            throw new SolrException (ErrorCode.NOT_FOUND, f + " not found");
+                            throw new SolrException (ErrorCode.FORBIDDEN, "access to " + f + " denied by rule");
                         }
                     }
                     contents = IOUtils.toString(absolutePath.openStream());   
