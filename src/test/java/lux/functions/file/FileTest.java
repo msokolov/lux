@@ -39,7 +39,7 @@ public class FileTest {
     @Test
     public void testListFiles() throws Exception {
     	XdmResultSet result = eval.evaluate ("declare namespace file='http://expath.org/ns/file';" +
-    			"(file:list('./src/test/resources/conf'))");
+    			"for $file in file:list('./src/test/resources/conf') order by $file return $file");
     	assertEquals ("schema.xml solrconfig.xml", result.getXdmValue().getUnderlyingValue().getStringValue());
     }
 
