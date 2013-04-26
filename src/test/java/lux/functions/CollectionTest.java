@@ -1,6 +1,9 @@
 package lux.functions;
 
 import static org.junit.Assert.*;
+
+import java.util.HashSet;
+
 import lux.Evaluator;
 import lux.IndexTestSupport;
 import lux.XdmResultSet;
@@ -70,13 +73,17 @@ public class CollectionTest {
         	result.getErrors().get(0).printStackTrace();
         	assertNull(result.getErrors().get(0).getMessage(), result.getErrors());
         }
+        String pwd = System.getProperty("user.dir");
+        HashSet<String> expected = new HashSet<String> ();
+        expected.add("file:" + pwd + "/src/test/resources/conf/schema.xml");
+        expected.add("file:" + pwd + "/src/test/resources/conf/solrconfig.xml");
+        HashSet<String> files = new HashSet<String> ();
         XdmSequenceIterator iter = result.getXdmValue().iterator();
-        String filename = iter.next().getStringValue();
-		assertTrue (filename, filename.endsWith("src/test/resources/conf/schema.xml"));
-		filename = iter.next().getStringValue();
-        assertTrue (filename, filename.endsWith("src/test/resources/conf/solrconfig.xml"));
-        assertFalse (iter.hasNext());
-        
+        while (iter.hasNext()) {
+            String filename = iter.next().getStringValue();
+            files.add(filename);
+        }
+        assertEquals (expected, files); 
     }
     
     // No need to test collection() with no args here - it's tested all over the place already

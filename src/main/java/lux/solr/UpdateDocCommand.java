@@ -7,6 +7,8 @@ import org.apache.solr.update.AddUpdateCommand;
 public class UpdateDocCommand extends AddUpdateCommand {
     
     public UpdateDocCommand(SolrCore core, Document doc, String uri) {
+        this.doc = doc;
+        this.indexedId = uri;
     }
     
 }

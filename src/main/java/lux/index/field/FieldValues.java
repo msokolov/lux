@@ -53,13 +53,13 @@ public class FieldValues implements Iterable<Fieldable> {
                 return new Field(fieldName, value.toString(), field.isStored(), Index.NOT_ANALYZED);
             
             case INT: {
-                NumericField nf = new NumericField(fieldName);
+                NumericField nf = new NumericField(fieldName, field.isStored(), true);
                 nf.setIntValue((Integer) value);
                 return nf;
             }
             
             case LONG: {
-                NumericField nf = new NumericField(fieldName);
+                NumericField nf = new NumericField(fieldName, field.isStored(), true);
                 nf.setLongValue((Long) value);
                 return nf;
             }

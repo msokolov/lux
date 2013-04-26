@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
 
+import lux.exception.LuxException;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
@@ -43,16 +44,32 @@ abstract class XmlTokenStreamBase extends TokenStream {
     protected XdmNode curNode;
     protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to index
     protected CharTermAttribute termAtt;
-    protected Reader charStream = new OffsetCharFilter(new CharSequenceStream(""));
+    protected Reader charStream;
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
-    XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
-        super (wrapped);
-        this.wrapped = wrapped;
+    XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrappedTokenStream) {
+        super (wrappedTokenStream);
+        charStream = new CharSequenceStream("");
+        this.wrapped = reusableTokenStream(analyzer, fieldName, charStream);
+        // ensure that the wrappedTokenStream we were handed *is the same tokenStream* that the
+        // analyzer produces:
+        assert (wrappedTokenStream == wrapped);
         this.fieldName = fieldName;
         this.analyzer = analyzer;
         termAtt = addAttribute(CharTermAttribute.class);
         //tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
+    }
+    
+    public static TokenStream reusableTokenStream (Analyzer analyzer, String fieldName) {
+        return reusableTokenStream(analyzer, fieldName, null);
+    }
+    
+    private static TokenStream reusableTokenStream (Analyzer analyzer, String fieldName, Reader reader) {
+        try {
+            return analyzer.reusableTokenStream(fieldName, reader);
+        } catch (IOException e) {
+            throw new LuxException("An error occurred while indexing", e);
+        }
     }
     
     @Override

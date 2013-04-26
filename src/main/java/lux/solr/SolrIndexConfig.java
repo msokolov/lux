@@ -206,13 +206,11 @@ public class SolrIndexConfig {
             setQueryAnalyzer(new WhitespaceGapAnalyzer());
         }
         
-        /*
-         * REVIEW: do we need this?
+        /* required for Solr 3 only */
         @Override
         protected Field.Index getFieldIndex(SchemaField field, String internalVal) {
             return Field.Index.ANALYZED;
         }
-        */
         
     }
     

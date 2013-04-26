@@ -139,12 +139,20 @@ public class IndexTestSupport {
     
     public void printAllTerms(String fld) throws IOException {
         IndexReader reader = IndexReader.open(dir);
-        System.out.println ("Printing all terms (except uri)");
+        if (fld == null) {
+            System.out.println ("Printing all terms (except uri)");
+        } else {
+            System.out.println ("Printing terms for field " + fld);
+        }
         String uriFieldName = indexer.getConfiguration().getFieldName(FieldName.URI);
         TermEnum terms = fld == null ? reader.terms() : reader.terms(new Term(fld));
         while (terms.next()) {
             if (terms.term().field().equals(uriFieldName)) {
                 continue;
+            }
+            if (fld != null && terms.term().field().compareTo(fld) > 0) {
+                // we've exhausted all the terms from the requested field
+                break;
             }
             System.out.println (terms.term().toString() + ' ' + terms.docFreq());
         }

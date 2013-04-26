@@ -101,7 +101,7 @@ public class IndexTest {
     public void testIndexFullText () throws Exception {
         IndexTestSupport indexTestSupport = buildIndex ("full-text", INDEX_FULLTEXT | STORE_DOCUMENT |BUILD_DOCUMENT);        
         assertTotalDocs ();
-        printAllTerms(indexTestSupport, "lux_elt_text");
+        //printAllTerms(indexTestSupport, "lux_elt_text");
         assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
     }
 
@@ -172,7 +172,7 @@ public class IndexTest {
         System.out.println 
              (String.format("indexed path-values for lux/reader-test.xml in %d bytes", dir.sizeInBytes()));
         IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
-        // printAllTerms(indexTestSupport);
+        //printAllTerms(indexTestSupport, "lux_elt_text");
         assertFullTextQuery (indexTestSupport, "title", "TEST", 1);
     }
     
@@ -326,6 +326,7 @@ public class IndexTest {
         return indexTestSupport;
     }
 
+    @SuppressWarnings("unused")
     private void printAllTerms(IndexTestSupport indexTestSupport, String fld) throws Exception {
         indexTestSupport.printAllTerms(fld);
     }

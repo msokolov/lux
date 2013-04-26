@@ -6,6 +6,7 @@ import lux.index.XmlIndexer;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.search.SortField;
@@ -148,6 +149,10 @@ public abstract class FieldDefinition {
     
     public boolean isSingleValued () {
         return false;
+    }
+    
+    public Index getIndexOptions() {
+        return analyzer != null ? Index.ANALYZED : Index.NOT_ANALYZED;
     }
     
     /**

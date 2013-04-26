@@ -10,7 +10,6 @@ import lux.index.analysis.QNameTokenFilter;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
-import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Field;
@@ -39,7 +38,7 @@ public class AttributeTextField extends FieldDefinition {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
             String fieldName = indexer.getConfiguration().getFieldName(this);
             Analyzer analyzer = getAnalyzer();
-            TokenStream textTokens = analyzer.tokenStream(fieldName, new CharSequenceReader(""));
+            TokenStream textTokens = AttributeTokenStream.reusableTokenStream(analyzer, fieldName);
             AttributeTokenStream tokens = new AttributeTokenStream(fieldName, analyzer, textTokens, doc, builder.getOffsets());
             ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
             return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(

@@ -51,10 +51,8 @@ public class SolrDocWriter implements DocWriter {
     @Override
     public void delete(String uri) {
         DeleteUpdateCommand cmd = new DeleteUpdateCommand();
-        /*
         cmd.fromCommitted = true;
         cmd.fromPending = true;
-        */
         cmd.id = uri;
         try {
             core.getUpdateHandler().delete(cmd);
@@ -66,10 +64,8 @@ public class SolrDocWriter implements DocWriter {
     @Override
     public void deleteAll() {
         DeleteUpdateCommand cmd = new DeleteUpdateCommand();
-        /*
         cmd.fromCommitted = true;
         cmd.fromPending = true;
-        */
         cmd.query = "*:*";
         try {
             core.getUpdateHandler().deleteByQuery(cmd);
@@ -82,7 +78,7 @@ public class SolrDocWriter implements DocWriter {
     public void commit() {
         CommitUpdateCommand cmd = new CommitUpdateCommand(false);
         cmd.expungeDeletes = false;
-        // cmd.waitFlush = true;
+        cmd.waitFlush = true;
         cmd.waitSearcher = true;
         try {
             core.getUpdateHandler().commit(cmd);

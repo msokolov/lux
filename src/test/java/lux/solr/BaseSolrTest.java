@@ -2,11 +2,13 @@ package lux.solr;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest.METHOD;
@@ -39,9 +41,10 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
+        FileUtils.deleteDirectory(new File("solr/collection1/data/index"));
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
-        String defaultCoreName = coreContainer.getDefaultCoreName();
+        String defaultCoreName = "collection1";
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
         solrCore = coreContainer.getCore(defaultCoreName);
         try {

@@ -8,7 +8,6 @@ import lux.index.analysis.XmlTextTokenStream;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
-import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Field;
@@ -34,8 +33,7 @@ public class XmlTextField extends FieldDefinition {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
             String fieldName = indexer.getConfiguration().getFieldName(this);
             Analyzer analyzer = getAnalyzer();
-            TokenStream textTokens=null;
-            textTokens = analyzer.tokenStream(fieldName, new CharSequenceReader(""));
+            TokenStream textTokens = XmlTextTokenStream.reusableTokenStream(analyzer, fieldName);
             XmlTextTokenStream tokens = new XmlTextTokenStream (fieldName, analyzer, textTokens, doc, builder.getOffsets());
             return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(new Field(indexer.getConfiguration().getFieldName(this), tokens)));
         }
