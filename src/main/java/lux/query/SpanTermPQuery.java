@@ -5,7 +5,7 @@ import lux.xml.QName;
 import lux.xquery.ElementConstructor;
 
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.ext.ExtendableQueryParser;
+import org.apache.lucene.queryParser.ext.ExtendableQueryParser;
 
 /**
  * Extends TermPQuery for use in contexts where a SpanTerm is required

@@ -10,7 +10,7 @@ import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
 
-import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.document.Fieldable;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.update.AddUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
@@ -70,7 +70,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                     doc.addField(fieldName, value);
                 }
             } else {
-                for (IndexableField value : field.getFieldValues(indexer)) {
+                for (Fieldable value : field.getFieldValues(indexer)) {
                     doc.addField(fieldName, value);
                 }
             }

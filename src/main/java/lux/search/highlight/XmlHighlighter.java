@@ -58,19 +58,15 @@ public class XmlHighlighter extends SaxonDocBuilder {
         analyzer = indexConfig.getFieldAnalyzers();
         this.highlighter = highlighter;
         textReader = new XmlStreamTextReader();
-        try {
-            // in order to handle highlighting element-text query terms, we need to
-            // arrange for element-text tokens to appear in this stream.
-            // The other place we do that is in ElementTokenStream, but that isn't
-            // really usable in a simple way in this context
-            // What do instead is to create yet another TokenStream class
-            // StreamingElementTokens, which wraps xmlStreamToken
-            xmlStreamTokens = new StreamingElementTokens(analyzer.tokenStream(textFieldName, textReader));
-            offsetAtt = xmlStreamTokens.addAttribute(OffsetAttribute.class);
-            xmlStreamTokens.addAttribute(PositionIncrementAttribute.class);
-        } catch (IOException e) {
-            throw new LuxException(e);
-        }
+        // in order to handle highlighting element-text query terms, we need to
+        // arrange for element-text tokens to appear in this stream.
+        // The other place we do that is in ElementTokenStream, but that isn't
+        // really usable in a simple way in this context
+        // What do instead is to create yet another TokenStream class
+        // StreamingElementTokens, which wraps xmlStreamToken
+        xmlStreamTokens = new StreamingElementTokens(analyzer.tokenStream(textFieldName, textReader));
+        offsetAtt = xmlStreamTokens.addAttribute(OffsetAttribute.class);
+        xmlStreamTokens.addAttribute(PositionIncrementAttribute.class);
         tokenGroup = new TokenGroup(xmlStreamTokens);
     }
     
@@ -85,9 +81,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
         // TODO: is this the Analyzer we're looking for???  OR ... reimplement using different HL
         Analyzer defaultAnalyzer = new DefaultAnalyzer();
         TokenStream textTokens = null;
-        try {
-            textTokens = defaultAnalyzer.tokenStream("xml_text", new CharSequenceReader(""));
-        } catch (IOException e) { }
+        textTokens = defaultAnalyzer.tokenStream("xml_text", new CharSequenceReader(""));
         init(new XmlTextTokenStream("xml_text", defaultAnalyzer, textTokens, new XdmNode (node), null));
         XmlReader xmlReader = new XmlReader ();
         xmlReader.addHandler(this);

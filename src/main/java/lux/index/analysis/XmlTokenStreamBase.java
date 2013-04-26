@@ -2,7 +2,6 @@ package lux.index.analysis;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.Iterator;
 
 import net.sf.saxon.om.NodeInfo;
@@ -44,7 +43,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
     protected XdmNode curNode;
     protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to index
     protected CharTermAttribute termAtt;
-    protected Reader charStream = new OffsetCharFilter(new StringReader(""));
+    protected Reader charStream = new OffsetCharFilter(new CharSequenceStream(""));
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
     XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
@@ -63,7 +62,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
     }
     
     public void reset (Reader reader) throws IOException {
-        TokenStream reset = analyzer.tokenStream (fieldName, reader);
+        TokenStream reset = analyzer.reusableTokenStream (fieldName, reader);
         // This must be the same token stream: ie the Analyzer must be re-usable, and the 
         // original token stream must have arisen from it.  We don't check for actual
         // identity with wrapped since that might get wrapped again (eg w/QNameTokenFilter).

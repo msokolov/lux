@@ -1,10 +1,10 @@
 package lux.query.parser;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.queryparser.ext.ExtensionQuery;
-import org.apache.lucene.queryparser.ext.ParserExtension;
-import org.apache.lucene.queryparser.xml.ParserException;
-import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.ext.ExtensionQuery;
+import org.apache.lucene.queryParser.ext.ParserExtension;
+import org.apache.lucene.xmlparser.ParserException;
 
 class NodeParser extends ParserExtension {
     

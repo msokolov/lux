@@ -72,7 +72,7 @@ public abstract class BaseSolrTest {
 
     protected void assertQuery (Object result, String type, String query) throws Exception {
         SolrQuery q = new SolrQuery(query);
-        q.setRequestHandler(SOLR_QUERY_TYPE);
+        q.setQueryType(SOLR_QUERY_TYPE);
         QueryResponse rsp = solr.query(q, METHOD.POST);
         NamedList<Object> response = rsp.getResponse();
         NamedList<?> actual = (NamedList<?>) response.get("xpath-results");
@@ -107,7 +107,7 @@ public abstract class BaseSolrTest {
 
     protected void assertXPathSearchError(String error, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setRequestHandler(SOLR_QUERY_TYPE);
+        q.setQueryType(SOLR_QUERY_TYPE);
         QueryResponse rsp = solr.query(q, METHOD.POST);
         String actualError = rsp.getResponse().get("xpath-error").toString();
         assertTrue("Error " + actualError + " does not contain expected error " + error, actualError.contains(error));
@@ -121,7 +121,7 @@ public abstract class BaseSolrTest {
     protected void assertXPathSearchCount(int count, int docCount, int maxResults, String type, String value,
             String query, SolrServer core) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setRequestHandler(SOLR_QUERY_TYPE);
+        q.setQueryType(SOLR_QUERY_TYPE);
         q.setRows(maxResults);
         q.setStart(0);
         QueryResponse rsp = core.query(q, METHOD.POST);

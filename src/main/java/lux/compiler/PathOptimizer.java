@@ -581,7 +581,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     // save away the field name as a possible sort key
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
                     FieldDefinition fieldDefinition = indexConfig.getField(fieldName);
-                    SortField.Type sortType;
+                    int sortType;
                     if (fieldDefinition != null) {
                         sortType = fieldDefinition.getType().getLuceneSortFieldType();
                     } else {
