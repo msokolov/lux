@@ -632,7 +632,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         if (fname.equals(FunCall.FN_COLLECTION) && subs.length == 0) {
             // Optimize when no arguments to collection()
-            // TODO: figure out why we don't need to push queries all over here?
             push(MATCH_ALL);
             return new Root();
         }
