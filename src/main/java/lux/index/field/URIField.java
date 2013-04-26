@@ -5,9 +5,11 @@ import java.util.Set;
 
 import lux.index.XmlIndexer;
 
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.Fieldable;
 
 public class URIField extends FieldDefinition {
     
@@ -22,8 +24,8 @@ public class URIField extends FieldDefinition {
     }
     
     @Override
-    public Set<StringField> getFieldValues(XmlIndexer indexer) {
-        return Collections.singleton(new StringField(indexer.getConfiguration().getFieldName(this), indexer.getURI(), Store.YES)); 
+    public Set<? extends Fieldable> getFieldValues(XmlIndexer indexer) {
+        return Collections.singleton(new Field(indexer.getConfiguration().getFieldName(this), indexer.getURI(), Store.YES, Index.NOT_ANALYZED));
     }
     
     @Override

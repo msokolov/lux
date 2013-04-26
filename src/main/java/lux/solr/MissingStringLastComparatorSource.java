@@ -15,171 +15,89 @@
  * limitations under the License.
  */
 
-
 /* Copied from Solr so as to avoid pulling the entire Solr dependency into this otherwise
- * Lucene-only code layer.
+ * Lucene-only code layer.  This functionality is available in later versions of Lucene,
+ * so TODO: remove this in favor of Lucene's version
  */
 package lux.solr;
 
 import java.io.IOException;
 
-import org.apache.lucene.index.AtomicReader;
-import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.SortedDocValues;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.FieldCache;
 import org.apache.lucene.search.FieldComparator;
 import org.apache.lucene.search.FieldComparatorSource;
-import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.UnicodeUtil;
 
-@SuppressWarnings("all")
+
 public class MissingStringLastComparatorSource extends FieldComparatorSource {
-  private final BytesRef missingValueProxy;
+  public static final String bigString="\uffff\uffff\uffff\uffff\uffff\uffff\uffff\uffffNULL_VAL";
+
+  private final String missingValueProxy;
 
   public MissingStringLastComparatorSource() {
-    this(UnicodeUtil.BIG_TERM);
+    this(bigString);
   }
 
-  /** Creates a {@link FieldComparatorSource} that sorts null last in a normal ascending sort.
-   * <tt>missingValueProxy</tt> as the value to return from FieldComparator.value()
+  /** Creates a {@link FieldComparatorSource} that uses <tt>missingValueProxy</tt> as the value to return from ScoreDocComparator.sortValue()
+   * which is only used my multisearchers to determine how to collate results from their searchers.
    *
    * @param missingValueProxy   The value returned when sortValue() is called for a document missing the sort field.
-   * This value is *not* normally used for sorting.
+   * This value is *not* normally used for sorting, but used to create
    */
-  public MissingStringLastComparatorSource(BytesRef missingValueProxy) {
+  public MissingStringLastComparatorSource(String missingValueProxy) {
     this.missingValueProxy=missingValueProxy;
   }
 
   @Override
-  public FieldComparator newComparator(String fieldname, int numHits, int sortPos, boolean reversed) throws IOException {
-    return new TermOrdValComparator_SML(numHits, fieldname, sortPos, reversed, missingValueProxy);
+  public FieldComparator<String> newComparator(String fieldname, int numHits, int sortPos, boolean reversed) throws IOException {
+    return new MissingLastOrdComparator(numHits, fieldname, sortPos, reversed, missingValueProxy);
   }
 
 }
 
-// Copied from Lucene's TermOrdValComparator and modified since the Lucene version couldn't
-// be extended.
-@SuppressWarnings("all")
-class TermOrdValComparator_SML extends FieldComparator<Comparable> {
-  private static final int NULL_ORD = Integer.MAX_VALUE-1;
+// Copied from Lucene and modified since the Lucene version couldn't
+// be extended or have it's values accessed.
+ class MissingLastOrdComparator extends FieldComparator<String> {
+    private static final int NULL_ORD = Integer.MAX_VALUE;
+    private final String nullVal; 
 
-  private final int[] ords;
-  private final BytesRef[] values;
-  private final int[] readerGen;
+    private final int[] ords;
+    private final String[] values;
+    private final int[] readerGen;
 
-  private SortedDocValues termsIndex;
-  private final String field;
+    private int currentReaderGen = -1;
+    private String[] lookup;
+    private int[] order;
+    private final String field;
 
-  private final BytesRef NULL_VAL;
-  private PerSegmentComparator current;
+    private int bottomSlot = -1;
+    private int bottomOrd;
+    private String bottomValue;
+    private final boolean reversed;
+    private final int sortPos;
 
-  public TermOrdValComparator_SML(int numHits, String field, int sortPos, boolean reversed, BytesRef nullVal) {
-    ords = new int[numHits];
-    values = new BytesRef[numHits];
-    readerGen = new int[numHits];
-    this.field = field;
-    this.NULL_VAL = nullVal;
-  }
-
-  @Override
-  public int compare(int slot1, int slot2) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void setBottom(int slot) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public int compareBottom(int doc) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void copy(int slot, int doc) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public BytesRef value(int slot) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public int compareValues(Comparable first, Comparable second) {
-    if (first == null) {
-      if (second == null) {
-        return 0;
-      } else {
-        return 1;
-      }
-    } else if (second == null) {
-      return -1;
-    } else {
-      return first.compareTo(second);
-    }
-  }
-
-  @Override
-  public FieldComparator setNextReader(AtomicReaderContext context) throws IOException {
-    return TermOrdValComparator_SML.createComparator(context.reader(), this);
-  }
-
-  @Override
-  public int compareDocToValue(int doc, Comparable docValue) {
-    throw new UnsupportedOperationException();
-  }
-
-  // Base class for specialized (per bit width of the
-  // ords) per-segment comparator.  NOTE: this is messy;
-  // we do this only because hotspot can't reliably inline
-  // the underlying array access when looking up doc->ord
-  private static abstract class PerSegmentComparator extends FieldComparator<BytesRef> {
-    protected TermOrdValComparator_SML parent;
-    protected final int[] ords;
-    protected final BytesRef[] values;
-    protected final int[] readerGen;
-
-    protected int currentReaderGen = -1;
-    protected SortedDocValues termsIndex;
-
-    protected int bottomSlot = -1;
-    protected int bottomOrd;
-    protected boolean bottomSameReader = false;
-    protected BytesRef bottomValue;
-    protected final BytesRef tempBR = new BytesRef();
-
-
-    public PerSegmentComparator(TermOrdValComparator_SML parent) {
-      this.parent = parent;
-      PerSegmentComparator previous = parent.current;
-      if (previous != null) {
-        currentReaderGen = previous.currentReaderGen;
-        bottomSlot = previous.bottomSlot;
-        bottomOrd = previous.bottomOrd;
-        bottomValue = previous.bottomValue;
-      }
-      ords = parent.ords;
-      values = parent.values;
-      readerGen = parent.readerGen;
-      termsIndex = parent.termsIndex;
-      currentReaderGen++;
-    }
-
-    @Override
-    public FieldComparator setNextReader(AtomicReaderContext context) throws IOException {
-      return TermOrdValComparator_SML.createComparator(context.reader(), parent);
+   public MissingLastOrdComparator(int numHits, String field, int sortPos, boolean reversed, String nullVal) {
+      ords = new int[numHits];
+      values = new String[numHits];
+      readerGen = new int[numHits];
+      this.sortPos = sortPos;
+      this.reversed = reversed;
+      this.field = field;
+      this.nullVal = nullVal;
     }
 
     @Override
     public int compare(int slot1, int slot2) {
       if (readerGen[slot1] == readerGen[slot2]) {
-        return ords[slot1] - ords[slot2];
+        int cmp = ords[slot1] - ords[slot2];
+        if (cmp != 0) {
+          return cmp;
+        }
       }
 
-      final BytesRef val1 = values[slot1];
-      final BytesRef val2 = values[slot2];
+      final String val1 = values[slot1];
+      final String val2 = values[slot2];
+
       if (val1 == null) {
         if (val2 == null) {
           return 0;
@@ -192,123 +110,103 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
     }
 
     @Override
-    public void setBottom(final int bottom) {
-      bottomSlot = bottom;
-
-      bottomValue = values[bottomSlot];
-      if (currentReaderGen == readerGen[bottomSlot]) {
-        bottomOrd = ords[bottomSlot];
-        bottomSameReader = true;
-      } else {
-        if (bottomValue == null) {
-          // -1 ord is null for all segments
-          assert ords[bottomSlot] == NULL_ORD;
-          bottomOrd = NULL_ORD;
-          bottomSameReader = true;
-          readerGen[bottomSlot] = currentReaderGen;
-        } else {
-          final int index = termsIndex.lookupTerm(bottomValue);
-          if (index < 0) {
-            bottomOrd = -index - 2;
-            bottomSameReader = false;
-          } else {
-            bottomOrd = index;
-            // exact value match
-            bottomSameReader = true;
-            readerGen[bottomSlot] = currentReaderGen;
-            ords[bottomSlot] = bottomOrd;
-          }
-        }
-      }
-    }
-
-    @Override
-    public BytesRef value(int slot) {
-      return values==null ? parent.NULL_VAL : values[slot];
-    }
-
-    @Override
-    public int compareDocToValue(int doc, BytesRef value) {
-      int docOrd = termsIndex.getOrd(doc);
-      if (docOrd == -1) {
-        if (value == null) {
-          return 0;
-        }
-        return 1;
-      } else if (value == null) {
-        return -1;
-      }
-      termsIndex.lookupOrd(docOrd, tempBR);
-      return tempBR.compareTo(value);
-    }
-  }
-
-  private static final class AnyOrdComparator extends PerSegmentComparator {
-    public AnyOrdComparator(TermOrdValComparator_SML parent) {
-      super(parent);
-    }
-
-    @Override
     public int compareBottom(int doc) {
       assert bottomSlot != -1;
-      int order = termsIndex.getOrd(doc);
-      if (order == -1) order = NULL_ORD;
-      if (bottomSameReader) {
-        // ord is precisely comparable, even in the equal
-        // case
-        return bottomOrd - order;
-      } else {
-        // ord is only approx comparable: if they are not
-        // equal, we can use that; if they are equal, we
-        // must fallback to compare by value
-
-        final int cmp = bottomOrd - order;
-        if (cmp != 0) {
-          return cmp;
-        }
-
-        // take care of the case where both vals are null
-        if (order == NULL_ORD) {
-          return 0;
-        }
-
-        // and at this point we know that neither value is null, so safe to compare
-        if (order == NULL_ORD) {
-          return bottomValue.compareTo(parent.NULL_VAL);
-        } else {
-          termsIndex.lookupOrd(order, tempBR);
-          return bottomValue.compareTo(tempBR);
-        }
+      int docOrder = this.order[doc];
+      int ord = (docOrder == 0) ? NULL_ORD : docOrder;
+      final int cmp = bottomOrd - ord;
+      if (cmp != 0) {
+        return cmp;
       }
+
+      final String val2 = lookup[docOrder];
+
+      // take care of the case where both vals are null
+      if (bottomValue == val2) return 0;
+ 
+      return bottomValue.compareTo(val2);
+    }
+
+    private void convert(int slot) {
+      readerGen[slot] = currentReaderGen;
+      int index = 0;
+      String value = values[slot];
+      if (value == null) {
+        // should already be done
+        // ords[slot] = NULL_ORD;
+        return;
+      }
+
+      if (sortPos == 0 && bottomSlot != -1 && bottomSlot != slot) {
+        // Since we are the primary sort, the entries in the
+        // queue are bounded by bottomOrd:
+        assert bottomOrd < lookup.length;
+        if (reversed) {
+          index = binarySearch(lookup, value, bottomOrd, lookup.length-1);
+        } else {
+          index = binarySearch(lookup, value, 0, bottomOrd);
+        }
+      } else {
+        // Full binary search
+        index = binarySearch(lookup, value);
+      }
+
+      if (index < 0) {
+        index = -index - 2;
+      }
+      ords[slot] = index;
     }
 
     @Override
     public void copy(int slot, int doc) {
-      int ord = termsIndex.getOrd(doc);
-      if (ord == -1) {
-        ords[slot] = NULL_ORD;
-        values[slot] = null;
-      } else {
-        ords[slot] = ord;
-        assert ord >= 0;
-        if (values[slot] == null) {
-          values[slot] = new BytesRef();
-        }
-        termsIndex.lookupOrd(ord, values[slot]);
-      }
+      final int ord = order[doc];
+      ords[slot] = ord == 0 ? NULL_ORD : ord;
+      assert ord >= 0;
+      values[slot] = lookup[ord];
       readerGen[slot] = currentReaderGen;
     }
-  }
 
-  public static FieldComparator createComparator(AtomicReader reader, TermOrdValComparator_SML parent) throws IOException {
-    parent.termsIndex = FieldCache.DEFAULT.getTermsIndex(reader, parent.field);
-    PerSegmentComparator perSegComp = new AnyOrdComparator(parent);
-
-    if (perSegComp.bottomSlot != -1) {
-      perSegComp.setBottom(perSegComp.bottomSlot);
+    @Override
+    public void setNextReader(IndexReader reader, int docBase) throws IOException {
+      FieldCache.StringIndex currentReaderValues = FieldCache.DEFAULT.getStringIndex(reader, field);
+      currentReaderGen++;
+      order = currentReaderValues.order;
+      lookup = currentReaderValues.lookup;
+      assert lookup.length > 0;
+      if (bottomSlot != -1) {
+        convert(bottomSlot);
+        bottomOrd = ords[bottomSlot];
+      }
     }
 
-    parent.current = perSegComp;
-    return perSegComp;
+    @Override
+    public void setBottom(final int bottom) {
+      bottomSlot = bottom;
+      if (readerGen[bottom] != currentReaderGen) {
+        convert(bottomSlot);
+      }
+      bottomOrd = ords[bottom];
+      assert bottomOrd >= 0;
+      // assert bottomOrd < lookup.length;
+      bottomValue = values[bottom];
+    }
+
+    @Override
+    public String value(int slot) {
+      String v = values[slot];
+      return v==null ? nullVal : v;
+    }
+
+    public String[] getValues() {
+      return values;
+    }
+
+    public int getBottomSlot() {
+      return bottomSlot;
+    }
+
+    public String getField() {
+      return field;
+    }
   }
-}
+

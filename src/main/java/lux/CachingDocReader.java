@@ -2,8 +2,10 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.transform.stream.StreamSource;
 
@@ -16,7 +18,8 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.DocumentStoredFieldVisitor;
+import org.apache.lucene.document.FieldSelector;
+import org.apache.lucene.document.SetBasedFieldSelector;
 import org.apache.lucene.index.IndexReader;
 
 /**
@@ -33,6 +36,7 @@ public class CachingDocReader {
     private final String xmlFieldName;
     private final String uriFieldName;
     private final HashSet<String> fieldsToRetrieve;
+    private FieldSelector fieldSelector;
     private final DocumentBuilder builder;
     private final DocIDNumberAllocator docIDNumberAllocator;
     private int cacheHits = 0;
@@ -59,6 +63,8 @@ public class CachingDocReader {
         fieldsToRetrieve = new HashSet<String>();
         fieldsToRetrieve.add(xmlFieldName);
         fieldsToRetrieve.add(uriFieldName);
+        Set<String> empty = Collections.emptySet();
+        fieldSelector = new SetBasedFieldSelector(fieldsToRetrieve, empty);
     }
 
     /**
@@ -85,9 +91,7 @@ public class CachingDocReader {
             return node;
         }
 
-        DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
-        reader.document(docID, fieldSelector);
-        Document document = fieldSelector.getDocument();
+        Document document = reader.document(docID, fieldSelector);
         
         String xml = document.get(xmlFieldName);
         String uri = "lux:/" + document.get(uriFieldName);
@@ -95,7 +99,7 @@ public class CachingDocReader {
         long t0 = System.nanoTime();
         byte[] bytes = null;
         if (xml == null) {
-            bytes = document.getBinaryValue(xmlFieldName).bytes;
+            bytes = document.getBinaryValue(xmlFieldName);
             xml = "<binary xmlns=\"http://luxdb.net\" />";
         }
         StreamSource source = new StreamSource(new StringReader(xml));

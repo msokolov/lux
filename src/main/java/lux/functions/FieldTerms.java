@@ -16,11 +16,8 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.SequenceType;
 
-import org.apache.lucene.index.Fields;
-import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.index.TermEnum;
 
 /**
  * <code>function lux:field-terms($field-name as xs:string?, $start as xs:string?) as xs:anyAtomicItem*</code>
@@ -103,7 +100,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     }
 
     class TermsIterator implements SequenceIterator<AtomicValue> {
-        private TermsEnum terms;
+        private final TermEnum terms;
         private final Evaluator eval;
         private Term term;
         private int pos;
@@ -113,50 +110,30 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             this.term = term;
             this.eval = eval;
             pos = -1;
-            createTermsEnum(term);
+            terms = createTerms(term);
         }
-
-        private void createTermsEnum(Term t) throws IOException {
-            String fieldName = t.field();
-            // TODO: get atomic sub readers and iterate values from those 
-            /*  From: http://lucene.apache.org/core/4_0_0-BETA/MIGRATE.html
-
-                Note that the MultiFields approach entails a performance
-                hit on MultiReaders, as it must merge terms/docs/positions
-                on the fly. It's generally better to instead get the
-                sequential readers (use oal.util.ReaderUtil) and then step
-                through those readers yourself, if you can (this is how
-                Lucene drives searches).
-            */
-            Fields fields = MultiFields.getFields(eval.getSearcher().getIndexReader());
-            if (fields != null) {
-                terms = fields.terms(fieldName).iterator(null);
-                if (t != null) {
-                    if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
-                        pos = -1;
-                    } else {
-                        current = terms.term().utf8ToString();
-                    }
-                }
+        
+        private TermEnum createTerms(Term t) throws IOException {
+            if (t != null) {
+                return eval.getSearcher().getIndexReader().terms (t);
+            } else {
+                TermEnum tenum = eval.getSearcher().getIndexReader().terms ();
+                tenum.next(); // position on first term as we do when a term start position is given
+                return tenum;
             }
         }
-
+        
         @Override
         public AtomicValue next() throws XPathException {
             try {
-                if (current == null) {
+                Term t = terms.term();
+                if (t == null || (term != null && !term.field().equals(t.field()))) {
+                    pos = -1;
                     return null;
                 }
-                String value = current;
-                BytesRef bytesRef = terms.next();
-                if (bytesRef == null) {
-                    pos = -1;
-                    current = null;
-                } else {
-                    ++pos;
-                    current = bytesRef.utf8ToString();
-                }
-                return new net.sf.saxon.value.StringValue(value);
+                terms.next();
+                ++pos;
+                return new net.sf.saxon.value.StringValue (t.text());
             } catch (IOException e) {
                 throw new XPathException(e);
             }

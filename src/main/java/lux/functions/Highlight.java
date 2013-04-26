@@ -23,9 +23,9 @@ import net.sf.saxon.tree.iter.EmptyIterator;
 import net.sf.saxon.tree.iter.SingletonIterator;
 import net.sf.saxon.value.SequenceType;
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.xml.ParserException;
+import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.xmlparser.ParserException;
 
 /**
  * <code>lux:highlight($query as item(), $node as node())</code> <p>returns

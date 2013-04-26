@@ -2,7 +2,7 @@ package lux.index.field;
 
 import lux.index.XmlIndexer;
 
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field.Store;
 
 public final class AttributeQNameField extends FieldDefinition {

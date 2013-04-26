@@ -18,21 +18,21 @@ import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.SaxonApiException;
 
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.surround.parser.ParseException;
-import org.apache.lucene.queryparser.surround.parser.QueryParser;
-import org.apache.lucene.queryparser.surround.query.BasicQueryFactory;
-import org.apache.lucene.queryparser.surround.query.SrndQuery;
-import org.apache.lucene.queryparser.xml.ParserException;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.surround.parser.QueryParser;
+import org.apache.lucene.queryParser.surround.query.BasicQueryFactory;
+import org.apache.lucene.queryParser.surround.query.SrndQuery;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.xmlparser.ParserException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -98,18 +98,10 @@ public class IndexTest {
     }
     
     @Test
-    public void testIndexPathOccurOnly () throws Exception {
-        // IndexTestSupport indexTestSupport = 
-        buildIndex ("path-occurrences", INDEX_PATHS | INDEX_EACH_PATH | BUILD_DOCUMENT);
-        // printAllTerms(indexTestSupport);
-        assertTotalDocs ();
-    }
-    
-    @Test
     public void testIndexFullText () throws Exception {
         IndexTestSupport indexTestSupport = buildIndex ("full-text", INDEX_FULLTEXT | STORE_DOCUMENT |BUILD_DOCUMENT);        
         assertTotalDocs ();
-        //printAllTerms(indexTestSupport);
+        printAllTerms(indexTestSupport, "lux_elt_text");
         assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
     }
 
@@ -121,7 +113,7 @@ public class IndexTest {
         assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
     }
 
-    private void assertPathQuery(IndexTestSupport indexTestSupport) throws ParseException, IOException {
+    private void assertPathQuery(IndexTestSupport indexTestSupport) throws ParseException, IOException, org.apache.lucene.queryParser.surround.parser.ParseException {
         SrndQuery q = new QueryParser ().parse2("w(w({},\"ACT\"),\"SCENE\")");
         Query q2 = q.makeLuceneQueryFieldNoBoost(indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.PATH),  new BasicQueryFactory());
         DocIdSetIterator iter = indexTestSupport.searcher.search(q2);
@@ -334,9 +326,8 @@ public class IndexTest {
         return indexTestSupport;
     }
 
-    @SuppressWarnings("unused")
-    private void printAllTerms(IndexTestSupport indexTestSupport) throws Exception {
-        indexTestSupport.printAllTerms();
+    private void printAllTerms(IndexTestSupport indexTestSupport, String fld) throws Exception {
+        indexTestSupport.printAllTerms(fld);
     }
     
     private void assertTotalDocs() throws IOException {

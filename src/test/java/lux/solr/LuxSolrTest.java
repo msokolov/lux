@@ -126,7 +126,7 @@ public class LuxSolrTest extends BaseSolrTest {
         // TODO: this still doesn't reproduce the problem we saw when running solr embedded in the lux app server
         // where we tried to create a new core interactively using the admin screen, and then the app server stopped responding
         SolrQuery q = new SolrQuery();
-        q.setRequestHandler(coreContainer.getAdminPath());
+        q.setQueryType(coreContainer.getAdminPath());
         q.setParam ("action", "CREATE");
         q.setParam ("name", "core2");
         q.setParam ("instanceDir", "core2");
@@ -144,7 +144,7 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test
     public void testAppServer () throws Exception {
         SolrQuery q = new SolrQuery();
-        q.setRequestHandler("/lux");
+        q.setQueryType("/lux");
     	q.setParam("test-param", "test-value");
     	q.setParam("wt", "lux");
     	q.setParam("lux.content-type", "text/xml");
