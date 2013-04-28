@@ -2,6 +2,7 @@ package lux.functions;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.util.HashSet;
 
 import lux.Evaluator;
@@ -73,10 +74,16 @@ public class CollectionTest {
         	result.getErrors().get(0).printStackTrace();
         	assertNull(result.getErrors().get(0).getMessage(), result.getErrors());
         }
-        String pwd = System.getProperty("user.dir");
+        String pwd = System.getProperty("user.dir").replace('\\', '/');
+        String prefix;
+        if (File.separatorChar == '\\') {
+            prefix = "file:/";
+        } else {
+            prefix = "file:";
+        }
         HashSet<String> expected = new HashSet<String> ();
-        expected.add("file:" + pwd + "/src/test/resources/conf/schema.xml");
-        expected.add("file:" + pwd + "/src/test/resources/conf/solrconfig.xml");
+        expected.add(prefix + pwd + "/src/test/resources/conf/schema.xml");
+        expected.add(prefix + pwd + "/src/test/resources/conf/solrconfig.xml");
         HashSet<String> files = new HashSet<String> ();
         XdmSequenceIterator iter = result.getXdmValue().iterator();
         while (iter.hasNext()) {
