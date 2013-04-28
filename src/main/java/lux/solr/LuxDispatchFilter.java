@@ -65,22 +65,34 @@ public class LuxDispatchFilter implements Filter {
         if( request instanceof HttpServletRequest) {
             HttpServletRequest req = (HttpServletRequest)request;
             String path = req.getServletPath();
-            int pathInfoOffset = path.indexOf('/', 1);
-            if (pathInfoOffset > 0) {
-                String servletPath = path.substring(0, pathInfoOffset);
-                String pathInfo = path.substring(pathInfoOffset);
+            if (path.endsWith(".xqy") || path.contains (".xqy/")) {
+                int pathOffset = path.indexOf('/', 1);
+                if (pathOffset > 0) {
+                    String servletPath = path.substring(0, pathOffset);
+                    String xquery= path.substring(pathOffset);
                 
-                Request wrapper = new Request(req);
-                wrapper.setServletPath (servletPath + "/lux");
+                    Request wrapper = new Request(req);
+                    wrapper.setServletPath (servletPath + "/lux");
                 
-                @SuppressWarnings("unchecked")
-                HashMap<String,String[]> params = new HashMap<String, String[]>(req.getParameterMap());
-                // load from classpath
-                // TODO: some way of configuring to load from db
-                params.put ("lux.xquery", new String[] { baseURI + pathInfo });
-                wrapper.setParameterMap(params);
-                chain.doFilter(wrapper, response);
-                return;
+                    @SuppressWarnings("unchecked")
+                    HashMap<String,String[]> params = new HashMap<String, String[]>(req.getParameterMap());
+                    
+                    // handle URLs like /core/foo.xqy/path/info
+                    int pathInfoOffset = xquery.indexOf(".xqy/");
+                    if (pathInfoOffset >= 0) {
+                        pathInfoOffset += ".xqy/".length();
+                        String pathInfo = xquery.substring(pathInfoOffset);
+                        params.put ("lux.pathInfo", new String[] { pathInfo });
+                        xquery = xquery.substring(0, pathInfoOffset - 1);
+                    }
+                
+                    // load from classpath
+                    // TODO: some way of configuring to load from db
+                    params.put ("lux.xquery", new String[] { baseURI + xquery });
+                    wrapper.setParameterMap(params);
+                    chain.doFilter(wrapper, response);
+                    return;
+                }
             }
         }
         chain.doFilter(request, response);
@@ -95,6 +107,8 @@ public class LuxDispatchFilter implements Filter {
         
         private Map<String,String[]> parameterMap;
         
+        private String pathInfo;
+        
         private String servletPath; 
         
         public Request (HttpServletRequest req) {
@@ -108,7 +122,7 @@ public class LuxDispatchFilter implements Filter {
         
         @Override
         public String getPathInfo () {
-            return null;
+            return pathInfo;
         }
 
         @Override 
@@ -122,6 +136,10 @@ public class LuxDispatchFilter implements Filter {
         
         public void setServletPath (String path) {
             servletPath = path;
+        }
+        
+        public void setPathInfo (String path) {
+            pathInfo = path;
         }
         
     }
