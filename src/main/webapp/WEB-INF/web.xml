@@ -32,6 +32,29 @@
     -->
     <filter-name>LuxDispatchFilter</filter-name>
     <filter-class>lux.solr.LuxDispatchFilter</filter-class>
+    
+    
+    <!-- to initialize an EXPath repository: -->
+    <!-- 
+    <init-param>
+      <param-name>org.expath.pkg.saxon.repo</param-name>
+      <param-value>/absolute/filesystem/path/to/repo</param-value>
+    </init-param>
+    -->
+    <init-param>
+      <param-name>org.expath.pkg.saxon.repo</param-name>
+      <param-value>c:/users/sokolov/documents/github/lux-appserver/xrepo</param-value>
+    </init-param>
+     
+    <!--  default for base-uri is the root of the webapp context folder;
+          "resource:" is another possibility, which will retrieve from the classpath
+    -->
+    <!-- 
+    <init-param>
+      <param-name>base-uri</param-name>
+      <param-value>resource:</param-value>
+    </init-param>
+     -->
   </filter>
   
   <filter>
@@ -62,7 +85,9 @@
 
   <filter-mapping>
     <filter-name>LuxDispatchFilter</filter-name>
-    <url-pattern>/*</url-pattern>
+    <url-pattern>*.xqy</url-pattern>
+    <dispatcher>FORWARD</dispatcher>
+    <dispatcher>REQUEST</dispatcher>
   </filter-mapping>
   
   <filter-mapping>
@@ -157,6 +182,7 @@
     <welcome-file>index.jsp</welcome-file>
     <welcome-file>admin.html</welcome-file>
     <welcome-file>index.html</welcome-file>
+    <welcome-file>index.xqy</welcome-file>
   </welcome-file-list>
 
 </web-app>
