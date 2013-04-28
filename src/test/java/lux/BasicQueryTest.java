@@ -241,7 +241,6 @@ public class BasicQueryTest {
         assertQuery ("count(//ACT)", MINIMAL, ValueType.ELEMENT, Q.ACT);
         assertQuery ("count(//ACT/root())", SINGULAR | MINIMAL, ValueType.INT, Q.ACT);
         assertQuery ("count(//ACT/ancestor::document-node())", SINGULAR | MINIMAL, ValueType.INT, Q.ACT);
-        // FIXME: the optimizer should mark this as minimal/counting too now that we have path queries
         int facts = hasPathIndexes() ? SINGULAR | MINIMAL : SINGULAR;
         assertQuery ("count(//ACT/SCENE/ancestor::document-node())", facts, (ValueType)null, Q.ACT_SCENE);
     }

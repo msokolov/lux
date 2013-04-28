@@ -286,7 +286,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 Object javaValue;
                 if (value instanceof DecimalValue) {
                     javaValue = ((DecimalValue) value).getDoubleValue();
-                    // TODO - NaN if value could not be converted
                 } else if (value instanceof QNameValue) {
                     javaValue = ((QNameValue) value).getClarkName();
                 } else if (value instanceof GDateValue) { 

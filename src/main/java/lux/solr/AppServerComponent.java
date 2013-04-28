@@ -34,7 +34,7 @@ public class AppServerComponent extends XQueryComponent {
                 String scheme = absolutePath.getProtocol();
                 String contents = null;
                 if (scheme.equals("lux")) {
-                    // TODO
+                    // TODO retrieve app server files from lux
                 } else {
                     if (absolutePath.getProtocol().equals("file")) {
                         File f = new File(absolutePath.getPath());

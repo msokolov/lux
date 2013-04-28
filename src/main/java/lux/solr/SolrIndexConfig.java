@@ -164,7 +164,7 @@ public class SolrIndexConfig {
     }
 
     private FieldType getFieldType(FieldDefinition xmlField, IndexSchema schema) {
-        // FIXME - we should store a field type name in XmlField and just look that up instead
+        // TODO - we should store a field type name in XmlField and just look that up instead
         // of trying to infer from the analyzer
         Analyzer analyzer = xmlField.getAnalyzer();
         String fieldName = indexConfig.getFieldName(xmlField);
