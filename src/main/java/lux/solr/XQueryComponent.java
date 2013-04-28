@@ -1,7 +1,5 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.*;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -48,7 +46,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
-import org.apache.solr.core.PluginInfo;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.QueryComponent;
 import org.apache.solr.handler.component.ResponseBuilder;
@@ -56,7 +53,6 @@ import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
-import org.apache.solr.update.processor.UpdateRequestProcessorChain;
 import org.apache.solr.util.plugin.SolrCoreAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,11 +91,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     @Override
     public void inform(SolrCore core) {
-        // Read the init args from the LuxUpdateProcessorFactory's configuration since we require
-        // this plugin to use compatible configuration
-        PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
-        solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT, info.initArgs);
-        solrIndexConfig.inform(core);
+        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(core);
         compiler = createXCompiler();
         typeHierarchy = compiler.getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
     }
