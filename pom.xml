@@ -3,7 +3,7 @@
   <groupId>lux</groupId>
   <artifactId>lux</artifactId>
   <packaging>jar</packaging>
-  <version>0.6.1-SNAPSHOT</version>
+  <version>0.6.1</version>
   <name>lux library</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -191,8 +191,10 @@
           <scanIntervalSeconds>10</scanIntervalSeconds>
           <stopPort>8000</stopPort>
           <stopKey>STOP</stopKey>
+          <webApp>
+            <contextPath>/solr</contextPath>
+          </webApp>
           <!--
-              <contextPath>/</contextPath>
           <webDefaultXml>src/test/resources/webdefault.xml</webDefaultXml>
           <webXml>src/test/webapp/WEB-INF/web.xml</webXml>
           <jettyConfig>src/test/resources/jetty.xml</jettyConfig>
