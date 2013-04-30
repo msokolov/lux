@@ -19,8 +19,8 @@ package lux.index.analysis;
 
 import java.io.Reader;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.ReusableAnalyzerBase;
+import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.util.Version;
 
 /**
@@ -28,12 +28,12 @@ import org.apache.lucene.util.Version;
  * position gaps of 100 between multiple values to inhibit phrase and span matches
  * across values.
  **/
-public final class WhitespaceGapAnalyzer extends Analyzer {
+public final class WhitespaceGapAnalyzer extends ReusableAnalyzerBase {
   
   @Override
   protected TokenStreamComponents createComponents(final String fieldName,
       final Reader reader) {
-    return new TokenStreamComponents(new WhitespaceTokenizer(Version.LUCENE_41, reader));
+    return new TokenStreamComponents(new WhitespaceTokenizer(Version.LUCENE_36, reader));
   }
   
   /**

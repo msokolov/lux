@@ -4,10 +4,11 @@ import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.search.SortField;
 import org.apache.solr.schema.FieldProperties;
 
@@ -48,12 +49,12 @@ public abstract class FieldDefinition {
      */
     public enum Type {
         TOKENS, STRING, BYTES, INT, LONG, TEXT;
-        public SortField.Type getLuceneSortFieldType () {
+        public int getLuceneSortFieldType () {
             switch (this) {
-            case STRING: return SortField.Type.STRING;
-            case INT: return SortField.Type.INT;
-            case LONG: return SortField.Type.LONG;
-            default: return SortField.Type.DOC; // ignore??
+            case STRING: return SortField.STRING;
+            case INT: return SortField.INT;
+            case LONG: return SortField.LONG;
+            default: return SortField.DOC; // ignore??
             }
         }
     };
@@ -101,9 +102,9 @@ public abstract class FieldDefinition {
     /** Wraps the values as Field, which includes the values and the Lucene indexing options.
      * Subclasses must implement getValues() or override this method
      * @param indexer the indexer that holds the field values
-     * @return the accumulated values of the field, as {@link IndexableField}s
+     * @return the accumulated values of the field, as {@link Fieldable}s
      */
-    public Iterable<? extends IndexableField> getFieldValues(XmlIndexer indexer) {
+    public Iterable<? extends Fieldable> getFieldValues(XmlIndexer indexer) {
         Iterable<?> values = getValues(indexer);
         if (values == null) {
             throw new LuxException(getClass().getName() + ".getValues() returned null: did you neglect to implement it?");
@@ -148,6 +149,10 @@ public abstract class FieldDefinition {
     
     public boolean isSingleValued () {
         return false;
+    }
+    
+    public Index getIndexOptions() {
+        return analyzer != null ? Index.ANALYZED : Index.NOT_ANALYZED;
     }
     
     /**

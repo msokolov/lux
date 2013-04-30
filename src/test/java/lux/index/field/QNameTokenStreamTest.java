@@ -117,7 +117,7 @@ public class QNameTokenStreamTest {
         reader.read(new ByteArrayInputStream(input));
         XdmNode doc = builder.getDocument();
         DefaultAnalyzer defaultAnalyzer = new DefaultAnalyzer();
-        TokenStream textTokens = defaultAnalyzer.tokenStream("dummy", new CharSequenceReader(""));
+        TokenStream textTokens = defaultAnalyzer.reusableTokenStream("dummy", new CharSequenceReader(""));
         tokenStream = (TokenStream) tokenStreamClass.getConstructor(String.class, Analyzer.class, TokenStream.class, XdmNode.class, Offsets.class).
                 newInstance("dummy", defaultAnalyzer, textTokens, doc, builder.getOffsets());
         termAtt = tokenStream.addAttribute(CharTermAttribute.class);

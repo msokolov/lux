@@ -9,7 +9,7 @@ import lux.BasicQueryTest.SearchExtractor;
 import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
 
-import org.apache.lucene.queryparser.xml.ParserException;
+import org.apache.lucene.xmlparser.ParserException;
 import org.apache.lucene.search.Query;
 import org.junit.Before;
 import org.junit.Test;

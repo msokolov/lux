@@ -41,10 +41,10 @@ import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
@@ -112,7 +112,7 @@ public class Evaluator {
     	IndexWriter indexWriter = indexer.newIndexWriter(dir);
 		DirectDocWriter writer = new DirectDocWriter(indexer, indexWriter);
     	Compiler compiler = new Compiler(indexer.getConfiguration());
-    	LuxSearcher searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
+    	LuxSearcher searcher = new LuxSearcher(IndexReader.open(indexWriter, true));
     	Evaluator eval = new Evaluator (compiler, searcher, writer);
     	return eval;
     }
@@ -373,7 +373,7 @@ public class Evaluator {
         try {
             
             LuxSearcher current = searcher;
-            searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) getSearcher().getIndexReader()));
+            searcher = new LuxSearcher (IndexReader.openIfChanged(getSearcher().getIndexReader()));
             current.close();
         } catch (IOException e) {
             throw new LuxException (e);

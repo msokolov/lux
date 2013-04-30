@@ -23,6 +23,41 @@
 >
 
   <filter>
+    <!--
+    rewrite URLs of the form:
+    [[app-prefix][/core-name]]/lux[/xquery-path]?query-string
+    TO
+    [[app-prefix][/core-name]]/lux?query-string&lux.xquery=[/xquery-path]
+    so that Solr will be able to process them using its handler URL syntax
+    -->
+    <filter-name>LuxDispatchFilter</filter-name>
+    <filter-class>lux.solr.LuxDispatchFilter</filter-class>
+    
+    
+    <!-- to initialize an EXPath repository: -->
+    <!-- 
+    <init-param>
+      <param-name>org.expath.pkg.saxon.repo</param-name>
+      <param-value>/absolute/filesystem/path/to/repo</param-value>
+    </init-param>
+    -->
+    <init-param>
+      <param-name>org.expath.pkg.saxon.repo</param-name>
+      <param-value>c:/users/sokolov/documents/github/lux-appserver/xrepo</param-value>
+    </init-param>
+     
+    <!--  default for base-uri is the root of the webapp context folder;
+          "resource:" is another possibility, which will retrieve from the classpath
+    -->
+    <!-- 
+    <init-param>
+      <param-name>base-uri</param-name>
+      <param-value>resource:</param-value>
+    </init-param>
+     -->
+  </filter>
+  
+  <filter>
     <filter-name>SolrRequestFilter</filter-name>
     <filter-class>org.apache.solr.servlet.SolrDispatchFilter</filter-class>
     <!-- If you are wiring Solr into a larger web application which controls
@@ -49,6 +84,13 @@
   </filter>
 
   <filter-mapping>
+    <filter-name>LuxDispatchFilter</filter-name>
+    <url-pattern>*.xqy</url-pattern>
+    <dispatcher>FORWARD</dispatcher>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+  
+  <filter-mapping>
     <!--
       NOTE: When using multicore, /admin JSP URLs with a core specified
       such as /solr/coreName/admin/stats.jsp get forwarded by a
@@ -62,73 +104,6 @@
     <filter-name>SolrRequestFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
-
-  <servlet>
-    <servlet-name>Zookeeper</servlet-name>
-    <servlet-class>org.apache.solr.servlet.ZookeeperInfoServlet</servlet-class>
-  </servlet>
-  
-  <servlet>
-    <servlet-name>LoadAdminUI</servlet-name>
-    <servlet-class>org.apache.solr.servlet.LoadAdminUiServlet</servlet-class>
-  </servlet>
-  
-  <!-- Remove in Solr 5.0 -->
-  <!-- This sends SC_MOVED_PERMANENTLY (301) for resources that changed in 4.0 -->
-  <servlet>
-    <servlet-name>RedirectOldAdminUI</servlet-name>
-    <servlet-class>org.apache.solr.servlet.RedirectServlet</servlet-class>
-    <init-param>
-      <param-name>destination</param-name>
-      <param-value>${context}/#/</param-value>
-    </init-param>
-  </servlet>
-  
-  <servlet>
-    <servlet-name>RedirectOldZookeeper</servlet-name>
-    <servlet-class>org.apache.solr.servlet.RedirectServlet</servlet-class>
-    <init-param>
-      <param-name>destination</param-name>
-      <param-value>${context}/zookeeper</param-value>
-    </init-param>
-  </servlet>
-  
-  <servlet>
-    <servlet-name>RedirectLogging</servlet-name>
-    <servlet-class>org.apache.solr.servlet.RedirectServlet</servlet-class>
-    <init-param>
-      <param-name>destination</param-name>
-      <param-value>${context}/#/~logging</param-value>
-    </init-param>
-  </servlet>
-  
-  <servlet-mapping>
-    <servlet-name>RedirectOldAdminUI</servlet-name>
-    <url-pattern>/admin/</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>RedirectOldAdminUI</servlet-name>
-    <url-pattern>/admin</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>RedirectOldZookeeper</servlet-name>
-    <url-pattern>/zookeeper.jsp</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>RedirectLogging</servlet-name>
-    <url-pattern>/logging</url-pattern>
-  </servlet-mapping>
-
-  <!-- Servlet Mapping -->
-  <servlet-mapping>
-    <servlet-name>Zookeeper</servlet-name>
-    <url-pattern>/zookeeper</url-pattern>
-  </servlet-mapping>
-  
-  <servlet-mapping>
-    <servlet-name>LoadAdminUI</servlet-name>
-    <url-pattern>/admin.html</url-pattern>
-  </servlet-mapping>
   
   <mime-mapping>
     <extension>.xsl</extension>
@@ -137,7 +112,10 @@
   </mime-mapping>
 
   <welcome-file-list>
+    <welcome-file>index.jsp</welcome-file>
     <welcome-file>admin.html</welcome-file>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.xqy</welcome-file>
   </welcome-file-list>
 
 </web-app>

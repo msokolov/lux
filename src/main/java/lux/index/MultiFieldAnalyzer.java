@@ -1,17 +1,19 @@
 package lux.index;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.util.HashMap;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.AnalyzerWrapper;
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.TokenStream;
 
 /**
  * Like SolrIndexAnalyzer, but without dependencies on solr  The
  * default analyzer is the analyzer mapped to the null key.  By default, null is mapped to
  * an instance of KeywordAnalyzer (an analyzer that returns a single token for the entire field value).
  */
-public final class MultiFieldAnalyzer extends AnalyzerWrapper {
+public final class MultiFieldAnalyzer extends Analyzer {
     
     private HashMap<String,Analyzer> analyzers;
     
@@ -28,7 +30,6 @@ public final class MultiFieldAnalyzer extends AnalyzerWrapper {
         }
     }
     
-    @Override
     protected Analyzer getWrappedAnalyzer(String fieldName)
     {
         if (analyzers.containsKey(fieldName)) {
@@ -38,8 +39,18 @@ public final class MultiFieldAnalyzer extends AnalyzerWrapper {
     }
 
     @Override
-    protected TokenStreamComponents wrapComponents(String fieldName, TokenStreamComponents components) {
-        return components;
+    public TokenStream tokenStream (String fieldName, Reader reader) {
+        return getWrappedAnalyzer(fieldName).tokenStream(fieldName, reader);
+    }
+    
+    @Override
+    public TokenStream reusableTokenStream(String fieldName, Reader reader) throws IOException {
+        return getWrappedAnalyzer(fieldName).reusableTokenStream(fieldName,reader);
+    }
+
+    @Override
+    public int getPositionIncrementGap(String fieldName) {
+        return getWrappedAnalyzer(fieldName).getPositionIncrementGap(fieldName);
     }
 
 }

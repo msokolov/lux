@@ -1,10 +1,7 @@
 package lux.search;
 
 import java.io.IOException;
-import java.util.List;
 
-import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
@@ -25,7 +22,7 @@ public class LuxSearcher extends IndexSearcher {
    * @param dir the Directory containing the index to search
    */
   public LuxSearcher (Directory dir) throws IOException {
-    super (DirectoryReader.open(dir));
+    super (IndexReader.open(dir));
     indexReader = getIndexReader(); 
   }
 
@@ -48,6 +45,7 @@ public class LuxSearcher extends IndexSearcher {
       this.indexReader = reader;
   }
   
+  @Override
   public void close () throws IOException {
       if (indexReader != null) {
           indexReader.close();
@@ -90,9 +88,8 @@ public class LuxSearcher extends IndexSearcher {
       private final boolean ordered;
       private int nextReader;
       private int docID;
+      private int docBase; // add to docID which is relative to each sub-reader
       private Scorer scorer;
-      private List<AtomicReaderContext> leaves;
-      private AtomicReaderContext leaf;
       
       /**
        * @param query the lucene query whose results will be iterated
@@ -100,18 +97,17 @@ public class LuxSearcher extends IndexSearcher {
        * @throws IOException
        */
       DocIterator (Query query, boolean ordered) throws IOException {
-          weight = createNormalizedWeight(query);
-          leaves = getIndexReader().leaves();
+          this.weight = createNormalizedWeight(query);
           this.ordered = ordered;
-          nextReader = 0;
-          docID = -1;
+          this.nextReader = 0;
+          this.docID = -1;
           advanceScorer();
       }
 
       private void advanceScorer () throws IOException {
-          while (nextReader < leaves.size()) {
-              leaf = leaves.get(nextReader++);
-              scorer = weight.scorer(leaf, ordered, false, leaf.reader().getLiveDocs()); // NB: arg 3 (topScorer) was 'true' prior to 4.1 upgrade but incorrectly I think??
+          while (nextReader < subReaders.length) {
+              docBase = docStarts[nextReader];
+              scorer = weight.scorer(subReaders[nextReader++], ordered, true);
               if (scorer != null) {
                   return;
               }
@@ -129,7 +125,7 @@ public class LuxSearcher extends IndexSearcher {
         while (scorer != null) {
             docID = scorer.nextDoc();
             if (docID != NO_MORE_DOCS) {
-                return docID + leaf.docBase;
+                return docID + docBase;
             }
             advanceScorer();
         }
@@ -139,9 +135,9 @@ public class LuxSearcher extends IndexSearcher {
     @Override
     public int advance(int target) throws IOException {
         while (scorer != null) {
-            docID = scorer.advance(target - leaf.docBase);
+            docID = scorer.advance(target - docBase);
             if (docID != NO_MORE_DOCS) {
-                return docID + leaf.docBase;
+                return docID + docBase;
             }
             advanceScorer();
         }
@@ -163,7 +159,7 @@ public class LuxSearcher extends IndexSearcher {
       TopDocsIterator (Query query, Sort sort) throws IOException {
           this.query = query;
           this.sort = sort;
-          topDocs = search(createNormalizedWeight(query), BATCH_SIZE, sort, false, false);
+          topDocs = search(createNormalizedWeight(query), null, BATCH_SIZE, sort, false);
       }
 
       @Override
@@ -183,7 +179,7 @@ public class LuxSearcher extends IndexSearcher {
               // storing only the next batch - we could possibly add a term to the query expressing
               // this?
               // iDocBase = iDocNext;
-              topDocs = search(createNormalizedWeight(query), iDocNext + BATCH_SIZE, sort, false, false);
+              topDocs = search(createNormalizedWeight(query), null, iDocNext + BATCH_SIZE, sort, false);
           }
           else {
               // exhausted the entire result set

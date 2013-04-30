@@ -9,8 +9,6 @@ import java.util.Collection;
 import java.util.TimeZone;
 
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
@@ -43,14 +41,14 @@ public class LuxSolrTest extends BaseSolrTest {
         // QNAME index is no longer part of the default setup created by LuxUpdateProcessor
         //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":config");
         //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":schema");
-        assertQueryCount (1, LUX_PATH + ":\"{} schema types fieldType\"");
-        assertQueryCount (1, LUX_PATH + ":schema");
-        assertQueryCount (102, LUX_PATH + ":\"{}\"");
-        assertQueryCount (1, LUX_PATH + ":\"{} config luceneMatchVersion\"");
         assertQueryCount (2, XML_TEXT + ":true");
         assertQueryCount (2, LUX_ELT_TEXT + ":enableLazyFieldLoading\\:true");
         assertQueryCount (1, LUX_ATT_TEXT + ":id\\:1");
         assertQueryCount (1, LUX_ATT_TEXT + ":type\\:random");
+        assertQueryCount (1, LUX_PATH + ":schema");
+        assertQueryCount (102, LUX_PATH + ":\"{}\"");
+        assertQueryCount (1, LUX_PATH + ":\"{} schema types fieldType\"");
+        assertQueryCount (1, LUX_PATH + ":\"{} config luceneMatchVersion\"");
     }
     
     @Test public void testXPathSearch() throws Exception {
@@ -108,8 +106,11 @@ public class LuxSolrTest extends BaseSolrTest {
     }
     
     @Test public void testCollectionFunction () throws Exception {
-        assertXPathSearchCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
+        assertQueryCount (102, "*:*");
+        assertQueryCount (102, "lux_path:[* TO *]");
+        assertQueryCount (102, "lux_path:\"{}\"");
         assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())");
+        assertXPathSearchCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
     }
     
     @Test public void testQueryError () throws Exception {
@@ -122,29 +123,9 @@ public class LuxSolrTest extends BaseSolrTest {
     }
     
     @Test
-    public void testCreateCore () throws Exception {
-        // TODO: this still doesn't reproduce the problem we saw when running solr embedded in the lux app server
-        // where we tried to create a new core interactively using the admin screen, and then the app server stopped responding
-        SolrQuery q = new SolrQuery();
-        q.setRequestHandler(coreContainer.getAdminPath());
-        q.setParam ("action", "CREATE");
-        q.setParam ("name", "core2");
-        q.setParam ("instanceDir", "core2");
-        solr.query(q);
-        SolrServer core2 = new EmbeddedSolrServer(coreContainer, "core2");
-        core2.deleteByQuery("*:*");
-        core2.commit();
-        assertQueryCount (0, "*:*", core2);
-        // main core still works
-        assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())", solr);
-        // new core working too
-        assertXPathSearchCount(1, 0, "xs:integer", "0", "count(collection())", core2);
-    }
-    
-    @Test
     public void testAppServer () throws Exception {
         SolrQuery q = new SolrQuery();
-        q.setRequestHandler("/lux");
+        q.setQueryType("/lux");
     	q.setParam("test-param", "test-value");
     	q.setParam("wt", "lux");
     	q.setParam("lux.content-type", "text/xml");
@@ -158,7 +139,7 @@ public class LuxSolrTest extends BaseSolrTest {
     			"<param name=\"wt\"><value>lux</value></param>" +
     			"<param name=\"qt\"><value>/lux</value></param>" +
     			"<param name=\"test-param\"><value>test-value</value></param>" +
-    			"<param name=\"wt\"><value>lux</value></param></params></http>", 
+    			"<param name=\"wt\"><value>lux</value></param></params><context-path/></http>", 
     			xpathResults.get("document").toString());
     	assertTrue(resp.getResults().isEmpty());
     }

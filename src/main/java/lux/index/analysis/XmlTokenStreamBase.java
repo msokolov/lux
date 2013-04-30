@@ -2,9 +2,9 @@ package lux.index.analysis;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.Iterator;
 
+import lux.exception.LuxException;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
@@ -44,16 +44,32 @@ abstract class XmlTokenStreamBase extends TokenStream {
     protected XdmNode curNode;
     protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to index
     protected CharTermAttribute termAtt;
-    protected Reader charStream = new OffsetCharFilter(new StringReader(""));
+    protected Reader charStream;
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
-    XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
-        super (wrapped);
-        this.wrapped = wrapped;
+    XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrappedTokenStream) {
+        super (wrappedTokenStream);
+        charStream = new CharSequenceStream("");
+        this.wrapped = reusableTokenStream(analyzer, fieldName, charStream);
+        // ensure that the wrappedTokenStream we were handed *is the same tokenStream* that the
+        // analyzer produces:
+        assert (wrappedTokenStream == wrapped);
         this.fieldName = fieldName;
         this.analyzer = analyzer;
         termAtt = addAttribute(CharTermAttribute.class);
         //tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
+    }
+    
+    public static TokenStream reusableTokenStream (Analyzer analyzer, String fieldName) {
+        return reusableTokenStream(analyzer, fieldName, null);
+    }
+    
+    private static TokenStream reusableTokenStream (Analyzer analyzer, String fieldName, Reader reader) {
+        try {
+            return analyzer.reusableTokenStream(fieldName, reader);
+        } catch (IOException e) {
+            throw new LuxException("An error occurred while indexing", e);
+        }
     }
     
     @Override
@@ -63,7 +79,7 @@ abstract class XmlTokenStreamBase extends TokenStream {
     }
     
     public void reset (Reader reader) throws IOException {
-        TokenStream reset = analyzer.tokenStream (fieldName, reader);
+        TokenStream reset = analyzer.reusableTokenStream (fieldName, reader);
         // This must be the same token stream: ie the Analyzer must be re-usable, and the 
         // original token stream must have arisen from it.  We don't check for actual
         // identity with wrapped since that might get wrapped again (eg w/QNameTokenFilter).

@@ -1,3 +1,6 @@
+* solr query box bugs
+** log4j.properties
+ship with it in place?
 * coverage 
 SaxonTranslator: 85,87,90
 ** namespace lookup failure during document ordering analysis

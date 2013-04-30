@@ -2,11 +2,13 @@ package lux.solr;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest.METHOD;
@@ -39,9 +41,10 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
+        FileUtils.deleteDirectory(new File("solr/collection1/data/index"));
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
-        String defaultCoreName = coreContainer.getDefaultCoreName();
+        String defaultCoreName = "collection1";
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
         solrCore = coreContainer.getCore(defaultCoreName);
         try {
@@ -72,7 +75,7 @@ public abstract class BaseSolrTest {
 
     protected void assertQuery (Object result, String type, String query) throws Exception {
         SolrQuery q = new SolrQuery(query);
-        q.setRequestHandler(SOLR_QUERY_TYPE);
+        q.setQueryType(SOLR_QUERY_TYPE);
         QueryResponse rsp = solr.query(q, METHOD.POST);
         NamedList<Object> response = rsp.getResponse();
         NamedList<?> actual = (NamedList<?>) response.get("xpath-results");
@@ -107,7 +110,7 @@ public abstract class BaseSolrTest {
 
     protected void assertXPathSearchError(String error, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setRequestHandler(SOLR_QUERY_TYPE);
+        q.setQueryType(SOLR_QUERY_TYPE);
         QueryResponse rsp = solr.query(q, METHOD.POST);
         String actualError = rsp.getResponse().get("xpath-error").toString();
         assertTrue("Error " + actualError + " does not contain expected error " + error, actualError.contains(error));
@@ -121,7 +124,7 @@ public abstract class BaseSolrTest {
     protected void assertXPathSearchCount(int count, int docCount, int maxResults, String type, String value,
             String query, SolrServer core) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
-        q.setRequestHandler(SOLR_QUERY_TYPE);
+        q.setQueryType(SOLR_QUERY_TYPE);
         q.setRows(maxResults);
         q.setStart(0);
         QueryResponse rsp = core.query(q, METHOD.POST);

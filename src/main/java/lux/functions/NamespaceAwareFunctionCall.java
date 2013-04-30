@@ -14,9 +14,9 @@ import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.NodeInfo;
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.xml.ParserException;
+import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.xmlparser.ParserException;
 import org.w3c.dom.Element;
 
 public abstract class NamespaceAwareFunctionCall extends ExtensionFunctionCall {

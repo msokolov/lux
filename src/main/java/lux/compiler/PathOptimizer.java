@@ -581,7 +581,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     // save away the field name as a possible sort key
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
                     FieldDefinition fieldDefinition = indexConfig.getField(fieldName);
-                    SortField.Type sortType;
+                    int sortType;
                     if (fieldDefinition != null) {
                         sortType = fieldDefinition.getType().getLuceneSortFieldType();
                     } else {
@@ -632,7 +632,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         if (fname.equals(FunCall.FN_COLLECTION) && subs.length == 0) {
             // Optimize when no arguments to collection()
-            // TODO: figure out why we don't need to push queries all over here?
             push(MATCH_ALL);
             return new Root();
         }

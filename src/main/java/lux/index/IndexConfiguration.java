@@ -13,13 +13,13 @@ import lux.index.field.ElementQNameField;
 import lux.index.field.ElementTextField;
 import lux.index.field.FieldDefinition;
 import lux.index.field.PathField;
-import lux.index.field.PathOccurrenceField;
 import lux.index.field.PathValueField;
 import lux.index.field.QNameValueField;
 import lux.index.field.URIField;
 import lux.index.field.XmlTextField;
 
 import org.apache.lucene.util.Version;
+import org.slf4j.LoggerFactory;
 
 /**
  * Maintains a list of field definitions and index options that inform indexing and search.
@@ -28,7 +28,7 @@ import org.apache.lucene.util.Version;
  */
 public class IndexConfiguration {
 
-    public static final Version LUCENE_VERSION = Version.LUCENE_41;
+    public static final Version LUCENE_VERSION = Version.LUCENE_36;
 
     /** causes a document node to be built during indexing. Must be set if any XPathFields are to be defined. */
     public final static int BUILD_DOCUMENT=     0x00000001;
@@ -161,7 +161,7 @@ public class IndexConfiguration {
         }
         if (isOption (INDEX_PATHS)) {
             if (isOption (INDEX_EACH_PATH)) {
-                addField (PathOccurrenceField.getInstance());
+                LoggerFactory.getLogger(getClass()).error("path occurrences not supported with Lucene 3.x");
             } else {
                 addField(PATH);
             }

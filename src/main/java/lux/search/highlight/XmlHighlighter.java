@@ -21,7 +21,6 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
-import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -58,19 +57,19 @@ public class XmlHighlighter extends SaxonDocBuilder {
         analyzer = indexConfig.getFieldAnalyzers();
         this.highlighter = highlighter;
         textReader = new XmlStreamTextReader();
+        // in order to handle highlighting element-text query terms, we need to
+        // arrange for element-text tokens to appear in this stream.
+        // The other place we do that is in ElementTokenStream, but that isn't
+        // really usable in a simple way in this context
+        // What do instead is to create yet another TokenStream class
+        // StreamingElementTokens, which wraps xmlStreamToken
         try {
-            // in order to handle highlighting element-text query terms, we need to
-            // arrange for element-text tokens to appear in this stream.
-            // The other place we do that is in ElementTokenStream, but that isn't
-            // really usable in a simple way in this context
-            // What do instead is to create yet another TokenStream class
-            // StreamingElementTokens, which wraps xmlStreamToken
-            xmlStreamTokens = new StreamingElementTokens(analyzer.tokenStream(textFieldName, textReader));
-            offsetAtt = xmlStreamTokens.addAttribute(OffsetAttribute.class);
-            xmlStreamTokens.addAttribute(PositionIncrementAttribute.class);
+            xmlStreamTokens = new StreamingElementTokens(analyzer.reusableTokenStream(textFieldName, textReader));
         } catch (IOException e) {
-            throw new LuxException(e);
+            throw new LuxException (e);
         }
+        offsetAtt = xmlStreamTokens.addAttribute(OffsetAttribute.class);
+        xmlStreamTokens.addAttribute(PositionIncrementAttribute.class);
         tokenGroup = new TokenGroup(xmlStreamTokens);
     }
     
@@ -82,12 +81,10 @@ public class XmlHighlighter extends SaxonDocBuilder {
         scorer = new QueryScorer(query);
         // grab all the text at once so Lucene's lame-ass highlighter can figure out if there are any
         // phrases in it...
-        // TODO: is this the Analyzer we're looking for???  OR ... reimplement using different HL
+        // FIXME: Use the field name and analyzer defined in IndexConfiguration
         Analyzer defaultAnalyzer = new DefaultAnalyzer();
         TokenStream textTokens = null;
-        try {
-            textTokens = defaultAnalyzer.tokenStream("xml_text", new CharSequenceReader(""));
-        } catch (IOException e) { }
+        textTokens = XmlTextTokenStream.reusableTokenStream(defaultAnalyzer, "xml_text");
         init(new XmlTextTokenStream("xml_text", defaultAnalyzer, textTokens, new XdmNode (node), null));
         XmlReader xmlReader = new XmlReader ();
         xmlReader.addHandler(this);
@@ -230,7 +227,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
      * @throws XMLStreamException 
      */
     private void highlightTextNode() throws IOException, XMLStreamException {
-        xmlStreamTokens.reset(analyzer.tokenStream(textFieldName, textReader));
+        xmlStreamTokens.reset(analyzer.reusableTokenStream(textFieldName, textReader));
         lastEndOffset = 0;
         for (boolean next = xmlStreamTokens.incrementToken(); 
                     next && (offsetAtt.startOffset() < maxDocCharsToAnalyze); 

@@ -1,5 +1,9 @@
 package lux.solr;
 
+import static lux.index.IndexConfiguration.*;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -11,19 +15,22 @@ import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.core.PluginInfo;
 import org.apache.solr.core.SolrCore;
+import org.apache.solr.core.SolrInfoMBean;
 import org.apache.solr.schema.BinaryField;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.StrField;
 import org.apache.solr.schema.TextField;
+import org.apache.solr.update.processor.UpdateRequestProcessorChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,12 +39,28 @@ import org.slf4j.LoggerFactory;
  * solrconfig.xml and schema.xml
  *
  */
-public class SolrIndexConfig {
+public class SolrIndexConfig implements SolrInfoMBean {
+    private static final String SOURCE_URL = "https://github.com/msokolov/lux";
     private final IndexConfiguration indexConfig;
     private NamedList<String> xpathFieldConfig;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
+    }
+    
+    public static SolrIndexConfig registerIndexConfiguration (SolrCore core) {
+        // Read the init args from the LuxUpdateProcessorFactory's configuration
+        PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
+        SolrInfoMBean configBean = core.getInfoRegistry().get(SolrIndexConfig.class.getName());
+        SolrIndexConfig indexConfig;
+        if (configBean != null) {
+            indexConfig = (SolrIndexConfig) configBean;
+        } else {
+            indexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS | INDEX_FULLTEXT | STORE_DOCUMENT, info.initArgs);
+            indexConfig.inform(core);
+            core.getInfoRegistry().put(indexConfig.getName(), indexConfig);
+        }
+        return indexConfig;
     }
 
     @SuppressWarnings("unchecked")
@@ -206,13 +229,11 @@ public class SolrIndexConfig {
             setQueryAnalyzer(new WhitespaceGapAnalyzer());
         }
         
-        /*
-         * REVIEW: do we need this?
+        /* required for Solr 3 only */
         @Override
         protected Field.Index getFieldIndex(SchemaField field, String internalVal) {
             return Field.Index.ANALYZED;
         }
-        */
         
     }
     
@@ -232,6 +253,53 @@ public class SolrIndexConfig {
 
     public IndexConfiguration getIndexConfig() {
         return indexConfig;
+    }
+
+    @Override
+    public String getName() {
+        return "lux.solr.SolrIndexConfig";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Lux index configuration";
+    }
+
+    @Override
+    public Category getCategory() {
+        return Category.OTHER;
+    }
+
+    @Override
+    public String getSourceId() {
+        return SOURCE_URL;
+    }
+
+    @Override
+    public String getSource() {
+        return SOURCE_URL;
+    }
+
+    private static URL[] docs;
+    
+    @Override
+    public URL[] getDocs() {
+        if (docs == null) {
+            try {
+                docs = new URL [] { new URL(SOURCE_URL) };
+            } catch (MalformedURLException e) { }
+        }
+        return docs;
+    }
+
+    @Override
+    public NamedList<?> getStatistics() {
+        return null;
     }
 }
 
