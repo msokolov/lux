@@ -139,7 +139,7 @@ public class LuxSolrTest extends BaseSolrTest {
     			"<param name=\"wt\"><value>lux</value></param>" +
     			"<param name=\"qt\"><value>/lux</value></param>" +
     			"<param name=\"test-param\"><value>test-value</value></param>" +
-    			"<param name=\"wt\"><value>lux</value></param></params></http>", 
+    			"<param name=\"wt\"><value>lux</value></param></params><context-path/></http>", 
     			xpathResults.get("document").toString());
     	assertTrue(resp.getResults().isEmpty());
     }

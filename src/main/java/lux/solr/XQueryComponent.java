@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -184,7 +185,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             context = new QueryContext();
             context.bindVariable(LUX_HTTP, buildHttpParams(
                     evaluator,
-                    rb.req.getParams(), 
+                    rb.req.getParams(),
+                    rb.req.getContext(),
                     xqueryPath
                     ));
         }
@@ -260,8 +262,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         return buf.toString();
     }
 
-    private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, String path) {
-        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params)), path);
+    private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, Map<Object, Object> context, String path) {
+        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params, context)), path);
     }
 
     private Compiler createXCompiler() {
@@ -318,7 +320,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     // but the only alternative I can see is to provide a special xquery function
     // and pass the map into the Saxon Evaluator object - but we can't get that
     // from here, and it would be thread-unsafe anyway
-    private String buildHttpInfo(SolrParams params) {
+    private String buildHttpInfo(SolrParams params, Map<Object, Object> context) {
         StringBuilder buf = new StringBuilder();
         // TODO: http method
         buf.append (String.format("<http>"));
@@ -341,6 +343,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         if (pathInfo != null) {
             buf.append("<path-info>").append(xmlEscape(pathInfo)).append("</path-info>");
         }
+        String webapp = (String) context.get("webapp");
+        if (webapp == null) {
+            webapp = "";
+        }
+        buf.append("<context-path>").append(webapp).append("</context-path>");
         // TODO: headers, path, etc?
         buf.append ("</http>");
         return buf.toString();
