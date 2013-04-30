@@ -9,7 +9,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
-  <!--  TODO: war packaging; do not include log4j.properties! -->
   <dependencies>
     <dependency>
         <groupId>net.sf.saxon</groupId>
