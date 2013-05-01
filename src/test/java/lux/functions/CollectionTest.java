@@ -84,7 +84,6 @@ public class CollectionTest {
         HashSet<String> expected = new HashSet<String> ();
         expected.add(prefix + pwd + "/src/test/resources/conf/schema.xml");
         expected.add(prefix + pwd + "/src/test/resources/conf/solrconfig.xml");
-        HashSet<String> files = new HashSet<String> ();
         XdmSequenceIterator iter = result.getXdmValue().iterator();
         String filename = iter.next().getStringValue();
 		assertTrue (filename, filename.endsWith("src/test/resources/conf/schema.xml"));
