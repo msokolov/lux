@@ -256,12 +256,7 @@
             <artifactItem>
               <groupId>org.apache.lucene</groupId>
               <artifactId>lucene-queryparser</artifactId>
-              <version>3.4.0</version>
-            </artifactItem>
-            <artifactItem>
-              <groupId>org.apache.lucene</groupId>
-              <artifactId>lucene-xml-query-parser</artifactId>
-              <version>3.4.0</version>
+              <version>4.2.0</version>
             </artifactItem>
             <artifactItem>
               <groupId>net.sf.saxon</groupId>
