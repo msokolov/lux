@@ -278,11 +278,6 @@ public class SolrIndexConfig implements SolrInfoMBean {
     }
 
     @Override
-    public String getSourceId() {
-        return SOURCE_URL;
-    }
-
-    @Override
     public String getSource() {
         return SOURCE_URL;
     }
