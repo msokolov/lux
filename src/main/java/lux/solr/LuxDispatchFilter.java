@@ -2,8 +2,11 @@ package lux.solr;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,7 +65,7 @@ public class LuxDispatchFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
             ServletException {
-        if( request instanceof HttpServletRequest) {
+         if( request instanceof HttpServletRequest) {
             HttpServletRequest req = (HttpServletRequest)request;
             String path = req.getServletPath();
             if (path.endsWith(".xqy") || path.contains (".xqy/")) {
@@ -74,8 +77,12 @@ public class LuxDispatchFilter implements Filter {
                     Request wrapper = new Request(req);
                     wrapper.setServletPath (servletPath + "/lux");
                 
-                    @SuppressWarnings("unchecked")
-                    HashMap<String,String[]> params = new HashMap<String, String[]>(req.getParameterMap());
+                    String qs = req.getQueryString();
+
+                    HashMap<String,String[]> params=null;
+                    if (req.getMethod().equals("GET")) {
+                        params = new HashMap<String, String[]>(req.getParameterMap());
+                    }
                     
                     // handle URLs like /core/foo.xqy/path/info
                     int pathInfoOffset = xquery.indexOf(".xqy/");
@@ -84,18 +91,37 @@ public class LuxDispatchFilter implements Filter {
                         String pathInfo = xquery.substring(pathInfoOffset);
                         params.put ("lux.pathInfo", new String[] { pathInfo });
                         xquery = xquery.substring(0, pathInfoOffset - 1);
+                        qs = appendToQueryString(qs, "lux.pathInfo", pathInfo);
                     }
                 
                     // load from classpath
                     // TODO: some way of configuring to load from db
-                    params.put ("lux.xquery", new String[] { baseURI + xquery });
-                    wrapper.setParameterMap(params);
+                    String query = baseURI + xquery;
+                    if (params != null) {
+                    	params.put ("lux.xquery", new String[] { query });
+                    	wrapper.setParameterMap(params);
+                    }
+                    
+                    // Solr 4 actually implements its own query string parsing, so we need to
+                    // swizzle the queryString here:
+                    qs = appendToQueryString(qs, "lux.xquery", query);
+                    wrapper.setQueryString(qs);
                     chain.doFilter(wrapper, response);
                     return;
                 }
             }
         }
         chain.doFilter(request, response);
+    }
+    
+    private String appendToQueryString (String qs, String param, String value) throws UnsupportedEncodingException {
+        // swizzle the queryString here:
+        if (qs == null) {
+        	return param + '=' + URLEncoder.encode(value, "UTF-8");
+        } else {
+        	return qs + '&' + param + '=' + URLEncoder.encode(value, "utf-8");
+        }
+    	
     }
 
     @Override
@@ -109,7 +135,9 @@ public class LuxDispatchFilter implements Filter {
         
         private String pathInfo;
         
-        private String servletPath; 
+        private String servletPath;
+        
+        private String queryString;
         
         public Request (HttpServletRequest req) {
             super (req);
@@ -130,6 +158,11 @@ public class LuxDispatchFilter implements Filter {
             return parameterMap;
         }
         
+        @Override
+        public String getQueryString () {
+        	return queryString;
+        }
+        
         public void setParameterMap (Map<String,String[]> map) {
             parameterMap = map;
         }
@@ -140,6 +173,10 @@ public class LuxDispatchFilter implements Filter {
         
         public void setPathInfo (String path) {
             pathInfo = path;
+        }
+        
+        public void setQueryString (String queryString) {
+        	this.queryString = queryString;
         }
         
     }
