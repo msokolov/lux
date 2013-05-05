@@ -6,7 +6,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,7 +61,7 @@ public class LuxDispatchFilter implements Filter {
         }
     }
 
-    @Override
+	@Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
             ServletException {
          if( request instanceof HttpServletRequest) {
@@ -81,7 +80,9 @@ public class LuxDispatchFilter implements Filter {
 
                     HashMap<String,String[]> params=null;
                     if (req.getMethod().equals("GET")) {
-                        params = new HashMap<String, String[]>(req.getParameterMap());
+                        @SuppressWarnings("unchecked")
+                    	Map<String, String[]> requestParams = req.getParameterMap();
+                        params = new HashMap<String, String[]>(requestParams);
                     }
                     
                     // handle URLs like /core/foo.xqy/path/info
