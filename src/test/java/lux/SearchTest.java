@@ -290,10 +290,6 @@ public class SearchTest extends BaseSearchTest {
     public void testSkipDocs () throws Exception {
         // Earlier implementations failed to indicate that the returned sequence of documents is sorted in document
         // order, causing Saxon to pull the entire result sequence.
-        //
-        // TODO: We shouldn't need to retrieve (the text of) the first 3 documents in the first query below since
-        // they are going to be discarded
-
         assertSearch ("KING CLAUDIUS", "subsequence((/)[.//SCENE], 4, 1)//SPEECH[1]/SPEAKER/string()", null, 1);
         assertSearch ("BERNARDO", "(//SCENE/SPEECH)[1]/SPEAKER/string()", null, 1);
     }

@@ -290,8 +290,7 @@ public class BasicQueryTest {
         // This should depend on having both ACT and SCENE
         assertQuery ("//ACT[.//SCENE]", MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);
         assertQuery ("//ACT[exists(.//SCENE)]", MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);        
-        // TODO: optimize not() expressions involving exists() and empty()
-        // This should depend on having a SCENE!
+        // This should depend on having a SCENE; Saxon takes care of this in 9.5...
         assertQuery ("//ACT[not(empty(.//SCENE))]", 0, ValueType.ELEMENT, Q.ACT); 
     }
     

@@ -41,7 +41,6 @@ public class HamletXPathFieldTest {
         indexer.getConfiguration().addField(new XPathField<String>("doctype", "name(/*)", null, Store.NO, Type.STRING));
         indexer.getConfiguration().addField(new XPathField<String>("doctype-stored", "name(/*)", null, Store.YES, Type.STRING));
         indexer.getConfiguration().addField(new XPathField<String>("title", "/*/TITLE", null, Store.YES, Type.STRING));
-        // TODO: test integer fields
         dir = new RAMDirectory();
         indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
     }
