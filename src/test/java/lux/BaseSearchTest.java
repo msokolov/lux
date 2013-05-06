@@ -36,7 +36,7 @@ public abstract class BaseSearchTest {
     protected static int totalDocs;
 
     public static void setup(String ... xmlfile) throws Exception {
-        XmlIndexer indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT);
+        XmlIndexer indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT|STORE_TINY_BINARY);
         indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
         index = new IndexTestSupport(xmlfile, indexer, new RAMDirectory());
         

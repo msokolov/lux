@@ -124,8 +124,10 @@ public class XmlIndexer {
             initDocBuilder();
         }
         if (isOption (STORE_DOCUMENT)) {
-            serializer = new Serializer();
-            xmlReader.addHandler(serializer);
+        	if (! isOption(STORE_TINY_BINARY)) {
+        		serializer = new Serializer();
+        		xmlReader.addHandler(serializer);
+        	}
         }
         if (isOption (BUILD_DOCUMENT) && saxonBuilder == null) {
             initDocBuilder();
@@ -409,7 +411,7 @@ public class XmlIndexer {
     }
 
     /** Primarily for internal use.
-     * @return the {@link SaxonDocBuilder} used by the indexer to construct XdmNodes.
+     * @return the {@link XmlPathMapper} used by the indexer to gather node paths.
      */
     public XmlPathMapper getPathMapper() {
         return pathMapper;

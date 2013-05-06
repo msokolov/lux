@@ -16,18 +16,13 @@ try w/XQTS
 see exprFor(FLWORExpression)
 try w/XQTS
 * bugs
-** not() optimization:
-*** invert the query:
-count(collection()[not(.//pubdate)])
-  optimize as:
-count(collection()) - count(collection()[.//pubdate])
-*** generalize
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
 * enhancements
 ** binary documents
 be able to write and read binary documents, incl. xquery
+I think this is working now?
 *** execute app from index
 * optimization
 ** not() optimization:
