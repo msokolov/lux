@@ -241,7 +241,6 @@ public class BasicQueryTest {
         assertQuery ("count(//ACT)", MINIMAL, ValueType.ELEMENT, Q.ACT);
         assertQuery ("count(//ACT/root())", SINGULAR | MINIMAL, ValueType.INT, Q.ACT);
         assertQuery ("count(//ACT/ancestor::document-node())", SINGULAR | MINIMAL, ValueType.INT, Q.ACT);
-        // FIXME: the optimizer should mark this as minimal/counting too now that we have path queries
         int facts = hasPathIndexes() ? SINGULAR | MINIMAL : SINGULAR;
         assertQuery ("count(//ACT/SCENE/ancestor::document-node())", facts, (ValueType)null, Q.ACT_SCENE);
     }
@@ -291,8 +290,7 @@ public class BasicQueryTest {
         // This should depend on having both ACT and SCENE
         assertQuery ("//ACT[.//SCENE]", MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);
         assertQuery ("//ACT[exists(.//SCENE)]", MINIMAL, ValueType.ELEMENT, Q.ACT_SCENE3);        
-        // TODO: optimize not() expressions involving exists() and empty()
-        // This should depend on having a SCENE!
+        // This should depend on having a SCENE; Saxon takes care of this in 9.5...
         assertQuery ("//ACT[not(empty(.//SCENE))]", 0, ValueType.ELEMENT, Q.ACT); 
     }
     

@@ -31,7 +31,6 @@ public class OptimizerTest {
     }
 
     private void assertQuery(Query expectedOpt, String query) throws ParserException {
-        // TODO Auto-generated method stub
         Compiler compiler = eval.getCompiler();
         compiler.compile(query);
         XQuery optimizedQuery = compiler.getLastOptimized();

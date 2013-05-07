@@ -169,7 +169,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
             } else {
                 long t1 = System.nanoTime();
                 // FIXME: use relative docID and leaf reader here  so we can avoid a binary search to find the 
-                // correct reader
+                // correct reader.  In fact the LuxSearcher *already* has the correct leaf reader - we just need
+                // to make it available here - probably via the docIter
                 XdmItem doc = docCache.get(docID, searcher.getIndexReader());
                 NodeInfo item = (NodeInfo) doc.getUnderlyingValue();
                 // assert documents in order : Note this is no longer accurate now that we have implemented "order by"

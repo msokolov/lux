@@ -100,6 +100,11 @@ public class CompilerTest {
     public void testTypedNodes() throws Exception {
         assertQuery ("2", "typed-nodes.xqy");
     }
+
+    @Test
+    public void testTypedNodeFail() throws Exception {
+        assertQueryError ("Required item type of value in 'treat as' expression is element('':foo); supplied value has item type element('':bar)", "typed-node-fail.xqy");
+    }
     
     @Test 
     public void testExtVarType() throws Exception {

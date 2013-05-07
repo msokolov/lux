@@ -17,22 +17,32 @@ import org.apache.lucene.store.Directory;
 
 public class LuxSearcher extends IndexSearcher {
 
-    // a reader managed by this exclusively
+  // a reader managed by this exclusively
   private final IndexReader indexReader;
     
+  /**
+   * creates a Lux searcher that searches the given {@link Directory}.
+   * @param dir the Directory containing the index to search
+   */
   public LuxSearcher (Directory dir) throws IOException {
     super (DirectoryReader.open(dir));
     indexReader = getIndexReader(); 
   }
-  
+
+  /**
+   * creates a Lux searcher based on an existing Lucene IndexSearcher
+   * @param searcher the underlying {@link IndexSearcher}
+   */
   public LuxSearcher (IndexSearcher searcher) {
       super (searcher.getIndexReader());
       indexReader = null;
   }
   
-  // FIXME: should we really take over management of this reader?
-  // I think we only did that as a convenience in our Index tests, but it doesn't really make sense
-  // if you think about the API
+  /**
+   * The reader will be managed by this LuxSearcher: when the searcher is closed, it will close the
+   * underlying reader, unlike in the other constructors, where the reader is expected to be managed externally.
+   * @param reader
+   */
   public LuxSearcher (IndexReader reader) {
       super (reader);
       this.indexReader = reader;

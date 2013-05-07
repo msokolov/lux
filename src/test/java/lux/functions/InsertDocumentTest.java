@@ -15,7 +15,7 @@ public class InsertDocumentTest extends XQueryTest {
     @BeforeClass
     public static void setup() throws Exception {
         RAMDirectory dir = new RAMDirectory();
-        indexTestSupport = new IndexTestSupport(new XmlIndexer(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT), dir);
+        indexTestSupport = new IndexTestSupport(new XmlIndexer(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT|STORE_TINY_BINARY), dir);
         evaluator = indexTestSupport.makeEvaluator();
     }
     

@@ -13,6 +13,7 @@ import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.ArrayIterator;
+import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.StringValue;
 
@@ -99,7 +100,10 @@ public class FieldValues extends ExtensionFunctionDefinition {
             } else {
                 node = (NodeInfo) arguments[1].next();
             }
-            long docID = node.getDocumentNumber();  
+            if (node == null) {
+                return EmptySequence.asIterator(EmptySequence.getInstance());
+            }
+            long docID = node.getDocumentNumber();
             Evaluator eval = SearchBase.getEvaluator(context);
             Document doc ;
             try {

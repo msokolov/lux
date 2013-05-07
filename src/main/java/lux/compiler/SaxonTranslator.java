@@ -310,7 +310,9 @@ public class SaxonTranslator {
         if (itemType.isAtomicType()) {
             typeDesc = sequenceType.toString();
         } else {
-            // TODO: specialized element() types
+            // Note: we drop specializations of the element() (and document()) types since
+        	// compile-time errors will already have been reported, and run-time errors are handled
+        	// using the "treat as" operator.
             typeDesc = itemType.getPrimitiveItemType().toString();
             int cardinality = sequenceType.getCardinality();
             if (cardinality == StaticProperty.ALLOWS_ONE_OR_MORE) {

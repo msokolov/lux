@@ -262,7 +262,13 @@ public class IndexTest {
 
     @Test
     public void testStoreDocuments() throws Exception {
-        buildIndex ("xml storage", STORE_DOCUMENT| BUILD_DOCUMENT);
+        buildIndex ("xml storage", STORE_DOCUMENT | BUILD_DOCUMENT);
+        assertTotalDocs ();
+    }
+
+    @Test
+    public void testStoreBinaryDocs() throws Exception {
+        buildIndex ("xml binary storage", STORE_TINY_BINARY | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     

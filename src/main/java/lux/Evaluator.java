@@ -89,8 +89,7 @@ public class Evaluator {
         config.setOutputURIResolver(new LuxOutputURIResolver());
         builder = compiler.getProcessor().newDocumentBuilder();
         if (searcher != null) {
-            DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
-            docReader = new CachingDocReader(builder, docIdAllocator, compiler.getIndexConfiguration());
+            docReader = new CachingDocReader(builder, config, compiler.getIndexConfiguration());
         } else {
             docReader = null;
         }

@@ -1,6 +1,10 @@
 package lux.functions;
 
 import static org.junit.Assert.*;
+
+import java.io.File;
+import java.util.HashSet;
+
 import lux.Evaluator;
 import lux.IndexTestSupport;
 import lux.XdmResultSet;
@@ -70,6 +74,16 @@ public class CollectionTest {
         	result.getErrors().get(0).printStackTrace();
         	assertNull(result.getErrors().get(0).getMessage(), result.getErrors());
         }
+        String pwd = System.getProperty("user.dir").replace('\\', '/');
+        String prefix;
+        if (File.separatorChar == '\\') {
+            prefix = "file:/";
+        } else {
+            prefix = "file:";
+        }
+        HashSet<String> expected = new HashSet<String> ();
+        expected.add(prefix + pwd + "/src/test/resources/conf/schema.xml");
+        expected.add(prefix + pwd + "/src/test/resources/conf/solrconfig.xml");
         XdmSequenceIterator iter = result.getXdmValue().iterator();
         String filename = iter.next().getStringValue();
 		assertTrue (filename, filename.endsWith("src/test/resources/conf/schema.xml"));

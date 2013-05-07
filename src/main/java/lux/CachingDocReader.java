@@ -10,6 +10,9 @@ import javax.xml.transform.stream.StreamSource;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.field.TinyBinaryField;
+import lux.xml.tinybin.TinyBinary;
+import net.sf.saxon.Configuration;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
@@ -22,19 +25,20 @@ import org.apache.lucene.index.IndexReader;
 /**
  * Reads, parses and caches XML documents from a Lucene index. Assigns Lucene
  * docIDs as Saxon document numbers. This reader is intended to survive for a
- * single query only, and is *not thread-safe*. TODO: a nice optimization would be to maintain a global
- * cache, shared across threads, with some tunable resource-based eviction
- * policy.
+ * single query only, and is *not thread-safe*. 
+ * 
+ * TODO: a nice optimization would be to maintain a global cache, shared across threads, 
+ * with some tunable resource-based eviction policy.
  * 
  * Not threadsafe.
  */
 public class CachingDocReader {
-    private final LRUCache<Integer, XdmNode> cache = new LRUCache<Integer, XdmNode>(512);
+	private final LRUCache<Integer, XdmNode> cache = new LRUCache<Integer, XdmNode>(512);
     private final String xmlFieldName;
     private final String uriFieldName;
     private final HashSet<String> fieldsToRetrieve;
     private final DocumentBuilder builder;
-    private final DocIDNumberAllocator docIDNumberAllocator;
+    private final Configuration config;
     private int cacheHits = 0;
     private int cacheMisses = 0;
     private long buildTime = 0;
@@ -45,15 +49,15 @@ public class CachingDocReader {
      * 
      * @param builder
      *            will be used to construct XML documents as XdmNodes
-     * @param docIDNumberAllocator
+     * @param config
      *            assigns the proper document ID to each constructed document
      * @param indexConfig
      *            supplies the names of the xml storage and uri fields
      */
-    public CachingDocReader(DocumentBuilder builder, DocIDNumberAllocator docIDNumberAllocator,
+    public CachingDocReader(DocumentBuilder builder, Configuration config,
             IndexConfiguration indexConfig) {
         this.builder = builder;
-        this.docIDNumberAllocator = docIDNumberAllocator;
+        this.config = config;
         this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
         this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
         fieldsToRetrieve = new HashSet<String>();
@@ -91,26 +95,38 @@ public class CachingDocReader {
         
         String xml = document.get(xmlFieldName);
         String uri = "lux:/" + document.get(uriFieldName);
-        docIDNumberAllocator.setNextDocID(docID);
+        DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
+        docIdAllocator.setNextDocID(docID);
         long t0 = System.nanoTime();
         byte[] bytes = null;
         if (xml == null) {
             bytes = document.getBinaryValue(xmlFieldName).bytes;
-            xml = "<binary xmlns=\"http://luxdb.net\" />";
+        	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N' && bytes[3] == 'Y') {
+            	// An XML document stored in tiny binary format
+				TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
+            	node = new XdmNode (tb.getTinyDocument(config));
+        	} else {
+            	xml = "<binary xmlns=\"http://luxdb.net\" />";
+            }
         }
-        StreamSource source = new StreamSource(new StringReader(xml));
-        source.setSystemId(uri);
-        try {
-            node = builder.build(source);
-        } catch (SaxonApiException e) {
-            // shouldn't normally happen since the document would generally have
-            // been parsed when indexed.
-            throw new LuxException(e);
+        if (node == null) {
+        	StreamSource source = new StreamSource(new StringReader(xml));
+        	source.setSystemId(uri);
+        	try {
+        		node = builder.build(source);
+        	} catch (SaxonApiException e) {
+        		// shouldn't normally happen since the document would generally have
+        		// been parsed when indexed.
+        		throw new LuxException(e);
+        	}
+        	// associate the bytes with the xml stub (for all non-XML content)
+            if (bytes != null) {
+                ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
+            }
         }
-        ((TinyDocumentImpl) node.getUnderlyingNode()).setBaseURI(uri);
-        if (bytes != null) {
-            ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
-        }
+        // doesn't seem to do what one might think:
+        // ((TinyDocumentImpl) node.getUnderlyingNode()).setBaseURI(uri);
+        ((TinyDocumentImpl) node.getUnderlyingNode()).setSystemId(uri);
         buildTime += (System.nanoTime() - t0);
         cache.put(docID, node);
         ++cacheMisses;
