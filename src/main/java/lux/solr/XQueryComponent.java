@@ -102,7 +102,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         // pool was present or not, but it salves my conscience
         XmlIndexer indexer = indexerPool.poll();
         if (indexer == null) {
-            indexer = new XmlIndexer (solrIndexConfig.getIndexConfig());
+            indexer = new XmlIndexer (solrIndexConfig.getIndexConfig(), compiler);
         }
         return indexer;
     }

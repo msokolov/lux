@@ -249,10 +249,13 @@ public class IndexConfiguration {
         }
         String currentName = fieldNames.get (field);
         if (currentName != null) {
+            if (currentName.equals(name)) {
+            	return;
+            }
             fields.remove(currentName);
+            fieldNames.put(field, name);
+            fields.put(name,  field);
         }
-        fieldNames.put(field, name);
-        fields.put(name,  field);
     }
 
     public Collection<FieldDefinition> getFields () {

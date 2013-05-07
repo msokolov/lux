@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.analysis.WhitespaceGapAnalyzer;
@@ -56,7 +57,8 @@ public class SolrIndexConfig implements SolrInfoMBean {
         if (configBean != null) {
             indexConfig = (SolrIndexConfig) configBean;
         } else {
-            indexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS | INDEX_FULLTEXT | STORE_DOCUMENT, info.initArgs);
+        	int options = (INDEX_PATHS | INDEX_FULLTEXT | STORE_DOCUMENT);
+            indexConfig = SolrIndexConfig.makeIndexConfiguration(options, info.initArgs);
             indexConfig.inform(core);
             core.getInfoRegistry().put(indexConfig.getName(), indexConfig);
         }
@@ -72,7 +74,16 @@ public class SolrIndexConfig implements SolrInfoMBean {
             if ("yes".equals(args.get("namespace-aware"))) {
                 options |= IndexConfiguration.NAMESPACE_AWARE;
             }
+            Object format = args.get("xml-format");
+            if (format != null) {
+            	if ("tiny".equals(format)) {
+            		options |= IndexConfiguration.STORE_TINY_BINARY;
+            	} else if (! "xml".equals(format)) {
+            		throw new LuxException("invalid xml-format: " + format + ", must be one of: (xml,tiny)");
+            	}
+            }
         }
+
         SolrIndexConfig config = new SolrIndexConfig(IndexConfiguration.makeIndexConfiguration (options));
         if (args != null) {
             config.renameFields (args);
