@@ -90,7 +90,6 @@ public class CachingDocReader {
             ++cacheHits;
             return node;
         }
-
         DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
