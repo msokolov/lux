@@ -18,9 +18,11 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
+import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.util.BytesRef;
 
 /**
  * Reads, parses and caches XML documents from a Lucene index. Assigns Lucene
@@ -100,7 +102,15 @@ public class CachingDocReader {
         long t0 = System.nanoTime();
         byte[] bytes = null;
         if (xml == null) {
-            bytes = document.getBinaryValue(xmlFieldName).bytes;
+            BytesRef binaryValue = document.getBinaryValue(xmlFieldName);
+            if (binaryValue == null) {
+                // This is a document without the expected fields, as will happen, eg if we just connect to
+                // some random database.
+                Logger.getLogger(CachingDocReader.class).warn ("Document " + docID + " has no content");
+                bytes = new byte[0];
+            } else {
+                bytes = binaryValue.bytes;
+            }
         	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N' && bytes[3] == 'Y') {
             	// An XML document stored in tiny binary format
 				TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
