@@ -21,6 +21,7 @@ import net.sf.saxon.value.Value;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.util.BytesRef;
 
@@ -135,12 +136,13 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             */
             Fields fields = MultiFields.getFields(eval.getSearcher().getIndexReader());
             if (fields != null) {
-                terms = fields.terms(fieldName).iterator(null);
-                if (t != null) {
-                    if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
-                        pos = -1;
-                    } else {
-                        current = terms.term().utf8ToString();
+                Terms fieldTerms = fields.terms(fieldName);
+                if (fieldTerms != null) {
+                    terms = fieldTerms.iterator(null);
+                    if (t != null) {
+                        if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) != TermsEnum.SeekStatus.END) {
+                            current = terms.term().utf8ToString();
+                        }
                     }
                 }
             }
