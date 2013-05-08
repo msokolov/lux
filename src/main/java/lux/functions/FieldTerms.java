@@ -14,7 +14,9 @@ import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
+import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
+import net.sf.saxon.value.Value;
 
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.MultiFields;
@@ -74,9 +76,9 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
     class FieldTermsCall extends ExtensionFunctionCall {
 
+        @SuppressWarnings("rawtypes")
         @Override
-        public SequenceIterator<AtomicValue> call(
-                @SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public SequenceIterator<? extends Item> call(SequenceIterator<? extends Item>[] arguments, XPathContext context)
                 throws XPathException {
             String fieldName = null, start = "";
             if (arguments.length > 0) {
@@ -93,6 +95,9 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             try {
                 if (fieldName == null) {
                     fieldName = eval.getCompiler().getIndexConfiguration().getDefaultFieldName();
+                    if (fieldName == null) {
+                        return Value.asIterator(EmptySequence.getInstance());
+                    }
                 }
                 return new TermsIterator(eval, new Term(fieldName, start));
             } catch (IOException e) {
