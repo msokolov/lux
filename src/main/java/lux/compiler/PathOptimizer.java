@@ -978,40 +978,43 @@ public class PathOptimizer extends ExpressionVisitorBase {
         AbstractExpression sequence = subsequence.getSequence();
         AbstractExpression start = subsequence.getStartExpr();
         AbstractExpression length = subsequence.getLengthExpr();
-        // Any (/) in the expression must have been replaced with a search
-        FunCall search = (FunCall) sequence.getRoot();
-        if (search != null && !start.equals(LiteralExpression.ONE)) {
-            AbstractExpression[] args = search.getSubs();
-            if (args.length >= 4) {
-                // there is already a start arg provided
-                return subsequence;
-            }
-            boolean isSingular;
-            if (args.length < 1) {
-                isSingular = true; // this must be a user-supplied search call
-            } else {
-                LiteralExpression factsArg = (LiteralExpression) args[1];
-                long facts = factsArg.equals(LiteralExpression.EMPTY) ? 0 :
-                    ((Long) factsArg.getValue());
-                isSingular = (facts & SINGULAR) != 0;
-            }
-            if (isSingular) {
-                AbstractExpression[] newArgs = new AbstractExpression[4];
-                int i = 0;
-                while (i < args.length) {
-                    newArgs[i] = args[i];
-                    ++i;
-                }
-                while (i < 3) {
-                    newArgs[i++] = LiteralExpression.EMPTY;
-                }
-                newArgs[i] = start;
-                search.setArguments(newArgs);
-                if (length == null || length.equals(LiteralExpression.EMPTY)) {
-                    return search;
-                }
-                subsequence.setStartExpr(LiteralExpression.ONE);
-            }
+        // Any (/) in the expression will have been replaced with a search, 
+        // unless this expression is inside a user-defined function.
+        AbstractExpression root = sequence.getRoot();
+		if (root == null || root.getType() != Type.FUNCTION_CALL || LiteralExpression.ONE.equals(start)) {
+        	return subsequence;
+        }
+        FunCall search = (FunCall) root;
+        AbstractExpression[] args = search.getSubs();
+        if (args.length >= 4) {
+        	// there is already a start arg provided
+        	return subsequence;
+        }
+        boolean isSingular;
+        if (args.length < 1) {
+        	isSingular = true; // this must be a user-supplied search call
+        } else {
+        	LiteralExpression factsArg = (LiteralExpression) args[1];
+        	long facts = factsArg.equals(LiteralExpression.EMPTY) ? 0 :
+        		((Long) factsArg.getValue());
+        	isSingular = (facts & SINGULAR) != 0;
+        }
+        if (isSingular) {
+        	AbstractExpression[] newArgs = new AbstractExpression[4];
+        	int i = 0;
+        	while (i < args.length) {
+        		newArgs[i] = args[i];
+        		++i;
+        	}
+        	while (i < 3) {
+        		newArgs[i++] = LiteralExpression.EMPTY;
+        	}
+        	newArgs[i] = start;
+        	search.setArguments(newArgs);
+        	if (length == null || length.equals(LiteralExpression.EMPTY)) {
+        		return search;
+        	}
+        	subsequence.setStartExpr(LiteralExpression.ONE);
         }
         return subsequence;
     }
@@ -1157,23 +1160,23 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // Pull queries from middle of stack since they get pushed in
             // reverse order
             XPathQuery q = queryStack.remove(stackOffset);
+            SortKey sortKey = sortKeys.get(i);
+            AbstractExpression key = sortKey.getKey();
             if (q.getSortFields() == null) {
+            	// TODO: analyze the expression, matching against xpath indexes 
                 // once we find an unindexed sort field, stop adding sort
                 // indexes to the query
                 foundUnindexedSort = true;
             } else if (!foundUnindexedSort) {
-                SortKey sortKey = sortKeys.get(i);
-                AbstractExpression key = sortKey.getKey();
+            	// previous analysis determined this order by clause should be optimized
                 if (key instanceof FunCall) {
-                    // special case - it would be nice if Saxon figured this out
-                    // when compiling
+                    // field-values() with one argument depends on context 
                     FunCall keyFun = (FunCall) key;
                     if (keyFun.getName().equals(FunCall.LUX_FIELD_VALUES)) { 
                     	if (keyFun.getSubs().length < 2) {
                     		throw new LuxException(
                     				"lux:field-values($key) depends on the context where there is no context defined");
                     	}
-                    	// TODO: support "order by $doc/lux:field-values('sort-field') 
                     }
                 }
                 String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();

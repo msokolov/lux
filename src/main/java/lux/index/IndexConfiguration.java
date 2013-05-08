@@ -16,6 +16,7 @@ import lux.index.field.PathField;
 import lux.index.field.PathOccurrenceField;
 import lux.index.field.PathValueField;
 import lux.index.field.QNameValueField;
+import lux.index.field.TinyBinaryField;
 import lux.index.field.URIField;
 import lux.index.field.XmlTextField;
 
@@ -33,46 +34,48 @@ public class IndexConfiguration {
     /** causes a document node to be built during indexing. Must be set if any XPathFields are to be defined. */
     public final static int BUILD_DOCUMENT=     0x00000001;
     
-    // public final static int SERIALIZE_XML=      0x00000002;
+    // public final static int SERIALIZE_XML =  0x00000002;
     
     /** causes QNames indexes to include the full namespace uri.  If not set, QNames are indexed lexically,
      * as {prefix}:{localname} without regard for any prefix mappings.  Currently namespace-unaware indexing
      * and search is not fully supported.
      */
-    public final static int NAMESPACE_AWARE=    0x00000004;
+    public final static int NAMESPACE_AWARE =   0x00000004;
     
-    /** causes a document to be stored in the index. This should generally always be enabled/ */
+    /** causes a document to be stored in the index. This should generally always be enabled */
     public final static int STORE_DOCUMENT =    0x00000008;
     
-    // public final static int STORE_PTREE=        0x00000010;
+    /** indicates that documents are to be stored in {@link TinyBinary} format.  If this is not set,
+     * documents are stored as serialized XML. */
+    public final static int STORE_TINY_BINARY =    0x00000010;
     
     /** enables the {@link #ELT_QNAME} and {@link #ATT_QNAME} fields, causing element and attribute 
      * QNames to be indexed.  If paths are indexed, this isn't really needed. */
-    public final static int INDEX_QNAMES=       0x00000020;
+    public final static int INDEX_QNAMES =      0x00000020;
     
     /** enables the {@link #PATH} field, causing element and attribute QName paths to be indexed. */
-    public final static int INDEX_PATHS=        0x00000040;
+    public final static int INDEX_PATHS =       0x00000040;
     
     /** enables the {@link #XML_TEXT}, {@link #ELEMENT_TEXT}, and {@link #ATTRIBUTE_TEXT} fields,
      * causing element and attribute text to be indexed. */
-    public final static int INDEX_FULLTEXT=     0x00000080;
+    public final static int INDEX_FULLTEXT =    0x00000080;
     
     /** enables the {@link #PATH_VALUE} field (if INDEX_PATHS is set), and the {@link #QNAME_VALUE} field (if
      * INDEX_QNAMES is set), causing values to be indexed.  This is an experimental feature that is not
      * fully supported.
      */
-    public final static int INDEX_VALUES=       0x00000100;
+    public final static int INDEX_VALUES =      0x00000100;
 
     /** enables the computation and storage of term offsets in the index. Currently there is no reason to enable
      * this flag.  In the future term offsets may be used to accelerate highlighting. */
-    public final static int COMPUTE_OFFSETS=    0x00000200;
+    public final static int COMPUTE_OFFSETS =   0x00000200;
     
     /** causes all namespace information to be stripped from incoming documents */
-    public final static int STRIP_NAMESPACES=   0x00000400;
+    public final static int STRIP_NAMESPACES =  0x00000400;
     
     /** experimental: index each occurrence of each path as an unparsed string,
      * rather than indexing unique paths and tokenizing */
-    public final static int INDEX_EACH_PATH = 0x00000800;
+    public final static int INDEX_EACH_PATH = 	0x00000800;
     
     /** mask covering all of the indexing options */
     public final static int INDEXES = INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | INDEX_VALUES;
@@ -85,6 +88,9 @@ public class IndexConfiguration {
     
     /** field that stores xml documents */
     private static final FieldDefinition XML_STORE = DocumentField.getInstance();
+
+    /** field that stores xml documents */
+    private static final FieldDefinition TINY_BINARY_STORE = TinyBinaryField.getInstance();
 
     /** element QName field */    
     public static final FieldDefinition ELT_QNAME = ElementQNameField.getInstance();
@@ -185,7 +191,11 @@ public class IndexConfiguration {
             */
         }
         if (isOption (STORE_DOCUMENT)) {
-            addField(XML_STORE);
+            if (isOption (STORE_TINY_BINARY )) {
+            	addField(TINY_BINARY_STORE);
+            } else {
+            	addField(XML_STORE);
+            }
         }
     }
     
@@ -239,10 +249,13 @@ public class IndexConfiguration {
         }
         String currentName = fieldNames.get (field);
         if (currentName != null) {
+            if (currentName.equals(name)) {
+            	return;
+            }
             fields.remove(currentName);
+            fieldNames.put(field, name);
+            fields.put(name,  field);
         }
-        fieldNames.put(field, name);
-        fields.put(name,  field);
     }
 
     public Collection<FieldDefinition> getFields () {

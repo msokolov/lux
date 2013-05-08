@@ -60,7 +60,7 @@ public class XPathQuery {
     public void setSortFields(SortField[] sortFields) {
         this.sortFields = sortFields;
         if (sortFields != null) {
-            setFact (IGNORABLE, false); // TODO seems a bit hacky
+            setFact (IGNORABLE, false); // prevent the fields from getting dropped
         }
     }
 

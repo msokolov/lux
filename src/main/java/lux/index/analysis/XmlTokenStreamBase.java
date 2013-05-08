@@ -34,6 +34,11 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
  * of the Analyzer class design prevent it from being extended in a straightforward manner.
  * Thus we have essentially an outer (XML) stream wrapping an inner (Text) stream.
  * </p>
+ * 
+ * FIXME: make the constructor protected; allow construction only through static builders
+ * defined on each derived class.  This will enable us to hide the complexity of wrapping the
+ * token stream, which is the same pattern for each of these; only the classes vary.  But we 
+ * can't do the work in the constructor due to Java structural issues.
  */
 abstract class XmlTokenStreamBase extends TokenStream {
 

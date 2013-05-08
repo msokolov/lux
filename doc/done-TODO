@@ -1,3 +1,11 @@
+* tiny binary
+In order to distinguish "regular" binary documents from XML binary documents, we can:
+*** add a content-type field
+lux_content_type; a stored string-valued field (DocValues?); should be
+renameable, but doesn't require any solrconfig.xml or schema.xml changes
+*** encode the "type" as a magic number (TINY) in the binary content itself
+paves the way for a file format; adds 4 bytes to each document; decode document from offset 
+position.  Has the virtue of being the same treatment as existing binaries.
 * optimization fixes
 ** //foo[non-path-expr = 'foo']
 was generating query(foo:foo); we now do this only for [. = 'foo']

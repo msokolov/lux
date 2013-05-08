@@ -107,6 +107,14 @@ public class XPathFieldTest {
     }
     
     @Test
+    public void testSortContextOptimization () throws Exception {
+        // order by an int field
+    	String s = getStringResult("(for $doc in collection() order by $doc/lux:field-values('string-length') return name($doc/*))[1]");
+        assertEquals ("entities", s);
+        assertEquals (1, eval.getQueryStats().docCount);
+    }
+    
+    @Test
     public void testSortByConstantFieldValue () throws Exception {
         // order by a constant value that might look the same - ordering by docid:
         // What if we produce two sequences, each ordered by a constant involving two different

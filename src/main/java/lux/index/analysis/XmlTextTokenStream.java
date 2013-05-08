@@ -9,8 +9,6 @@ import org.apache.lucene.analysis.TokenStream;
 /**
  * Extracts tokens from an s9api XML document tree (XdmNode) in order to make them
  * available to Lucene classes that accept TokenStreams, like the indexer and highlighter.
- * 
- * TODO: wrap an entire Analyzer, not just predefined analysis: LowerCaseFilter/StandardTokenizer
  */
 public final class XmlTextTokenStream extends TextOffsetTokenStream {
 

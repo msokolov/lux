@@ -3,7 +3,7 @@ We use maven to build Lux.  We provide a maven pom file; an Eclipse
 To build a clean distribution, running all unit tests:
 
 cd lux
-mvn install (runs tests, packages the jar, and installs in your repo)
+mvn clean install (runs tests, packages the jar, and installs in your repo)
 
 cd ../lux-appserver
 mvn clean package dependency:copy-dependencies assembly:single

@@ -123,8 +123,6 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test
     public void testCreateCore () throws Exception {
-        // TODO: this still doesn't reproduce the problem we saw when running solr embedded in the lux app server
-        // where we tried to create a new core interactively using the admin screen, and then the app server stopped responding
         SolrQuery q = new SolrQuery();
         q.setRequestHandler(coreContainer.getAdminPath());
         q.setParam ("action", "CREATE");
@@ -153,12 +151,12 @@ public class LuxSolrTest extends BaseSolrTest {
     	q.setParam("lux.xquery", "file:src/test/resources/lux/solr/echo.xqy");
     	resp = solr.query(q);
     	NamedList<?> xpathResults = (NamedList<?>) resp.getResponse().get("xpath-results"); 
-    	assertEquals ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+    	assertEquals (
     			"<http><params>" +
     			"<param name=\"wt\"><value>lux</value></param>" +
     			"<param name=\"qt\"><value>/lux</value></param>" +
     			"<param name=\"test-param\"><value>test-value</value></param>" +
-    			"<param name=\"wt\"><value>lux</value></param></params></http>", 
+    			"<param name=\"wt\"><value>lux</value></param></params><context-path/></http>", 
     			xpathResults.get("document").toString());
     	assertTrue(resp.getResults().isEmpty());
     }

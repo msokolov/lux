@@ -117,7 +117,9 @@ public enum ValueType {
     
     @Override
     public String toString () {
-        // FIXME: QName qualification eg element(foo) or document-node(element(foo))
+        // We lose type qualifications (like element(foo) - they become just element())
+    	// but that's OK since the type assertion is preserved in a dynamic "treat as" expression,
+    	// and static type checking will already have been performed by the compiler.
         if (!isAtomic) {
             return name + "()";
         }

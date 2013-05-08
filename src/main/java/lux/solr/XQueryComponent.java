@@ -1,7 +1,5 @@
 package lux.solr;
 
-import static lux.index.IndexConfiguration.*;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -9,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -48,7 +47,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
-import org.apache.solr.core.PluginInfo;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.QueryComponent;
 import org.apache.solr.handler.component.ResponseBuilder;
@@ -56,7 +54,6 @@ import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
-import org.apache.solr.update.processor.UpdateRequestProcessorChain;
 import org.apache.solr.util.plugin.SolrCoreAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,15 +86,13 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
         serializer = new Serializer();
         serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
+        serializer.setOutputProperty(Serializer.Property.BYTE_ORDER_MARK, "no");
+        serializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
     }
     
     @Override
     public void inform(SolrCore core) {
-        // Read the init args from the LuxUpdateProcessorFactory's configuration since we require
-        // this plugin to use compatible configuration
-        PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
-        solrIndexConfig = SolrIndexConfig.makeIndexConfiguration(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT, info.initArgs);
-        solrIndexConfig.inform(core);
+        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(core);
         compiler = createXCompiler();
         typeHierarchy = compiler.getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
     }
@@ -107,7 +102,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         // pool was present or not, but it salves my conscience
         XmlIndexer indexer = indexerPool.poll();
         if (indexer == null) {
-            indexer = new XmlIndexer (solrIndexConfig.getIndexConfig());
+            indexer = new XmlIndexer (solrIndexConfig.getIndexConfig(), compiler);
         }
         return indexer;
     }
@@ -130,7 +125,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             }
         } else {
-            contentType = "text/html; charset=UTF-8";
             serializer.setOutputProperty(Serializer.Property.METHOD, "html");
         }
     }
@@ -191,7 +185,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             context = new QueryContext();
             context.bindVariable(LUX_HTTP, buildHttpParams(
                     evaluator,
-                    rb.req.getParams(), 
+                    rb.req.getParams(),
+                    rb.req.getContext(),
                     xqueryPath
                     ));
         }
@@ -267,8 +262,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         return buf.toString();
     }
 
-    private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, String path) {
-        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params)), path);
+    private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, Map<Object, Object> context, String path) {
+        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params, context)), path);
     }
 
     private Compiler createXCompiler() {
@@ -285,7 +280,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 Object javaValue;
                 if (value instanceof DecimalValue) {
                     javaValue = ((DecimalValue) value).getDoubleValue();
-                    // TODO - NaN if value could not be converted
                 } else if (value instanceof QNameValue) {
                     javaValue = ((QNameValue) value).getClarkName();
                 } else if (value instanceof GDateValue) { 
@@ -325,7 +319,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     // but the only alternative I can see is to provide a special xquery function
     // and pass the map into the Saxon Evaluator object - but we can't get that
     // from here, and it would be thread-unsafe anyway
-    private String buildHttpInfo(SolrParams params) {
+    private String buildHttpInfo(SolrParams params, Map<Object, Object> context) {
         StringBuilder buf = new StringBuilder();
         // TODO: http method
         buf.append (String.format("<http>"));
@@ -348,6 +342,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         if (pathInfo != null) {
             buf.append("<path-info>").append(xmlEscape(pathInfo)).append("</path-info>");
         }
+        String webapp = (String) context.get("webapp");
+        if (webapp == null) {
+            webapp = "";
+        }
+        buf.append("<context-path>").append(webapp).append("</context-path>");
         // TODO: headers, path, etc?
         buf.append ("</http>");
         return buf.toString();
