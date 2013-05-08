@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import lux.exception.LuxException;
-
 import net.sf.saxon.Configuration;
 import net.sf.saxon.om.NamePool;
 import net.sf.saxon.om.NamespaceBinding;
@@ -32,7 +31,7 @@ import org.apache.lucene.store.ByteArrayDataOutput;
 public class TinyBinary {
 
 	private final static int TINY = ('T' << 24) | ('I' << 16) | ('N' << 8) | 'Y';
-	private ByteBuffer bytes;
+	private ByteBuffer byteBuffer;
 	private int charBufferLength;
 	private int commentBufferLength;
 	private int nodeCount; // number of (non-attribute) nodes
@@ -57,19 +56,19 @@ public class TinyBinary {
 	}
 
 	public TinyBinary(byte[] buf, Charset charset) {
-		this.bytes = ByteBuffer.wrap(buf);
-		int signature = bytes.getInt();
+		this.byteBuffer = ByteBuffer.wrap(buf);
+		int signature = byteBuffer.getInt();
 		if (signature != TINY) {
 			throw new LuxException ("bytes lack TINY signature");
 		}
-		charBufferLength = bytes.getInt();
-		commentBufferLength = bytes.getInt();
-		nodeCount = bytes.getInt();
-		attCount = bytes.getInt();
-		nsCount = bytes.getInt();
-		nameCount = bytes.getInt();
-		nsNameCount = bytes.getInt();
-		attValueCount = bytes.getInt();
+		charBufferLength = byteBuffer.getInt();
+		commentBufferLength = byteBuffer.getInt();
+		nodeCount = byteBuffer.getInt();
+		attCount = byteBuffer.getInt();
+		nsCount = byteBuffer.getInt();
+		nameCount = byteBuffer.getInt();
+		nsNameCount = byteBuffer.getInt();
+		attValueCount = byteBuffer.getInt();
 		if (charset != null) {
 			this.charsetDecoder = charset.newDecoder();
 		}
@@ -101,17 +100,17 @@ public class TinyBinary {
 		}
 		// System.out.println ("nodeCount: " + nodeCount);
 		
-		bytes.get(nodeKind);
+		byteBuffer.get(nodeKind);
 
-		readVInts(bytes, next, nodeCount);
-		readAlpha(bytes, alpha, nodeKind, nodeCount);
-		readBeta(bytes, beta, nodeKind, nodeCount);
-		readMappedNameCodes(nameCode, nodeCount, bytes);
-		readDeltas(bytes, attParent, attCount);
-		readMappedNameCodes(attNameCode, attCount, bytes);
-		readDeltas(bytes, nsParent, nsCount);
-		readMappedNameCodes(nsNameCode, nsCount, bytes);
-		readShortDeltas(bytes, depth, nodeCount);
+		readVInts(byteBuffer, next, nodeCount);
+		readAlpha(byteBuffer, alpha, nodeKind, nodeCount);
+		readBeta(byteBuffer, beta, nodeKind, nodeCount);
+		readMappedNameCodes(nameCode, nodeCount, byteBuffer);
+		readDeltas(byteBuffer, attParent, attCount);
+		readMappedNameCodes(attNameCode, attCount, byteBuffer);
+		readDeltas(byteBuffer, nsParent, nsCount);
+		readMappedNameCodes(nsNameCode, nsCount, byteBuffer);
+		readShortDeltas(byteBuffer, depth, nodeCount);
 		readChars(charBuffer, charBufferLength);
 		if (commentBufferLength > 0) {
 			readChars(commentBuffer, commentBufferLength);
@@ -195,7 +194,7 @@ public class TinyBinary {
 	 */
 	private void readChars(AppendableCharSequence charBuffer, int len) {
 		if (charsetDecoder == null) {
-			CharBuffer chars = bytes.asCharBuffer();
+			CharBuffer chars = byteBuffer.asCharBuffer();
 			chars.limit(len);
 			if (charBuffer instanceof LargeStringBuffer) {
 				// TODO: don't copy all these chars - implement
@@ -204,13 +203,13 @@ public class TinyBinary {
 			} else {
 				charBuffer.append(chars);
 			}
-			bytes.position(bytes.position() + len * 2);
+			byteBuffer.position(byteBuffer.position() + len * 2);
 		} else {
 			if (charBuffer instanceof FastStringBuffer) {
 				FastStringBuffer buffer = ((FastStringBuffer) charBuffer);
 				CharBuffer chars = CharBuffer.wrap(buffer.getCharArray(), 0,
 						len);
-				CoderResult result = charsetDecoder.decode(bytes, chars, false);
+				CoderResult result = charsetDecoder.decode(byteBuffer, chars, false);
 				// we expect Overflow to occur
 				if (result.isError() || result.isUnderflow()) {
 					throw new LuxException ("character mapping error: " + result.toString());
@@ -218,25 +217,24 @@ public class TinyBinary {
 				setStringBufferUsed (buffer, len);
 			} else {
 				CharBuffer chars = CharBuffer.wrap(new char[len]);
-				charsetDecoder.decode(bytes, chars, false);
+				charsetDecoder.decode(byteBuffer, chars, false);
 				charBuffer.append(new CharSlice(chars.array()));
 			}
 		}
 	}
 
-	private void allocateNames(int[] nameCode, String[] names,
-			String[] namespaces, NamePool namePool) {
+	private void allocateNames(int[] nameCode, String[] nameArr, String[] nsArr, NamePool namePool) {
 		for (int i = 0; i < nameCode.length; i++) {
 			int code = nameCode[i];
 			if (code < 0) {
 				continue;
 			}
 			int localNameCode = (code & 0xffff) - 1;
-			String localName = localNameCode < 0 ? "" : names[localNameCode];
+			String localName = localNameCode < 0 ? "" : nameArr[localNameCode];
 			int prefixCode = ((code >> 24) & 0xff) - 1;
-			String prefix = prefixCode < 0 ? "" : namespaces[prefixCode];
+			String prefix = prefixCode < 0 ? "" : nsArr[prefixCode];
 			int uriCode = ((code >> 16) & 0xff) - 1;
-			String uri = uriCode < 0 ? "" : namespaces[uriCode];
+			String uri = uriCode < 0 ? "" : nsArr[uriCode];
 			// System.out.println ("allocateName " + i + " " + prefix + ":" +
 			// localName);
 			int poolCode = namePool.allocate(prefix, uri, localName);
@@ -248,15 +246,15 @@ public class TinyBinary {
 			CharsetDecoder decoder) {
 		CharSequence[] csqs = new CharSequence[count];
 		for (int i = 0; i < count; i++) {
-			short len = bytes.getShort();
+			short len = byteBuffer.getShort();
 			CharBuffer chars;
 			if (decoder == null) {
-				chars = bytes.asCharBuffer();
+				chars = byteBuffer.asCharBuffer();
 				chars.limit(len);
-				bytes.position(bytes.position() + len * 2);
+				byteBuffer.position(byteBuffer.position() + len * 2);
 			} else {
 				chars = CharBuffer.wrap(new char[len]);
-				decoder.decode(bytes, chars, false);
+				decoder.decode(byteBuffer, chars, false);
 				chars.position(0);
 			}
 			csqs[i] = chars;
@@ -267,17 +265,17 @@ public class TinyBinary {
 	private String[] readStrings(final int count, CharsetDecoder decoder) {
 		String[] strings = new String[count];
 		for (int i = 0; i < count; i++) {
-			short len = bytes.getShort();
+			short len = byteBuffer.getShort();
 			CharBuffer chars;
 			if (decoder == null) {
-				chars = bytes.asCharBuffer();
+				chars = byteBuffer.asCharBuffer();
 				chars.limit(len);
-				bytes.position(bytes.position() + len * 2);
+				byteBuffer.position(byteBuffer.position() + len * 2);
 				strings[i] = chars.toString();
 			} else {
 				// TODO: re-use this char[]
 				chars = CharBuffer.wrap(new char[len]);
-				decoder.decode(bytes, chars, false);
+				decoder.decode(byteBuffer, chars, false);
 				strings[i] = new String(chars.array(), 0, chars.position());
 			}
 		}
@@ -299,32 +297,32 @@ public class TinyBinary {
 			charsetEncoder = charset.newEncoder();
 		}
 		int totalSize = calculateTotalSize(tree);
-		bytes = ByteBuffer.allocate(totalSize);
-		bytes.putInt(TINY); // signature of the TINY format
-		bytes.putInt(tree.getCharacterBuffer().length());
+		byteBuffer = ByteBuffer.allocate(totalSize);
+		byteBuffer.putInt(TINY); // signature of the TINY format
+		byteBuffer.putInt(tree.getCharacterBuffer().length());
 		if (tree.getCommentBuffer() == null)
-			bytes.putInt(0);
+			byteBuffer.putInt(0);
 		else
-			bytes.putInt(tree.getCommentBuffer().length());
-		bytes.putInt(nodeCount);
-		bytes.putInt(attCount);
-		bytes.putInt(nsCount);
-		bytes.putInt(names.size());
-		bytes.putInt(namespaces.size());
-		bytes.putInt(attValues.size());
+			byteBuffer.putInt(tree.getCommentBuffer().length());
+		byteBuffer.putInt(nodeCount);
+		byteBuffer.putInt(attCount);
+		byteBuffer.putInt(nsCount);
+		byteBuffer.putInt(names.size());
+		byteBuffer.putInt(namespaces.size());
+		byteBuffer.putInt(attValues.size());
 
-		bytes.put(tree.nodeKind, 0, nodeCount);
-		writeVInts(bytes, tree.getNextPointerArray(), nodeCount);
-		writeAlpha(bytes, tree.getAlphaArray(), tree.nodeKind, nodeCount);
-		writeBeta(bytes, tree.getBetaArray(), tree.nodeKind, nodeCount);
-		writeMappedNameCodes(tree.getNameCodeArray(), nodeCount, bytes);
-		writeDeltas(bytes, tree.getAttributeParentArray(), attCount);
-		writeMappedNameCodes(tree.getAttributeNameCodeArray(), attCount, bytes);
-		writeDeltas(bytes, tree.getNamespaceParentArray(), nsCount);
+		byteBuffer.put(tree.nodeKind, 0, nodeCount);
+		writeVInts(byteBuffer, tree.getNextPointerArray(), nodeCount);
+		writeAlpha(byteBuffer, tree.getAlphaArray(), tree.nodeKind, nodeCount);
+		writeBeta(byteBuffer, tree.getBetaArray(), tree.nodeKind, nodeCount);
+		writeMappedNameCodes(tree.getNameCodeArray(), nodeCount, byteBuffer);
+		writeDeltas(byteBuffer, tree.getAttributeParentArray(), attCount);
+		writeMappedNameCodes(tree.getAttributeNameCodeArray(), attCount, byteBuffer);
+		writeDeltas(byteBuffer, tree.getNamespaceParentArray(), nsCount);
 
 		// put ns decl string references
-		ByteArrayDataOutput out = new ByteArrayDataOutput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
+		ByteArrayDataOutput out = new ByteArrayDataOutput(byteBuffer.array(),
+				byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
 		NamespaceBinding[] bindings = tree.getNamespaceCodeArray();
 		try {
 			for (int i = 0; i < nsCount; i++) {
@@ -336,9 +334,9 @@ public class TinyBinary {
 			}
 		} catch (IOException e) {
 		}
-		bytes.position(out.getPosition() - bytes.arrayOffset());
+		byteBuffer.position(out.getPosition() - byteBuffer.arrayOffset());
 
-		writeShortDeltas(bytes, tree.getNodeDepthArray(), nodeCount);
+		writeShortDeltas(byteBuffer, tree.getNodeDepthArray(), nodeCount);
 
 		putCharacterBuffer(tree.getCharacterBuffer(), charsetEncoder);
 		if (tree.getCommentBuffer() != null) {
@@ -571,26 +569,24 @@ public class TinyBinary {
 		}
 	}
 
-	private void putCharacterBuffer(CharSequence characterBuffer,
-			CharsetEncoder charsetEncoder) {
-		if (charsetEncoder == null) {
-			CharBuffer chars = bytes.asCharBuffer();
+	private void putCharacterBuffer(CharSequence characterBuffer, CharsetEncoder encoder) {
+		if (encoder == null) {
+			CharBuffer chars = byteBuffer.asCharBuffer();
 			chars.put(characterBuffer.toString());
-			bytes.position(bytes.position() + chars.position() * 2);
+			byteBuffer.position(byteBuffer.position() + chars.position() * 2);
 		} else if (characterBuffer instanceof FastStringBuffer) {
 			CharBuffer chars = CharBuffer.wrap(
 					((FastStringBuffer) characterBuffer).getCharArray(), 0,
 					characterBuffer.length());
-			charsetEncoder.encode(chars, bytes, false);
+			encoder.encode(chars, byteBuffer, false);
 		} else {
 			CharBuffer chars = CharBuffer.wrap(characterBuffer, 0,
 					characterBuffer.length());
-			charsetEncoder.encode(chars, bytes, false);
+			encoder.encode(chars, byteBuffer, false);
 		}
 	}
 
-	private void writeMappedNameCodes(int[] nameCodes, int count,
-			ByteBuffer bytes) {
+	private void writeMappedNameCodes(int[] nameCodes, int count, ByteBuffer bytes) {
 		ByteArrayDataOutput out = new ByteArrayDataOutput(bytes.array(),
 				bytes.arrayOffset() + bytes.position(), bytes.remaining());
 		try {
@@ -608,8 +604,7 @@ public class TinyBinary {
 		bytes.position(out.getPosition() - bytes.arrayOffset());
 	}
 
-	private void readMappedNameCodes(int[] nameCodes, int count,
-			ByteBuffer bytes) {
+	private void readMappedNameCodes(int[] nameCodes, int count, ByteBuffer bytes) {
 		ByteArrayDataInput in = new ByteArrayDataInput(bytes.array(),
 				bytes.arrayOffset() + bytes.position(), bytes.remaining());
 		for (int i = 0; i < count; i++) {
@@ -623,19 +618,18 @@ public class TinyBinary {
 		bytes.position(in.getPosition() - bytes.arrayOffset());
 	}
 
-	private void writeStrings(LinkedHashMap<CharSequence, Integer> map,
-			CharsetEncoder charsetEncoder) {
-		CharBuffer chars = bytes.asCharBuffer();
+	private void writeStrings(LinkedHashMap<CharSequence, Integer> map, CharsetEncoder encoder) {
+		CharBuffer chars = byteBuffer.asCharBuffer();
 		for (CharSequence name : map.keySet()) {
 			int len = name.length();
-			bytes.putShort((short) len);
-			if (charsetEncoder == null) {
+			byteBuffer.putShort((short) len);
+			if (encoder == null) {
 				chars.position(chars.position() + 1);
 				chars.put(name.toString());
-				bytes.position(bytes.position() + len * 2);
+				byteBuffer.position(byteBuffer.position() + len * 2);
 			} else {
 				chars = CharBuffer.wrap(name);
-				charsetEncoder.encode(chars, bytes, false);
+				encoder.encode(chars, byteBuffer, false);
 			}
 		}
 	}
@@ -731,11 +725,11 @@ public class TinyBinary {
 	}
 
 	public byte[] getBytes() {
-		return bytes.array();
+		return byteBuffer.array();
 	}
 
 	public int length() {
-		return bytes.position();
+		return byteBuffer.position();
 	}
 
 	/*

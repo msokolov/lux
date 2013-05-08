@@ -19,6 +19,7 @@ import lux.index.field.QNameValueField;
 import lux.index.field.TinyBinaryField;
 import lux.index.field.URIField;
 import lux.index.field.XmlTextField;
+import lux.xml.tinybin.TinyBinary;
 
 import org.apache.lucene.util.Version;
 

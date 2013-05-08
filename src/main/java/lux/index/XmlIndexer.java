@@ -109,7 +109,8 @@ public class XmlIndexer {
     /**
      * Make a new instance with the given options and Compiler. The runtime uses this to
      * index documents from its nodes directly, without serializing and parsing.
-     * @param options the index configuration options to use
+     * @param indexConfig the index configuration options to use 
+     * @param compiler the indexer will make XPath that is compatible with this compiler 
      */
     public XmlIndexer(IndexConfiguration indexConfig, Compiler compiler) {
         this.configuration = indexConfig;

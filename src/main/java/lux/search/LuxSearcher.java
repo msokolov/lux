@@ -23,6 +23,7 @@ public class LuxSearcher extends IndexSearcher {
   /**
    * creates a Lux searcher that searches the given {@link Directory}.
    * @param dir the Directory containing the index to search
+   * @throws IOException if the Directory cannot be opened
    */
   public LuxSearcher (Directory dir) throws IOException {
     super (DirectoryReader.open(dir));
