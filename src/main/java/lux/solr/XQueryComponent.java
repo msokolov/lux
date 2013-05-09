@@ -172,7 +172,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         	    err = ex.getMessage();
         	}
         	rsp.add("xpath-error", err);
-        	evaluator.close();
+        	// don't close: this forces a commit()
+        	// evaluator.close();
         	return;
         }
         //SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
@@ -194,7 +195,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         try {
             queryResults = evaluator.evaluate(expr, context);
         } finally {
-            evaluator.close();
+            // don't close; this forces a commit()
+            // evaluator.close();
         }
         if (queryResults != null) {
         	String err = null;
