@@ -249,14 +249,17 @@ public class IndexConfiguration {
             throw new IllegalArgumentException("Attempt to rename field " + field + " whose name is fixed");
         }
         String currentName = fieldNames.get (field);
+        if (currentName == null) {
+            currentName = field.getDefaultName();
+        }
         if (currentName != null) {
             if (currentName.equals(name)) {
             	return;
             }
             fields.remove(currentName);
-            fieldNames.put(field, name);
-            fields.put(name,  field);
         }
+        fieldNames.put(field, name);
+        fields.put(name, field);
     }
 
     public Collection<FieldDefinition> getFields () {
