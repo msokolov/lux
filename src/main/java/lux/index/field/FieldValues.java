@@ -3,7 +3,6 @@ package lux.index.field;
 import java.util.Iterator;
 
 import lux.index.IndexConfiguration;
-import lux.xml.tinybin.TinyBinary;
 
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
@@ -44,14 +43,13 @@ public class FieldValues implements Iterable<IndexableField> {
         @Override
         public IndexableField next() {
             Object value = iter.next();
+            if (value instanceof IndexableField) {
+                return (IndexableField) value;
+            }
             switch (field.getType()) {
             case BYTES:
                 if (value instanceof byte[]) {
                     return new StoredField(fieldName, (byte[])value);
-                }
-                if (value instanceof TinyBinary) {
-                	TinyBinary tinyBinary = (TinyBinary) value;
-					return new StoredField(fieldName, tinyBinary.getBytes(), 0, tinyBinary.length());
                 }
                 // else fall through and treat as String?
             case STRING:

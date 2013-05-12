@@ -31,7 +31,7 @@ import org.apache.lucene.store.ByteArrayDataOutput;
 public class TinyBinary {
 
 	private final static int TINY = ('T' << 24) | ('I' << 16) | ('N' << 8) | 'Y';
-	private ByteBuffer byteBuffer;
+	private final ByteBuffer byteBuffer;
 	private int charBufferLength;
 	private int commentBufferLength;
 	private int nodeCount; // number of (non-attribute) nodes
@@ -47,14 +47,25 @@ public class TinyBinary {
 	private HashMap<Integer, Integer> nameCodeMap;
 	private CharsetDecoder charsetDecoder;
 	private CharsetEncoder charsetEncoder;
+
+	private TinyDocumentImpl document;
 	
 	private static Field fsbUsed;
 	
-	// To read a TinyTree
+	/** To read a TinyTree from a byte array in which characters are encoded as they are in 
+	 * Java (ie 16-bit values for normal chars, 32-bit for those in the supplemental planes) 
+	 * @param buf a byte array containing a binary-encoded tiny tree.
+	 */
 	public TinyBinary(byte[] buf) {
 		this(buf, null);
 	}
 
+    /** To read a TinyTree from a byte array in which characters are encoded according to the 
+     * given Charset.
+     * @param buf a byte array containing a binary-encoded tiny tree.
+     * @param charset the charset that defines a mapping between characters (unicode code points)
+     * and bytes.
+     */
 	public TinyBinary(byte[] buf, Charset charset) {
 		this.byteBuffer = ByteBuffer.wrap(buf);
 		int signature = byteBuffer.getInt();
@@ -76,7 +87,9 @@ public class TinyBinary {
 	}
 
 	public TinyDocumentImpl getTinyDocument(Configuration config) {
-
+	    if (document != null) {
+	        return document;
+	    }
 		// Allocate TinyTree storage
 		byte[] nodeKind = new byte[nodeCount];
 		short[] depth = new short[nodeCount];
@@ -141,6 +154,9 @@ public class TinyBinary {
 			int uriCode = (nsCode & 0xffff) - 1;
 			binding[i] = new NamespaceBinding(prefix, nsTable[uriCode]);
 		}
+		
+		resetByteBuffer();
+
 		/*
 		 * TinyTree tree = new TinyTree (config, nodeCount, nodeKind, depth,
 		 * next, alpha, beta, nameCode, attCount, attParent, attNameCode,
@@ -181,7 +197,8 @@ public class TinyBinary {
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
 		}
-		return (TinyDocumentImpl) tree.getNode(0);
+		document = (TinyDocumentImpl) tree.getNode(0);
+		return document;
 	}
 
 	private void setFieldValue(TinyTree tree, String fieldName,
@@ -361,11 +378,15 @@ public class TinyBinary {
 		writeStrings(namespaces, charsetEncoder);
 		writeStrings(attValues, charsetEncoder);
 
-		// leave the buffer positioned at zero and properly limited so that consumers of the
+		resetByteBuffer();
+	}
+
+    private void resetByteBuffer() {
+        // leave the buffer positioned at zero and properly limited so that consumers of the
         // raw buffer will see all the right bytes
 		byteBuffer.limit(byteBuffer.position());
 		byteBuffer.position(0);
-	}
+    }
 
 	private void writeAlpha(ByteBuffer bytes, int[] alpha, byte[] nodeKind,
 			int count) {
@@ -759,7 +780,7 @@ public class TinyBinary {
 	}
 
 	public int length() {
-		return byteBuffer.position();
+		return byteBuffer.limit();
 	}
 
 	/*

@@ -19,9 +19,13 @@ public class DocumentField extends FieldDefinition {
     }
     
     protected DocumentField () {
-        super ("lux_xml", null, Store.YES, Type.BYTES, true);
+        super ("lux_xml", null, Store.YES, Type.STRING, true);
     }
     
+    /**
+     * This will be a byte[] value if the document is a binary document, or if it is an 
+     * XML document indexed using TinyBinary.  Otherwise it will be a String value.
+     */
     @Override
     public Iterable<?> getValues(XmlIndexer indexer) {
         byte[] bytes = indexer.getDocumentBytes();

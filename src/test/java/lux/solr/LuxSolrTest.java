@@ -194,7 +194,7 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQuery ("--12-01", "xs:gMonthDay", "xs:gMonthDay('--12-01')");
         
     }
-    
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

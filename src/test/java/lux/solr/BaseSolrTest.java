@@ -58,6 +58,8 @@ public abstract class BaseSolrTest {
             solr.rollback();
         } catch (SolrException e) {
         }
+        // This is needed to avoid LockObtainedException when running the whole test suite,
+        // but it sometimes causes warnings about too many close() calls ... 
         while (solrCore != null && ! solrCore.isClosed()) {
             solrCore.close();
         }

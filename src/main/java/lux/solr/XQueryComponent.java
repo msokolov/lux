@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.transform.TransformerException;
 
@@ -20,7 +19,6 @@ import lux.QueryContext;
 import lux.TransformErrorListener;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
-import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -68,10 +66,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     public static final String LUX_PATH_INFO = "lux.pathInfo";
     private static final QName LUX_HTTP = new QName (Evaluator.LUX_NAMESPACE, "http");
     protected Set<String> fields = new HashSet<String>();
-    protected Compiler compiler;
-    private TypeHierarchy typeHierarchy;
-    private ArrayBlockingQueue<XmlIndexer> indexerPool;
-    //protected XmlIndexer indexer;
+
     protected SolrIndexConfig solrIndexConfig;
     private Serializer serializer;
     
@@ -83,7 +78,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
-        indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
         serializer = new Serializer();
         serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
         serializer.setOutputProperty(Serializer.Property.BYTE_ORDER_MARK, "no");
@@ -93,25 +87,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     @Override
     public void inform(SolrCore core) {
         solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(core);
-        compiler = createXCompiler();
-        typeHierarchy = compiler.getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
     }
-    
-    public XmlIndexer checkoutXmlIndexer () {
-        // In tests it didn't seem to make any appreciable difference whether this
-        // pool was present or not, but it salves my conscience
-        XmlIndexer indexer = indexerPool.poll();
-        if (indexer == null) {
-            indexer = new XmlIndexer (solrIndexConfig.getIndexConfig(), compiler);
-        }
-        return indexer;
-    }
-    
-    public void returnXmlIndexer (XmlIndexer doneWithIt) {
-        indexerPool.offer(doneWithIt);
-        // if the pool was full, we just drop the indexer as garbage
-    }
-    
+
     @Override
     public void prepare(ResponseBuilder rb) throws IOException {
         SolrQueryRequest req = rb.req;
@@ -160,6 +137,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         SolrIndexSearcher searcher = rb.req.getSearcher();
         DocWriter docWriter = new SolrDocWriter (this, rb.req.getCore());
+        lux.Compiler compiler = solrIndexConfig.getCompiler();
+
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
@@ -247,6 +226,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             }
             buf.append (te.getMessageAndLocation());
             buf.append ("\n");
+            Compiler compiler = solrIndexConfig.getCompiler();
             if (te.getLocator() != null) {
                 int lineNumber = te.getLocator().getLineNumber();
                 int column = te.getLocator().getColumnNumber();
@@ -268,15 +248,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params, context)), path);
     }
 
-    private Compiler createXCompiler() {
-        return new Compiler(solrIndexConfig.getIndexConfig());
-    }
-    
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) throws SaxonApiException {
         if (item.isAtomicValue()) {
             // We need to get Java primitive values that Solr knows how to marshal
             XdmAtomicValue xdmValue = (XdmAtomicValue) item;
             AtomicValue value = (AtomicValue) xdmValue.getUnderlyingValue();
+            TypeHierarchy typeHierarchy = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
             try {
                 String typeName = value.getItemType(typeHierarchy).toString();
                 Object javaValue;
