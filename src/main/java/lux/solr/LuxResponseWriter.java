@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-import net.sf.saxon.s9api.XdmNode;
-
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.util.NamedList;
@@ -53,7 +51,8 @@ public class LuxResponseWriter implements QueryResponseWriter {
                     // css?
                 }
                 boolean wrapResults = "text/xml".equals(contentType) && 
-                        (values.size() == 0 || values.size() > 1 || (! (values.getVal(0) instanceof XdmNode)));
+                        (values.size() == 0 || values.size() > 1 || 
+                        (! (values.getName(0).equals("document") || values.getName(0).equals("element"))));
                 if (wrapResults) {
                     writer.write("<results>");
                 }

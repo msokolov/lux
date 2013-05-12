@@ -287,7 +287,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             XdmNode node = (XdmNode) item;
             XdmNodeKind nodeKind = node.getNodeKind();
             StringWriter buf = new StringWriter ();
-            // assume text/html
+            // TODO: xml serialization, indentation control; for now assume text/html
             serializer.setOutputWriter(buf);
             serializer.serializeNode(node);
             xpathResults.add(nodeKind.toString().toLowerCase(), buf.toString());
