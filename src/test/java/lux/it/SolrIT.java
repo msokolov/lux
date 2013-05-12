@@ -1,8 +1,6 @@
 package lux.it;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -32,6 +30,13 @@ public class SolrIT {
     private final String XQUERY_PATH = "http://localhost:8080/xquery";
     private static WebClient httpclient;
 
+    @BeforeClass
+    public static void setup () {
+        httpclient = new WebConversation();
+        httpclient.setExceptionsThrownOnErrorStatus(false);
+        HttpUnitOptions.setScriptingEnabled(false);
+    }
+    
     @Test
     public void testAppServer () throws Exception {
         String path = (APP_SERVER_PATH + "?lux.xquery=file:src/test/resources/lux/compiler/minus-1.xqy");
@@ -179,10 +184,4 @@ public class SolrIT {
         return "<doc><title id=\"" + i + "\">" + (101-i) + "</title><test>cat</test></doc>";
     }
     
-    @BeforeClass
-    public static void setup () {
-        httpclient = new WebConversation();
-        httpclient.setExceptionsThrownOnErrorStatus(false);
-        HttpUnitOptions.setScriptingEnabled(false);
-    }
 }
