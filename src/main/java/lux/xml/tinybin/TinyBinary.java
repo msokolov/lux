@@ -72,6 +72,7 @@ public class TinyBinary {
 		if (charset != null) {
 			this.charsetDecoder = charset.newDecoder();
 		}
+		// TODO: merge this w/getTinyDocument, which just picks up where this leaves off
 	}
 
 	public TinyDocumentImpl getTinyDocument(Configuration config) {
@@ -86,7 +87,8 @@ public class TinyBinary {
 		int[] attParent = new int[attCount];
 		int[] attNameCode = new int[attCount];
 		int[] nsParent = new int[nsCount];
-		int[] nsNameCode = new int[nsCount];
+		int[] nsNameCode = new int[nsCount]; // TODO: don't allocate this; stream in the values
+		int[] attValueIndex = new int[attCount];
 		NamespaceBinding[] binding = new NamespaceBinding[nsCount];
 		AppendableCharSequence charBuffer;
 		if (charBufferLength > 65000) {
@@ -110,6 +112,7 @@ public class TinyBinary {
 		readMappedNameCodes(attNameCode, attCount, byteBuffer);
 		readDeltas(byteBuffer, nsParent, nsCount);
 		readMappedNameCodes(nsNameCode, nsCount, byteBuffer);
+		readVInts(byteBuffer, attValueIndex, attCount);
 		readShortDeltas(byteBuffer, depth, nodeCount);
 		readChars(charBuffer, charBufferLength);
 		if (commentBufferLength > 0) {
@@ -117,8 +120,14 @@ public class TinyBinary {
 		}
 		String[] nameTable = readStrings(nameCount, charsetDecoder);
 		String[] nsTable = readStrings(nsNameCount, charsetDecoder);
-		CharSequence[] attValue = readCharSequences(attValueCount,
-				charsetDecoder);
+		CharSequence[] attValueDict = readCharSequences(attValueCount, charsetDecoder);
+
+		// dereference attValue pointers
+		CharSequence[] attValue  = new CharSequence [attCount];
+		for (int i = 0; i < attCount; i++) {
+		    int idx = attValueIndex[i];
+            attValue[i] = attValueDict[idx];
+		}
 		NamePool namePool = config.getNamePool();
 		// TODO: Would it be faster to save the list of distinct nameCodes
 		// for efficiently recreating the pool rather than attempting to
@@ -325,12 +334,17 @@ public class TinyBinary {
 				byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
 		NamespaceBinding[] bindings = tree.getNamespaceCodeArray();
 		try {
+            // write namespace binding pointers: these are pairs of indexes into the namespaces string array
 			for (int i = 0; i < nsCount; i++) {
 				NamespaceBinding binding = bindings[i];
 				int a = binding.getPrefix().length() == 0 ? 0 : namespaces
 						.get(binding.getPrefix());
 				int b = namespaces.get(binding.getURI());
 				out.writeVInt((a << 16) | b);
+			}
+            // write attribute value pointers: these are indexes into the attValues string array
+			for (int i = 0; i < attCount; i++) {
+			    out.writeVInt(attValues.get(tree.getAttributeValueArray()[i]) - 1);
 			}
 		} catch (IOException e) {
 		}
@@ -346,6 +360,11 @@ public class TinyBinary {
 		writeStrings(names, charsetEncoder);
 		writeStrings(namespaces, charsetEncoder);
 		writeStrings(attValues, charsetEncoder);
+
+		// leave the buffer positioned at zero and properly limited so that consumers of the
+        // raw buffer will see all the right bytes
+		byteBuffer.limit(byteBuffer.position());
+		byteBuffer.position(0);
 	}
 
 	private void writeAlpha(ByteBuffer bytes, int[] alpha, byte[] nodeKind,
@@ -635,9 +654,9 @@ public class TinyBinary {
 	}
 
 	/**
-	 * FIXME: lurking bug here for supplemental chars, since we allocate a buffer
-	 * based on an assumption that chars will be 2 bytes on average, and this
-	 * could be badly wrong. We should allocate smaller (assume 1 byte per char)
+	 * FIXME: lurking bug here for buffers filled entirely with supplemental chars, 
+	 * since we allocate a buffer based on an assumption that chars will be 2 bytes on average, 
+	 * and this could be badly wrong. We should allocate smaller (assume 1 byte per char)
 	 * and grow as needed.
 	 * 
 	 * @param tree
@@ -724,6 +743,17 @@ public class TinyBinary {
 		return n;
 	}
 
+	/**
+	 * @return the internal storage buffer
+	 */
+	public ByteBuffer getByteBuffer() {
+	    return byteBuffer;
+	}
+	
+    /**
+     * @return the byte array from the internal storage buffer.  This will usually be larger
+     * than required, and contains unused trailing bytes.  
+     */
 	public byte[] getBytes() {
 		return byteBuffer.array();
 	}
