@@ -2,6 +2,7 @@ package lux.solr;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -9,6 +10,8 @@ import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
+import lux.xml.tinybin.TinyBinary;
+import net.sf.saxon.Configuration;
 
 import org.apache.lucene.index.IndexableField;
 import org.apache.solr.common.SolrInputDocument;
@@ -19,33 +22,40 @@ import org.slf4j.LoggerFactory;
 
 public class LuxUpdateProcessor extends UpdateRequestProcessor {
 
+    private final SolrIndexConfig solrIndexConfig;
     private final IndexConfiguration indexConfig;
+    private final Configuration saxonConfig;
     
-    public LuxUpdateProcessor (IndexConfiguration config, UpdateRequestProcessor next) {
+    public LuxUpdateProcessor (SolrIndexConfig config, UpdateRequestProcessor next) {
         super(next);
-        indexConfig = config;
-    }
-    
-    private XmlIndexer getIndexer (IndexConfiguration config) {
-        // TODO: pool these across requests - the UpdateProcessor is allocated per-request,
-        // but XmlIndexer contains various expensive components that should be reused
-        return new XmlIndexer(config);
+        solrIndexConfig = config;
+        indexConfig = solrIndexConfig.getIndexConfig();
+        saxonConfig = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration();
     }
 
     @Override
     public void processAdd (AddUpdateCommand cmd) throws IOException {
-        XmlIndexer xmlIndexer = getIndexer(indexConfig);
         SolrInputDocument solrInputDocument = cmd.getSolrInputDocument();
         Object o = solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.XML_STORE));
-        if (o != null) {
-            String xml = (String) o;
-            String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
-            try {
-                xmlIndexer.index (new StringReader(xml), uri);
-            } catch (XMLStreamException e) {
-                LoggerFactory.getLogger(LuxUpdateProcessor.class).error ("Failed to parse " + FieldName.XML_STORE, e);
+        XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
+        try {
+            if (o != null) {
+                String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
+                try {
+                    if (o instanceof String) {
+                        String xml = (String) o;
+                        xmlIndexer.index (new StringReader(xml), uri);
+                    } else if (o instanceof byte[]) {
+                        TinyBinary xml = new TinyBinary ((byte[]) o, Charset.forName("utf-8"));
+                        xmlIndexer.index(xml.getTinyDocument(saxonConfig), uri);
+                    }
+                } catch (XMLStreamException e) {
+                    LoggerFactory.getLogger(LuxUpdateProcessor.class).error ("Failed to parse " + FieldName.XML_STORE, e);
+                }
+                addDocumentFields (xmlIndexer, solrInputDocument);
             }
-            addDocumentFields (xmlIndexer, solrInputDocument);
+        } finally {
+            solrIndexConfig.returnXmlIndexer(xmlIndexer);
         }
         if (next != null) {
             next.processAdd(cmd);
@@ -54,6 +64,10 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     
     public static void addDocumentFields (XmlIndexer indexer, SolrInputDocument doc) {
         IndexConfiguration indexConfig = indexer.getConfiguration();
+        if (indexConfig.isOption(IndexConfiguration.STORE_TINY_BINARY)) {
+            // remove the serialized xml field value -- we will store a TinyBinary instead
+            doc.removeField(indexConfig.getFieldName(FieldName.XML_STORE));
+        }
         for (FieldDefinition field : indexConfig.getFields()) {
             String fieldName = indexConfig.getFieldName(field);
             if (field == indexConfig.getField(FieldName.URI) ||  

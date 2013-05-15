@@ -1,6 +1,6 @@
 package lux.xml.tinybin;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -9,10 +9,7 @@ import java.nio.charset.Charset;
 
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
-import org.junit.Test;
-
+import lux.SearchTest;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.sort.CodepointCollator;
 import net.sf.saxon.expr.sort.GenericAtomicComparer;
@@ -25,18 +22,24 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
-import lux.SearchTest;
-import lux.xml.tinybin.TinyBinary;
+import org.apache.commons.io.IOUtils;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TinyBinaryTest {
 
     Processor processor;
     DocumentBuilder builder;
     
-    @Test
-    public void testRoundTrip() throws SaxonApiException, XPathException, IOException {
+    @Before
+    public void init () {
         processor = new Processor(false);
         builder = processor.newDocumentBuilder();
+    }
+    
+    @Test
+    public void testRoundTrip() throws SaxonApiException, XPathException, IOException {
         // try building a TinyBinary and recreating a tree from that
         assertRoundTrip("lux/reader-test.xml", null);
         assertRoundTrip("lux/reader-test.xml", "utf-8");
@@ -49,6 +52,12 @@ public class TinyBinaryTest {
         // a large(r) document:
         assertRoundTrip("lux/hamlet.xml", null);
         assertRoundTrip("lux/hamlet.xml", "utf-8");
+    }
+    
+    @Test
+    public void testAttributes () throws Exception {
+        assertRoundTrip ("conf/solrconfig.xml", null);
+        assertRoundTrip ("conf/solrconfig.xml", "utf-8");
     }
     
     @Test
@@ -112,7 +121,8 @@ public class TinyBinaryTest {
         TinyDocumentImpl tinyDoc = copy.getTinyDocument(config);
         // for debugging:
         // processor.newSerializer(System.out).serializeNode(new XdmNode(tinyDoc));
-        assertTrue (DeepEqual.deepEquals(
+        assertTrue (docpath + " was not preserved by TinyBinary roundtrip",
+                DeepEqual.deepEquals(
                 SingletonIterator.makeIterator(tinyDoc),
                 SingletonIterator.makeIterator(doc.getUnderlyingNode()),
                 new GenericAtomicComparer(CodepointCollator.getInstance(),

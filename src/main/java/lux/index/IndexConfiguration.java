@@ -17,6 +17,7 @@ import lux.index.field.PathOccurrenceField;
 import lux.index.field.PathValueField;
 import lux.index.field.QNameValueField;
 import lux.index.field.TinyBinaryField;
+import lux.index.field.TinyBinarySolrField;
 import lux.index.field.URIField;
 import lux.index.field.XmlTextField;
 import lux.xml.tinybin.TinyBinary;
@@ -30,12 +31,13 @@ import org.apache.lucene.util.Version;
  */
 public class IndexConfiguration {
 
-    public static final Version LUCENE_VERSION = Version.LUCENE_41;
+    public static final Version LUCENE_VERSION = Version.LUCENE_42;
 
     /** causes a document node to be built during indexing. Must be set if any XPathFields are to be defined. */
-    public final static int BUILD_DOCUMENT=     0x00000001;
+    public final static int BUILD_DOCUMENT =    0x00000001;
     
-    // public final static int SERIALIZE_XML =  0x00000002;
+    /** Configure for use in solr; eg TinyBinarySolrField instead of TinyBinaryField*/
+    public final static int SOLR =              0x00000002;
     
     /** causes QNames indexes to include the full namespace uri.  If not set, QNames are indexed lexically,
      * as {prefix}:{localname} without regard for any prefix mappings.  Currently namespace-unaware indexing
@@ -193,7 +195,11 @@ public class IndexConfiguration {
         }
         if (isOption (STORE_DOCUMENT)) {
             if (isOption (STORE_TINY_BINARY )) {
-            	addField(TINY_BINARY_STORE);
+                if (isOption(SOLR)) {
+                    addField(TinyBinarySolrField.getInstance());
+                } else {
+                    addField(TINY_BINARY_STORE);
+                }
             } else {
             	addField(XML_STORE);
             }

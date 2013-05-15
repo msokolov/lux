@@ -31,7 +31,7 @@ import org.apache.lucene.store.ByteArrayDataOutput;
 public class TinyBinary {
 
 	private final static int TINY = ('T' << 24) | ('I' << 16) | ('N' << 8) | 'Y';
-	private ByteBuffer byteBuffer;
+	private final ByteBuffer byteBuffer;
 	private int charBufferLength;
 	private int commentBufferLength;
 	private int nodeCount; // number of (non-attribute) nodes
@@ -47,14 +47,25 @@ public class TinyBinary {
 	private HashMap<Integer, Integer> nameCodeMap;
 	private CharsetDecoder charsetDecoder;
 	private CharsetEncoder charsetEncoder;
+
+	private TinyDocumentImpl document;
 	
 	private static Field fsbUsed;
 	
-	// To read a TinyTree
+	/** To read a TinyTree from a byte array in which characters are encoded as they are in 
+	 * Java (ie 16-bit values for normal chars, 32-bit for those in the supplemental planes) 
+	 * @param buf a byte array containing a binary-encoded tiny tree.
+	 */
 	public TinyBinary(byte[] buf) {
 		this(buf, null);
 	}
 
+    /** To read a TinyTree from a byte array in which characters are encoded according to the 
+     * given Charset.
+     * @param buf a byte array containing a binary-encoded tiny tree.
+     * @param charset the charset that defines a mapping between characters (unicode code points)
+     * and bytes.
+     */
 	public TinyBinary(byte[] buf, Charset charset) {
 		this.byteBuffer = ByteBuffer.wrap(buf);
 		int signature = byteBuffer.getInt();
@@ -72,10 +83,13 @@ public class TinyBinary {
 		if (charset != null) {
 			this.charsetDecoder = charset.newDecoder();
 		}
+		// TODO: merge this w/getTinyDocument, which just picks up where this leaves off
 	}
 
 	public TinyDocumentImpl getTinyDocument(Configuration config) {
-
+	    if (document != null) {
+	        return document;
+	    }
 		// Allocate TinyTree storage
 		byte[] nodeKind = new byte[nodeCount];
 		short[] depth = new short[nodeCount];
@@ -86,7 +100,8 @@ public class TinyBinary {
 		int[] attParent = new int[attCount];
 		int[] attNameCode = new int[attCount];
 		int[] nsParent = new int[nsCount];
-		int[] nsNameCode = new int[nsCount];
+		int[] nsNameCode = new int[nsCount]; // TODO: don't allocate this; stream in the values
+		int[] attValueIndex = new int[attCount];
 		NamespaceBinding[] binding = new NamespaceBinding[nsCount];
 		AppendableCharSequence charBuffer;
 		if (charBufferLength > 65000) {
@@ -110,6 +125,7 @@ public class TinyBinary {
 		readMappedNameCodes(attNameCode, attCount, byteBuffer);
 		readDeltas(byteBuffer, nsParent, nsCount);
 		readMappedNameCodes(nsNameCode, nsCount, byteBuffer);
+		readVInts(byteBuffer, attValueIndex, attCount);
 		readShortDeltas(byteBuffer, depth, nodeCount);
 		readChars(charBuffer, charBufferLength);
 		if (commentBufferLength > 0) {
@@ -117,8 +133,14 @@ public class TinyBinary {
 		}
 		String[] nameTable = readStrings(nameCount, charsetDecoder);
 		String[] nsTable = readStrings(nsNameCount, charsetDecoder);
-		CharSequence[] attValue = readCharSequences(attValueCount,
-				charsetDecoder);
+		CharSequence[] attValueDict = readCharSequences(attValueCount, charsetDecoder);
+
+		// dereference attValue pointers
+		CharSequence[] attValue  = new CharSequence [attCount];
+		for (int i = 0; i < attCount; i++) {
+		    int idx = attValueIndex[i];
+            attValue[i] = attValueDict[idx];
+		}
 		NamePool namePool = config.getNamePool();
 		// TODO: Would it be faster to save the list of distinct nameCodes
 		// for efficiently recreating the pool rather than attempting to
@@ -132,6 +154,9 @@ public class TinyBinary {
 			int uriCode = (nsCode & 0xffff) - 1;
 			binding[i] = new NamespaceBinding(prefix, nsTable[uriCode]);
 		}
+		
+		resetByteBuffer();
+
 		/*
 		 * TinyTree tree = new TinyTree (config, nodeCount, nodeKind, depth,
 		 * next, alpha, beta, nameCode, attCount, attParent, attNameCode,
@@ -172,7 +197,8 @@ public class TinyBinary {
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
 		}
-		return (TinyDocumentImpl) tree.getNode(0);
+		document = (TinyDocumentImpl) tree.getNode(0);
+		return document;
 	}
 
 	private void setFieldValue(TinyTree tree, String fieldName,
@@ -325,12 +351,17 @@ public class TinyBinary {
 				byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
 		NamespaceBinding[] bindings = tree.getNamespaceCodeArray();
 		try {
+            // write namespace binding pointers: these are pairs of indexes into the namespaces string array
 			for (int i = 0; i < nsCount; i++) {
 				NamespaceBinding binding = bindings[i];
 				int a = binding.getPrefix().length() == 0 ? 0 : namespaces
 						.get(binding.getPrefix());
 				int b = namespaces.get(binding.getURI());
 				out.writeVInt((a << 16) | b);
+			}
+            // write attribute value pointers: these are indexes into the attValues string array
+			for (int i = 0; i < attCount; i++) {
+			    out.writeVInt(attValues.get(tree.getAttributeValueArray()[i]) - 1);
 			}
 		} catch (IOException e) {
 		}
@@ -346,7 +377,16 @@ public class TinyBinary {
 		writeStrings(names, charsetEncoder);
 		writeStrings(namespaces, charsetEncoder);
 		writeStrings(attValues, charsetEncoder);
+
+		resetByteBuffer();
 	}
+
+    private void resetByteBuffer() {
+        // leave the buffer positioned at zero and properly limited so that consumers of the
+        // raw buffer will see all the right bytes
+		byteBuffer.limit(byteBuffer.position());
+		byteBuffer.position(0);
+    }
 
 	private void writeAlpha(ByteBuffer bytes, int[] alpha, byte[] nodeKind,
 			int count) {
@@ -635,9 +675,9 @@ public class TinyBinary {
 	}
 
 	/**
-	 * FIXME: lurking bug here for supplemental chars, since we allocate a buffer
-	 * based on an assumption that chars will be 2 bytes on average, and this
-	 * could be badly wrong. We should allocate smaller (assume 1 byte per char)
+	 * FIXME: lurking bug here for buffers filled entirely with supplemental chars, 
+	 * since we allocate a buffer based on an assumption that chars will be 2 bytes on average, 
+	 * and this could be badly wrong. We should allocate smaller (assume 1 byte per char)
 	 * and grow as needed.
 	 * 
 	 * @param tree
@@ -724,12 +764,23 @@ public class TinyBinary {
 		return n;
 	}
 
+	/**
+	 * @return the internal storage buffer
+	 */
+	public ByteBuffer getByteBuffer() {
+	    return byteBuffer;
+	}
+	
+    /**
+     * @return the byte array from the internal storage buffer.  This will usually be larger
+     * than required, and contains unused trailing bytes.  
+     */
 	public byte[] getBytes() {
 		return byteBuffer.array();
 	}
 
 	public int length() {
-		return byteBuffer.position();
+		return byteBuffer.limit();
 	}
 
 	/*

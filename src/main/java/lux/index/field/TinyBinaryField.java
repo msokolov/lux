@@ -9,6 +9,7 @@ import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 import net.sf.saxon.tree.tiny.TinyTree;
 
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.StoredField;
 
 /**
  * A field that stores XML documents in a binary form ({@link TinyBinary}) that is very close to the in-memory Saxon TinyTree format.
@@ -28,11 +29,16 @@ public class TinyBinaryField extends FieldDefinition {
         super ("lux_xml", null, Store.YES, Type.BYTES);
     }
     
+    protected TinyBinary makeTinyBinary (XmlIndexer indexer) {
+        TinyTree tinyTree = ((TinyDocumentImpl) indexer.getXdmNode().getUnderlyingNode()).getTree();
+        return new TinyBinary (tinyTree, UTF8);
+    }
+    
     @Override
     public Iterable<?> getValues(XmlIndexer indexer) {
-        TinyTree tinyTree = ((TinyDocumentImpl) indexer.getXdmNode().getUnderlyingNode()).getTree();
-        TinyBinary tinyBinary = new TinyBinary (tinyTree, UTF8);
-        return Collections.singleton(tinyBinary);
+        TinyBinary tinyBinary = makeTinyBinary(indexer);
+        String fieldName = indexer.getConfiguration().getFieldName(this);
+        return Collections.singleton(new StoredField(fieldName, tinyBinary.getBytes(), 0, tinyBinary.length()));
     }
 
 }

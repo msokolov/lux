@@ -12,7 +12,6 @@ import org.junit.Test;
 
 public class SolrMultiCoreTest extends BaseSolrTest {
     
-
     protected static SolrServer core1, core2;
 
     @BeforeClass 

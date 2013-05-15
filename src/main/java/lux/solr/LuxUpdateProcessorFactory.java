@@ -20,7 +20,7 @@ public class LuxUpdateProcessorFactory extends UpdateRequestProcessorFactory imp
 
     @Override
     public UpdateRequestProcessor getInstance(SolrQueryRequest req, SolrQueryResponse rsp, UpdateRequestProcessor next) {
-        return new LuxUpdateProcessor (indexConfig.getIndexConfig(), next);
+        return new LuxUpdateProcessor (indexConfig, next);
     }
 
 }
