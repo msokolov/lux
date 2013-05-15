@@ -16,6 +16,9 @@ try w/XQTS
 see exprFor(FLWORExpression)
 try w/XQTS
 * bugs
+** OOM
+On buda, lux:search ("<@imagepage:123")[1]/root() fails w OOM while
+lux:search ("<@imagepage:123")[1] works fine ... ??
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
