@@ -1,11 +1,9 @@
-* step back - what do we want to be good it
-the app server is really secondary, right?  although necessary to shake out
-bugs, and to provide an easy on-ramp.  But the core benefits should be:
+* Mission
+Low-profile optimized xquery data store suitable for embedding, in a java
+process, or as a web service. And an app server, but this is really
+secondary.
 ** correctness
 ** speed
-*** indexing and query optimization
-*** document loading
-**** compare
 ** features
 * Distribution
 ** blog post
@@ -14,9 +12,6 @@ mention on the mailing list
 ** xml-dev
 mention on the mailing list
 * Plans
-** benchmark framework
-Eventually will want to scale up, perform repeats, report timings in a
-better way, etc.  For now unit tests seem fine.
 * Advanced Indexing techniques
 ** index XML structure
 "shred" or "fragment" - should help w/large docs.. Additional query
@@ -26,9 +21,3 @@ post-evaluation, joins, etc).
 ** compatible API
 Expose some kind of API like Saxon's? Or behave as a Saxon Configuration
 plus a preprocessing optimizer?
-** PTree binary storage
-Use tinytree for storage; evaluate the perf improvement from this.  Could
-use Ptree if you have saxon-PE+.  Or could build a replacement (maybe for
-in house use, but don't release).  Actually this proves to be difficult
-without totally taking over Saxon.
-** check whether our code works w/9.1 (Saxon B) ?

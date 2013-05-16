@@ -432,8 +432,18 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("65", "lux:count(text{'bernardo'})", null, 65, 0);
     }
     
-    @Test public void testLuxSearchPath () throws Exception {
+    @Test 
+    public void testLuxSearchPath () throws Exception {
         assertSearch ("1", "count(lux:search('\"holla bernardo\"')/SPEECH)", null, 5, 5);   
+    }
+    
+    /* Something like this failed (with OOME) in the wild, but not reproducible here? I think it was
+     * a bug in 0.7.1; no longer though. */
+    @Test
+    public void testLuxSearchRoot () throws Exception {
+        // first result is LINE due to TFIDF (relevance) scoring
+        assertSearch ("LINE", "lux:search('\"holla bernardo\"')[1]/root()/*/name()", null, 1, 1);
+        assertSearch (null, "lux:search('<@id:100')[1]/root()/*/name()", null, 0, 0);
     }
     
     @Test
