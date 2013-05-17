@@ -84,13 +84,14 @@ public class CollectionTest {
         HashSet<String> expected = new HashSet<String> ();
         expected.add(prefix + pwd + "/src/test/resources/conf/schema.xml");
         expected.add(prefix + pwd + "/src/test/resources/conf/solrconfig.xml");
+
+        HashSet<String> found = new HashSet<String> ();
         XdmSequenceIterator iter = result.getXdmValue().iterator();
-        String filename = iter.next().getStringValue();
-		assertTrue (filename, filename.endsWith("src/test/resources/conf/schema.xml"));
-		filename = iter.next().getStringValue();
-        assertTrue (filename, filename.endsWith("src/test/resources/conf/solrconfig.xml"));
-        assertFalse (iter.hasNext());
-        
+        while (iter.hasNext()) {
+            String filename = iter.next().getStringValue();
+            found.add(filename);
+        }
+        assertEquals (expected, found);
     }
     
     // No need to test collection() with no args here - it's tested all over the place already
