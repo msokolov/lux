@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include header.html %}
+  </head>
+
+  <body>
+    {% include navbar.html %}
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+
+        <div class="span9">
+          {{ content }}
+        </div><!--/span-->
+
+        <div class="span3">
+          {% include sidenav.html %}
+        </div><!--/span-->
+
+      <hr />
+
+      </div><!--/row-->
+
+      {% include footer.html %}
+
+    </div><!--/.fluid-container-->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.js"></script>
+
+    </body>
+</html>
