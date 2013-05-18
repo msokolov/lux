@@ -12,6 +12,12 @@ mention on the mailing list
 ** xml-dev
 mention on the mailing list
 * Plans
+** envision use cases
+** optimize
+** fix bugs
+we have one or two
+** Evangelize
+write some blog posts, send out announcements to email lists, tweet
 * Advanced Indexing techniques
 ** index XML structure
 "shred" or "fragment" - should help w/large docs.. Additional query
