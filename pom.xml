@@ -2,9 +2,20 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>lux</groupId>
   <artifactId>lux</artifactId>
+  <version>0.8.0</version>
   <packaging>jar</packaging>
-  <version>0.8.1-SNAPSHOT</version>
-  <name>lux library</name>
+
+  <name>Lux library</name>
+  <description>Lux XML search engine</description>
+  <url>http://luxdb.org/</url>
+  <licenses>
+    <license>Mozilla Public License Version 2.0</license>
+    <url>http://www.mozilla.org/MPL/2.0/</url>
+    <distribution>repo</distribution>
+  </licenses>
+  <scm>
+    <url>http://github.com/msokolov/lux</url>
+  </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
