@@ -16,8 +16,16 @@
     </license>
   </licenses>
   <scm>
-    <url>http://github.com/msokolov/lux</url>
+    <url>https://github.com/msokolov/lux</url>
+    <connection>scm:git:https://github.com/msokolov/lux</connection>
   </scm>
+  <developers>
+    <developer>
+      <id>msokolov</id>
+      <name>Michael Sokolov</name>
+      <email>sokolov@falutin.net</email>
+    </developer>
+  </developers>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -285,6 +293,21 @@
           <excludeTransitive>true</excludeTransitive>
         </configuration>
       </plugin>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>sign-artifacts</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>sign</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
     </plugins>
   </build>
 </project>
