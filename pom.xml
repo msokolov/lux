@@ -9,9 +9,11 @@
   <description>Lux XML search engine</description>
   <url>http://luxdb.org/</url>
   <licenses>
-    <license>Mozilla Public License Version 2.0</license>
-    <url>http://www.mozilla.org/MPL/2.0/</url>
-    <distribution>repo</distribution>
+    <license>
+      <name>Mozilla Public License Version 2.0</name>
+      <url>http://www.mozilla.org/MPL/2.0/</url>
+      <distribution>repo</distribution>
+    </license>
   </licenses>
   <scm>
     <url>http://github.com/msokolov/lux</url>
