@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>lux</groupId>
   <artifactId>lux</artifactId>
-  <version>0.8.0</version>
+  <version>0.8.1</version>
   <packaging>jar</packaging>
 
   <name>Lux library</name>
@@ -70,7 +70,7 @@
   	<dependency>
   		<groupId>org.apache.solr</groupId>
   		<artifactId>solr-core</artifactId>
-  		<version>4.2.0</version>
+  		<version>4.2.1</version>
   		<exclusions>
   			<exclusion>
   				<artifactId>wstx-asl</artifactId>
@@ -277,7 +277,7 @@
             <artifactItem>
               <groupId>org.apache.lucene</groupId>
               <artifactId>lucene-queryparser</artifactId>
-              <version>4.2.0</version>
+              <version>4.2.1</version>
             </artifactItem>
             <artifactItem>
               <groupId>net.sf.saxon</groupId>
@@ -293,21 +293,28 @@
           <excludeTransitive>true</excludeTransitive>
         </configuration>
       </plugin>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-gpg-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>sign-artifacts</id>
-              <phase>verify</phase>
-              <goals>
-                <goal>sign</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-      </plugins>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>maven-deploy</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
