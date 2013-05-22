@@ -36,11 +36,14 @@ public class LuxDispatchFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         baseURI = filterConfig.getInitParameter("base-uri");
         if (baseURI == null) {
-            String path;
-            if (File.separatorChar == '\\') {
-                path = "///" + filterConfig.getServletContext().getRealPath("/").replace('\\', '/');
+            String path = filterConfig.getServletContext().getRealPath("/");
+            if (path == null) {
+                // unexploded war: load resources from classpath root
+                path = "resource:/";
+            } else if (File.separatorChar == '\\') {
+                path = "///" + path.replace('\\', '/');
             } else {
-                path = "//" + filterConfig.getServletContext().getRealPath("/");
+                path = "//" + path;
             }
             // Create a URI since that is supposed to handle quoting of non-URI characters in the path (like spaces)
             URI uri;
