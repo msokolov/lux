@@ -1,3 +1,9 @@
+---
+layout: page
+title: FAQ
+group: navbar
+pos: 3
+---
 # FAQ #
 
 This page lists some nonobvious quirks and idiosyncracies, with solutions
@@ -50,8 +56,11 @@ This means a simple xpath like:
 
        (//foo)[1]
 
-has to be evaluated by retrieving every foo element, sorting them in document
-order (which is a no-op), before retrieving the first element.
+has to be evaluated by retrieving every foo element, sorting them in
+document order, before retrieving the first element.  This consumes
+unnecessary time and space.  If the sequence is long enough (easy to
+achieve with even a medium-sized data set), the query may well fail to
+complete.
 
 With Saxon-HE we are able to arrange for expressions like this to be
 evaluated lazily by supplying a custom Configuration object, which supplies

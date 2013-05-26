@@ -1,19 +1,25 @@
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container-fluid">
-          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            </button>
-          <a class="brand" href="#">Lux</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
-              <li><a href="#about">About</a></li>
-              <li><a href="#contact">Contact</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div class="navbar navbar-inverse navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container-fluid">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="{{site.root-url}}"><img src="{{site.root-url}}/assets/img/sunflwor20.png" width="20" height="20" /></a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          {% for node in site.pages %}
+          {% if node.group == "navbar" %}
+          {% if page.url == node.url %}
+          <li class="active"><a href="{{site.root-url}}{{node.url}}" class="active">{{node.title}}</a></li>
+          {% else %}
+          <li><a href="{{site.root-url}}{{node.url}}">{{node.title}}</a></li>
+          {% endif %}
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div><!--/.nav-collapse -->
     </div>
+  </div>
+</div>

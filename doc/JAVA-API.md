@@ -1,3 +1,9 @@
+---
+layout: page
+title: Java API
+group: api
+pos: 3
+---
 # Lux Java API overview #
 
 This is a high level, brief introduction to the main entry points to the

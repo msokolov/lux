@@ -1,9 +1,16 @@
-## Changes in Lux release 0.7.1
+---
+layout: page
+title: Release 0.7.1
+group: release
+pos: 8
+---
+
+# Changes in Lux release 0.7.1
 
 Now ships with/depends on Solr/Lucene 4.2.  This is actually a breaking change since we rely on some internal APIs
 that changed since 4.1 (in the order by /empty greatest support we copied from Solr).
 
-### New features
+## New features
 
 Calling lux:delete() with no arguments used to delete all documents.
 Now the argument to lux:delete($uri) is required. Deleting the special uri "lux:/" deletes all documents.
@@ -14,7 +21,7 @@ Sorting by integer and long-valued fields is now implemented.
 
 Added support for "order by ... empty greatest"
 
-### Bug fixes
+## Bug fixes
 
 Improved test coverage uncovered some bugs, which are now fixed.  Most of these were fairly unusual and/or difficult to reproduce,
 

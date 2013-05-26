@@ -1,3 +1,12 @@
+---
+layout: page
+title: Release 0.7
+group: release
+pos: 9
+---
+
+# Changes in Release 0.7
+
 This release of Lux is integrated with Solr/Lucene 4.2
 
 Added low-level support for binary documents; you can now store images,

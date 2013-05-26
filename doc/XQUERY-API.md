@@ -1,3 +1,9 @@
+---
+layout: page
+title: XQuery API
+group: api
+pos: 2
+---
 # Lux XQuery function library #
 
 ## Indexing and Search functions ##
@@ -73,7 +79,7 @@ LuxQueryParser.
 
 A Lucene query parser extension that supports query terms of the form:
 
-  [node]<[nodeName]:[term]
+  {%raw%}{node}<{nodeName}:{term}{%endraw%}
 
 In which nodeName is either empty, an unqualified element name, a prefixed
 element name (ie a QName), or a QName prefixed with "@", indicating an
@@ -135,7 +141,7 @@ Lux app server.
 
 ## XPath 2.0 function library ##
 
-The W3C standard (XPath function
-library)[http://www.w3.org/TR/xpath-functions/] available in Lux, as
+The W3C standard [XPath function
+library](http://www.w3.org/TR/xpath-functions/) available in Lux, as
 implemented by Saxon, includes a large number of useful functions.
 
