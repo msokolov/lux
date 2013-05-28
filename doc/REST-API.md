@@ -98,7 +98,7 @@ used as the name of the field used to store the complete XML document.
 
 #### Document Format ####
 
-The value of str[@name='xml-format'] controls the XML document storage
+The value of `str[@name='xml-format']` controls the XML document storage
 format. Supplying a value of 'xml', or no value, causes documents to be
 stored as serialized XML.  A value of 'tiny' enables the use of an
 optimized binary format closely related to Saxon's TinyTree XML

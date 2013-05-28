@@ -26,7 +26,7 @@ forms:
 
 1) a string, parsed with an extended version of the classic Lucene query parser.  The extensions take the form:
 
-<[nodeName]:[term]
+<\[nodeName\]:\[term\]
 
 where nodeName can be an element name, or an attribute name preceded by '@', or not present, in which case the entire XML document text is searched.
 
