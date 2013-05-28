@@ -27,6 +27,16 @@ import javax.servlet.http.HttpServletRequestWrapper;
  * 
  * [[app-prefix][/core-name]]/lux?query-string&lux.xquery=[/xquery-path]
  * 
+ *
+ * TODO: enable configuration of app server (w/core) and provide mappings from:
+ *  make this SolrCoreAware? so that it can read config from solrconfig.xml?
+ *
+ *  [app-prefix][/xquery-path]?query-string
+ *
+ * TO
+ *
+ *  [[app-prefix][/core-name]]/lux?query-string&lux.xquery=[app-base-uri]/[xquery-path]
+ *
  */
 public class LuxDispatchFilter implements Filter {
     
@@ -55,8 +65,8 @@ public class LuxDispatchFilter implements Filter {
             baseURI = uri.toString();
         }
         
-        // Arrange for initialization of EXPath repository by setting the appropriate system
-        // property, if a path is configured using JNDI:
+        // Arrange for initialization of EXPath repository by setting the
+        // appropriate system property, if a path is configured using JNDI:
 
         String expathRepo = filterConfig.getInitParameter("org.expath.pkg.saxon.repo");
         if (expathRepo != null) {
@@ -64,7 +74,7 @@ public class LuxDispatchFilter implements Filter {
         }
     }
 
-	@Override
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
             ServletException {
          if( request instanceof HttpServletRequest) {

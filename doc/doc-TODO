@@ -1,17 +1,9 @@
-* sidebar
-** link to release notes
-** link to API notes
-* Download
-create a download page with links to released artifacts
-put a link in the top navbar
-* JAVA API
-** generate javadoc
-** link to javadoc
+* review copy
+it's a bit old, and there are some typos
+* release 0.8.1
 * SEO
 Make sure we link to github and back, and to the maven repo if/when we get
 stuff in there.  
 * Balisage paper
 link to Balisage site if they accept it; or publish here
-* review copy
-it's a bit old, and there are some typos
 * test on phone

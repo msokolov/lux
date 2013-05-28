@@ -6,6 +6,12 @@ pos: 2
 ---
 # Lux XQuery function library #
 
+## XPath function library ##
+
+The W3C standard [XPath function
+library](http://www.w3.org/TR/xpath-functions/) available in Lux, as
+implemented by Saxon, includes a large number of useful functions.
+
 ## Indexing and Search functions ##
 
 Functions relating to search and indexing are declared in the
@@ -138,10 +144,4 @@ the value of that property as the EXPath repository location.
 This provides a mechanism for loading additional function library support,
 such as the HTTP client and Zip file modules, which are provided with the
 Lux app server.
-
-## XPath 2.0 function library ##
-
-The W3C standard [XPath function
-library](http://www.w3.org/TR/xpath-functions/) available in Lux, as
-implemented by Saxon, includes a large number of useful functions.
 

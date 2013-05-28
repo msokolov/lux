@@ -265,6 +265,6 @@ to know if an element ever occurs more than once in some context.
 
 ## Acknowledgements ##
 
-Lux relies on many underlying open-source software packages, but it could not exist without Solr/Lucene, and Saxon. For more information about Lucene and Solr, see (http://lucene.apache.org/), 
+Lux relies on many underlying open-source software packages, but it could not exist without Solr/Lucene, and Saxon. For more information about Lucene and Solr, see [http://lucene.apache.org/](http://lucene.apache.org/), 
 and for more information about The Saxon XSLT and XQuery Processor from Saxonica
-Limited, see (http://www.saxonica.com/).
+Limited, see [http://www.saxonica.com/](http://www.saxonica.com/).

@@ -18,3 +18,8 @@
 9) deploy to maven central:
 
 mvn deploy -Dgpg.passhprase=xxxxxxx
+
+10) generate luxdb.org 
+  mvn javadoc:javadoc
+  cd doc
+  jekyll build

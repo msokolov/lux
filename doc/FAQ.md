@@ -9,7 +9,7 @@ pos: 3
 This page lists some nonobvious quirks and idiosyncracies, with solutions
 or workarounds where available.
 
-## Why doesn't it work when I call lux:log(), ##
+#### Why doesn't it work when I call lux:log(), ####
 lux:insert(), lux:commit(),
 or some other function whose work is all done as a side effect?
 
@@ -24,7 +24,7 @@ For example:
     ...
     return ($actual-function-return-value, $insert-dummy)
 
-## Why do absolute paths (like //document) work only in the outer scope, ##
+#### Why do absolute paths (like //document) work only in the outer scope, ####
 and not within a function definition?
 
 Lux supplies a special implicit context for such expressions.  It rewrites
@@ -39,7 +39,7 @@ is to supply the context yourself: instead of //foo, write:
 Lux will optimize this expression so that only documents containing
 elements named "foo" will be returned.
 
-## I want to use Lux with Saxon PE/EE.  How do I do that? ##
+#### I want to use Lux with Saxon PE/EE.  How do I do that? ####
 
 Lux will work with any (9.x) version of Saxon.  It inspects the loaded
 classes and attempts to instantiate a licensed Saxon Processor if it
@@ -47,7 +47,7 @@ detects that the you have a non-HE version installed.  However, there are
 some caveats about using Lux with PE/EE that you should be aware of if you
 choose to do this.
 
-### Eager evaluation of document-ordered sequences ### 
+##### Eager evaluation of document-ordered sequences #####
 
 Search result sets that need to be document-ordered cannot be evaluated
 lazily in Lux when using Saxon PE/EE.
@@ -62,27 +62,23 @@ unnecessary time and space.  If the sequence is long enough (easy to
 achieve with even a medium-sized data set), the query may well fail to
 complete.
 
-With Saxon-HE we are able to arrange for expressions like this to be
-evaluated lazily by supplying a custom Configuration object, which supplies
-Lux's Optimizer and function library.  However Saxon-PE/EE have their own
-Configuration, which cannot be replaced without losing PE/EE licensed
-functionality, and any optimizations they may provide are not applicable to
-to Lux search result sequences.
+The reason is that with Saxon-HE we are able to arrange for such
+expressions to be evaluated lazily by supplying a custom Configuration
+object, which in turn supplies Lux's optimizer and function library.
+However Saxon-PE/EE have their own Configurations, which cannot be replaced
+without losing PE/EE licensed functionality.
 
-## What is the Lux security model? ##
+#### What is the Lux security model? ####
 
-Currently there is no security model for Lux.
+Currently there is no security model for Lux; applications using Lux may
+implement their own security restrictions.  Users should be aware that
+exposing the Lux app server directly to users poses a security risk since
+the app server exposes internal APIs as web services, which allow, for
+example, deleting all documents in the index.
 
-Our philosophy about security is that, because it just gets in your way, it
-should not be the first area of concern. We should make sure everything is
-working well and serving a need before we go about figuring out how to make
-it inaccessible.  Later on when we have valuables, we can throw up barriers
-around them.
-
-The next obvious step to take to secure Lux is to enable authz in the app
-server, and to provide a way to restrict access to the /solr urls that it
-exposes, which enable unfettered access to all database content.  The next
-area of concern for security is document-level security: document ownership
-and rights, and possibly even functional rights (and the users and roles
-that would underpin all this).
+This should not pose a great problem for prototyping and internal
+administrative use.  However in order to deploy a public-facing web
+application using Lux, it is strongly advised to host the service behind a
+proxy that allows access only to the app server urls (/lux in the supplied
+configuration) and shields all of the other Solr service points.
 

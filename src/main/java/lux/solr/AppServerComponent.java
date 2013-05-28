@@ -46,10 +46,10 @@ public class AppServerComponent extends XQueryComponent {
                         throw new SolrException (ErrorCode.NOT_FOUND, path + " not found");
                     } else {
                         try {
-							contents = IOUtils.toString(in);
-						} catch (IOException e) {
-							LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + path, e);
-						}
+                            contents = IOUtils.toString(in);
+                        } catch (IOException e) {
+                            LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + path, e);
+                        }
                         IOUtils.closeQuietly(in);
                     }
                 } else {
@@ -61,24 +61,24 @@ public class AppServerComponent extends XQueryComponent {
                     } else {
                         InputStream in = null;
                         try {
-                        	if (url.getProtocol().equals("file")) {
-                        		File f = new File(url.getPath());
-                        		if (!f.exists()) {
-                        			throw new SolrException (ErrorCode.NOT_FOUND, f + " not found");
-                        		}
-                        		if (f.isDirectory() || ! f.canRead()) {
-                        			throw new SolrException (ErrorCode.FORBIDDEN, "access to " + f + " denied by rule");
-                        		}
-                        		in = new FileInputStream(f);
-                        	} else {
-                        		in = url.openStream();
-                        	}
-							contents = IOUtils.toString(in);
-						} catch (IOException e) {
-							LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + url, e);
-						}
+                            if (url.getProtocol().equals("file")) {
+                                File f = new File(url.getPath());
+                                if (!f.exists()) {
+                                    throw new SolrException (ErrorCode.NOT_FOUND, f + " not found");
+                                }
+                                if (f.isDirectory() || ! f.canRead()) {
+                                    throw new SolrException (ErrorCode.FORBIDDEN, "access to " + f + " denied by rule");
+                                }
+                                in = new FileInputStream(f);
+                            } else {
+                                in = url.openStream();
+                            }
+                            contents = IOUtils.toString(in);
+                        } catch (IOException e) {
+                            LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + url, e);
+                        }
                         if (in != null) {
-                        	IOUtils.closeQuietly(in);
+                            IOUtils.closeQuietly(in);
                         }
                     }
                 }

@@ -1,2 +1,2 @@
-destination:    /hades/var/www/html/luxdb
-root-url:       http://falutin.net/luxdb
+destination:    /hades/var/www/luxdb
+root-url:       http://luxdb.org
