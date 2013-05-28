@@ -9,7 +9,34 @@ pos: 3
 This page lists some nonobvious quirks and idiosyncracies, with solutions
 or workarounds where available.
 
-#### Why doesn't it work when I call lux:log(), ####
+## Can Lux manage its XML fields alongside other (normal) Solr fields?
+
+Yes, updates are handled exactly as for Solr without Lux.  The only
+difference is that if a document has a value for its Lux-enabled XML
+document field, then Lux springs into action and supplies additional fields
+as well, representing the document decomposed into XML nodes.
+
+On the query side, the full power of Lucene queries are available via the
+XQuery function lux:search().  This function accepts a query and uses
+Lucene/Solr to search for documents that match the query, so you can embed
+Lucene queries within an XQuery, and those queries can contain Lucene
+XML-aware field queries of the type: find a term within a given element or
+attribute scope.  The query argument to lux:search() can take one of two
+forms:
+
+1) a string, parsed with an extended version of the classic Lucene query parser.  The extensions take the form:
+
+<[nodeName]:[term]
+
+where nodeName can be an element name, or an attribute name preceded by '@', or not present, in which case the entire XML document text is searched.
+
+2) a query expressed as an XML element; this is parsed using an extension of Lucene's org.apache.lucene.queryparser.xml.CoreParser.  Eventually we would like to have an XQuery library that generates these so that queries can be expressed in a functional manner
+
+One restriction is that some Solr extensions to the basic query mechanism
+are not available via lux:search, like faceting, since all it can do is
+return a sequence of documents.
+
+## Why doesn't it work when I call lux:log(), ##
 lux:insert(), lux:commit(),
 or some other function whose work is all done as a side effect?
 
