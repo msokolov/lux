@@ -9,7 +9,7 @@ pos: 3
 This page lists some nonobvious quirks and idiosyncracies, with solutions
 or workarounds where available.
 
-## Can Lux manage its XML fields alongside other (normal) Solr fields?
+#### Can Lux manage its XML fields alongside other (normal) Solr fields?
 
 Yes, updates are handled exactly as for Solr without Lux.  The only
 difference is that if a document has a value for its Lux-enabled XML
@@ -26,7 +26,7 @@ forms:
 
 1) a string, parsed with an extended version of the classic Lucene query parser.  The extensions take the form:
 
-<\[nodeName\]:\[term\]
+     <[nodeName]:[term]
 
 where nodeName can be an element name, or an attribute name preceded by '@', or not present, in which case the entire XML document text is searched.
 
@@ -36,7 +36,7 @@ One restriction is that some Solr extensions to the basic query mechanism
 are not available via lux:search, like faceting, since all it can do is
 return a sequence of documents.
 
-## Why doesn't it work when I call lux:log(), ##
+#### Why doesn't it work when I call lux:log(), ####
 lux:insert(), lux:commit(),
 or some other function whose work is all done as a side effect?
 
@@ -61,7 +61,7 @@ performed within a function definition because a static error is raised by
 Saxon prior to the rewriting pass of the Lux compiler.  A simple workaround 
 is to supply the context yourself: instead of //foo, write:
 
-   collection()//foo
+        collection()//foo
 
 Lux will optimize this expression so that only documents containing
 elements named "foo" will be returned.
