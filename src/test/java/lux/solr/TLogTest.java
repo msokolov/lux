@@ -70,8 +70,8 @@ public class TLogTest {
         QueryResponse response = search ("lux_uri:src/test/resources/conf/schema.xml", solr);
         assertEquals (0, response.getResults().getNumFound());
 
-        // soft commit
-        solr.commit(false, false, true);
+        // soft commit -- note must waitSearcher in order to see commit
+        solr.commit(false, true, true);
         response = search ("lux_uri:src/test/resources/conf/schema.xml", solr);
         assertEquals (1, response.getResults().getNumFound());
         assertEquals ("src/test/resources/conf/schema.xml", response.getResults().get(0).get("lux_uri"));
