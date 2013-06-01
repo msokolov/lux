@@ -6,8 +6,11 @@ cd lux
 mvn clean install (runs tests, packages the jar, and installs in your repo)
 
 cd ../lux-appserver
-mvn clean package dependency:copy-dependencies assembly:single
+mvn clean package assembly:single
 
 run app server:
-
+cd ../lux-test
+unzip ../lux-appserver/target/lux-appserver-[version].zip
 ./lux  (or ./lux.bat on Windows)
+ ... tests ...
+./bin/jetty.sh stop
