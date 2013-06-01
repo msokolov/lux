@@ -84,7 +84,7 @@ to know if an element ever occurs more than once in some context.
 
 ## More flexible highlighter
 
-Currently the highlighter always surrounds highlighted words with a <B>
+Currently the highlighter always surrounds highlighted words with a <code>&lt;B></code>
 tag.  We plan to provide users the ability to control the highlighter's
 output.
 
