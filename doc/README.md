@@ -224,44 +224,15 @@ without the need to pre-configure any indexes, and also provides explicit XPath 
 
 ### Responding to feedback ###
 
-The next steps will certainly be shaped by requests and comments from the community.  Our main
-focus will be maintaining a high standard of quality w.r.t. any reported bugs or serious gaps
-in existing functionality.  And contributions are definitely welcome.
+The next steps will certainly be shaped by requests and comments from the
+community.  Our main focus will be maintaining a high standard of quality
+w.r.t. any reported bugs or serious gaps in existing functionality.  Any
+contributions along these lines will be welcome.
 
-### Performance enhancements
-We have numerous ideas for improving performance, including: 
-* caching various internal objects to make better use of memory
-* caching compiled and optimized queries
-* Skipping unused documents in a result set (deep paging)
+### Enhancements
 
-### XQuery 3.0
-
-We will track whatever features are made available
-in the open source version of Saxon, at least to the extent of ensuring the optimizer doesn't break them. 
-Other than that, we don't have any immediate plans to support a full range of XQuery 3.0 features, although we may add some.
-
-### Standard HTTP request handling
-
-We're looking at implementing the EXQuery request specification in the Lux app server
-
-### Extensible text analysis 
-
-It should be possible to configure the analysis chain (lower casing, diacritics, stemming, synonyms, etc) for
-the XML text fields.  Right now those fields are all case- and diacritic- insensitive, and perform no stemming
-or synonym expansion.
-
-### Indexing boundaries / element transparency
-
-In some cases, you may want to exclude the content of certain elements from consideration by search queries that 
-reference an enclosing context.  It is also useful to be able to specify that phrases may not cross certain element 
-boundaries.
-
-### Index path occurrence counts
-
-We'd like to be able to evaluate queries like count (/a/b/c) efficiently -
-ie out of the indexes.  In particular a very useful optimization would be
-the ability to compute <code>exists (/a/b/c[2])</code>in constant time. We often want
-to know if an element ever occurs more than once in some context.
+Please see the [PLANS.md](Plans) page for more about future plans for Lux
+development.
 
 ## Acknowledgements ##
 
