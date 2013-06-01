@@ -21,34 +21,26 @@ import javax.servlet.http.HttpServletRequestWrapper;
 /**
  * rewrite URLs of the form:
  * 
- * [[app-prefix][/core-name]]/lux[/xquery-path]?query-string
+ * [/core-name]/[appserver][/xquery-path]?query-string
  * 
  * TO
  * 
- * [[app-prefix][/core-name]]/lux?query-string&lux.xquery=[/xquery-path]
+ * [/core-name]/[appserver]?query-string&lux.xquery=[/xquery-path]
  * 
- *
- * TODO: enable configuration of app server (w/core) and provide mappings from:
- *  make this SolrCoreAware? so that it can read config from solrconfig.xml?
- *
- *  [app-prefix][/xquery-path]?query-string
- *
- * TO
- *
- *  [[app-prefix][/core-name]]/lux?query-string&lux.xquery=[app-base-uri]/[xquery-path]
- *
  */
 public class LuxDispatchFilter implements Filter {
     
     private String baseURI;
+    private String[] baseURIArr;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         baseURI = filterConfig.getInitParameter("base-uri");
+        URI uri;
         if (baseURI == null) {
             String path = filterConfig.getServletContext().getRealPath("/");
             if (path == null) {
-                // unexploded war: load resources from classpath root
+                // unexploded war: load resources from classpath root. um.
                 path = "resource:/";
             } else if (File.separatorChar == '\\') {
                 path = "///" + path.replace('\\', '/');
@@ -56,14 +48,20 @@ public class LuxDispatchFilter implements Filter {
                 path = "//" + path;
             }
             // Create a URI since that is supposed to handle quoting of non-URI characters in the path (like spaces)
-            URI uri;
             try {
                 uri = new URI ("file", path, null);
             } catch (URISyntaxException e) {
                 throw new ServletException ("Malformed URI for path: " + path, e);
             }
-            baseURI = uri.toString();
+        } else {
+            try {
+                uri = new URI (baseURI);
+            } catch (URISyntaxException e) {
+                throw new ServletException ("Malformed URI for path: " + baseURI, e);
+            }
         }
+        baseURI = uri.toString();
+        baseURIArr = new String[] { baseURI };
         
         // Arrange for initialization of EXPath repository by setting the
         // appropriate system property, if a path is configured using JNDI:
@@ -77,49 +75,55 @@ public class LuxDispatchFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
             ServletException {
-         if( request instanceof HttpServletRequest) {
+        if( request instanceof HttpServletRequest) {
             HttpServletRequest req = (HttpServletRequest)request;
             String path = req.getServletPath();
             if (path.endsWith(".xqy") || path.contains (".xqy/")) {
-                int pathOffset = path.indexOf('/', 1);
-                if (pathOffset > 0) {
-                    String servletPath = path.substring(0, pathOffset);
-                    String xquery= path.substring(pathOffset);
+                String [] pc = path.split("/", 4);
+                if (pc.length > 1) {
+                    String coreName = pc[1];
+                    String handlerName = pc[2];
+                    String xquery= pc[3];
                 
                     Request wrapper = new Request(req);
-                    wrapper.setServletPath (servletPath + "/lux");
+                    wrapper.setServletPath ('/' + coreName + '/' + handlerName);
                 
                     String qs = req.getQueryString();
 
                     HashMap<String,String[]> params=null;
                     if (req.getMethod().equals("GET")) {
                         @SuppressWarnings("unchecked")
-                    	Map<String, String[]> requestParams = req.getParameterMap();
+                    	  Map<String, String[]> requestParams = req.getParameterMap();
                         params = new HashMap<String, String[]>(requestParams);
                     }
                     
+                    // Solr 4 actually implements its own query string parsing, so we need to
+                    // add our parameters to the query string in addition to setting the parameter map
+
                     // handle URLs like /core/foo.xqy/path/info
                     int pathInfoOffset = xquery.indexOf(".xqy/");
                     if (pathInfoOffset >= 0) {
                         pathInfoOffset += ".xqy/".length();
                         String pathInfo = xquery.substring(pathInfoOffset);
-                        params.put ("lux.pathInfo", new String[] { pathInfo });
                         xquery = xquery.substring(0, pathInfoOffset - 1);
+                        if (params != null) {
+                            params.put ("lux.pathInfo", new String[] { pathInfo });
+                        }
                         qs = appendToQueryString(qs, "lux.pathInfo", pathInfo);
                     }
-                
-                    // load from classpath
-                    // TODO: some way of configuring to load from db
-                    String query = baseURI + xquery;
+
+                    // add lux.query and lux.base-uri to the query parameter map
                     if (params != null) {
-                    	params.put ("lux.xquery", new String[] { query });
-                    	wrapper.setParameterMap(params);
+                    	params.put ("lux.xquery", new String[] { xquery });
+                    	params.put ("lux.serverBaseUri", baseURIArr);
                     }
-                    
-                    // Solr 4 actually implements its own query string parsing, so we need to
-                    // swizzle the queryString here:
-                    qs = appendToQueryString(qs, "lux.xquery", query);
+                    qs = appendToQueryString(qs, "lux.xquery", xquery);
+                    qs = appendToQueryString(qs, "lux.serverBaseUri", baseURI);
+
+                    // set the modified query string and parameter map on a request wrapper
                     wrapper.setQueryString(qs);
+                    wrapper.setParameterMap(params);
+
                     chain.doFilter(wrapper, response);
                     return;
                 }

@@ -25,14 +25,13 @@
   <filter>
     <!--
     rewrite URLs of the form:
-    [[app-prefix][/core-name]]/lux[/xquery-path]?query-string
+    [/core-name][/app-server][/xquery-path]?query-string
     TO
-    [[app-prefix][/core-name]]/lux?query-string&lux.xquery=[/xquery-path]
+    [/core-name][/app-server]?query-string&lux.xquery=[/xquery-path]
     so that Solr will be able to process them using its handler URL syntax
     -->
     <filter-name>LuxDispatchFilter</filter-name>
     <filter-class>lux.solr.LuxDispatchFilter</filter-class>
-    
     
     <!-- to initialize an EXPath repository: -->
     <!-- 
@@ -41,10 +40,6 @@
       <param-value>/absolute/filesystem/path/to/repo</param-value>
     </init-param>
     -->
-    <init-param>
-      <param-name>org.expath.pkg.saxon.repo</param-name>
-      <param-value>c:/users/sokolov/documents/github/lux-appserver/xrepo</param-value>
-    </init-param>
      
     <!--  default for base-uri is the root of the webapp context folder;
           "resource:" is another possibility, which will retrieve from the classpath

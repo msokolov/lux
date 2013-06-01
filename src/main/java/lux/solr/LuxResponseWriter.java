@@ -14,7 +14,7 @@ import org.apache.solr.response.SolrQueryResponse;
 /**
  * Writes out the result of Lux evaluations
  * 
- *  lux.content-type controls the response's content-type header, and the serialization
+ *  lux.contentType controls the response's content-type header, and the serialization
  *  of nodes: default is html.  Output is always serialized as utf-8.
  *
  *  lux.xml-xsl-stylesheet
@@ -31,7 +31,7 @@ public class LuxResponseWriter implements QueryResponseWriter {
         String xsl = request.getParams().get("lux.xml-xsl-stylesheet");
         @SuppressWarnings("unchecked")
         List<String> errors = response.getValues().getAll("xpath-error");
-        String contentType= request.getParams().get("lux.content-type");
+        String contentType= request.getParams().get("lux.contentType");
         if (!errors.isEmpty()) {
             StringBuilder buf = new StringBuilder();
             for (String e : errors) {
@@ -73,7 +73,7 @@ public class LuxResponseWriter implements QueryResponseWriter {
 
     @Override
     public String getContentType(SolrQueryRequest request, SolrQueryResponse response) {
-        String contentTypeParam = request.getParams().get("lux.content-type");
+        String contentTypeParam = request.getParams().get("lux.contentType");
         if (contentTypeParam != null) {
             return contentTypeParam;
         } else {

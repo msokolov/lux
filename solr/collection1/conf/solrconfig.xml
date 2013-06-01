@@ -1645,11 +1645,27 @@
       <str name="lux.contentType">text/html;charset=UTF-8</str>
       <str name="wt">lux</str>
     </lst>
+    <lst name="invariants">
+      <str name="lux.baseUri">resource:</str>
+    </lst>
     <arr name="components">
       <str>lux-app-server</str>
       <str>stats</str>
       <str>debug</str>
       <!-- highlight? facet? -->
+    </arr>
+  </requestHandler>
+
+  <requestHandler name="/testapp" class="solr.SearchHandler" id="testapp">
+    <lst name="defaults">
+      <str name="lux.contentType">text/html;charset=UTF-8</str>
+      <str name="wt">lux</str>
+    </lst>
+    <lst name="invariants">
+      <str name="lux.baseUri">${user.dir}/src/test/resources</str>
+    </lst>
+    <arr name="components">
+      <str>lux-app-server</str>
     </arr>
   </requestHandler>
   

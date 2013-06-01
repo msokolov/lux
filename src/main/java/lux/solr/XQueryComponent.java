@@ -70,6 +70,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     protected SolrIndexConfig solrIndexConfig;
     private Serializer serializer;
     
+    protected String queryPath;
+    
     public SolrIndexConfig getSolrIndexConfig() {
         return solrIndexConfig;
     }
@@ -96,13 +98,17 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         if (rb.getQueryString() == null) {
             rb.setQueryString( params.get( CommonParams.Q ) );
         }
-        String contentType= params.get("lux.content-type");
+        String contentType= params.get("lux.contentType");
         if (contentType != null) {
             if (contentType.equals ("text/xml")) {
                 serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             }
         } else {
             serializer.setOutputProperty(Serializer.Property.METHOD, "html");
+        }
+        if (queryPath == null) {
+        	// allow subclasses to override...
+        	queryPath = rb.req.getParams().get(LUX_XQUERY);
         }
     }
     
@@ -142,7 +148,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
-            String queryPath = rb.req.getParams().get(LUX_XQUERY);
         	expr = compiler.compile(query, errorListener, queryPath == null ? null : java.net.URI.create(queryPath));
         } catch (LuxException ex) {
         	// ex.printStackTrace();

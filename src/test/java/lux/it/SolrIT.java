@@ -26,7 +26,7 @@ import com.meterware.httpunit.WebResponse;
  */
 public class SolrIT {
 
-    private final String APP_SERVER_PATH = "http://localhost:8080/lux";
+    private final String APP_SERVER_PATH = "http://localhost:8080/testapp";
     private final String XQUERY_PATH = "http://localhost:8080/xquery";
     private static WebClient httpclient;
 
@@ -39,21 +39,21 @@ public class SolrIT {
     
     @Test
     public void testAppServer () throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=file:src/test/resources/lux/compiler/minus-1.xqy");
+        String path = (APP_SERVER_PATH + "?lux.xquery=lux/compiler/minus-1.xqy");
         String response = httpclient.getResponse(path).getText();
         assertEquals ("1", response);
     }
 
     @Test
     public void testNoDirectoryListing() throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=file:src/test/resources/lux/");
+        String path = (APP_SERVER_PATH + "?lux.xquery=lux/");
         WebResponse response = httpclient.getResponse(path);
         assertEquals (403, response.getResponseCode());
     }
     
     @Test
     public void testSyntaxError () throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=file:src/test/resources/lux/functions/transform-error.xqy");
+        String path = (APP_SERVER_PATH + "?lux.xquery=lux/functions/transform-error.xqy");
         WebResponse httpResponse = httpclient.getResponse(path);
         assertEquals (400, httpResponse.getResponseCode());
         assertEquals ("Bad Request", httpResponse.getResponseMessage());
@@ -63,7 +63,7 @@ public class SolrIT {
     
     @Test
     public void testParameterMap () throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=file:src/test/resources/lux/solr/test-params.xqy&p1=A&p2=B&p2=C");
+        String path = (APP_SERVER_PATH + "?lux.xquery=lux/solr/test-params.xqy&p1=A&p2=B&p2=C");
         String response = httpclient.getResponse(path).getText();
         // This test depends on the order in which keys are retrieved from a java.util.HashMap
         assertEquals ("<http method=\"\"><params>" +
@@ -76,7 +76,7 @@ public class SolrIT {
     @Test
     public void testResultFormat () throws Exception {
     	verifyMultiThreadedWrites(); // load test documents
-        String path = (XQUERY_PATH + "?q=subsequence(for $x in collection() order by xs:int($x//@id) return $x,1,2)&lux.content-type=text/xml&wt=lux");
+        String path = (XQUERY_PATH + "?q=subsequence(for $x in collection() order by xs:int($x//@id) return $x,1,2)&lux.contentType=text/xml&wt=lux");
         WebResponse httpResponse = httpclient.getResponse(path);
     	assertEquals ("<results><doc><title id=\"1\">100</title><test>cat</test></doc><doc><title id=\"2\">99</title><test>cat</test></doc></results>", httpResponse.getText());
     }

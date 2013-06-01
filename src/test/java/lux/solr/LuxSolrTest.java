@@ -142,13 +142,13 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test
     public void testAppServer () throws Exception {
         SolrQuery q = new SolrQuery();
-        q.setRequestHandler("/lux");
+        q.setRequestHandler("/testapp");
     	q.setParam("test-param", "test-value");
     	q.setParam("wt", "lux");
-    	q.setParam("lux.content-type", "text/xml");
+    	q.setParam("lux.contentType", "text/xml");
     	QueryResponse resp = solr.query(q);
     	assertEquals ("query was blank", resp.getResponse().get("xpath-error"));
-    	q.setParam("lux.xquery", "file:src/test/resources/lux/solr/echo.xqy");
+    	q.setParam("lux.xquery", "lux/solr/echo.xqy");
     	resp = solr.query(q);
     	NamedList<?> xpathResults = (NamedList<?>) resp.getResponse().get("xpath-results"); 
     	assertEquals (

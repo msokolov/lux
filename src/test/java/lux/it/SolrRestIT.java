@@ -41,7 +41,7 @@ public class SolrRestIT {
     }
     
     private WebResponse eval (String xquery) throws MalformedURLException, IOException, SAXException {
-        WebResponse response = httpclient.getResponse(XQUERY_PATH + "?wt=lux&lux.content-type=text/xml&q=" + xquery);
+        WebResponse response = httpclient.getResponse(XQUERY_PATH + "?wt=lux&lux.contentType=text/xml&q=" + xquery);
         assertEquals (200, response.getResponseCode());
         return response;
     }

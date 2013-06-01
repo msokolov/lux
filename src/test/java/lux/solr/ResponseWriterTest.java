@@ -63,7 +63,7 @@ public class ResponseWriterTest extends BaseSolrTest {
     // return a single string with the text/xml content type
     @Test
     public void testXmlStringResponse () throws Exception {
-        SolrQueryRequest request = makeRequest("lux.content-type", "text/xml");
+        SolrQueryRequest request = makeRequest("lux.contentType", "text/xml");
         SolrQueryResponse response = new SolrQueryResponse();
         NamedList<String> results = new NamedList<String> ();
         results.add("xs:string", "Hello, World");
@@ -76,7 +76,7 @@ public class ResponseWriterTest extends BaseSolrTest {
     // return a single xml result with the text/xml content type
     @Test
     public void testXmlResponse () throws Exception {
-        SolrQueryRequest request = makeRequest("lux.content-type", "text/xml");
+        SolrQueryRequest request = makeRequest("lux.contentType", "text/xml");
         SolrQueryResponse response = new SolrQueryResponse();
         NamedList<XdmNode> results = new NamedList<XdmNode> ();
         Processor processor = new Processor(false);
@@ -87,7 +87,7 @@ public class ResponseWriterTest extends BaseSolrTest {
         assertEquals ("<test>Hello, World</test>\n", writer.getBuffer().toString());
         
         // and with xsl
-        request = makeRequest("lux.content-type", "text/xml", "lux.xml-xsl-stylesheet", "transform.xsl");
+        request = makeRequest("lux.contentType", "text/xml", "lux.xml-xsl-stylesheet", "transform.xsl");
         writer.getBuffer().setLength(0);
         responseWriter.write(writer, request, response);
         assertEquals ("<?xml-stylesheet type='text/xsl' href='transform.xsl' ?>\n<test>Hello, World</test>\n", writer.getBuffer().toString());
@@ -97,7 +97,7 @@ public class ResponseWriterTest extends BaseSolrTest {
     // return multiple xml results 
     @Test
     public void testMultipleXmlResults() throws Exception {
-        SolrQueryRequest request = makeRequest("lux.content-type", "text/xml");
+        SolrQueryRequest request = makeRequest("lux.contentType", "text/xml");
         SolrQueryResponse response = new SolrQueryResponse();
         NamedList<XdmNode> results = new NamedList<XdmNode> ();
         Processor processor = new Processor(false);

@@ -25,39 +25,65 @@ import org.slf4j.LoggerFactory;
  * from the "lux.xquery" parameter.  Having two separate components causes us to create two Compilers,
  * two Processors, etc.
  * 
- * TODO: add support for controlling HTTP response via xquery;
- * eg for redirects, binary responses, etc.
- * TODO: file upload support
+ * TODO: add extended support for accessing HTTP request and controlling HTTP response via xquery;
+ * eg for redirects, binary responses, file upload, etc.
  */
 public class AppServerComponent extends XQueryComponent {
+
+    private static final String RESOURCE_SCHEME = "resource:";
+    private static final String CONTEXT_SCHEME = "context:";
 
     @Override
     public void prepare(ResponseBuilder rb) throws IOException {
         SolrQueryRequest req = rb.req;
         SolrParams params = req.getParams();            
         if (rb.getQueryString() == null) {
-            String path = (String) params.get(LUX_XQUERY);
-            if (! StringUtils.isBlank(path)) {
+            queryPath = rb.req.getParams().get(LUX_XQUERY);
+            if (! StringUtils.isBlank(queryPath)) {
+                String baseUri;
+                String contextBase = (String) params.get("lux.serverBaseUri");
+                if (params.get("lux.baseUri") != null) {
+                    baseUri = (String) params.get("lux.baseUri");
+                } else if (params.get("lux.serverBaseUri") != null) {
+                    baseUri = contextBase;
+                } else {
+                    baseUri = "";
+                }
+                if (! baseUri.endsWith("/")) {
+                    // add trailing slash
+                    baseUri = baseUri + '/';
+                }
+                if (baseUri.startsWith ("/")) {
+                	baseUri = "file://" + baseUri;
+                }
+                String resourceBase=null;
+                if (baseUri.startsWith (RESOURCE_SCHEME)) {
+                    resourceBase = baseUri.substring(RESOURCE_SCHEME.length());
+                } else if (baseUri.startsWith(CONTEXT_SCHEME)) {
+                	baseUri = contextBase + baseUri.substring(CONTEXT_SCHEME.length());
+                }
                 String contents = null;
-                if (path.startsWith("resource:")) {
-                    String p = path.substring("resource:".length());
-                    InputStream in = AppServerComponent.class.getResourceAsStream(p);
+                if (resourceBase != null) {
+                    InputStream in = AppServerComponent.class.getResourceAsStream(resourceBase + queryPath);
+                	queryPath = baseUri + queryPath;
                     if (in == null) {
-                        throw new SolrException (ErrorCode.NOT_FOUND, path + " not found");
+                        throw new SolrException (ErrorCode.NOT_FOUND, queryPath + " not found");
                     } else {
                         try {
                             contents = IOUtils.toString(in);
                         } catch (IOException e) {
-                            LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + path, e);
+                            LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + queryPath, e);
                         }
                         IOUtils.closeQuietly(in);
                     }
                 } else {
                     // url provided with scheme
-                    URL url = new URL (path);
+                	queryPath = baseUri + queryPath;
+                    URL url = new URL (queryPath);
                     String scheme = url.getProtocol();
                     if (scheme.equals("lux")) {
                         // TODO
+                    	throw new SolrException (ErrorCode.NOT_FOUND, queryPath + " not found (actually lux: scheme is not implemented)");
                     } else {
                         InputStream in = null;
                         try {
@@ -71,11 +97,12 @@ public class AppServerComponent extends XQueryComponent {
                                 }
                                 in = new FileInputStream(f);
                             } else {
-                                in = url.openStream();
+                                // in = url.openStream();
+                                LoggerFactory.getLogger(AppServerComponent.class).error("URL scheme not supported: " + url.getProtocol());
                             }
                             contents = IOUtils.toString(in);
                         } catch (IOException e) {
-                            LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + url, e);
+                        	LoggerFactory.getLogger(AppServerComponent.class).error("An error occurred while reading " + url, e);
                         }
                         if (in != null) {
                             IOUtils.closeQuietly(in);
