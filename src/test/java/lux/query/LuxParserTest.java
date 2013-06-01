@@ -209,7 +209,7 @@ public class LuxParserTest {
         assertParseQuery (makeSpanTermQuery(LUX_PATH, "{}"), "(lux_within:1 lux_path:\\{\\})");
         assertParseQuery (makeSpanTermQuery(LUX_PATH, "{}"), "(lux_near:1 lux_path:\\{\\})");
         assertParseQuery (makeSpanTermQuery(LUX_PATH, "{}"), "(lux_near:3 lux_path:\\{\\})");
-        assertUnparseQuery("lux_path:\\{\\}", new SpanMatchAll());
+        assertUnparseQuery("*:*", new SpanMatchAll());
     }
 
     @Test
