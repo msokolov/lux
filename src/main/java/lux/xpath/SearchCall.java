@@ -81,8 +81,7 @@ public class SearchCall extends FunCall {
     }
 
     /**
-     * create an string describing sort options to be passed as an argument search
-     * @return
+     * @return a string describing sort options to be passed as an argument to search
      */
     private String createSortString (SortField[] sort) {
         StringBuilder buf = new StringBuilder();

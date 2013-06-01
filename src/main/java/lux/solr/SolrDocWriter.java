@@ -103,9 +103,6 @@ public class SolrDocWriter implements DocWriter {
         }
     }
 
-    /**
-     * @return
-     */
     private SolrQueryRequestBase makeSolrQueryRequest() {
         return new SolrQueryRequestBase(core, new ModifiableSolrParams()) {};
     }
