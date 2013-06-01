@@ -104,10 +104,10 @@ public class XPathQuery {
     private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
     
     /**
-     * @param expr an XPath 2.0 expression
      * @param query a Lucene query
      * @param resultFacts a bitmask with interesting facts about this query
      * @param valueType the type of results returned by the xpath expression, as specifically as 
+     * @param immutable whether this query may be changed - set true for some internal statics like MATCH_ALL
      * can be determined.
      */
     protected XPathQuery(ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
