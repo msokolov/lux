@@ -31,7 +31,7 @@ public class EXPathSupport {
             Method initialize = pkgInitializerClass.getMethod("initialize", Configuration.class);
             initialize.invoke(pkgInitializer, p.getUnderlyingConfiguration());
         } catch (ClassNotFoundException e) {
-            log.error("EXPath repository declared, but EXPath Saxon package support classes are not available");
+            log.error("EXPath repository declared, but EXPath Saxon package support classes are not available", e);
         } catch (SecurityException e) {
             log.error (e.getMessage());
         } catch (NoSuchMethodException e) {
