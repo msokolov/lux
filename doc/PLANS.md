@@ -40,6 +40,18 @@ filter on a subsequent pass.
 
 ### Cache compiled and optimized queries
 
+This will save time spent reading, parsing and optimizing queries that are repeated.
+
+### Handle distributed indexes (SolrCloud)
+
+To scale up to huge databases (on the order of 1TB and up), we would need
+to support running queries against a distributed index. Solr already does
+this, but we don't use its implementation currently. Rather, we have a
+simpler implementation based on lower-level Lucene search functions which
+operate only on a local index.  The work here involves providing a new
+implementation of the low-level search iterators that re-uses Solr's
+sharding components.
+
 ## Iterate over leaf DocReaders internally
 
 Currently we rely on some generic functionality in Lucene that exposes a

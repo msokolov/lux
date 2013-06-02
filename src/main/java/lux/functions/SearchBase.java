@@ -105,7 +105,5 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         }
         
     }
-    
-    
   
 }

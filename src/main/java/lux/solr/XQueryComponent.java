@@ -122,7 +122,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         int start = params.getInt( CommonParams.START, 1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
-        // multiple shards not implemented
+        // TODO: implement distributed index with multiple shards
         evaluateQuery(rb, start, len);
     }
 
