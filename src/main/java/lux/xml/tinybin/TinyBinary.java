@@ -139,7 +139,11 @@ public class TinyBinary {
 		CharSequence[] attValue  = new CharSequence [attCount];
 		for (int i = 0; i < attCount; i++) {
 		    int idx = attValueIndex[i];
-            attValue[i] = attValueDict[idx];
+		    if (idx == 0) {
+		    	attValue[i] = "";
+		    } else {
+		    	attValue[i] = attValueDict[idx - 1];
+		    }
 		}
 		NamePool namePool = config.getNamePool();
 		// TODO: Would it be faster to save the list of distinct nameCodes
@@ -361,7 +365,9 @@ public class TinyBinary {
 			}
             // write attribute value pointers: these are indexes into the attValues string array
 			for (int i = 0; i < attCount; i++) {
-			    out.writeVInt(attValues.get(tree.getAttributeValueArray()[i]) - 1);
+			    Integer index = attValues.get(tree.getAttributeValueArray()[i]);
+			    // index is always 1-based: the 0 value is reserved for the empty string
+				out.writeVInt(index == null ? 0 : index.intValue());
 			}
 		} catch (IOException e) {
 		}

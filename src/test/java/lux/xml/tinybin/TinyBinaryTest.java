@@ -61,17 +61,18 @@ public class TinyBinaryTest {
     }
     
     @Test
+    public void testEmptyAttribute() throws SaxonApiException, XPathException, IOException {
+    	// this document has an attribute with an empty value
+        assertRoundTrip("lux/wikipedia-ns-test.xml", "utf-8");
+    }
+    
+    @Test
     public void testOnce() throws SaxonApiException, XPathException, IOException {
-        processor = new Processor(false);
-        builder = processor.newDocumentBuilder();
-        // try building a TinyBinary and recreating a tree from that
         assertRoundTrip("lux/reader-test.xml", "utf-8");
     }
     
     @Test @Ignore
     public void testBenchmark () throws IOException, SaxonApiException {
-        processor = new Processor(false);
-        builder = processor.newDocumentBuilder();
         doBenchmark("lux/reader-test.xml", null, 1000);
         doBenchmark("lux/reader-test.xml", "utf-8", 1000);
         doBenchmark("lux/reader-test.xml", null, 1000);
