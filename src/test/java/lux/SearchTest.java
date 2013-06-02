@@ -478,31 +478,32 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testHighlight () throws Exception {
-        assertSearch ("<TITLE>The Tragedy of <B>Hamlet</B>, Prince of Denmark</TITLE>", "lux:highlight('hamlet',/PLAY/TITLE)", null, null);
+        assertSearch ("<TITLE>The Tragedy of <B>Hamlet</B>, Prince of Denmark</TITLE>",
+                      "lux:highlight(/PLAY/TITLE, 'hamlet')", null, null);
     }
 
     @Test
     public void testHighlightMultiple () throws Exception {
         assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince <B>of</B> Denmark</TITLE>", 
-                "lux:highlight('tragedy of hamlet',/PLAY/TITLE)", null, null);
+                      "lux:highlight(/PLAY/TITLE,'tragedy of hamlet')", null, null);
     }
 
     @Test
     public void testHighlightPhrase () throws Exception {
-        assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince of Denmark</TITLE>", 
-                "lux:highlight('\"tragedy of hamlet\"',/PLAY/TITLE)", null, null);
+        assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince of Denmark</TITLE>",
+                      "lux:highlight(/PLAY/TITLE, '\"tragedy of hamlet\"')", null, null);
     }
     
     @Test
     public void testHighlightElementQuery () throws Exception {
         assertSearch ("<TITLE>The Tragedy of <B>Hamlet</B>, Prince of Denmark</TITLE>", 
-                "lux:highlight('<TITLE:hamlet',/PLAY/TITLE)", null, null);
+                "lux:highlight(/PLAY/TITLE, '<TITLE:hamlet')", null, null);
     }
     
     @Test
     public void testHighlightElementMultiple () throws Exception {
         assertSearch ("<TITLE>The <B>Tragedy</B> of <B>Hamlet</B>, Prince of Denmark</TITLE>", 
-                "lux:highlight('<TITLE:hamlet <TITLE:tragedy',/PLAY/TITLE)", null, null);
+                "lux:highlight(/PLAY/TITLE, '<TITLE:hamlet <TITLE:tragedy')", null, null);
     }
     
     // Highlighting element-phrase-queries is not well-supported by the current highlighter.
@@ -512,19 +513,19 @@ public class SearchTest extends BaseSearchTest {
     @Test
     public void testHighlightElementPhrase () throws Exception {
         assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince of Denmark</TITLE>", 
-                "lux:highlight('<TITLE:\"tragedy of hamlet\"',/PLAY/TITLE)", null, null);
+                "lux:highlight(/PLAY/TITLE, '<TITLE:\"tragedy of hamlet\"')", null, null);
     }
     
     @Test 
     public void testHighlightMixedQuery () throws Exception {
         assertSearch ("<TITLE>The <B>Tragedy</B> <B>of</B> <B>Hamlet</B>, Prince of Denmark</TITLE>",
-                "lux:highlight('<TITLE:tragedy \"of hamlet\"',/PLAY/TITLE)", null, null);
+                "lux:highlight(/PLAY/TITLE, '<TITLE:tragedy \"of hamlet\"')", null, null);
     }
     
     @Test
     public void testHighlightAttributeQuery () throws Exception {
         // no highlighting in attributes
-        assertSearch ("<node id=\"10\">node 10</node>", "lux:highlight('<@id:10', <node id=\"10\">node 10</node>)", null, null);
+        assertSearch ("<node id=\"10\">node 10</node>", "lux:highlight(<node id=\"10\">node 10</node>, '<@id:10')", null, null);
     }
     
     // Make sure text offset calculations handle multiple text nodes
@@ -534,7 +535,7 @@ public class SearchTest extends BaseSearchTest {
         		"<P>SGML markup by <B>Jon</B> <B>Bosak</B>, 1992-1994.</P>\n" +
         		"<P>XML version by <B>Jon</B> <B>Bosak</B>, 1996-1998.</P>\n" +
         		"<P>This work may be freely copied and distributed worldwide.</P>\n</FM>", 
-                "lux:highlight('Jon Bosak', /FM)", null, null);
+                "lux:highlight(/FM, 'Jon Bosak')", null, null);
     }
     
     @Test 

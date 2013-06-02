@@ -3,14 +3,25 @@ package lux.search.highlight;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-public class HtmlBoldFormatter implements HighlightFormatter {
+/**
+ * Utility class for highlighting that surrounds highlighted text with a single element
+ */
+public class TagFormatter implements HighlightFormatter {
+	
+	private final String localName;
+	private final String namespaceURI;
+	
+	public TagFormatter (String localName, String namespaceURI) {
+		this.localName = localName;
+		this.namespaceURI = namespaceURI == null ? "" : namespaceURI;
+	}
 
     /* (non-Javadoc)
      * @see lux.search.highlight.Highlighter#highlightTerm(javax.xml.stream.XMLStreamWriter, java.lang.String)
      */
     @Override
     public void highlightTerm(XMLStreamWriter writer, String text) throws XMLStreamException {
-        writer.writeStartElement("B");
+        writer.writeStartElement(namespaceURI, localName);
         writer.writeCharacters(text);
         writer.writeEndElement();
     }
