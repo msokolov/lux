@@ -27,20 +27,28 @@ in Solr/Lucene.
    of their required dependencies.  Please see THIRDPARTYLICENSES.md for a
    complete list.
 
-2. Start the server using the Windows batch file lux.bat, or the UNIX
-   shell script lux.
-
-TODO --- edit below --
+2. Start the server using the Windows batch file lux.bat, or the UNIX shell
+   script lux.  You can just enter "./lux" or "./lux start" to start Lux,
+   and "./lux stop" to stop it.
 
 3. The app server comes with a single core (that is a Lucene index) called
-   collection1, a small demo search application and xquery evaluation
-   window (querybox).  You can ensure that Lux is running properly by
-   opening
+   collection1, and includes a small demo search application and xquery
+   evaluation window (querybox).  You can ensure that Lux is running
+   properly by opening
    [http://localhost:8080/collection1/lux/index.xqy](http://localhost:8080/collection1/lux/query.xqy)
    in your browser; you should see the query box, and can experiment with
-   evaluating XQuery interactively.  There are no documents in the index as shipped.
+   evaluating XQuery interactively.  Note that there are no documents in
+   the index as shipped.
 
 *** Load documents from ibiblio
+
+If you are just evaluating Lux and want to load some sample data, you may
+wish to select "load shakespeare (ibiblio)" from the top menu; this will
+retrieve a complete list of shakespeare plays hosted at ibiblio.org.  Then
+if you click "load selected plays," the demo app retrieves the XML from
+ibiblio (using the EXPath http extension), chunks the plays into scenes,
+and loads them into the collection1 index.  Note: you must have an active
+internet connection for this to work.
 
 *** run some sample queries
 
