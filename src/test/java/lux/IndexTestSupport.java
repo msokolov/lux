@@ -2,6 +2,7 @@ package lux;
 
 import static lux.index.IndexConfiguration.*;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -101,7 +102,11 @@ public class IndexTestSupport {
      * @throws SaxonApiException 
      */
     public void indexAllElements(String filename) throws XMLStreamException, IOException, SaxonApiException {
-        indexAllElements(filename, SearchTest.class.getClassLoader().getResourceAsStream(filename));
+    	InputStream in = SearchTest.class.getClassLoader().getResourceAsStream(filename);
+    	if (in == null) {
+    		throw new FileNotFoundException (filename + " not found");
+    	}
+    	indexAllElements(filename, in);
         // System.out.println ("Indexed " + totalDocs + " documents from " + filename);
     }
     

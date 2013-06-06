@@ -34,25 +34,53 @@ in Solr/Lucene.
 3. The app server comes with a single core (that is a Lucene index) called
    collection1, and includes a small demo search application and xquery
    evaluation window (querybox).  You can ensure that Lux is running
-   properly by opening
-   [http://localhost:8080/collection1/lux/index.xqy](http://localhost:8080/collection1/lux/query.xqy)
-   in your browser; you should see the query box, and can experiment with
-   evaluating XQuery interactively.  Note that there are no documents in
-   the index as shipped.
+   properly by opening [http://localhost:8080/](http://localhost:8080) in
+   your browser; you should see the Solr 4 administrative interface.
 
-*** Load documents from ibiblio
+Once you have the server running and it responds successfully via browser,
+you can dive right in and start loading documents and writing queries of
+your own.  If you just want to play around for a bit though, you might want
+to try loading some sample data and take a look at Lux's demonstration app.
 
-If you are just evaluating Lux and want to load some sample data, you may
-wish to select "load shakespeare (ibiblio)" from the top menu; this will
-retrieve a complete list of shakespeare plays hosted at ibiblio.org.  Then
-if you click "load selected plays," the demo app retrieves the XML from
-ibiblio (using the EXPath http extension), chunks the plays into scenes,
-and loads them into the collection1 index.  Note: you must have an active
-internet connection for this to work.
+### Try the demo app
 
+To open the demo app, select the "collection1" core link at the bottom of
+the left-hand side menu, and then select the "Lux" link in the upper-right
+qudrant.
+
+#### Load documents from ibiblio
+
+The collection1 core is empty: it has no documents, initially.  In order to
+load some sample data, select "load shakespeare" from the top menu; this
+will retrieve a complete list of shakespeare plays hosted at ibiblio.org.
+Then if you click "load selected plays," the demo app will load the XML
+from ibiblio (using the EXPath http extension), chunk the plays into
+scenes, and insert them into the collection1 index.  Note: you must have an
+active internet connection for this to work.
+
+#### Try the demo search interface
+
+The "search" menu item links to a simple document-oriented search and
+display application written in XQuery and Javascript.  Start typing in the
+search boxes, and note the autocomplete for both search terms and element
+names.  Having a QName path index enables Lux to expose a convenient
+element (and attribute) name list, which can be valuable when working with
+a new tag set, for example.  Note that the shakespeare tag names are all
+upper case, and that the tag name index is case-sensitive, so in order to
+see matching elements, it is necessary to enter an upper-case letter or
+something that sorts before 'A' like a space.
+
+Note that results may be ordered by document order, or by title (and
+reversed).  Document order *of documents* is simply insertion order, and
+only happens to correspond to the order within the plays because the
+chunker inserted lines in order.
+
+TODO: also relevance order
+TODO: phrase search? Multiple terms? Autocomplete does something weird?
+
+  scrolling to highlighted phrase on initial click through to result
+  
 *** run some sample queries
-
-*** try the search interface
 
 *** set up your own index
 

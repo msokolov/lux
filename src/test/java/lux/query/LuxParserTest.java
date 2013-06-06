@@ -80,7 +80,7 @@ public class LuxParserTest {
         assertParseQuery (makeTermQuery(LUX_ATT_TEXT, "attribute:term"), "node<@attribute:term");
     
         // degenerate query
-        assertParseQuery (makeWildcardQuery(LUX_ELT_TEXT, "field:*"), "<field:....");
+        assertParseQuery (new MatchAllDocsQuery(), "<field:....");
     }
     
     @Test 

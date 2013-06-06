@@ -68,7 +68,8 @@ public class LuxResponseWriter implements QueryResponseWriter {
     }
 
     private void writeError(Writer writer, String error) throws IOException {
-        writer.write(String.format("<html><head><title>Error</title></head><body><h1>Error</h1><code>%s</code></body></html>", error));
+        String encError = error.replace("&", "&amp;"). replace("<", "&lt;");
+        writer.write(String.format ("<html><head><title>Error</title></head><body><h1>Error</h1><code>%s</code></body></html>", encError));
     }
 
     @Override
