@@ -12,7 +12,7 @@ also available at [https://github.com/msokolov/lux](GitHub).
 When the library is installed in the context of a Solr installation it
 provides an XQuery REST service.  This will be most useful for those
 wishing to invoke XQuery from another programming environment.  The REST
-API will be familiar to Solr users since it is a straightforwward extension
+API will be familiar to Solr users since it is a straightforward extension
 of Solr's existing API.
 
 The Lux-enhanced Solr also provides a web application server for
@@ -50,13 +50,13 @@ qudrant.
 
 #### Load documents from ibiblio
 
-The collection1 core is empty: it has no documents, initially.  In order to
-load some sample data, select "load shakespeare" from the top menu; this
-will retrieve a complete list of shakespeare plays hosted at ibiblio.org.
-Then if you click "load selected plays," the demo app will load the XML
-from ibiblio (using the EXPath http extension), chunk the plays into
-scenes, and insert them into the collection1 index.  Note: you must have an
-active internet connection for this to work.
+The collection1 core is delivered empty: it has no documents, initially.
+In order to load some sample data, select "load shakespeare" from the top
+menu; this will retrieve a complete list of shakespeare plays hosted at
+ibiblio.org.  Then if you click "load selected plays," the demo app will
+load the XML from ibiblio (using the EXPath http extension), chunk the
+plays into scenes, and insert them into the collection1 index.  Note: you
+must have an active internet connection for this to work.
 
 #### Try the demo search interface
 

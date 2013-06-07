@@ -7,7 +7,7 @@ pos: 7
 
 # Changes in Lux release 0.8
 
-## binary XML storage
+#### Binary XML storage
 
 This release includes support for a high-speed binary XML storage format,
 TinyBinary.  When documents are stored as TinyBinary, we can avoid

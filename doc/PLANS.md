@@ -2,7 +2,7 @@
 layout: page
 title: Plans
 group: navbar
-pos:   4
+pos:   5
 ---
 # Plans
 
@@ -94,13 +94,7 @@ ie out of the indexes.  In particular a very useful optimization would be
 the ability to compute <code>exists (/a/b/c[2])</code>in constant time. We often want
 to know if an element ever occurs more than once in some context.
 
-## More flexible highlighter
-
-Currently the highlighter always surrounds highlighted words with a <code>&lt;B></code>
-tag.  We plan to provide users the ability to control the highlighter's
-output.
-
-## Provide convenient access to Solr features
+## Provide convenient access to advanced Solr and Lucene features
 
 Solr provides a number of advanced query capabilities such as spelling
 suggestions, faceting, grouping, function queries, aggregate computations
@@ -108,11 +102,19 @@ and so on.  Within-query features like function queries may be available by
 lux:search, but not in a truly integrated way.  Solr components are available 
 via the REST service, alongside XQuery, but again, not truly integrated.
 
-We need to consider providing XQuery functions that bind to Solr functions,
-but we should also think about what it means to run faceting alongside an
-XQuery that might execute multiple underlying Lucene queries. Do we
-identify a primary one?  Run multiple faceting episodes?
+We will add XQuery functions that bind to Solr and Lucene functions, but we
+should also think about how to offer features that Solr provides as
+"components".  These generally provide a REST interface, rather than a Java
+functional interface, and make assumptions about query parameters that
+aren't generally in line with the conventions used by Lux. For example,
+what does it mean to run faceting alongside an XQuery that might execute
+multiple underlying Lucene queries. Do we identify a primary one?  Run
+multiple faceting episodes?
 
 ## implement hexBinary and base64Binary response types
 Currently these cannot be serialized by the REST API
+
+## provide a document processing pipeline 
+
+Possibly support update triggers that run XQuery/XSLT, or incorporate XProc
 

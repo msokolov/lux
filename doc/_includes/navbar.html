@@ -9,7 +9,9 @@
       <a class="brand" href="{{site.root-url}}"><img src="{{site.root-url}}/assets/img/sunflwor20.png" width="20" height="20" /></a>
       <div class="nav-collapse collapse">
         <ul class="nav">
-          {% for node in site.pages %}
+    {% for pos in (1..10) %}
+      {% for node in site.pages %}
+        {% if node.pos == pos %}
           {% if node.group == "navbar" %}
           {% if page.url == node.url %}
           <li class="active"><a href="{{site.root-url}}{{node.url}}" class="active">{{node.title}}</a></li>
@@ -17,7 +19,9 @@
           <li><a href="{{site.root-url}}{{node.url}}">{{node.title}}</a></li>
           {% endif %}
           {% endif %}
-          {% endfor %}
+        {% endif %}
+      {% endfor %}
+    {%   endfor %}
         </ul>
       </div><!--/.nav-collapse -->
     </div>

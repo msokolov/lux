@@ -2,7 +2,7 @@
 layout: page
 title: FAQ
 group: navbar
-pos: 3
+pos: 2
 ---
 # FAQ #
 
