@@ -70,17 +70,13 @@ upper case, and that the tag name index is case-sensitive, so in order to
 see matching elements, it is necessary to enter an upper-case letter or
 something that sorts before 'A' like a space.
 
-Note that results may be ordered by document order, or by title (and
-reversed).  Document order *of documents* is simply insertion order, and
-only happens to correspond to the order within the plays because the
-chunker inserted lines in order.
+Note that results may be ordered by document order, by relevance, or by any indexed field, such as title.  Document order *of documents* is simply insertion
+order, and only happens to correspond to the order within the plays because
+the chunker inserted lines in order.
 
-TODO: also relevance order
-TODO: phrase search? Multiple terms? Autocomplete does something weird?
+*** Run some sample queries
 
-  scrolling to highlighted phrase on initial click through to result
-  
-*** run some sample queries
+
 
 *** set up your own index
 
