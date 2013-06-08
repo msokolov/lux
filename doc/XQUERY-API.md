@@ -1,6 +1,6 @@
 ---
 layout: page
-title: XQuery API
+title: Lux XQuery API
 group: api
 pos: 2
 ---
