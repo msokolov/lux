@@ -797,6 +797,10 @@ public class SaxonTranslator {
                 return ValueType.DAY;
             case StandardNames.XS_G_MONTH_DAY:
                 return ValueType.MONTH_DAY;
+            case StandardNames.XS_DAY_TIME_DURATION:
+                return ValueType.DAY_TIME_DURATION;
+            case StandardNames.XS_YEAR_MONTH_DURATION:
+                return ValueType.YEAR_MONTH_DURATION;
             case StandardNames.XS_INT:
                 return ValueType.INT;
             case StandardNames.XS_INTEGER:

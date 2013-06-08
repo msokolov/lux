@@ -249,6 +249,12 @@ public class CompilerTest {
         assertQuery ("falsetruefalsetruefalsetrue", "ReturnExpr018.xqy", context);
     }
     
+    @Test
+    public void testDateSubtraction() throws Exception {
+        //assertQuery ("xs:dayTimeDuration(\"P26997D\")", "day-time.xqy");
+        assertQuery ("P26997D", "day-time.xqy");
+    }
+    
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
         assertQuery (result, queryFileName, null);
     }

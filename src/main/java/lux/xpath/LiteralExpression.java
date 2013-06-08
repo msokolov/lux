@@ -147,6 +147,8 @@ public class LiteralExpression extends AbstractExpression {
         case MONTH_DAY:
         case YEAR:
         case YEAR_MONTH:
+        case DAY_TIME_DURATION:
+        case YEAR_MONTH_DURATION:
             buf.append(valueType.name).append("(\"").append(value).append("\")");
             break;
             
