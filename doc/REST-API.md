@@ -1,6 +1,6 @@
 ---
 layout: page
-title: REST API
+title: Lux REST API
 group: api
 pos: 1
 ---

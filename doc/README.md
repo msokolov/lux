@@ -1,6 +1,6 @@
 ---
 layout: page
-title: About
+title: About Lux
 group: navbar
 pos:   1
 ---
