@@ -13,7 +13,7 @@ pos: 6
 
 * Added argument to lux:highlight for controlling the highlight tag name.
 
-* fixed an internal parser error when searching for an empty value like (//a[@id=""])
+* fixed an internal parser error when searching for an empty value like <code>(//a[@id=""])</code>
 
 * fixed a tinybin error encoding empty-valued attributes
 
