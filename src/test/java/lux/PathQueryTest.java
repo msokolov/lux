@@ -86,18 +86,16 @@ public class PathQueryTest extends BasicQueryTest {
             
         case ACT_SCENE_SPEECH:
             return "<SpanOr>" +
-                     "<SpanOr>" +
-                         "<SpanNear inOrder=\"true\" slop=\"0\">" +
-                             "<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
-                         "</SpanNear>" +
-                         "<SpanNear inOrder=\"true\" slop=\"0\">" +
-                             "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
-                         "</SpanNear>" +
-                     "</SpanOr>" +
-                     "<SpanNear inOrder=\"true\" slop=\"0\">" +
-            		    "<SpanTerm fieldName=\"lux_path\">SPEECH</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
-            		  "</SpanNear>" +
-            		"</SpanOr>";
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">ACT</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
+            "</SpanNear>" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
+            "</SpanNear>" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">SPEECH</SpanTerm><SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
+            "</SpanNear>" +
+            "</SpanOr>";
             
         case ACT_SCENE_SPEECH_AND:
             return "<BooleanQuery><Clause occurs=\"must\">" + 
@@ -171,6 +169,54 @@ public class PathQueryTest extends BasicQueryTest {
                 "</SpanOr>" +
                 "<SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
             "</SpanNear>";
+        case SCENE_3:
+            return "<BooleanQuery>" + 
+            "<Clause occurs=\"must\">" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
+            "</SpanNear></Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SPEECH</SpanTerm>" +
+            "</SpanNear></Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">STAGEDIR</SpanTerm>" +
+            "</SpanNear></Clause>" +
+            "</BooleanQuery>";
+        case SCENE_4:
+            return "<BooleanQuery>" + 
+            "<Clause occurs=\"must\">" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">TITLE</SpanTerm>" +
+            "</SpanNear></Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SPEECH</SpanTerm>" +
+            "</SpanNear></Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">STAGEDIR</SpanTerm>" +
+            "</SpanNear></Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<SpanNear inOrder=\"true\" slop=\"0\">" +
+            "<SpanTerm fieldName=\"lux_path\">&#x7B;&#x7D;</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">SCENE</SpanTerm>" +
+            "<SpanTerm fieldName=\"lux_path\">MISC</SpanTerm>" +
+            "</SpanNear></Clause>" +
+            "</BooleanQuery>";
         default:
             throw new UnsupportedOperationException("unregistered query enum: " + q);
         }

@@ -69,7 +69,6 @@ public class SearchCall extends FunCall {
     private void generateArguments () {
         ArrayList<AbstractExpression> args = new ArrayList<AbstractExpression>();
         args.add (queryArg);
-        args.add (new LiteralExpression(query.getFacts()));
         SortField[] sortFields = query.getSortFields();
         if (sortFields != null) {
             args.add(new LiteralExpression (createSortString(sortFields)));

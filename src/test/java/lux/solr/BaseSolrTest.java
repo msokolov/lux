@@ -132,8 +132,8 @@ public abstract class BaseSolrTest {
         if (type.equals("error")) {
             assertEquals(value, error);
         } else {
-            long docMatches = rsp.getResults().getNumFound();
             assertNull("got unexpected error: " + error, error);
+            long docMatches = rsp.getResults().getNumFound();
             assertEquals(docCount, docMatches);
             assertEquals(count, results.size());
             assertEquals(type, results.getName(0));

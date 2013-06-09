@@ -33,6 +33,7 @@ public class BasicQueryTest {
             ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
             MATCH_ALL_Q, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
             LUX_FOO, LINE, TITLE, ACT_SCENE_SPEECH_AND, 
+            SCENE_3, SCENE_4
     };
     
     protected Compiler compiler;
@@ -104,8 +105,7 @@ public class BasicQueryTest {
     @Test
     public void testConvertRootedPathToPredicate() throws Exception {
         int facts = hasPathIndexes() ? SINGULAR|MINIMAL : SINGULAR;
-        assertQuery ("//ACT/SCENE/root()", "lux:search(" + 
-                     getQueryXml(Q.ACT_SCENE) + "," + facts + ")" +
+        assertQuery ("//ACT/SCENE/root()", "lux:search(" + getQueryXml(Q.ACT_SCENE) + ")" +
         		"[(descendant::element(ACT)/child::element(SCENE))/root(.)]", 
         		facts, ValueType.DOCUMENT, Q.ACT_SCENE);
     }    
@@ -263,12 +263,12 @@ public class BasicQueryTest {
     }
     
     @Test public void testNonexistence() throws Exception {
-        assertQuery ("empty(/)", MINIMAL|BOOLEAN_FALSE|EMPTY, ValueType.BOOLEAN_FALSE, Q.MATCH_ALL_Q);
-        assertQuery ("empty(//ACT)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT);
-        assertQuery ("empty(//ACT/root())", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT);
-        assertQuery ("empty(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT, Q.SCENE);
-        assertQuery ("empty(//ACT/root()//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT_AND_SCENE);
-        assertQuery ("empty((/)[.//ACT and .//SCENE])", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN_FALSE, Q.ACT_AND_SCENE);
+        assertQuery ("empty(/)", MINIMAL|BOOLEAN_FALSE|EMPTY, ValueType.BOOLEAN, Q.MATCH_ALL_Q);
+        assertQuery ("empty(//ACT)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT);
+        assertQuery ("empty(//ACT/root())", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT);
+        assertQuery ("empty(//ACT) and empty(//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT, Q.SCENE);
+        assertQuery ("empty(//ACT/root()//SCENE)", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
+        assertQuery ("empty((/)[.//ACT and .//SCENE])", MINIMAL|BOOLEAN_FALSE, ValueType.BOOLEAN, Q.ACT_AND_SCENE);
 
         assertQuery ("//ACT[empty(SCENE)]", 0, ValueType.ELEMENT, Q.ACT);
     }
@@ -308,7 +308,7 @@ public class BasicQueryTest {
         // fn:collection() is implicit
         assertQuery ("collection()//SCENE", "lux:search(" +
                 getQueryXml(Q.SCENE)
-                + ",2)/descendant::element(SCENE)", MINIMAL, ValueType.ELEMENT, Q.SCENE);
+                + ")/descendant::element(SCENE)", MINIMAL, ValueType.ELEMENT, Q.SCENE);
     }
     
     @Test public void testOrderBy () throws Exception {
@@ -370,6 +370,18 @@ public class BasicQueryTest {
 
     }
     
+    @Test
+    public void testThreePredicates () throws Exception {
+    	String query = "/SCENE[TITLE][SPEECH][STAGEDIR]";
+    	assertQuery (query, MINIMAL, Q.SCENE_3);
+    }
+    
+    @Test
+    public void testFourPredicates () throws Exception {
+    	String query = "/SCENE[TITLE][SPEECH][STAGEDIR][MISC]";
+    	assertQuery (query, MINIMAL, Q.SCENE_4);
+    }
+    
     public void assertQuery (String xpath, Integer facts, Q ... queries) throws Exception {
         assertQuery (xpath, facts, null, queries);
     }
@@ -428,13 +440,15 @@ public class BasicQueryTest {
             //assertEquals (getQueryString(queries[i]), extractor.queries.get(i).toString());
         }
         if (queries.length > 0) {
+        	/*
             boolean isMinimal = (facts & MINIMAL) != 0;
             assertEquals ("isMinimal was not " + isMinimal + " for xpath " + xpath,
                     isMinimal, extractor.queries.get(0).isFact(MINIMAL));
             assertEquals ("unexpected value for SINGULAR; for xpath " + xpath, (facts & SINGULAR) != 0, 
                     extractor.queries.get(0).isFact(SINGULAR));
             assertEquals ("facts don't match", facts, extractor.queries.get(0).getFacts());      
-            if (type != null) {
+            */
+        	if (type != null) {
                 assertSame (type, extractor.queries.get(0).getResultType());
             }
         }
@@ -563,6 +577,23 @@ public class BasicQueryTest {
         case MATCH_ALL_Q: return "<MatchAllDocsQuery />";
         case AND: return "<TermQuery fieldName=\"lux_elt_name\">AND</TermQuery>";
         case LUX_FOO: return "<TermQuery fieldName=\"lux_elt_name\">foo&#x7B;http://luxdb.net&#x7D;</TermQuery>";
+        case SCENE_3:
+            return 
+                "<BooleanQuery>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SCENE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SPEECH</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">STAGEDIR</TermQuery></Clause>" + 
+                "</BooleanQuery>";
+        case SCENE_4:
+            return 
+                "<BooleanQuery>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SCENE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SPEECH</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">STAGEDIR</TermQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">MISC</TermQuery></Clause>" + 
+                "</BooleanQuery>";
         default: throw new UnsupportedOperationException("unregistered query enum: " + q);
         }
     }
@@ -574,8 +605,8 @@ public class BasicQueryTest {
     static class MockQuery extends XPathQuery {
         private final String queryString;
 
-        MockQuery (String queryString, long facts, ValueType valueType) {
-            super (null,  facts, valueType);
+        MockQuery (String queryString, ValueType valueType) {
+            super (null, 0, valueType);
             this.queryString = queryString;
         }
 
@@ -598,11 +629,13 @@ public class BasicQueryTest {
                 AbstractExpression queryArg = funcall.getSubs()[0];
                 String q = (queryArg instanceof LiteralExpression) ? ((LiteralExpression)queryArg).getValue().toString()
                         : queryArg.toString();
+                /*
                 long facts=0;
                 if (funcall.getSubs().length > 1) {
                     facts = (Long) ((LiteralExpression)funcall.getSubs()[1]).getValue();
                 }
-                queries.add( new MockQuery (q, facts, funcall.getReturnType()));
+                */
+                queries.add( new MockQuery (q, funcall.getReturnType()));
             }
             return funcall;
         }
@@ -619,8 +652,8 @@ public class BasicQueryTest {
         @Override
         public FunCall visit (FunCall funcall) {
             if (funcall.getName().equals (FunCall.LUX_SEARCH)) {
-                if (funcall.getSubs().length >= 3) {
-                    AbstractExpression sortArg = funcall.getSubs()[2];
+                if (funcall.getSubs().length >= 2) {
+                    AbstractExpression sortArg = funcall.getSubs()[1];
                     String s = ((LiteralExpression)sortArg).getValue().toString();
                     sorts.add(s);
                 }

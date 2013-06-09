@@ -1,6 +1,5 @@
 package lux.compiler;
 
-import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
 import lux.query.BooleanPQuery.Clause;
@@ -372,23 +371,25 @@ public class XPathQuery {
       return facts;
   }
 
-  public void setType(ValueType type) {
-      if (immutable) throw new LuxException ("attempt to modify immutable query");
+  public XPathQuery setType(ValueType type) {
+	  XPathQuery query;
       if (type == null) {
           type = ValueType.VALUE;
       }
-      valueType = type;
-      facts &= ~BOOLEAN_FALSE;
-      if (valueType == ValueType.BOOLEAN) {
-          facts &= ~SINGULAR;
+	  if (immutable) {
+          query = new XPathQuery (pquery, facts, type);
+      } else {
+    	  query = this;
       }
-      else if (valueType == ValueType.BOOLEAN_FALSE) {
-          facts |= BOOLEAN_FALSE;
-          facts &= ~SINGULAR;
+      query.valueType = type;
+      query.facts &= ~BOOLEAN_FALSE;
+      if (query.valueType == ValueType.BOOLEAN) {
+          query.facts &= ~SINGULAR;
       }
-      else if (valueType == ValueType.DOCUMENT) {
-          facts |= SINGULAR;
+      else if (query.valueType == ValueType.DOCUMENT) {
+          query.facts |= SINGULAR;
       }
+      return query;
       // no other type info is stored in facts since it's not needed by search()
   }
 

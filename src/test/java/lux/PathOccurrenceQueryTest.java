@@ -56,11 +56,9 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
             
         case ACT_SCENE_SPEECH:
             return "<BooleanQuery><Clause occurs=\"should\">" +
-            "<BooleanQuery><Clause occurs=\"should\">" +
             "<RegexpQuery fieldName=\"lux_path\">TITLE\\/ACT(\\/.*)?</RegexpQuery>" +
             "</Clause><Clause occurs=\"should\">" +
             "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SCENE(\\/.*)?</RegexpQuery>" +
-            "</Clause></BooleanQuery>" + 
             "</Clause><Clause occurs=\"should\">" +
             "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SPEECH(\\/.*)?</RegexpQuery>" +
             "</Clause></BooleanQuery>";
@@ -113,6 +111,34 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
         case LUX_FOO: return "<RegexpQuery fieldName=\"lux_path\">foo\\&#x7B;http\\:\\/\\/luxdb.net\\&#x7D;(\\/.*)?</RegexpQuery>";
         case PLAY_ACT_OR_PERSONAE_TITLE:
             return "<RegexpQuery fieldName=\"lux_path\">TITLE\\/(ACT|PERSONAE)\\/PLAY</RegexpQuery>";
+        case SCENE_3:
+            return "<BooleanQuery>" + 
+            "<Clause occurs=\"must\">" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SCENE</RegexpQuery>" +
+            "</Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<RegexpQuery fieldName=\"lux_path\">SPEECH\\/SCENE</RegexpQuery>" +
+            "</Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<RegexpQuery fieldName=\"lux_path\">STAGEDIR\\/SCENE</RegexpQuery>" +
+            "</Clause>" +
+            "</BooleanQuery>";
+        case SCENE_4:
+            return "<BooleanQuery>" + 
+            "<Clause occurs=\"must\">" +
+            "<RegexpQuery fieldName=\"lux_path\">TITLE\\/SCENE</RegexpQuery>" +
+            "</Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<RegexpQuery fieldName=\"lux_path\">SPEECH\\/SCENE</RegexpQuery>" +
+            "</Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<RegexpQuery fieldName=\"lux_path\">STAGEDIR\\/SCENE</RegexpQuery>" +
+            "</Clause>" +
+            "<Clause occurs=\"must\">" +
+            "<RegexpQuery fieldName=\"lux_path\">MISC\\/SCENE</RegexpQuery>" +
+            "</Clause>" +
+            "</BooleanQuery>";
+        
         default:
             throw new UnsupportedOperationException("unregistered query enum: " + q);
         }

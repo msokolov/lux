@@ -420,7 +420,7 @@ public class SearchTest extends BaseSearchTest {
             assertTrue ("expected exception not thrown", false);
         } catch (LuxException e) { }
         try {
-            assertSearch (null, "lux:search(1,'xx')", null, null, null);
+            assertSearch (null, "lux:search(1,2)", null, null, null);
             assertTrue ("expected exception not thrown", false);
         } catch (LuxException e) { }
         try {

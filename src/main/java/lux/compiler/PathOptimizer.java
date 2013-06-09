@@ -344,7 +344,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // path combination
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), filter, baseQuery, filterQuery,
                 ResultOrientation.LEFT);
-        query.setBaseQuery(baseQuery);
+        XPathQuery contextQuery = baseQuery.getBaseQuery() == null ? baseQuery : baseQuery.getBaseQuery();
+        query.setBaseQuery(contextQuery);
         push(query);
         optimizeComparison(predicate);
         //if (indexConfig.isOption(INDEX_PATHS)) {
@@ -519,7 +520,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     /**
      * If a function F is emptiness-preserving, in other words F(a,b,c...) is
      * empty ( =()) if *any* of its arguments are empty, and is non-empty if
-     * *all* of its arguments are non-empty, then its argument's queries can be
+     * *all* of its arguments are non-empty, then its arguments' queries can be
      * combined with Occur.MUST. At first I thought that was the way most
      * functions work, but it's not: string(()) = '', not ()
      * 
@@ -654,7 +655,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 qname = FunCall.LUX_EXISTS;
             } else if (fname.equals(FunCall.FN_EMPTY)) {
                 functionFacts = BOOLEAN_FALSE;
-                returnType = ValueType.BOOLEAN_FALSE;
+                returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_EXISTS;
             } else if (fname.equals(FunCall.FN_CONTAINS)) {
                 // also see optimizeComparison
@@ -676,10 +677,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     // create a searching function call using the argument to
                     // the enclosed lux:search call
                     push(MATCH_ALL);
-                    return new FunCall(qname, returnType, searchArg, new LiteralExpression(MINIMAL));
+                    return new FunCall(qname, returnType, searchArg);
                 }
+                query = query.setType(returnType);
                 query =  query.setFact(functionFacts, true);
-                query.setType(returnType);
                 AbstractExpression root = subs[0].getRoot();
                 if (! isSearchCall(root)) {
                     push(MATCH_ALL);
@@ -986,27 +987,26 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         FunCall search = (FunCall) root;
         AbstractExpression[] args = search.getSubs();
-        if (args.length >= 4) {
+        if (args.length >= 3) {
         	// there is already a start arg provided
         	return subsequence;
         }
         boolean isSingular;
         if (args.length < 1) {
         	isSingular = true; // this must be a user-supplied search call
+        } else if (search instanceof SearchCall) {
+        	isSingular = ((SearchCall) search).getQuery().isFact(SINGULAR);
         } else {
-        	LiteralExpression factsArg = (LiteralExpression) args[1];
-        	long facts = factsArg.equals(LiteralExpression.EMPTY) ? 0 :
-        		((Long) factsArg.getValue());
-        	isSingular = (facts & SINGULAR) != 0;
+        	isSingular = false;
         }
         if (isSingular) {
-        	AbstractExpression[] newArgs = new AbstractExpression[4];
+        	AbstractExpression[] newArgs = new AbstractExpression[3];
         	int i = 0;
         	while (i < args.length) {
         		newArgs[i] = args[i];
         		++i;
         	}
-        	while (i < 3) {
+        	while (i < 2) {
         		newArgs[i++] = LiteralExpression.EMPTY;
         	}
         	newArgs[i] = start;
@@ -1032,8 +1032,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // searchCall.setFnCollection (!optimizeForOrderedResults);
             return new SearchCall(query, indexConfig);
         }
-        return new FunCall(functionName, query.getResultType(), query.toXmlNode(indexConfig.getDefaultFieldName(), indexConfig),
-                new LiteralExpression(query.getFacts()));
+        FunCall fn = new FunCall(functionName, query.getResultType(), query.toXmlNode(indexConfig.getDefaultFieldName(), indexConfig));
+        if (query.isFact(BOOLEAN_FALSE)) {
+        	return new FunCall(FunCall.FN_NOT, ValueType.BOOLEAN, fn);
+        } else {
+        	return fn;
+        }
     }
 
     @Override
