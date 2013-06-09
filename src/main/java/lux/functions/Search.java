@@ -47,7 +47,6 @@ public class Search extends SearchBase {
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] { 
                 SequenceType.SINGLE_ITEM,       // query: as element node or string
-                SequenceType.OPTIONAL_INTEGER,  // bit set: boolean facts - query optimizations
                 SequenceType.OPTIONAL_STRING,   // sort key stanza
                 SequenceType.OPTIONAL_INTEGER   // start - index of first result (1-based)
                 };
@@ -68,7 +67,7 @@ public class Search extends SearchBase {
      * @throws XPathException
      */
     @Override
-    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, long facts, String sortCriteria, int start) throws XPathException {        
+    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, String sortCriteria, int start) throws XPathException {        
         try {
             return new SearchResultIterator (eval, query, sortCriteria, start);
         } catch (Exception e) {

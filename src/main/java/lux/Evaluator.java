@@ -301,7 +301,7 @@ public class Evaluator {
         @Override
         public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
             if (StringUtils.isEmpty(href)) {
-                return new Search().iterate(new MatchAllDocsQuery(), Evaluator.this, 0, null, 1);
+                return new Search().iterate(new MatchAllDocsQuery(), Evaluator.this, null, 1);
             }
             if (href.startsWith("lux:")) {
                 // Saxon doesn't actually enforce that this is a valid URI, and we don't care about that either
@@ -314,7 +314,7 @@ public class Evaluator {
                 }
                 LoggerFactory.getLogger(getClass()).debug("executing query: {}", q);
 
-                return new Search().iterate(q, Evaluator.this, 0, null, 1);
+                return new Search().iterate(q, Evaluator.this, null, 1);
             }
             return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);
         }

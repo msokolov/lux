@@ -19,7 +19,6 @@ public enum ValueType {
     INT("xs:int", true), 
     INTEGER("xs:integer", true), 
     BOOLEAN("xs:boolean", true), 
-    BOOLEAN_FALSE("xs:boolean", true), 
     DATE("xs:date", true), 
     DATE_TIME("xs:dateTime", true),
     DAY("xs:gDay", true),
