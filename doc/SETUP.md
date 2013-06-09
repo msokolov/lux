@@ -98,7 +98,7 @@ capability in a Solr environment.  As an example, enter:
            lux:search ("<STAGEDIR:bear") 
 to get a list of all documents containing the word "bear" in a stage direction.
 Or try:
-           /SPEECH[@act="1"][@scene="1"][@speech="1"]
+           <code>/SPEECH\[@act="1"\]\[@scene="1"\]\[@speech="1"\]</code>
 to see the all the first lines of Shakespeare's plays.
 
 ### Add a new core
@@ -145,7 +145,7 @@ application folder must be configured for each core separately.
 3. Copy the file lux-application.xml from lux-appserver/contexts-available to lux-appserver/contexts.  Note: this is a standard Jetty configuration file, so you can use any appropriate Jetty IOC-style configuration here.  But the only required steps are:
     1. Set contextPath to the path of your application (in the example above: /library1/reader).
     2. Set resourceBase to the same path you used for lux.baseUri above
-4. Restart lux.  Your new application should now be available.  Any files with any ".xq*" extension (ie: .xqy, .xq, .xqm, .xquery, .xqpaloozaFest1999, etc.) will be loaded by Lux and evaluated, with output serialized and returned as HTML.  All other files will be served without any processing.
+4. Restart lux.  Your new application should now be available.  Any files with an ".xq\*" extension (ie: .xqy, .xq, .xqm, .xquery, .xqpaloozaFest1999, etc.) will be loaded by Lux and evaluated, with output serialized and returned as HTML.  All other files will be served without any processing.
 
 *** Create XPath fields
 
