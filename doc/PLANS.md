@@ -118,3 +118,7 @@ Currently these cannot be serialized by the REST API
 
 Possibly support update triggers that run XQuery/XSLT, or incorporate XProc
 
+## enhance the query box
+
+It would be nice to add more advanced editing capabilities, including
+syntax highlighting, syntax checking, and term completion.

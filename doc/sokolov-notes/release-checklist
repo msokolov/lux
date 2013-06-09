@@ -13,15 +13,18 @@
    git push origin master
    git push origin v0.6
 8) post binary files to luxdb.org
+   mvn -Pmaven-deploy verify
+   cd target
+   jar -cvf bundle.jar lux-*.jar lux-*.asc
+   # go to https://oss.sonatype.org/index.html#stagingRepositories
+   # Staging Upload / Artifact Bundle
 9) deploy to maven central:
-# this never did work?  Maybe it was just lacking the -Pmaven-deploy,
-# which includes the gpg instructions
-# mvn deploy -Dgpg.passhprase=xxxxxxx
-mvn -Pmaven-deploy verify
-cd target
-jar -cvf bundle.jar lux-*.jar lux-*.asc
+mvn -Pmaven-deploy deploy
+# OR:
+# cd target
+# jar -cvf bundle.jar lux-*.jar lux-*.asc
 # go to https://oss.sonatype.org/index.html#stagingRepositories
-# Staging Upload / Artifact Bundle
+# Staging Upload / Artifact Bundle (password is in .m2/settings-security.xml)
 
 9a) increment the version in pom.xml to the next -SNAPSHOT
 
