@@ -344,7 +344,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // path combination
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), filter, baseQuery, filterQuery,
                 ResultOrientation.LEFT);
-        query.setBaseQuery(baseQuery);
+        XPathQuery contextQuery = baseQuery.getBaseQuery() == null ? baseQuery : baseQuery.getBaseQuery();
+        query.setBaseQuery(contextQuery);
         push(query);
         optimizeComparison(predicate);
         //if (indexConfig.isOption(INDEX_PATHS)) {

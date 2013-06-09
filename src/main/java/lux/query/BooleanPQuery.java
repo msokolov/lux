@@ -23,6 +23,23 @@ public class BooleanPQuery extends ParseableQuery {
     private Clause clauses[];
     
     public BooleanPQuery (Clause ... clauses) {
+    	setClauses (clauses);
+    }
+    
+    public BooleanPQuery (Occur occur, ParseableQuery ... queries) {
+        Clause[] cl= new Clause[queries.length];
+        int i = 0;
+        for (ParseableQuery query : queries) {
+            cl[i++] = new Clause(query, occur);
+        }
+        setClauses (cl);
+    }    
+    
+    private void setClauses (Clause[] clauses) {
+    	if (clauses.length == 0) {
+    		this.clauses = clauses;
+    		return;
+    	}
         Occur oc = clauses[0].getOccur();
         // We assume all the clauses have the same occur 
         // otherwise possibly merge the clauses if some of them are BooleanPQuery
@@ -44,14 +61,6 @@ public class BooleanPQuery extends ParseableQuery {
         }
         this.clauses = cl.toArray(new Clause[cl.size()]);
     }
-    
-    public BooleanPQuery (Occur occur, ParseableQuery ... queries) {
-        clauses = new Clause[queries.length];
-        int i = 0;
-        for (ParseableQuery query : queries) {
-            clauses[i++] = new Clause(query, occur);
-        }
-    }    
     
     public Occur getOccur () {
         return clauses.length > 0 ? clauses[0].occur : Occur.SHOULD;

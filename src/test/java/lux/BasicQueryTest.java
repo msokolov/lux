@@ -33,6 +33,7 @@ public class BasicQueryTest {
             ACT_ID, ACT_ID_123, ACT_SCENE_ID_123,
             MATCH_ALL_Q, ACT_SCENE2, ACT_AND_SCENE, ACT_SCENE3, AND, PLAY_ACT_OR_PERSONAE_TITLE, 
             LUX_FOO, LINE, TITLE, ACT_SCENE_SPEECH_AND, 
+            SCENE_3, SCENE_4
     };
     
     protected Compiler compiler;
@@ -369,6 +370,18 @@ public class BasicQueryTest {
 
     }
     
+    @Test
+    public void testThreePredicates () throws Exception {
+    	String query = "/SCENE[TITLE][SPEECH][STAGEDIR]";
+    	assertQuery (query, MINIMAL, Q.SCENE_3);
+    }
+    
+    @Test
+    public void testFourPredicates () throws Exception {
+    	String query = "/SCENE[TITLE][SPEECH][STAGEDIR][MISC]";
+    	assertQuery (query, MINIMAL, Q.SCENE_4);
+    }
+    
     public void assertQuery (String xpath, Integer facts, Q ... queries) throws Exception {
         assertQuery (xpath, facts, null, queries);
     }
@@ -564,6 +577,23 @@ public class BasicQueryTest {
         case MATCH_ALL_Q: return "<MatchAllDocsQuery />";
         case AND: return "<TermQuery fieldName=\"lux_elt_name\">AND</TermQuery>";
         case LUX_FOO: return "<TermQuery fieldName=\"lux_elt_name\">foo&#x7B;http://luxdb.net&#x7D;</TermQuery>";
+        case SCENE_3:
+            return 
+                "<BooleanQuery>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SCENE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SPEECH</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">STAGEDIR</TermQuery></Clause>" + 
+                "</BooleanQuery>";
+        case SCENE_4:
+            return 
+                "<BooleanQuery>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SCENE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">SPEECH</TermQuery></Clause>" +
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">STAGEDIR</TermQuery></Clause>" + 
+                "<Clause occurs=\"must\"><TermQuery fieldName=\"lux_elt_name\">MISC</TermQuery></Clause>" + 
+                "</BooleanQuery>";
         default: throw new UnsupportedOperationException("unregistered query enum: " + q);
         }
     }

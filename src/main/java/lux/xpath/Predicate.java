@@ -16,10 +16,16 @@ public class Predicate extends AbstractExpression {
         buf.append (']');
     }
     
+    /**
+     * @return the base of the predicate expression (the part that is tested by the predicate filter)
+     */
     public final AbstractExpression getBase() {
         return subs[0];
     }
 
+    /**
+     * @return the filter of the predicate expression (the part that tests the base expression)
+     */
     public final AbstractExpression getFilter() {
         return subs[1];
     }
