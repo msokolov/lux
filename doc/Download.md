@@ -2,7 +2,7 @@
 layout: page
 title: Download
 group: navbar
-pos: 4
+pos: 2
 ---
 
 # Download Lux #

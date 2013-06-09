@@ -1,8 +1,8 @@
 ---
 layout: page
-title: Lux FAQ
+title: FAQ
 group: navbar
-pos: 2
+pos: 4
 ---
 # FAQ #
 

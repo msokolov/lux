@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Lux Plans
+title: Plans
 group: navbar
 pos:   5
 ---

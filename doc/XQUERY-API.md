@@ -22,7 +22,7 @@ http://luxdb.net namespace, which we always reference using the prefix
 
 commits pending updates to the index and blocks until the operation is complete.
 
-### `function lux:count($query as item(), $hints as xs:int?) as xs:integer` ###
+### `function lux:count($query as item()) as xs:integer` ###
 
 counts the number of results of a search.  It is faster and uses less memory 
 than calling fn:count() on the search results themselves because it does not need to load
@@ -34,7 +34,7 @@ $query formats.
 deletes a document from the index at the given uri.  NOTE: if the $uri document
 is empty, *all documents* will be deleted.  This "feature" will be removed in a later release.
 
-### `function lux:exists($query as item(), $hints as xs:int?) as xs:integer` ###
+### `function lux:exists($query as item()) as xs:integer` ###
 
 tests whether a search has any results.  It is faster and uses less memory
 than calling fn:exists() on the search results themselves because it does
@@ -65,7 +65,7 @@ index-optimized sorting in Lucene (only for string-valued fields).  An
 error results if an attempt is made to sort by a field that has multiple
 values for any of the documents in the sequence.
 
-### `lux:highlight($query as item(), $node as node())` ###
+### `lux:highlight($node as node()?, $query as item())` ###
 
 returns the given node with text matching the query surrounded by B tags.
 The query may be a string or an element/document of the same types
@@ -76,7 +76,7 @@ supported by lux:search.
 inserts a document to the index at the given uri. lux:commit() must be called for the result
 to become visible.
 
-### `function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?) as document-node()*` ###
+### `function lux:search($query as item(), $sort as xs:string?) as document-node()*` ###
 
 executes a Lucene search query and returns documents.  If the query
 argument is an element or document node, it is parsed using the
