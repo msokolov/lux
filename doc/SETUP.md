@@ -1,3 +1,9 @@
+---
+layout: page
+title: Lux Setup
+group: navbar
+pos:   3
+---
 # Lux Setup #
 
 This document describes the Lux distribution, and gives instructions for
@@ -61,26 +67,82 @@ must have an active internet connection for this to work.
 #### Try the demo search interface
 
 The "search" menu item links to a simple document-oriented search and
-display application written in XQuery and Javascript.  Start typing in the
-search boxes, and note the autocomplete for both search terms and element
-names.  Having a QName path index enables Lux to expose a convenient
-element (and attribute) name list, which can be valuable when working with
-a new tag set, for example.  Note that the shakespeare tag names are all
-upper case, and that the tag name index is case-sensitive, so in order to
-see matching elements, it is necessary to enter an upper-case letter or
-something that sorts before 'A' like a space.
+display application written in XQuery, XSLT, and Javascript.  The demo app
+shows off Lux's index-aware capabilities.  Note that when you start typing
+in the search boxes, terms from the index are shown in a typical
+autocomplete menu.  One interesting feature of Lux that is not universally
+available is the ability to treat tag names as first class terms in the
+index (note the autocomplete for element names).  Having a QName path index
+can be invaluable when working with a new tag set, for example.  Note that
+the shakespeare tag names are all upper case, and that the tag name index
+is case-sensitive, so in order to see matching elements, it is necessary to
+enter an upper-case letter or something that sorts before 'A' like a space.
 
-Note that results may be ordered by document order, by relevance, or by any indexed field, such as title.  Document order *of documents* is simply insertion
+Results may be ordered by document order, by relevance, or by any indexed
+field, such as title.  Document order *of documents* is simply insertion
 order, and only happens to correspond to the order within the plays because
 the chunker inserted lines in order.
 
-*** Run some sample queries
+Searches are word-oriented, and, as in typical full text search
+applications, words are subject to normalizing transformations (analysis,
+in Lucene parlance) to achieve better search precision and recall. Search
+results show search-term highlighting.
 
+#### Run some sample queries
 
+The "query" menu item links to an interactive "query box" that allows for
+executing arbitrary XQuery, with results displayed in the area below; XML
+results are rendered with an expand/collapse viewer for easy navigation.
+The original motivation for Lux was to provide this powerful ad hoc query
+capability in a Solr environment.
 
-*** set up your own index
+*** Add a new index, or "core"
 
-*** set up your own app folder
+Each Solr core functions as a completely independent index; uri uniqueness
+is preserved within a single core, all searches are scoped by core, commits
+are per-core, and so on.  You can have multiple cores in each Solr (or Lux)
+install.  To add a new core:
+
+1. Create a new folder in the lux-appserver/solr directory called, e.g., "new-core"
+         cd lux-appserver
+         mkdir new-core
+2. Copy the conf folder (containing schema.xml and solrconfig.xml) from an
+existing core directory (like collection1) into the new core directory:
+         cp -r solr/collection1/conf/ new-core/conf/
+3. Edit solr.xml (in lux-appserver/solr) and list the new core there:
+      <core name="new-core" instanceDir="new-core" />
+4. restart lux
+   ./lux restart
+
+The new core should appear in the solr admin on the lower left-hand side.
+
+Note: the Solr admin (in the "core admin" area) gives the impression that
+you can add a core using the web GUI, but this is not actually true.  This
+UI seems to edit solr.xml, but will not create the new core folder.  Its
+function has more to do with distributed configurations in which cores may
+migrate from host to host.
+
+*** Set up an application
+
+The Lux demo application is bundled inside the Java war file (if you want
+to see the source code, you can extract it from there using an unzip tool,
+or go look in the source repository on github), but you can deploy your own
+applications as files.  To set up an external application, you need to edit
+soltconfig.xml, which is in the solr/[corename]/conf folder: each
+application folder must be configured for each core separately.
+
+1. In solrconfig.xml, find the request handler configuration element whose start tag is:
+   <requestHandler name="/lux" class="solr.SearchHandler" id="lux">
+2. Make a copy of this element, and edit it as follows:
+   1. Change the value of the name attribute from /lux to the path where you want your application to be hosted.  If your core is called "library1," and you name your application "reader," then your application will be served at the url http://server.name:8080/library1/reader.
+   2. Change the id to something unique, usually the same as the name, but without a leading slash.
+   3. Edit the contents of the <code><str name="lux.baseUri"></code> element, replacing the default value of context:/lux with the URI where your application's source files will reside.  The only supported URI schemes are `context`, `resource`, and `file`.  The context and resource schemes refer to the contents of the war file; you will almost certainly want to use a file-based URI here.  For example, if your application will be stored at /var/www/reader, then you would enter `file:///var/www/reader` as the SearchHandler's lux.baseUri.
+3. Copy the file lux-application.xml from lux-appserver/contexts-available to lux-appserver/contexts.  Note: this is a standard Jetty configuration file, so you can use any appropriate Jetty IOC-style configuration here.  But the only required steps are:
+    1. Set contextPath to the path of your application (in the example above: /library1/reader).
+    2. Set resourceBase to the same path you used for lux.baseUri above
+4. Restart lux.  Your new application should now be available.  Any files with the ".xqy" extension will be loaded by Lux and evaluated, and their output serialized and returned as HTML.  All other files will be served without any processing.
+
+*** Create indexes
 
 *** load some documents
 
