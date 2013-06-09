@@ -16,11 +16,10 @@ import net.sf.saxon.value.SequenceType;
 import org.apache.lucene.search.Query;
 
 /**
- * <code>function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?, $start as xs:int?) as document-node()*</code>
+ * <code>function lux:search($query as item(), $sort as xs:string?, $start as xs:int?) as document-node()*</code>
  * <p>Executes a Lucene search query and returns documents.  If the query argument is an element or document 
  * node, it is parsed using the {@link XmlQueryParser}; otherwise its string value is parsed using the {@link LuxQueryParser}.
  * For details about the query syntaxes, see the parser documentation.</p>
- * <p>The optimizer provides optimization information in the $hints variable</p>
  * <p>$sort defines sort criteria: multiple criteria are separated by commas; each criterion is a field
  * name (or lux:score) with optional keywords appended: ascending|descending, empty least|empty greatest.
  * If no sort key is provided, documents are ordered by Lucene docID, which is defined to be XQuery document order.
