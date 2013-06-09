@@ -78,7 +78,7 @@ public class LuxDispatchFilter implements Filter {
         if( request instanceof HttpServletRequest) {
             HttpServletRequest req = (HttpServletRequest)request;
             String path = req.getServletPath();
-            if (path.endsWith(".xqy") || path.contains (".xqy/")) {
+            if (path.contains(".xq")) {
                 String [] pc = path.split("/", 4);
                 if (pc.length > 1) {
                     String coreName = pc[1];
