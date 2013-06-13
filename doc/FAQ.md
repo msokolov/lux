@@ -9,6 +9,11 @@ pos: 4
 This page lists some nonobvious quirks and idiosyncracies, with solutions
 or workarounds where available.
 
+#### Where is the mailing list / discussion group?
+
+Uh -- there is none.  We'll get there!  For now, just send mail to
+info@luxdb.org.
+
 #### Can Lux manage its XML fields alongside other (normal) Solr fields?
 
 Yes, updates are handled exactly as for Solr without Lux.  The only

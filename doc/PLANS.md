@@ -7,11 +7,17 @@ pos:   5
 # Plans
 
 This page lists a number of potential areas for improvement. There is no
-schedule for any of this work, not any commitment that all of it will be
-completed. However, we do continue to make improvements, and this list does
-reflect our priorities. We hope it may be useful for users insofar as it gives a
-general idea of the direction in which we want to take Lux development in
-the future.
+schedule for any of this work, not any commitment that all (or any) of it
+will be completed. However, we do continue to make improvements, and this
+list does reflect our priorities. We hope it may be useful for users
+insofar as it gives a general idea of the direction in which we want to
+take Lux development in the future.  And of course, we welcome
+contributions.
+
+## Improve the documentation
+
+The documentation is not really complete; we need sections that explain
+what indexes are available, and how to best make use of them in queries.
 
 ## Performance enhancements
 
@@ -52,7 +58,7 @@ operate only on a local index.  The work here involves providing a new
 implementation of the low-level search iterators that re-uses Solr's
 sharding components.
 
-## Iterate over leaf DocReaders internally
+### Iterate over leaf DocReaders internally
 
 Currently we rely on some generic functionality in Lucene that exposes a
 simpler "single-index" API.  We could save some cycles by handling the
@@ -111,14 +117,14 @@ what does it mean to run faceting alongside an XQuery that might execute
 multiple underlying Lucene queries. Do we identify a primary one?  Run
 multiple faceting episodes?
 
-## implement hexBinary and base64Binary response types
+## Implement hexBinary and base64Binary response types
 Currently these cannot be serialized by the REST API
 
-## provide a document processing pipeline 
+## Provide a document processing pipeline 
 
 Possibly support update triggers that run XQuery/XSLT, or incorporate XProc
 
-## enhance the query box
+## Enhance the query box
 
 It would be nice to add more advanced editing capabilities, including
 syntax highlighting, syntax checking, and term completion.
@@ -128,3 +134,4 @@ syntax highlighting, syntax checking, and term completion.
 We should provide either a manual, or an automatic reindexing capability so
 that when field definitions change, we can apply them to existing documents
 without the need to reload.
+
