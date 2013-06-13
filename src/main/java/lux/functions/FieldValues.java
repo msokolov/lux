@@ -33,7 +33,7 @@ import org.apache.lucene.document.Document;
 * 
 * <p>
 * Order by expressions containing lux:field-values calls are subject to special optimization and are often able to be
-* implemented by index-optimized sorting in Lucene (only for string-valued fields).  
+* implemented by index-optimized sorting in Lucene (for fields whose values are string-, integer-, or long-valued only).  
 * An error results if an attempt is made
 * to sort by a field that has multiple values for any of the documents in the sequence.
 * </p>

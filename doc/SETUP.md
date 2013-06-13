@@ -129,31 +129,88 @@ migrate from host to host.
 
 ### Set up an application
 
-The Lux demo application is bundled inside the Java war file (if you want
-to see the source code, you can extract it from there using an unzip tool,
-or go look in the source repository on github), but you can deploy your own
-applications as files.  To set up an external application, you need to edit
-soltconfig.xml, which is in the `solr/[corename]/conf` folder: each
-application folder must be configured for each core separately.
+It's pretty easy to deploy a web application using Lux. Just create a
+folder containing your XQuery, XSLT and supporting files, and then configure Lux to point at it.  You'll need to edit two configuration files. `solrconfig.xml`, which is in your Solr core's `conf` folder, tells Lux how to map URLs to your XQuery files.  In addition, you will need to create a context in Jetty configuration in order to include static assets (js, css, images, etc).
 
-1. In solrconfig.xml, find the request handler configuration element whose start tag is:
-   &lt;requestHandler name="/lux" class="solr.SearchHandler" id="lux">
+1. In `solrconfig.xml`, find the request handler configuration element whose start tag is:
+    <requestHandler name="/lux" class="solr.SearchHandler" id="lux">
+   It should be at the very end of the file.
 2. Make a copy of this element, and edit it as follows:
-   1. Change the value of the name attribute from /lux to the path where you want your application to be hosted.  If your core is called "library1," and you name your application "reader," then your application will be served at the url http://server.name:8080/library1/reader.
+   1. Change the value of the name attribute from /lux to the path where you want your application to be hosted.  If your core is called "library1," and you name your application "reader," then your application will be served at the url `http://server.name:8080/library1/reader`.
    2. Change the id to something unique, usually the same as the name, but without a leading slash.
-   3. Edit the contents of the <code>&lt;str name="lux.baseUri"></code> element, replacing the default value of context:/lux with the URI where your application's source files will reside.  The only supported URI schemes are context, resource, and file.  The context and resource schemes refer to the contents of the war file; you will almost certainly want to use a file-based URI here.  For example, if your application will be stored at /var/www/reader, then you would enter file:///var/www/reader as the SearchHandler's lux.baseUri.
-3. Copy the file lux-application.xml from lux-appserver/contexts-available to lux-appserver/contexts.  Note: this is a standard Jetty configuration file, so you can use any appropriate Jetty IOC-style configuration here.  But the only required steps are:
-    1. Set contextPath to the path of your application (in the example above: /library1/reader).
-    2. Set resourceBase to the same path you used for lux.baseUri above
-4. Restart lux.  Your new application should now be available.  Any files with an ".xq\*" extension (ie: .xqy, .xq, .xqm, .xquery, .xqpaloozaFest1999, etc.) will be loaded by Lux and evaluated, with output serialized and returned as HTML.  All other files will be served without any processing.
+   3. Edit the contents of the <code>&lt;str name="lux.baseUri"></code> element, replacing the default value of `context:/lux` with the (file-based) URI where your application's source files will reside.  For example, if your application will be stored at `/var/www/reader`, then you would enter `file:///var/www/reader` as the SearchHandler's `lux.baseUri`.
+3. Copy the file `lux-application.xml` from `lux-appserver/contexts-available` to `lux-appserver/contexts`.  Note: this is a standard Jetty configuration file, so you can use any appropriate Jetty IOC-style configuration here.  But the only required steps are:
+    1. Set `contextPath` to the path of your application (in the example above: `/library1/reader`).
+    2. Set `resourceBase` to the same path you used for `lux.baseUri` above
+4. Restart lux.  Your new application should now be available.  Any files with an ".xq\*" extension (ie: `.xqy`, `.xq`, `.xqm`, `.xquery`, `.xqpaloozaFest1999`, etc.) will be loaded by Lux and evaluated, with output serialized and returned as HTML.  All other files will be served without any processing.
 
-*** Create XPath fields
+Note: the Lux demo application is bundled inside the Java war file (if you
+want to see the source code, you can extract it from there using an unzip
+tool, or go look in the source repository on github).
 
-*** load some documents
+### Create XPath fields
 
-**** using XQuery
+Lux will automatically index all element and attribute names, paths, and
+content using the built-in fields lux_path, lux_elt_text, and lux_att_text.
 
-**** using curl
+You can also define fields indexing specific XPath expressions. You can
+reference such fields in `order by` expressions (when single-valued), in
+explicit search queries using the Lucene syntax, and as the target of
+lux:field-values and lux:field-terms.  Soon, comparisons involving indexed
+paths will be optimized using the Lucene index, but this has not yet been
+implemented.
+
+To define an XPath field, edit the lux-update-chain definition stanza in
+solrconfig.xml, as in this example:
+    <lst name="fields">
+      <!--  define additional fields using XPath-->
+      <str name="title">/descendant::TITLE</str>
+      <str name="doctype_s">local-name(/*)</str>
+    </lst>
+The Solr field name, as defined in the `str/@name` attribute, must correspond to a field name or field name pattern defined in `schema.xml`.  To define a string-valued field, use a field name ending "_s". Integer- and long-valued fields are denoted by "_i" and "_l" suffixes, respectively.  Multiple XPaths separated by commas \(,\) are allowed.
+
+Once new fields have been defined, restart the Lux service.  All documents
+inserted after that point will be indexed by the new field.  Any existing
+documents will need to be reloaded in order to have the new field
+definition(s) applied to them.
+
+### Load some documents
+
+Your application will most likely require some data.  First, consider how best to structure your data.  Because Lux indexes documents, you will get the most benefit from the indexing optimizations when the things you search for are mostly documents, rather than elements within documents.
+
+You can insert documents using the REST API that Lux inherits from Solr, or
+using the Lux XQuery API.
+
+#### using XQuery
+
+#### Inserting documents using the REST API
+
+Solr's REST service accepts documents in a number of different formats; the XML format, documented on the (UpdateXmlMessages)[http://wiki.apache.org/solr/UpdateXmlMessages] page is probably the most convenient. That page also shows examples of using `curl` to post updates and other commands (such as commit) to solr.  You can use any HTTP-capable client, but curl is the most widely used command-line client, and is suitable for use in scripts.  There are also Solr clients available in many languages, including Java, .Net, Ruby, PHP, and Python.
+
+A document in Lucene/Solr is essentially a list of field names and values. 
+Lux requires two fields to be present in order to trigger its XML-aware
+indexing: lux_uri and lux_xml.  Documents in Lux are uniquely identified by lux_uri; their contents are stored in lux_xml, which must be a well-formed XML document.  When submitting documents via the REST API, field values are embedded in an XML document: the lux_xml field must therefore be escaped, or wrapped as CDATA, to protect its tagging from being interpreted as part of the enclosing structure.
+
+Here's an example, using curl, of inserting a simple document:
+
+       curl http://localhost:8080/solr/collection1/update? -H "Content-Type: text/xml" --data-binary @update.xml
+
+The contents of update.xml might look like this:
+
+    <update>
+      <add>
+        <doc>
+          <field name="lux_uri">/doc/hello.xhtml</field>
+          <field name="lux_xml">
+            <![CDATA[
+              <html>
+                <head><title>Hello, World</title></head>
+                <body>Hello, World!</body>
+              </html>
+            ]]>
+          </field>
+      </add>
+    </update>
 
 *** proxy the service using apache or nginx
 
