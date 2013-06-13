@@ -129,102 +129,101 @@ migrate from host to host.
 
 ### Set up an application
 
-The Lux demo application is bundled inside the Java war file (if you want
-to see the source code, you can extract it from there using an unzip tool,
-or go look in the source repository on github), but you can deploy your own
-applications as files.  To set up an external application, you need to edit
-soltconfig.xml, which is in the `solr/[corename]/conf` folder: each
-application folder must be configured for each core separately.
+It's pretty easy to deploy a web application using Lux. Just create a
+folder containing your XQuery, XSLT and supporting files, and then configure Lux to point at it.  You'll need to edit two configuration files. `solrconfig.xml`, which is in your Solr core's `conf` folder, tells Lux how to map URLs to your XQuery files.  In addition, you will need to create a context in Jetty configuration in order to include static assets (js, css, images, etc).
 
-1. In solrconfig.xml, find the request handler configuration element whose start tag is:
-   &lt;requestHandler name="/lux" class="solr.SearchHandler" id="lux">
+1. In `solrconfig.xml`, find the request handler configuration element whose start tag is:
+    <requestHandler name="/lux" class="solr.SearchHandler" id="lux">
+   It should be at the very end of the file.
 2. Make a copy of this element, and edit it as follows:
-   1. Change the value of the name attribute from /lux to the path where you want your application to be hosted.  If your core is called "library1," and you name your application "reader," then your application will be served at the url http://server.name:8080/library1/reader.
+   1. Change the value of the name attribute from /lux to the path where you want your application to be hosted.  If your core is called "library1," and you name your application "reader," then your application will be served at the url `http://server.name:8080/library1/reader`.
    2. Change the id to something unique, usually the same as the name, but without a leading slash.
-   3. Edit the contents of the <code>&lt;str name="lux.baseUri"></code> element, replacing the default value of context:/lux with the URI where your application's source files will reside.  The only supported URI schemes are context, resource, and file.  The context and resource schemes refer to the contents of the war file; you will almost certainly want to use a file-based URI here.  For example, If your application will be stored at /var/www/reader, then you would enter file:///var/www/reader as the SearchHandler's lux.baseUri.
-3. Copy the file lux-application.xml from lux-appserver/contexts-available to lux-appserver/contexts.  Note: this is a standard Jetty configuration file, so you can use any appropriate Jetty IOC-style configuration here.  But the only required steps are:
-    1. Set contextPath to the path of your application (in the example above: /library1/reader).
-    2. Set resourceBase to the same path you used for lux.baseUri above
-4. Restart lux.  Your new application should now be available.  Any files with an ".xq\*" extension (ie: .xqy, .xq, .xqm, .xquery, .xqpaloozaFest1999, etc.) will be loaded by Lux and evaluated, with output serialized and returned as HTML.  All other files will be served without any processing.
+   3. Edit the contents of the <code>&lt;str name="lux.baseUri"></code> element, replacing the default value of `context:/lux` with the (file-based) URI where your application's source files will reside.  For example, if your application will be stored at `/var/www/reader`, then you would enter `file:///var/www/reader` as the SearchHandler's `lux.baseUri`.
+3. Copy the file `lux-application.xml` from `lux-appserver/contexts-available` to `lux-appserver/contexts`.  Note: this is a standard Jetty configuration file, so you can use any appropriate Jetty IOC-style configuration here.  But the only required steps are:
+    1. Set `contextPath` to the path of your application (in the example above: `/library1/reader`).
+    2. Set `resourceBase` to the same path you used for `lux.baseUri` above
+4. Restart lux.  Your new application should now be available.  Any files with an ".xq\*" extension (ie: `.xqy`, `.xq`, `.xqm`, `.xquery`, `.xqpaloozaFest1999`, etc.) will be loaded by Lux and evaluated, with output serialized and returned as HTML.  All other files will be served without any processing.
+
+Note: the Lux demo application is bundled inside the Java war file (if you
+want to see the source code, you can extract it from there using an unzip
+tool, or go look in the source repository on github).
 
 ### Create XPath fields
 
-### load some documents
+Lux will automatically index all element and attribute names, paths, and
+content using the built-in fields lux_path, lux_elt_text, and lux_att_text.
 
-**** using XQuery
+You can also define fields indexing specific XPath expressions. You can
+reference such fields in `order by` expressions (when single-valued), in
+explicit search queries using the Lucene syntax, and as the target of
+lux:field-values and lux:field-terms.  Soon, comparisons involving indexed
+paths will be optimized using the Lucene index, but this has not yet been
+implemented.
 
-**** using curl
+To define an XPath field, edit the lux-update-chain definition stanza in
+solrconfig.xml, as in this example:
+    <lst name="fields">
+      <!--  define additional fields using XPath-->
+      <str name="title">/descendant::TITLE</str>
+      <str name="doctype_s">local-name(/*)</str>
+    </lst>
+The Solr field name, as defined in the `str/@name` attribute, must correspond to a field name or field name pattern defined in `schema.xml`.  To define a string-valued field, use a field name ending "_s". Integer- and long-valued fields are denoted by "_i" and "_l" suffixes, respectively.  Multiple XPaths separated by commas \(,\) are allowed.
 
-*** proxy the service using apache or nginx
+Once new fields have been defined, restart the Lux service.  All documents
+inserted after that point will be indexed by the new field.  Any existing
+documents will need to be reloaded in order to have the new field
+definition(s) applied to them.
 
-is configured to occupy the root context (/) on port 8080,
-with the webapp directory as the web app root folder. The Solr service is at /solr.
-Application files are set up to be read from the webapps/demo folder.
-The xrepo folder is configured as an EXPath repository from which the app server will 
-load EXPath modules.  These paths and ports are configurable by editing the lux.properties file.
+### Load some documents
 
-## Lux query service (integrate with existing Solr) ##
+Your application will most likely require some data.  First, consider how best to structure your data.  Because Lux indexes documents, you will get the most benefit from the indexing optimizations when the things you search for are mostly documents, rather than elements within documents.
 
-1. Download the library bundle as a [zip
-   file](http://luxdb.net/download/lux-0.5.zip) "Download Lux zip") or [tar
-   archive](http://luxdb.net/download/lux-0.5.tar.gz "Download Lux tar").
+You can insert documents using the REST API that Lux inherits from Solr, or
+using the Lux XQuery API.
 
-2. Unpack the download. Move or copy the contents of the lib folder (jar
-   files) into the solr/lib folder so as to add the libraries to your Solr
-   classpath.
+#### using XQuery
 
-3. Insert the contents of the conf/luxconfig.xml file into Solr's
-   configuration file: solrconfig.xml; just before the closing &lt;config> tag
-   is a good place.
+The lux:insert() function inserts a document into the active Solr core (or
+into an embedded Lucene index if you are using Lux as an extension to a
+Java program).  Following the Solr/Lucene persistence model, you must issue
+a lux:commit() in order for inserted documents to be committed to the index
+and made visible to future queries (note: this area is in flux.  We have an
+open issue to apply automatic commits, and also to delay committing until a
+query is complete in order to respect XQuery/XSLT semantics).
 
-4. In solrconfig.xml, insert the Lux update chain in the configuration
-   block for each update processor:
+But where will these documents come from?  You can read files using the
+doc() function with a "file:" URI.  You can use the provided EXPath HTTP
+extension module to read documents via HTTP.  Once you have the documents
+in memory, you can process them and then insert them to Lux.
 
-        <lst name="defaults">
-          <str name="update.chain">lux-update-chain</str>
-        </lst>
+#### Inserting documents using the REST API
 
-   For example, the configuration for the XmlUpdateRequestHandler should
-   look like:
+Solr's REST service accepts documents in a number of different formats; the XML format, documented on the (UpdateXmlMessages)[http://wiki.apache.org/solr/UpdateXmlMessages] page is probably the most convenient. That page also shows examples of using `curl` to post updates and other commands (such as commit) to solr.  You can use any HTTP-capable client, but curl is the most widely used command-line client, and is suitable for use in scripts.  There are also Solr clients available in many languages, including Java, .Net, Ruby, PHP, and Python.
 
-        <requestHandler name="/update" class="solr.XmlUpdateRequestHandler">
-          <lst name="defaults">
-            <str name="update.chain">lux-update-chain</str>
-          </lst>                  
-        </requestHandler>
+A document in Lucene/Solr is essentially a list of field names and values. 
+Lux requires two fields to be present in order to trigger its XML-aware
+indexing: lux_uri and lux_xml.  Documents in Lux are uniquely identified by lux_uri; their contents are stored in lux_xml, which must be a well-formed XML document.  When submitting documents via the REST API, field values are embedded in an XML document: the lux_xml field must therefore be escaped, or wrapped as CDATA, to protect its tagging from being interpreted as part of the enclosing structure.
 
-   Also insert the Lux update chain into the configuration for
-   solr.BinaryUpdateRequestHandler, solr.CSVRequestHandler and
-   solr.JsonRequestHandler, or whichever update handler you will be
-   using.  You can refer to the provided solrconfig.xml file for an
-   example of what this should look like.
+Here's an example, using curl, of inserting a simple document:
 
-4. Lux requires that a unique string-valued key be defined. If no such field
-   exists, add the following to the schema:
+       curl http://localhost:8080/solr/collection1/update? -H "Content-Type: text/xml" --data-binary @update.xml
 
-        <field name="lux_uri" type="string" indexed="true" stored="true" multiValued="false"/>
-        <uniqueKey>lux_uri</uniqueKey>
-           
-   If a unique id field is already defined, you can configure Lux to use it by editing
-   the configuration element <code>&lt;updateRequestProcessorChain name="lux-update-chain"></code>
-   in solrconfig.xml.
+The contents of update.xml might look like this:
 
-   Lux will automatically register all the other fields it needs.  Their names all begin with "lux_", so it
-   should not usually be necessary to rename them, but it is possible to do so using configuration in solrconfog.xml.
-   Also, if you are already storing the complete text of your XML documents in Solr/Lucene, you may wish to instruct 
-   Lux to use your existing field, rather than registering its own (by default: lux_xml).  This will avoid storing each
-   document twice.
-
-5. Restart Solr.  Watch the Solr logs to make sure there are no errors.
-   You may see ClassNotFoundException.  If you do, that probably means the
-   jars are not in the right folder: you may need to read up about Solr
-   configuration: see above for a link.
-
-   Now you have an RESTful XQuery service with automatic node and full text indexes and a search capability.  
-   You can insert XML documents using the standard Solr mechanisms, and they will 
-   automatically be indexed for fast retrieval using XQuery. You can send XQuery requests to it via HTTP, and receive
-   responses using one of Solr's standard response writers, which wrap your results in one way or another, or
-   you can use the LuxResponseWriter, which serializes the results directly as the response.
+    <update>
+      <add>
+        <doc>
+          <field name="lux_uri">/doc/hello.xhtml</field>
+          <field name="lux_xml">
+            <![CDATA[
+              <html>
+                <head><title>Hello, World</title></head>
+                <body>Hello, World!</body>
+              </html>
+            ]]>
+          </field>
+      </add>
+    </update>
 
 ## Linux service setup
 
@@ -255,9 +254,9 @@ server is configured to initialize the package manager, and will load any
 modules in the EXPath repository.  It comes with two modules installed: an
 HTTP client and a Zip file access module.
 
-If you install the Lux library into a pre-existing environment, and you
-also want to make use of EXPath modules, you need to add the EXPath (for
-Saxon) package manager jars to your classpath, create an EXPath repository,
+If you use the Lux library in some other environment, and you also want to
+make use of EXPath modules, you would need to add the EXPath (for Saxon)
+package manager jars to your classpath, create an EXPath repository,
 install the extension jars to that repository, and install the extensions
 you want into the repository.  The EXPath jars are available from the
 EXPath site, and are also distributed as part of the Lux app server bundle.
@@ -274,5 +273,6 @@ build the various artifacts.  "mvn assembly:single" builds distribution bundles.
 
 ## Maven distribution ##
 
-The Lux library is also available from Maven central using the groupID
-"org.luxdb" and the artifactId "lux".
+Java developers wishing to embed Lux may depend on the Lux library using
+Maven dependency declarations.  It is available on Maven central using the
+groupID "org.luxdb" and the artifactId "lux".

@@ -122,3 +122,9 @@ Possibly support update triggers that run XQuery/XSLT, or incorporate XProc
 
 It would be nice to add more advanced editing capabilities, including
 syntax highlighting, syntax checking, and term completion.
+
+## Reindexing
+
+We should provide either a manual, or an automatic reindexing capability so
+that when field definitions change, we can apply them to existing documents
+without the need to reload.
