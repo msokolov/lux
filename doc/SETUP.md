@@ -141,15 +141,15 @@ application folder must be configured for each core separately.
 2. Make a copy of this element, and edit it as follows:
    1. Change the value of the name attribute from /lux to the path where you want your application to be hosted.  If your core is called "library1," and you name your application "reader," then your application will be served at the url http://server.name:8080/library1/reader.
    2. Change the id to something unique, usually the same as the name, but without a leading slash.
-   3. Edit the contents of the <code>&lt;str name="lux.baseUri"></code> element, replacing the default value of context:/lux with the URI where your application's source files will reside.  The only supported URI schemes are context, resource, and file.  The context and resource schemes refer to the contents of the war file; you will almost certainly want to use a file-based URI here.  For example, if your application will be stored at /var/www/reader, then you would enter file:///var/www/reader as the SearchHandler's lux.baseUri.
+   3. Edit the contents of the <code>&lt;str name="lux.baseUri"></code> element, replacing the default value of context:/lux with the URI where your application's source files will reside.  The only supported URI schemes are context, resource, and file.  The context and resource schemes refer to the contents of the war file; you will almost certainly want to use a file-based URI here.  For example, If your application will be stored at /var/www/reader, then you would enter file:///var/www/reader as the SearchHandler's lux.baseUri.
 3. Copy the file lux-application.xml from lux-appserver/contexts-available to lux-appserver/contexts.  Note: this is a standard Jetty configuration file, so you can use any appropriate Jetty IOC-style configuration here.  But the only required steps are:
     1. Set contextPath to the path of your application (in the example above: /library1/reader).
     2. Set resourceBase to the same path you used for lux.baseUri above
 4. Restart lux.  Your new application should now be available.  Any files with an ".xq\*" extension (ie: .xqy, .xq, .xqm, .xquery, .xqpaloozaFest1999, etc.) will be loaded by Lux and evaluated, with output serialized and returned as HTML.  All other files will be served without any processing.
 
-*** Create XPath fields
+### Create XPath fields
 
-*** load some documents
+### load some documents
 
 **** using XQuery
 
