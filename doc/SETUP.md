@@ -133,7 +133,7 @@ It's pretty easy to deploy a web application using Lux. Just create a
 folder containing your XQuery, XSLT and supporting files, and then configure Lux to point at it.  You'll need to edit two configuration files. `solrconfig.xml`, which is in your Solr core's `conf` folder, tells Lux how to map URLs to your XQuery files.  In addition, you will need to create a context in Jetty configuration in order to include static assets (js, css, images, etc).
 
 1. In `solrconfig.xml`, find the request handler configuration element whose start tag is:
-    <requestHandler name="/lux" class="solr.SearchHandler" id="lux">
+    &lt;requestHandler name="/lux" class="solr.SearchHandler" id="lux">
    It should be at the very end of the file.
 2. Make a copy of this element, and edit it as follows:
    1. Change the value of the name attribute from /lux to the path where you want your application to be hosted.  If your core is called "library1," and you name your application "reader," then your application will be served at the url `http://server.name:8080/library1/reader`.
@@ -198,7 +198,7 @@ in memory, you can process them and then insert them to Lux.
 
 #### Inserting documents using the REST API
 
-Solr's REST service accepts documents in a number of different formats; the XML format, documented on the (UpdateXmlMessages)[http://wiki.apache.org/solr/UpdateXmlMessages] page is probably the most convenient. That page also shows examples of using `curl` to post updates and other commands (such as commit) to solr.  You can use any HTTP-capable client, but curl is the most widely used command-line client, and is suitable for use in scripts.  There are also Solr clients available in many languages, including Java, .Net, Ruby, PHP, and Python.
+Solr's REST service accepts documents in a number of different formats; the XML format, documented on the [http://wiki.apache.org/solr/UpdateXmlMessages](UpdateXmlMessages) page is probably the most convenient. That page also shows examples of using `curl` to post updates and other commands (such as commit) to solr.  You can use any HTTP-capable client, but curl is the most widely used command-line client, and is suitable for use in scripts.  There are also Solr clients available in many languages, including Java, .Net, Ruby, PHP, and Python.
 
 A document in Lucene/Solr is essentially a list of field names and values. 
 Lux requires two fields to be present in order to trigger its XML-aware
