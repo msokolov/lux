@@ -11,8 +11,7 @@ or workarounds where available.
 
 #### Where is the mailing list / discussion group?
 
-Uh -- there is none.  We'll get there!  For now, just send mail to
-info@luxdb.org.
+luxdb@luxdb.org -- it forwards to a google group luxdb@googlegroups.com which is [archived here](https://groups.google.com/forum/?fromgroups#!forum/luxdb).  You will need to join the "group" in order to post.  With a gmail address it is obvious how; you can also sign up with a non-google email address by tacking your email address on to this URL: `http://groups.google.com/group/luxdb/boxsubscribe?email=`.
 
 #### Can Lux manage its XML fields alongside other (normal) Solr fields?
 
@@ -100,6 +99,14 @@ object, which in turn supplies Lux's optimizer and function library.
 However Saxon-PE/EE have their own Configurations, which cannot be replaced
 without losing PE/EE licensed functionality.
 
+#### What should I do with my 10GB XML document?
+
+You will find that you get better performance if you break your large files into smaller components when indexing them.  The index is optimized for a very large number of smaller documents: its entire function is to make it very fast to find a document. If you only have a small number of very large documents, then you won't be getting any advantage from the index.
+
+There is an [open issue](http://issues.luxdb.org/browse/LUX-3) calling for internal fragmentation that aims to make it easier to work with very large documents, but at the moment it is up to you to fragment documents when you load them.  You can do this using XSLT, for example, either within Lux or otherwise.
+
+In any case when working with large XML files, you need to take care to allocate sufficient heap space for an entire document to be loaded into memory.
+
 #### What is the Lux security model? ####
 
 Currently there is no security model for Lux; applications using Lux may
@@ -113,4 +120,3 @@ administrative use.  However in order to deploy a public-facing web
 application using Lux, it is strongly advised to host the service behind a
 proxy that allows access only to the app server urls (/lux in the supplied
 configuration) and shields all of the other Solr service points.
-

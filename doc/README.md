@@ -231,7 +231,7 @@ contributions along these lines will be welcome.
 
 ### Enhancements
 
-Please see the [PLANS.md](Plans) page for more about future plans for Lux
+Please see the [Plans](PLANS.md) page for more about future plans for Lux
 development.
 
 ## Acknowledgements ##

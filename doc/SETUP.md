@@ -13,7 +13,7 @@ server, as well as how to integrate Lux into an existing Solr installation.
 Lux is distributed as a compiled library which is ready to be dropped into
 an existing Solr installation, and as a complete application server bundle,
 including Solr and all of its dependencies.  The complete source code is
-also available at [https://github.com/msokolov/lux](GitHub).  
+also available at [GitHub](https://github.com/msokolov/lux).  
 
 When the library is installed in the context of a Solr installation it
 provides an XQuery REST service.  This will be most useful for those
@@ -27,7 +27,7 @@ in Solr/Lucene.
 
 ## Standalone Lux app server (w/Solr embedded) ##
 
-1. [http://luxdb.org/Download.html](Download) the complete server bundle.
+1. [Download](http://luxdb.org/Download.html) the complete server bundle.
 
    This download includes the Lux application server, Solr, Saxon and all
    of their required dependencies.  Please see THIRDPARTYLICENSES.md for a
@@ -198,7 +198,7 @@ in memory, you can process them and then insert them to Lux.
 
 #### Inserting documents using the REST API
 
-Solr's REST service accepts documents in a number of different formats; the XML format, documented on the [http://wiki.apache.org/solr/UpdateXmlMessages](UpdateXmlMessages) page is probably the most convenient. That page also shows examples of using `curl` to post updates and other commands (such as commit) to solr.  You can use any HTTP-capable client, but curl is the most widely used command-line client, and is suitable for use in scripts.  There are also Solr clients available in many languages, including Java, .Net, Ruby, PHP, and Python.
+Solr's REST service accepts documents in a number of different formats; the XML format, documented on the [UpdateXmlMessages](http://wiki.apache.org/solr/UpdateXmlMessages) page is probably the most convenient. That page also shows examples of using `curl` to post updates and other commands (such as commit) to solr.  You can use any HTTP-capable client, but curl is the most widely used command-line client, and is suitable for use in scripts.  There are also Solr clients available in many languages, including Java, .Net, Ruby, PHP, and Python.
 
 A document in Lucene/Solr is essentially a list of field names and values. 
 Lux requires two fields to be present in order to trigger its XML-aware
