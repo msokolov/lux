@@ -76,6 +76,8 @@ original query.  In addition to XQTS, Lux contains a battery of its own
 tests (which are available as part of the source distribution) that help
 ensure correct results.
 
+Build Status:  +[![build status](https://secure.travis-ci.org/symfony2admingenerator/AdmingeneratorGeneratorBundle.png)](http://travis-ci.org/symfony2admingenerator/AdmingeneratorGeneratorBundle) 
+
 ## Performance ##
 
 Query performance varies depending on the query, and the data, and the environment,
