@@ -13,7 +13,7 @@ The Lux app server bundle is a complete server bundle, including Jetty.  It
 does require a working Java installation.  It will probably work with a
 recent OpenJDK JVM, but has only been tested with Oracle/Sun JVMs.
 
-* [Lux app server 0.9.1, bzip](dist/lux-appserver-0.9.1-bin.tar.bz)
+* [Lux app server 0.9.1, bzip](dist/lux-appserver-0.9.1-bin.tar.bz2)
 * [Lux app server 0.9.1, gzip](dist/lux-appserver-0.9.1-bin.tar.gz)
 * [Lux app server 0.9.1, zip](dist/lux-appserver-0.9.1-bin.zip)
 
