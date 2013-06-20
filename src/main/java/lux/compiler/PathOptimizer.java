@@ -91,9 +91,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private final String attrQNameField;
     private final String elementQNameField;
     private boolean optimizeForOrderedResults;
+    private Logger log;
 
     private static final boolean DEBUG = false;
-
+    
     public PathOptimizer(IndexConfiguration indexConfig) {
         queryStack = new ArrayList<XPathQuery>();
         varBindings = new HashMap<QName, VarBinding>();
@@ -102,6 +103,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
         elementQNameField = indexConfig.getFieldName(FieldName.ELT_QNAME);
         optimizeForOrderedResults = true;
+        log = LoggerFactory.getLogger(PathOptimizer.class);
+
     }
 
     /**
@@ -319,10 +322,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         XPathQuery rq = pop();
         XPathQuery lq = pop();
-        Logger log = LoggerFactory.getLogger(PathOptimizer.class);
-        log.debug("lhs: {} rhs: {}", lq, rq);
+        if (DEBUG) {
+        	log.debug("lhs: {} rhs: {}", lq, rq);
+        }
         XPathQuery query = combineAdjacentQueries(pathExpr.getLHS(), pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
-        log.debug("combined: {}", query);
+        if (DEBUG) {
+        	log.debug("combined: {}", query);
+        }
         push(query);
         return pathExpr;
     }
@@ -339,8 +345,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
 		predicate.setFilter(optimizeExpression(filter, peek()));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
-        Logger log = LoggerFactory.getLogger(PathOptimizer.class);
-        log.debug("base: {} [ {} ]", baseQuery, filterQuery);
+        if (DEBUG) {
+        	Logger log = LoggerFactory.getLogger(PathOptimizer.class);
+        	log.debug("base: {} [ {} ]", baseQuery, filterQuery);
+        }
 
         // In a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C
         // and from A[B[C]/D]/E we want A/B/C AND A/B/D and A/E
@@ -352,8 +360,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), filter, baseQuery, filterQuery,
                 ResultOrientation.LEFT);
         XPathQuery contextQuery = baseQuery.getBaseQuery() == null ? baseQuery : baseQuery.getBaseQuery();
-        log.debug("combined: {}", query);
-        log.debug("context: {}", contextQuery);
+        if (DEBUG) {
+        	log.debug("combined: {}", query);
+        	log.debug("context: {}", contextQuery);
+        }
         query.setBaseQuery(contextQuery);
         push(query);
         optimizeComparison(predicate);
@@ -611,7 +621,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                         sortType = fieldDefinition.getType().getLuceneSortFieldType();
                     } else {
                         sortType = FieldDefinition.Type.STRING.getLuceneSortFieldType();
-                        LoggerFactory.getLogger(PathOptimizer.class).warn("Sorting by unknown field: {}", fieldName);
+                        log.warn("Sorting by unknown field: {}", fieldName);
                     }
                     peek().setSortFields(new SortField[] { new SortField(fieldName, sortType) });
                 }
