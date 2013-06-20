@@ -1,6 +1,7 @@
 package lux.functions;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import lux.Evaluator;
 import lux.xpath.FunCall;
@@ -107,7 +108,7 @@ public class FieldValues extends ExtensionFunctionDefinition {
             Evaluator eval = SearchBase.getEvaluator(context);
             Document doc ;
             try {
-                doc = eval.getSearcher().doc((int) docID);
+                doc = eval.getSearcher().doc((int) docID, Collections.singleton(fieldName));
             }  catch (IOException e) {
                 throw new XPathException(e);
             }

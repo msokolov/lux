@@ -606,8 +606,13 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testFieldValuesComparison () throws Exception {
-    	String query = "collection()[lux:field-values('doctype')='SCENE']/descendant::SPEECH[1]/SPEAKER";
+    	// FIXME: we should be able to eliminate the predicate from these after generating
+    	// the equivalent query, and the second should be countable without retrieving any docs
+    	String query = "collection()[lux:field-values('doctype')='SCENE'][1]/descendant::SPEECH[1]/SPEAKER/string()";
+    	// there are 20 scenes in Hamlet, but we only need to pull the first one for this query
     	assertSearch ("BERNARDO", query, null, 1);
+    	query = "count(collection()[lux:field-values('doctype')='SCENE'])";
+    	assertSearch ("20", query, null, 20);
     }
 
     @Test

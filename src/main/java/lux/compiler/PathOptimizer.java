@@ -877,7 +877,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 return;
             }
         } else if (filter.getType() == Type.FUNCTION_CALL) {
-            if (!((FunCall) filter).getName().equals(FunCall.FN_CONTAINS)) {
+        	FunCall funcall = (FunCall) filter;
+            if (! (funcall.getName().equals(FunCall.FN_CONTAINS))) {
                 return;
             }
         } else {
@@ -900,40 +901,56 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // of the predicate.
             last = predicate.getBase().getLastContextStep();
         }
+        String v = value.getValue().toString();
         if (last.getType() == Type.PATH_STEP) {
-            String v = value.getValue().toString();
+        	ParseableQuery termQuery = null;
             if (filter.getType() == Type.FUNCTION_CALL) {
                 if (v.matches("\\w+")) {
                     // when optimizing contains(), we have to do a wildcard
                     // query;
                     // we can only do this if the term contains only word
                     // characters
-                    createTermQuery((PathStep) last, path, "*" + v + "*");
+                    termQuery = createTermQuery((PathStep) last, path, "*" + v + "*");
                 }
             } else {
-                createTermQuery((PathStep) last, path, v);
+                termQuery = createTermQuery((PathStep) last, path, v);
             }
+            if (termQuery != null) {
+            	combineTermQuery (termQuery, ((PathStep) last).getNodeTest().getType());
+            }
+        }
+        if (last.getType() == Type.FUNCTION_CALL) {
+        	FunCall funcall = (FunCall) last;
+        	if (funcall.getName().equals(FunCall.LUX_FIELD_VALUES)) {
+        		AbstractExpression arg = last.getSubs()[0];
+        		if (arg instanceof LiteralExpression) {
+        			String fieldName = ((LiteralExpression) arg).getValue().toString();
+        			ParseableQuery termQuery = new TermPQuery (new Term(fieldName, v));
+        			combineTermQuery (termQuery, ValueType.VALUE);
+        		}
+        	}
         }
     }
 
-    private void createTermQuery(PathStep context, AbstractExpression path, String value) {
+    private ParseableQuery createTermQuery(PathStep context, AbstractExpression path, String value) {
         NodeTest nodeTest = context.getNodeTest();
         QName nodeName = nodeTest.getQName();
-        ParseableQuery termQuery = null;
         if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {
-            termQuery = makeTextQuery(value, indexConfig);
+            return makeTextQuery(value, indexConfig);
         } else if (nodeTest.getType() == ValueType.ELEMENT) {
-            termQuery = makeElementValueQuery(nodeName, value, indexConfig);
+            return makeElementValueQuery(nodeName, value, indexConfig);
         } else if (nodeTest.getType() == ValueType.ATTRIBUTE) {
-            termQuery = makeAttributeValueQuery(nodeName, value, indexConfig);
+            return makeAttributeValueQuery(nodeName, value, indexConfig);
         }
-        if (termQuery != null) {
-            XPathQuery tq = XPathQuery.getQuery(termQuery, MINIMAL, nodeTest.getType(), indexConfig, null);
-            XPathQuery q = pop();
-            XPathQuery combined = combineQueries(tq, Occur.MUST, q, q.getResultType());
-            combined.setBaseQuery (q.getBaseQuery());
-            push(combined);
-        }
+        return null;
+    }
+    
+    private void combineTermQuery (ParseableQuery termQuery, ValueType termType) {
+        XPathQuery tq = XPathQuery.getQuery(termQuery, MINIMAL, termType, indexConfig, null);
+        XPathQuery q = pop();
+        XPathQuery combined = combineQueries(tq, Occur.MUST, q, q.getResultType());
+        combined.setBaseQuery (q.getBaseQuery());
+        push(combined);
     }
 
     public static NodeTextQuery makeElementValueQuery(QName qname, String value, IndexConfiguration config) {
