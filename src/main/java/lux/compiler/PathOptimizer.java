@@ -319,11 +319,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         XPathQuery rq = pop();
         XPathQuery lq = pop();
-        AbstractExpression lhs = pathExpr.getLHS();
-
         Logger log = LoggerFactory.getLogger(PathOptimizer.class);
         log.debug("lhs: {} rhs: {}", lq, rq);
-        XPathQuery query = combineAdjacentQueries(lhs, pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
+        XPathQuery query = combineAdjacentQueries(pathExpr.getLHS(), pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
         log.debug("combined: {}", query);
         push(query);
         return pathExpr;
@@ -347,7 +345,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // In a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C
         // and from A[B[C]/D]/E we want A/B/C AND A/B/D and A/E
         // so leave the combined query on the stack, but save the base query for
-        // path combination
+        // path combination, so:
+        
+        // the query for a predicate is a query that matches the combination of base and filter,
+        // and has a baseQuery that matches only the base
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), filter, baseQuery, filterQuery,
                 ResultOrientation.LEFT);
         XPathQuery contextQuery = baseQuery.getBaseQuery() == null ? baseQuery : baseQuery.getBaseQuery();
@@ -411,19 +412,35 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
         }
         ValueType resultType = (orient == ResultOrientation.RIGHT) ? rq.getResultType() : lq.getResultType();
-        XPathQuery baseQuery = lq.getBaseQuery();
         if (rSlop != null && lSlop != null) {
+        	XPathQuery bq = combineBaseQueries (lq, rq);
             // total slop is the distance between the two path components.
-        	if (baseQuery != null) {
-                query = baseQuery.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
+        	if (lq.getBaseQuery() != null) {
+        		// the path relation is between baseQuery and rq
+        		// for example, baseQuery[lq]/rq
+                query = lq.getBaseQuery().combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
                 query = combineQueries(lq, Occur.MUST, query, query.getResultType());
         	} else {
                 query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
         	}
+            query.setBaseQuery(bq);
         } else {
             query = combineQueries(lq, Occur.MUST, rq, resultType);
         }
         return query;
+    }
+    
+    // AND the base-queries of the two queries, retaining the result type of q1
+    private XPathQuery combineBaseQueries (XPathQuery q1, XPathQuery q2) {
+    	XPathQuery base1 = q1.getBaseQuery();
+    	XPathQuery base2 = q2.getBaseQuery();
+    	if (base1 == null) {
+    		return base2;
+    	}
+    	if (base2 == null) {
+    		return base1;
+    	}
+    	return base1.combineBooleanQueries(Occur.MUST, base2, Occur.MUST, base1.getResultType(), indexConfig);
     }
 
     @Override
@@ -901,10 +918,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
             termQuery = makeAttributeValueQuery(nodeName, value, indexConfig);
         }
         if (termQuery != null) {
-            XPathQuery query = XPathQuery.getQuery(termQuery, MINIMAL, nodeTest.getType(), indexConfig, null);
-            XPathQuery baseQuery = pop();
-            query = combineQueries(query, Occur.MUST, baseQuery, baseQuery.getResultType());
-            push(query);
+            XPathQuery tq = XPathQuery.getQuery(termQuery, MINIMAL, nodeTest.getType(), indexConfig, null);
+            XPathQuery q = pop();
+            XPathQuery combined = combineQueries(tq, Occur.MUST, q, q.getResultType());
+            combined.setBaseQuery (q.getBaseQuery());
+            push(combined);
         }
     }
 
@@ -1123,19 +1141,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 QName varName = ((VariableBindingClause) clause).getVariable().getQName();
                 descopeVariable(varName);
             }
+            XPathQuery returnq = pop(); // get top two queries
+            XPathQuery clauseq = pop();
             if (clause instanceof LetClause) {
-                XPathQuery top = pop(); // get top two queries
-                XPathQuery letQuery = pop();
                 // the let query will have been marked as ignorable, but in this
                 // context it is not.
-                letQuery.setFact(IGNORABLE, false);
+            	clauseq.setFact(IGNORABLE, false);
                 // merge into let query (leave the top query alone - don't
                 // combine let-constraints with it)
-                letQuery = combineQueries(letQuery, Occur.MUST, top, letQuery.getResultType());
-                clause.setSequence(optimizeExpression(seq, letQuery));
-                push(top); // restore accumulating return query to top of stack
+                XPathQuery q = combineQueries(clauseq, Occur.MUST, returnq, clauseq.getResultType());
+                clause.setSequence(optimizeExpression(seq, q));
+                push(returnq); // restore accumulating return query to top of stack
             } else {
-                combineTopQueries(2, Occur.MUST);
+            	XPathQuery q = combineQueries (clauseq, Occur.MUST, returnq, returnq.getResultType());
+            	q.setBaseQuery(combineBaseQueries(returnq, clauseq));
+            	push (q);
             }
             if (clause instanceof ForClause) {
                 clause.setSequence(optimizeExpression(seq, peek()));

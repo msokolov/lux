@@ -313,13 +313,13 @@ public class BasicQueryTest {
     
     @Test public void testOrderBy () throws Exception {
         String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc";
-        assertQuery (query, MINIMAL, ValueType.VALUE, Q.ACT);
+        assertQuery (query, MINIMAL, ValueType.ELEMENT, Q.ACT);
         assertSortKeys (query, "sortkey");
     }
     
     @Test public void testOrderByContextArgument () throws Exception {
         String query = "for $doc in //ACT order by lux:field-values('sortkey', $doc) return $doc";
-        assertQuery (query, MINIMAL, ValueType.VALUE, Q.ACT);
+        assertQuery (query, MINIMAL, ValueType.ELEMENT, Q.ACT);
         assertSortKeys (query, "sortkey");
     }
 
@@ -333,7 +333,7 @@ public class BasicQueryTest {
     public void testOrderBy2Keys () throws Exception {
         // two indexed sortkeys
         String query = "for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc";
-        assertQuery (query, MINIMAL, ValueType.VALUE, Q.ACT);
+        assertQuery (query, MINIMAL, ValueType.ELEMENT, Q.ACT);
         assertSortKeys (query, "sortkey,sk2");
     }
     

@@ -451,6 +451,11 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("MARCELLUS", "for $doc in /SPEECH[LINE='Holla! Bernardo!'] return $doc/SPEAKER/string()", null, 1, 1);
     }
     
+    @Test
+    public void testEmptyReturn() throws Exception {
+        assertSearch (null, "for $doc in /SPEECH[LINE='Holla! Bernardo!'] return $doc/UNKNOWN/string()", null, 0, 0);
+    }
+    
     @Test 
     public void testBugFix0018b() throws Exception {
         assertSearch (HAMLET_TITLE_MARKUP, "lux:search(\"*:*\")[2]", null, 1, 1);
@@ -598,7 +603,19 @@ public class SearchTest extends BaseSearchTest {
         String query = "(for $doc at $i in collection() where $doc/SCENE return $i)[1]";
         assertSearch ("44", query, null, 44);
     }
+    
+    @Test
+    public void testFieldValuesComparison () throws Exception {
+    	String query = "collection()[lux:field-values('doctype')='SCENE']/descendant::SPEECH[1]/SPEAKER";
+    	assertSearch ("BERNARDO", query, null, 1);
+    }
 
+    @Test
+    public void testPredicateChain() throws Exception {
+    	String query = "count(//ACT[1]/SCENE[2]/SPEECH[3]/SPEAKER)";
+    	assertSearch ("6", query, null, 6);
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

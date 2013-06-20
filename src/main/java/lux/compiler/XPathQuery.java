@@ -238,15 +238,6 @@ public class XPathQuery {
         SortField[] combinedSorts = combineSortFields(precursor);
         XPathQuery q = new XPathQuery(result, resultFacts, type);
         q.setSortFields(combinedSorts);
-        if (baseQuery != null) {
-            if (precursor.getBaseQuery() != null) {
-                q.setBaseQuery(baseQuery.combineBooleanQueries(occur, precursor.getBaseQuery(), occur, baseQuery.getResultType(), config));
-            } else {
-                q.setBaseQuery(baseQuery);
-            }
-        } else if (precursor.getBaseQuery() != null) {
-            q.setBaseQuery(precursor.getBaseQuery());
-        }
         return q;
     }
 
@@ -284,11 +275,6 @@ public class XPathQuery {
     
     private static ParseableQuery combineSpans (ParseableQuery a, Occur occur, ParseableQuery b, int distance) {
 
-        // distance == 0 means the two queries are adjacent
-        if (distance == 0) {
-            return combineFiniteSpan(a, occur, b, distance);
-        }
-
         // don't create a span query for //foo; a single term is enough
         // distance < 0 means no distance could be computed
         if (a instanceof SpanMatchAll && occur != Occur.MUST_NOT && (distance > 90 || distance < 0)) {
@@ -303,7 +289,7 @@ public class XPathQuery {
             }
             return a;
         }
-        if (distance > 0) {
+        if (distance >= 0) {
             // there is a specific distance (path steps separate by /*/, say)
             return combineFiniteSpan(a, occur, b, distance);
         }
