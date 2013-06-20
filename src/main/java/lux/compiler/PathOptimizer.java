@@ -53,6 +53,7 @@ import lux.xquery.XQuery;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.SortField;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -319,7 +320,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery rq = pop();
         XPathQuery lq = pop();
         AbstractExpression lhs = pathExpr.getLHS();
+
+        Logger log = LoggerFactory.getLogger(PathOptimizer.class);
+        log.debug("lhs: {} rhs: {}", lq, rq);
         XPathQuery query = combineAdjacentQueries(lhs, pathExpr.getRHS(), lq, rq, ResultOrientation.RIGHT);
+        log.debug("combined: {}", query);
         push(query);
         return pathExpr;
     }
@@ -336,15 +341,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
 		predicate.setFilter(optimizeExpression(filter, peek()));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
+        Logger log = LoggerFactory.getLogger(PathOptimizer.class);
+        log.debug("base: {} [ {} ]", baseQuery, filterQuery);
 
         // In a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C
-        // !
         // and from A[B[C]/D]/E we want A/B/C AND A/B/D and A/E
         // so leave the combined query on the stack, but save the base query for
         // path combination
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), filter, baseQuery, filterQuery,
                 ResultOrientation.LEFT);
         XPathQuery contextQuery = baseQuery.getBaseQuery() == null ? baseQuery : baseQuery.getBaseQuery();
+        log.debug("combined: {}", query);
+        log.debug("context: {}", contextQuery);
         query.setBaseQuery(contextQuery);
         push(query);
         optimizeComparison(predicate);
@@ -406,13 +414,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery baseQuery = lq.getBaseQuery();
         if (rSlop != null && lSlop != null) {
             // total slop is the distance between the two path components.
-            XPathQuery base = baseQuery != null ? baseQuery : lq;
-            query = base.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
-            if (baseQuery != null) {
-                // when there is a base query (from a predicate), add lq as an
-                // additional constraint
+        	if (baseQuery != null) {
+                query = baseQuery.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
                 query = combineQueries(lq, Occur.MUST, query, query.getResultType());
-            }
+        	} else {
+                query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
+        	}
         } else {
             query = combineQueries(lq, Occur.MUST, rq, resultType);
         }
