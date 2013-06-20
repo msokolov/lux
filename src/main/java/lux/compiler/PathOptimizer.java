@@ -928,6 +928,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         			ParseableQuery termQuery = new TermPQuery (new Term(fieldName, v));
         			combineTermQuery (termQuery, ValueType.VALUE);
         		}
+        		if (last == path) {
+        			// if the entire predicate test is lux:field-values(...) == literal, we can replace it w/true()
+        			predicate.setFilter(new LiteralExpression (true));
+        			peek().setFact(SINGULAR, true);
+        		}
         	}
         }
     }

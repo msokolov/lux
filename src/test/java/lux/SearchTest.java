@@ -610,9 +610,9 @@ public class SearchTest extends BaseSearchTest {
     	// the equivalent query, and the second should be countable without retrieving any docs
     	String query = "collection()[lux:field-values('doctype')='SCENE'][1]/descendant::SPEECH[1]/SPEAKER/string()";
     	// there are 20 scenes in Hamlet, but we only need to pull the first one for this query
-    	assertSearch ("BERNARDO", query, null, 1);
+    	assertSearch ("BERNARDO", query, null, 1, 1);
     	query = "count(collection()[lux:field-values('doctype')='SCENE'])";
-    	assertSearch ("20", query, null, 20);
+    	assertSearch ("20", query, null, 20, 0);
     }
 
     @Test
