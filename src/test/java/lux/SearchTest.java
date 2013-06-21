@@ -598,6 +598,12 @@ public class SearchTest extends BaseSearchTest {
         String query = "(for $doc at $i in collection() where $doc/SCENE return $i)[1]";
         assertSearch ("44", query, null, 44);
     }
+    
+    @Test
+    public void testFieldValuesComparisonxxx () throws Exception {
+        String query = "collection()[lux:field-values('doctype')='SCENE'][1]/descendant::SPEAKER[1]";
+        assertSearch ("BERNARDO", query, null, 1);
+    }
 
 }
 
