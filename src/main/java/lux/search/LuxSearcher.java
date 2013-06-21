@@ -1,10 +1,8 @@
 package lux.search;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
