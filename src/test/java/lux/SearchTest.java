@@ -623,6 +623,12 @@ public class SearchTest extends BaseSearchTest {
     	assertSearch ("6", query, null, 6);
     }
     
+    @Test
+    public void testNestedPredicateComparison() throws Exception {
+        String query = "exists(/PLAY[ACT[SCENE/TITLE='SCENE IV.  The platform.']])";
+        assertSearch ("true", query, null, 1);
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
