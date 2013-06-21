@@ -56,9 +56,10 @@ public class AppServerComponent extends XQueryComponent {
                     // add trailing slash
                     baseUri = baseUri + '/';
                 }
-                if (baseUri.startsWith("/") || (File.separatorChar == '\\' && baseUri.matches("^[A-Z]:/.*$"))) {
+                if (baseUri.startsWith("/") || (File.separatorChar == '\\' && baseUri.matches("^[A-Za-z]:/.*$"))) {
                     baseUri = "file://" + baseUri;
                 }
+                System.out.println ("BASE URI = " + baseUri);
                 String resourceBase=null;
                 if (baseUri.startsWith (RESOURCE_SCHEME)) {
                     resourceBase = baseUri.substring(RESOURCE_SCHEME.length());
