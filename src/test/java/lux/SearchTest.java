@@ -599,6 +599,31 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("44", query, null, 44);
     }
 
+    @Test
+    public void testFieldValuesComparison () throws Exception {
+        String query = "collection()[lux:field-values('doctype')='SCENE'][1]/descendant::SPEECH[1]/SPEAKER/string()";
+        // there are 20 scenes in Hamlet, but we only need to pull the first one for this query
+        assertSearch ("BERNARDO", query, null, 1, 1);
+        
+        query = "collection()[lux:field-values('doctype')='SCENE'][1]/descendant::SPEAKER[1]/string()";
+        assertSearch ("BERNARDO", query, null, 1, 1);
+
+        query = "count(collection()[lux:field-values('doctype')='SCENE'])";
+        assertSearch ("20", query, null, 20, 0);
+    }
+
+    @Test
+    public void testPredicateChain() throws Exception {
+    	String query = "count(//ACT[1]/SCENE[2]/SPEECH[3]/SPEAKER)";
+    	assertSearch ("6", query, null, 6);
+    }
+    
+    @Test
+    public void testNestedPredicateComparison() throws Exception {
+        String query = "exists(/PLAY[ACT[SCENE/TITLE='SCENE IV.  The platform.']])";
+        assertSearch ("true", query, null, 1);
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

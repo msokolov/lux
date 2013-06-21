@@ -320,21 +320,24 @@ public class XPathQuery {
             throw new IllegalArgumentException ("unsupported boolean combination for span query: " + occur);
         }
         assert (! (a instanceof SpanBooleanPQuery && b instanceof SpanBooleanPQuery));
-        if (a instanceof SpanBooleanPQuery && ((SpanBooleanPQuery) a).getOccur() == Occur.MUST) {
+        if ((a instanceof SpanBooleanPQuery && ((SpanBooleanPQuery) a).getOccur() == Occur.MUST) ||
+                (b instanceof SpanBooleanPQuery && ((SpanBooleanPQuery) b).getOccur() == Occur.MUST)) {
             return combineBooleanWithSpan(a, b, distance);
-        } else if (b instanceof SpanBooleanPQuery && ((SpanBooleanPQuery) b).getOccur() == Occur.MUST) {
-            return combineBooleanWithSpan(b, a, distance);
         }
         return new SpanNearPQuery(distance, true, a, b);
     }
-
+    
     private static ParseableQuery combineBooleanWithSpan(ParseableQuery a, ParseableQuery b, int distance) {
         // ((A NEAR B) AND C) NEAR D => ((A NEAR B) AND (C NEAR D))
-        SpanBooleanPQuery abool = (SpanBooleanPQuery) a;
-        Clause[] clauses = new Clause [abool.getClauses().length];
-        System.arraycopy(abool.getClauses(), 0, clauses, 0, clauses.length);
+        SpanBooleanPQuery bq = (SpanBooleanPQuery) ((a instanceof SpanBooleanPQuery) ? a : b);
+        Clause[] clauses = new Clause [bq.getClauses().length];
+        System.arraycopy(bq.getClauses(), 0, clauses, 0, clauses.length);
         int i = clauses.length-1;
-        clauses[i] = new Clause (new SpanNearPQuery (distance, true, clauses[i].getQuery(), b), clauses[i].getOccur());
+        if (bq == a) {
+            clauses[i] = new Clause (new SpanNearPQuery (distance, true, clauses[i].getQuery(), b), clauses[i].getOccur());
+        } else {
+            clauses[i] = new Clause (new SpanNearPQuery (distance, true, a, clauses[i].getQuery()), clauses[i].getOccur());
+        }
         return new SpanBooleanPQuery (clauses);
     }
     
