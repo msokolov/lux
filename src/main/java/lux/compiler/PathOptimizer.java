@@ -14,8 +14,10 @@ import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
+import lux.query.BooleanPQuery;
 import lux.query.NodeTextQuery;
 import lux.query.ParseableQuery;
+import lux.query.RangePQuery;
 import lux.query.SpanTermPQuery;
 import lux.query.TermPQuery;
 import lux.xml.QName;
@@ -346,7 +348,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         if (DEBUG) {
-        	Logger log = LoggerFactory.getLogger(PathOptimizer.class);
         	log.debug("base: {} [ {} ]", baseQuery, filterQuery);
         }
 
@@ -804,14 +805,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         case ALE:
         case AGT:
         case AGE:
-            // atomic comparisons 
-        	if (lq.getResultType().isNode || rq.getResultType().isNode) {
-        		required = true;
-        		occur = Occur.MUST;
-        	}
-            resultType = ValueType.BOOLEAN;
-            break;
-            
         case EQUALS:
         case NE:
         case LT:
@@ -822,6 +815,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
         		required = true;
         		occur = Occur.MUST;
         	}
+            AbstractExpression optimized = optimizeRangeComparison (lq, rq, op);
+            if (optimized != null) {
+                // Replace this comparison with an equivalent indexed query; skip the generic 
+                // query combination below
+                return optimized;
+            }
         	resultType = ValueType.BOOLEAN;
             break;
 
@@ -862,6 +861,83 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return op;
     }
 
+    /** Attempt to replace the XQuery comparison with an equivalent indexed query.
+     * When optimization is possible, push the resulting query on the stack; otherwise 
+     * the stack is left unchanged, and it is the caller's responsibility to push something there.
+     * @param lq
+     * @param rq
+     * @param op
+     * @return when optimization is possible, return the literal value 'true()', otherwise null.
+     */
+    private AbstractExpression optimizeRangeComparison(XPathQuery lq, XPathQuery rq, BinaryOperation op) {
+        LiteralExpression value = null;
+        AbstractExpression op1 = op.getOperand1(), op2 = op.getOperand2(), expr = null;
+        /*
+         * TODO: handle variables
+        if (op1.getType() == Type.VARIABLE) {
+            VarBinding varBinding = varBindings.get(((Variable)op1).getQName());
+            op1 = varBinding.getExpr();
+            lq = varBinding.getQuery();
+        }
+        if (op2.getType() == Type.VARIABLE) {
+            VarBinding varBinding = varBindings.get(((Variable)op2).getQName());
+            op2 = varBinding.getExpr();
+            rq = varBinding.getQuery();
+        }
+        */
+        if (op1.getType() == Type.LITERAL) {
+            value = (LiteralExpression) op1;
+            expr = op2;
+        } else if (op2.getType() == Type.LITERAL) {
+            value = (LiteralExpression) op2;
+            expr = op1;
+        } else {
+            return null;
+        }
+        /*
+         // TODO: analyze the non-literal expression -- compare against its final path step  
+        AbstractExpression last = expr.getLastContextStep();
+            // TODO: handle comparisons that reference the context item
+        if (last.getType() == Type.DOT) {
+            last = getSuper().getLastContextStep(); // predicate.getBase() ...
+            return null;
+        }
+        */
+        String v = value.getValue().toString();
+        if (expr.getType() == Type.FUNCTION_CALL) {
+            FunCall funcall = (FunCall) expr;
+            if (funcall.getName().equals(FunCall.LUX_FIELD_VALUES)) {
+                AbstractExpression arg = funcall.getSubs()[0];
+                if (arg instanceof LiteralExpression) {
+                    String fieldName = ((LiteralExpression) arg).getValue().toString();
+                    ParseableQuery rangeQuery;
+                    switch (op.getOperator()) {
+                    case AEQ: case EQUALS:
+                        rangeQuery = new TermPQuery (new Term(fieldName, v)); break;
+                    case ANE: case NE:
+                        rangeQuery = new TermPQuery (new Term(fieldName, v)); 
+                        rangeQuery = new BooleanPQuery(Occur.MUST_NOT, rangeQuery);
+                        break;
+                    case ALE: case LE:
+                        rangeQuery = new RangePQuery (fieldName, "string", null, v, true, true); break;
+                    case ALT: case LT:
+                        rangeQuery = new RangePQuery (fieldName, "string", null, v, false, false); break;
+                    case AGE: case GE:
+                        rangeQuery = new RangePQuery (fieldName, "string", v, null, true, true); break;
+                    case AGT: case GT:
+                        rangeQuery = new RangePQuery (fieldName, "string", v, null, false, false); break;
+                    default:
+                        return null;
+                    }
+                    push (new XPathQuery(rangeQuery, MINIMAL|SINGULAR, ValueType.BOOLEAN));
+                    return LiteralExpression.TRUE;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
     private void optimizeComparison(Predicate predicate) {
         if (!indexConfig.isOption(INDEX_FULLTEXT)) {
             return;

@@ -32,6 +32,7 @@ public class LiteralExpression extends AbstractExpression {
 
     public static final LiteralExpression EMPTY = new LiteralExpression ("()", ValueType.EMPTY);
     public static final LiteralExpression ONE = new LiteralExpression (1L);
+    public static final LiteralExpression TRUE = new LiteralExpression (true);
     
     private static ValueType computeType (Object value) {
         if (value instanceof String) {

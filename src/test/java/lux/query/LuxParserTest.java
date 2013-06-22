@@ -1,18 +1,24 @@
 package lux.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+
 import lux.index.IndexConfiguration;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.query.parser.LuxQueryParser;
+import lux.query.parser.XmlQueryParser;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
@@ -37,6 +43,7 @@ public class LuxParserTest {
     private static final String LUX_PATH = "lux_path";
     
     private LuxQueryParser parser;
+    private XmlQueryParser xmlQueryParser;
     private IndexConfiguration indexConfig;
     
     @Before
@@ -44,6 +51,7 @@ public class LuxParserTest {
         indexConfig = IndexConfiguration.DEFAULT;
         parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
         parser.bindNamespacePrefix("ns", "nsuri");
+        xmlQueryParser = new XmlQueryParser("lux_text", new DefaultAnalyzer());
     }
     
     @Test
@@ -109,6 +117,12 @@ public class LuxParserTest {
         // attribute text query
         assertUnparseQuery ("lux_att_text:attribute\\:term", makeTermPQuery(LUX_ATT_TEXT, "attribute:term"));
         assertUnparseQuery ("<@attribute:term", new NodeTextQuery(new Term(LUX_ATT_TEXT, "term"), "attribute"));
+    }
+    
+    @Test
+    public void testTermQueryXml () throws Exception {
+        assertQueryXMLRoundtrip(makeTermQuery("field:term"), makeTermPQuery("field:term"));
+        assertQueryXMLRoundtrip(makeTermQuery("lux_elt_text", "element:term"), makeTermPQuery(LUX_ELT_TEXT, "element:term"));
     }
     
     @Test
@@ -259,9 +273,19 @@ public class LuxParserTest {
         assertUnparseQuery ("+lux_path:b +lux_text:dog", makeBooleanPQuery(Occur.MUST, makeSpanTermPQuery(LUX_PATH, "b"), makeSpanTermPQuery(LUX_TEXT, "dog")));
         // test booleans in a span - should throw a parse error
     }
+    
+    @Test
+    public void testParseRangeQuery () throws Exception {
+        // test two spans in a boolean
+        TermRangeQuery termRangeQuery = makeTermRangeQuery(LUX_PATH, "a", "b", true, true);
+        assertParseQuery (termRangeQuery, "lux_path:[a TO b]");
+        ParseableQuery termRangePQuery = makeTermRangePQuery(LUX_PATH, "a", "b", true, true);
+        assertUnparseQuery ("lux_path:[a TO b]", termRangePQuery);
+        assertQueryXMLRoundtrip (termRangeQuery, termRangePQuery);
+    }
 
     // query construction helpers:
-
+    
     public static TermQuery makeTermQuery (String text) {
         return makeTermQuery (LUX_TEXT, text);
     }
@@ -352,6 +376,18 @@ public class LuxParserTest {
         }
         return new SpanBooleanPQuery(Occur.SHOULD, clauses);
     }
+    
+    public static TermRangeQuery makeTermRangeQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {
+        return TermRangeQuery.newStringRange(field, lower, upper, includeUpper, includeLower);
+    }
+    
+    public static ParseableQuery makeTermRangePQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {
+        return new RangePQuery(field, "string", lower, upper, includeLower, includeUpper);
+    }
+
+    public static ParseableQuery makeNumericRangePQuery(String field, String type, String lower, String upper, boolean includeLower, boolean includeUpper) {
+        return new RangePQuery(field, type, lower, upper, includeLower, includeUpper);
+    }
 
     // assertions:
 
@@ -362,5 +398,12 @@ public class LuxParserTest {
     private void assertUnparseQuery(String expected, ParseableQuery q) {
         assertEquals (expected, q.toQueryString("lux_text", indexConfig));
     }
+
+    private void assertQueryXMLRoundtrip(Query termRangeQuery, ParseableQuery termRangePQuery) throws ParserException {
+        String xmlQuery = termRangePQuery.toXmlNode("lux_text", indexConfig).toString();
+        Query q = xmlQueryParser.parse(new ByteArrayInputStream (xmlQuery.getBytes()));
+        assertEquals (termRangeQuery, q);
+    }
+
     
 }

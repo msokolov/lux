@@ -620,15 +620,48 @@ public class SearchTest extends BaseSearchTest {
     @Test
     public void testPredicateChain() throws Exception {
     	String query = "count(//ACT[1]/SCENE[2]/SPEECH[3]/SPEAKER)";
-    	assertSearch ("6", query, null, 6);
+    	assertSearch ("6", query, null, 6, 6);
     }
     
     @Test
     public void testNestedPredicateComparison() throws Exception {
         String query = "exists(/PLAY[ACT[SCENE/TITLE='SCENE IV.  The platform.']])";
-        assertSearch ("true", query, null, 1);
+        assertSearch ("true", query, null, 1, 1);
     }
     
+    @Test
+    public void testRangeInequality() throws Exception {
+        // we have five ACTs 
+        String query = "count((/)[lux:field-values('doctype') <= 'ACT'])";
+        assertSearch ("5", query, null, 5, 0);
+        query = "count((/)[lux:field-values('doctype') le 'ACT'])";
+        assertSearch ("5", query, null, 5, 0);
+    }
+
+    @Test
+    public void testCombinedRange() throws Exception {
+        String query = "count((/)[lux:field-values('doctype') >= 'A'][lux:field-values('doctype') <= 'B'])";
+        assertSearch ("5", query, null, 5, 0);
+
+        // we have one FM and two GRPDESCR
+        query = "count((/)[lux:field-values('doctype') > 'F'][lux:field-values('doctype') < 'H'])";
+        assertSearch ("3", query, null, 3, 0);
+        query = "count((/)[lux:field-values('doctype') gt 'F' and lux:field-values('doctype') lt 'H'])";
+        assertSearch ("3", query, null, 3, 0);
+    }
+    
+    @Test
+    public void testRangeGenComp() throws Exception {
+        // we have only one SCNDESCR, but we don't optimize this yet
+        String query = "count((/)[lux:field-values('doctype') gt 'S' and lux:field-values('doctype') lt 'T' " +
+        		"and not(lux:field-values('doctype') = ('SCENE','SPEECH','SPEAKER','STAGEDIR'))])";
+        assertSearch ("1", query, null, 2552, 2552);
+    }
+    
+    // TODO: test range comparisons for a numeric field
+    // TODO: test range comparisons when some documents have null values
+    // TODO: test non-optimizable comparisons due to type or cardinality mismatch
+    // TODO: test automatic optimizations of range queries (ie not involving field-values()).
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

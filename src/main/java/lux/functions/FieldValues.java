@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 import lux.Evaluator;
+import lux.index.field.FieldDefinition;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -19,6 +20,8 @@ import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.StringValue;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.slf4j.LoggerFactory;
 
 /**
 * <code>function lux:field-values($field-name as xs:string, $node as node()) as xs:anyAtomicItem*</code>
@@ -106,6 +109,13 @@ public class FieldValues extends ExtensionFunctionDefinition {
             }
             long docID = node.getDocumentNumber();
             Evaluator eval = SearchBase.getEvaluator(context);
+            FieldDefinition field = eval.getCompiler().getIndexConfiguration().getField(fieldName);
+            if (field == null) {
+                LoggerFactory.getLogger(FieldValues.class).warn("Attempt to retrieve values of non-existent field: {}", fieldName);
+            }
+            else if (field.isStored() == Field.Store.NO) {
+                LoggerFactory.getLogger(FieldValues.class).warn("Attempt to retrieve values of non-stored field: {}", fieldName);
+            }
             Document doc ;
             try {
                 doc = eval.getSearcher().doc((int) docID, Collections.singleton(fieldName));
