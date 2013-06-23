@@ -15,6 +15,7 @@ import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -283,6 +284,24 @@ public class LuxParserTest {
         assertUnparseQuery ("lux_path:[a TO b]", termRangePQuery);
         assertQueryXMLRoundtrip (termRangeQuery, termRangePQuery);
     }
+    
+    @Test
+    public void testParseNumericRangeQuery () throws Exception {
+        // test two spans in a boolean
+        NumericRangeQuery<Integer> numericRangeQuery = makeNumericRangeQuery(LUX_PATH, 1, 2, true, false);
+        // Lucene's original query parser has no support for numeric range queries.
+        // If we want to support this, we would have to switch to the newer "pluggable" query parser
+        // assertParseQuery (numericRangeQuery, "lux_path:[1 TO 2}");
+        ParseableQuery numericRangePQuery = makeNumericRangePQuery(LUX_PATH, "int", "1", "2", true, false);
+        assertUnparseQuery ("lux_path:[1 TO 2}", numericRangePQuery);
+        assertQueryXMLRoundtrip (numericRangeQuery, numericRangePQuery);
+
+        numericRangeQuery = makeNumericRangeQuery(LUX_PATH, 1, null, true, false);
+        numericRangePQuery = makeNumericRangePQuery(LUX_PATH, "int", "1", null, true, false);
+        assertUnparseQuery ("lux_path:[1 TO *}", numericRangePQuery);
+        assertQueryXMLRoundtrip (numericRangeQuery, numericRangePQuery);
+
+    }
 
     // query construction helpers:
     
@@ -378,7 +397,11 @@ public class LuxParserTest {
     }
     
     public static TermRangeQuery makeTermRangeQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {
-        return TermRangeQuery.newStringRange(field, lower, upper, includeUpper, includeLower);
+        return TermRangeQuery.newStringRange(field, lower, upper, includeLower, includeUpper);
+    }
+    
+    public static NumericRangeQuery<Integer> makeNumericRangeQuery(String field, Integer lower, Integer upper, boolean includeLower, boolean includeUpper) {
+        return NumericRangeQuery.newIntRange(field, lower, upper, includeLower, includeUpper);
     }
     
     public static ParseableQuery makeTermRangePQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {

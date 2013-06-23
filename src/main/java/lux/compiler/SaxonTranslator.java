@@ -24,6 +24,7 @@ import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
+import lux.xquery.AtomizedSequence;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
 import lux.xquery.ComputedElementConstructor;
@@ -341,26 +342,6 @@ public class SaxonTranslator {
                 new ForClause (var, null, exprFor(atomizer.getBaseExpression())));        
         // this often works, doesn't provide the type conversion:
         // return exprFor (atomizer.getBaseExpression());
-        /*
-        // this produces expressions like: fn:string(data($x))
-        // buf if $x is a sequence, that's not allowed
-        Expression base = atomizer.getBaseExpression();
-        ItemType type = atomizer.getItemType(config.getTypeHierarchy());
-        if (!type.isAtomicType()) {
-            throw new LuxException ("AtomicSequenceConverter converting to non-atomic type: " + type);
-        }
-        AtomicType atomicType = (AtomicType) type;
-        ArrayList<AbstractExpression> abstracted = new ArrayList<AbstractExpression>();
-        if (base instanceof Block) {
-            Expression[] children = ((Block)base).getChildren();
-            for (int i = 0; i < children.length; i++) {
-                addCastExprFor (abstracted, children[i], atomicType);
-            }
-        } else {
-            addCastExprFor(abstracted, base, atomicType);
-        }
-        return new Sequence(abstracted.toArray(new AbstractExpression[0]));
-        */
     }
 
     /* return a QName suitable for use as a constructor of the given type */
@@ -591,7 +572,7 @@ public class SaxonTranslator {
         if (valueType.isNode) {
             return new TreatAs (baseExpr, nodeTestFor((NodeTest) type), occurrence);            
         }
-        return new TreatAs (baseExpr, valueType, occurrence);
+        return new AtomizedSequence(baseExpr, valueType, occurrence);
     }
 
     private Sequence exprFor (Expression[] exprs) {

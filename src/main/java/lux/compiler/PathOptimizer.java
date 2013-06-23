@@ -39,6 +39,7 @@ import lux.xpath.Root;
 import lux.xpath.SearchCall;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
+import lux.xquery.AtomizedSequence;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
@@ -907,7 +908,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
         String v = value.getValue().toString();
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
-            if (funcall.getName().equals(FunCall.LUX_FIELD_VALUES)) {
+            QName funcName = funcall.getName();
+            if (funcName.equals(FunCall.FN_MIN) || funcName.equals(FunCall.FN_MAX)) {
+            	// Undo an unhelpful optimization supplied by Saxon
+            	if (funcall.getSubs()[0] instanceof AtomizedSequence) {
+            		AbstractExpression flwor = funcall.getSubs()[0].getSubs()[0]; 
+                	// this will be an expression of the form min/max(for $x in (seq) return $x treat as (type))
+            		if (flwor instanceof FLWOR) {
+            			expr = ((FLWOR) flwor).getClauses()[0].getSequence();
+            			if (expr instanceof FunCall) {
+            				funcall = (FunCall) expr;
+            				funcName = funcall.getName();
+            			}
+            		}
+            	}
+            }
+			if (funcName.equals(FunCall.LUX_FIELD_VALUES)) {
                 AbstractExpression arg = funcall.getSubs()[0];
                 if (arg instanceof LiteralExpression) {
                     String fieldName = ((LiteralExpression) arg).getValue().toString();

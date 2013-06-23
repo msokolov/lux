@@ -671,7 +671,7 @@ public class SearchTest extends BaseSearchTest {
     }
     
     @Test
-    public void testIntFieldComparison() throws Exception {
+    public void testIntFieldEquality() throws Exception {
     	String query;
     	// check that our int-valued field was indexed correctly:
     	query = "(/ACT)[2]/lux:field-values('actnum')";
@@ -688,8 +688,27 @@ public class SearchTest extends BaseSearchTest {
     		assertEquals("Cannot compare xs:integer to xs:string", e.getMessage());
     	}
     }
-    
-    // TODO: test range comparisons when some documents have null values
+
+    @Test
+    public void testIntFieldInequality() throws Exception {
+    	String query;
+    	// do a basic int comparison
+    	query = "count(collection()[lux:field-values('actnum') lt 2])";
+    	assertSearch ("6", query, null, 6, 0);
+    	query = "count(collection()[lux:field-values('actnum') < 2])";
+    	assertSearch ("6", query, null, 6, 0);
+    	query = "count(collection()[lux:field-values('actnum') > 2][lux:field-values('actnum') <= 3])";
+    	assertSearch ("5", query, null, 5, 0);
+    }
+
+    @Test
+    public void testLongFieldInequality() throws Exception {
+    	String query;
+    	// do a basic long comparison, and make sure comparison with other numeric types is allowed
+    	query = "count(collection()[lux:field-values('scnlong') gt xs:int(5)])";
+    	assertSearch ("2", query, null, 2, 0);
+    }
+
     // TODO: test automatic optimizations of range queries (ie not involving field-values()).
 }
 

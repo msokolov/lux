@@ -10,6 +10,7 @@ public class XmlQueryParser extends CoreParser {
         queryFactory.addBuilder("RegexpQuery", new RegexpQueryBuilder());
         queryFactory.addBuilder("QNameTextQuery", new NodeQueryBuilder(analyzer, true));
         queryFactory.addBuilder("TermRangeQuery", new TermRangeQueryBuilder());
+        queryFactory.addBuilder("NumericRangeQuery", new NumericRangeQueryBuilder());
     }
     
 }

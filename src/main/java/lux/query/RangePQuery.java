@@ -70,15 +70,16 @@ public class RangePQuery extends ParseableQuery {
     public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
         ArrayList<AttributeConstructor> atts = new ArrayList<AttributeConstructor>();
         atts.add (new AttributeConstructor(FIELD_ATTR_NAME, new LiteralExpression (fieldName)));
+        boolean isNumeric = ! "string".equals(type);
         if (lowerTerm != null) {
             atts.add (new AttributeConstructor(LOWER_TERM_ATTR_NAME, new LiteralExpression (lowerTerm)));
-            atts.add (new AttributeConstructor(INCLUDE_LOWER_ATTR_NAME, new LiteralExpression (Boolean.toString(includeLower))));
         }
         if (upperTerm != null) {
             atts.add (new AttributeConstructor(UPPER_TERM_ATTR_NAME, new LiteralExpression (upperTerm)));
-            atts.add (new AttributeConstructor(INCLUDE_UPPER_ATTR_NAME, new LiteralExpression (Boolean.toString(includeUpper))));
         }
-        if ("string".equals(type)) {
+        atts.add (new AttributeConstructor(INCLUDE_LOWER_ATTR_NAME, new LiteralExpression (Boolean.toString(includeLower))));
+        atts.add (new AttributeConstructor(INCLUDE_UPPER_ATTR_NAME, new LiteralExpression (Boolean.toString(includeUpper))));
+		if (! isNumeric) {
             return new ElementConstructor
                     (TERM_RANGE_QUERY_QNAME, LiteralExpression.EMPTY, atts.toArray(new AttributeConstructor[atts.size()]));
         }
