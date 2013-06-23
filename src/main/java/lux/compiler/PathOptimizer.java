@@ -911,22 +911,38 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 AbstractExpression arg = funcall.getSubs()[0];
                 if (arg instanceof LiteralExpression) {
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
+                    FieldDefinition field = indexConfig.getField(fieldName);
+                    if (field == null) {
+                    	return null; // this will generate a warning during evaluation
+                    }
+                    FieldDefinition.Type fieldType = field.getType();
+                    if (! isComparableType(value.getValueType(), fieldType)) {
+                    	// will throw a run-time error if it gets executed
+                    	return null;
+                    }
+                	String rangeTermType = fieldType.getRangeTermType();
                     ParseableQuery rangeQuery;
-                    switch (op.getOperator()) {
+                    Operator operator = op.getOperator();
+					switch (operator) {
                     case AEQ: case EQUALS:
-                        rangeQuery = new TermPQuery (new Term(fieldName, v)); break;
                     case ANE: case NE:
-                        rangeQuery = new TermPQuery (new Term(fieldName, v)); 
-                        rangeQuery = new BooleanPQuery(Occur.MUST_NOT, rangeQuery);
+						if ("string".equals(rangeTermType)) {
+                    		rangeQuery = new TermPQuery (new Term(fieldName, v)); 
+                    	} else {
+                    		rangeQuery = new RangePQuery (fieldName, rangeTermType, v, v, true, true); 
+                    	}
+						if (operator == Operator.ANE || operator == Operator.NE) {
+							rangeQuery = new BooleanPQuery(Occur.MUST_NOT, rangeQuery);
+						}
                         break;
                     case ALE: case LE:
-                        rangeQuery = new RangePQuery (fieldName, "string", null, v, true, true); break;
+                        rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, true, true); break;
                     case ALT: case LT:
-                        rangeQuery = new RangePQuery (fieldName, "string", null, v, false, false); break;
+                        rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, false, false); break;
                     case AGE: case GE:
-                        rangeQuery = new RangePQuery (fieldName, "string", v, null, true, true); break;
+                        rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, true, true); break;
                     case AGT: case GT:
-                        rangeQuery = new RangePQuery (fieldName, "string", v, null, false, false); break;
+                        rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, false, false); break;
                     default:
                         return null;
                     }
@@ -942,7 +958,22 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return null;
     }
     
-    private void optimizeComparison(Predicate predicate) {
+    private boolean isComparableType(ValueType valueType, FieldDefinition.Type fieldType) {
+    	if (valueType.isNode || valueType == ValueType.VALUE || valueType == ValueType.ATOMIC) {
+    		// These are plausible: will be determined at run-time
+    		return true;
+    	}
+    	switch (fieldType) {
+    	case STRING:
+    		return valueType == ValueType.STRING || valueType == ValueType.UNTYPED_ATOMIC;
+    	case INT: case LONG:
+    		return valueType.isNumeric;
+    	default:
+    		return false;
+    	}
+	}
+
+	private void optimizeComparison(Predicate predicate) {
         if (!indexConfig.isOption(INDEX_FULLTEXT)) {
             return;
         }
@@ -998,22 +1029,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (termQuery != null) {
             	combineTermQuery (termQuery, ((PathStep) last).getNodeTest().getType());
             }
-        }
-        if (last.getType() == Type.FUNCTION_CALL) {
-        	FunCall funcall = (FunCall) last;
-        	if (funcall.getName().equals(FunCall.LUX_FIELD_VALUES)) {
-        		AbstractExpression arg = last.getSubs()[0];
-        		if (arg instanceof LiteralExpression) {
-        			String fieldName = ((LiteralExpression) arg).getValue().toString();
-        			ParseableQuery termQuery = new TermPQuery (new Term(fieldName, v));
-        			combineTermQuery (termQuery, ValueType.VALUE);
-        		}
-        		if (last == path) {
-        			// if the entire predicate test is lux:field-values(...) == literal, we can replace it w/true()
-        			predicate.setFilter(new LiteralExpression (true));
-        			peek().setFact(SINGULAR, true);
-        		}
-        	}
         }
     }
 

@@ -16,11 +16,13 @@ import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.ArrayIterator;
 import net.sf.saxon.value.EmptySequence;
+import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.StringValue;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.index.IndexableField;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -112,9 +114,11 @@ public class FieldValues extends ExtensionFunctionDefinition {
             FieldDefinition field = eval.getCompiler().getIndexConfiguration().getField(fieldName);
             if (field == null) {
                 LoggerFactory.getLogger(FieldValues.class).warn("Attempt to retrieve values of non-existent field: {}", fieldName);
+                return EmptySequence.asIterator(EmptySequence.getInstance());
             }
             else if (field.isStored() == Field.Store.NO) {
                 LoggerFactory.getLogger(FieldValues.class).warn("Attempt to retrieve values of non-stored field: {}", fieldName);
+                return EmptySequence.asIterator(EmptySequence.getInstance());
             }
             Document doc ;
             try {
@@ -122,12 +126,23 @@ public class FieldValues extends ExtensionFunctionDefinition {
             }  catch (IOException e) {
                 throw new XPathException(e);
             }
-            String [] values = doc.getValues(fieldName);
-            StringValue[] valueItems = new StringValue[values.length];
-            for (int i = 0; i < values.length; i++) {
-                valueItems[i] = new StringValue (values[i]);
+            if (field.getType() == FieldDefinition.Type.STRING) {
+            	String [] values = doc.getValues(fieldName);
+            	StringValue[] valueItems = new StringValue[values.length];
+            	for (int i = 0; i < values.length; i++) {
+            		valueItems[i] = new StringValue (values[i]);
+            	}
+            	return new ArrayIterator<StringValue>(valueItems);
             }
-            return new ArrayIterator<StringValue>(valueItems);
+            if (field.getType() == FieldDefinition.Type.INT || field.getType() == FieldDefinition.Type.LONG) {
+            	IndexableField [] fieldValues = doc.getFields(fieldName);
+            	Int64Value[] valueItems = new Int64Value[fieldValues.length];
+            	for (int i = 0; i < fieldValues.length; i++) {
+            		valueItems[i] = Int64Value.makeIntegerValue(fieldValues[i].numericValue().longValue());
+            	}
+            	return new ArrayIterator<Int64Value>(valueItems);
+            }
+            return EmptySequence.asIterator(EmptySequence.getInstance());
         }
         
     }

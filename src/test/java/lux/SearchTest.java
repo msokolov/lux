@@ -626,7 +626,7 @@ public class SearchTest extends BaseSearchTest {
     @Test
     public void testNestedPredicateComparison() throws Exception {
         String query = "exists(/PLAY[ACT[SCENE/TITLE='SCENE IV.  The platform.']])";
-        assertSearch ("true", query, null, 1, 1);
+    	assertSearch ("true", query, null, 1, 1);
     }
     
     @Test
@@ -658,9 +658,38 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("1", query, null, 2552, 2552);
     }
     
-    // TODO: test range comparisons for a numeric field
+    @Test
+    public void testFieldValuesNoContext () throws Exception {
+    	// compare an integer against a string-valued field
+    	String query = "if (2 eq lux:field-values('xxx')) then 'yes' else 'no'";
+        try {
+            assertSearch ("false", query, null, 0, 0);
+        	fail ("expected exception not thrown");
+        } catch (LuxException e) {
+        	assertTrue (e.getMessage().contains("no context defined"));
+        }
+    }
+    
+    @Test
+    public void testIntFieldComparison() throws Exception {
+    	String query;
+    	// check that our int-valued field was indexed correctly:
+    	query = "(/ACT)[2]/lux:field-values('actnum')";
+    	assertSearch ("2", query, null, 1, 1);
+    	// do a basic int comparison
+    	query = "count(collection()[2 eq lux:field-values('actnum')])";
+    	assertSearch ("3", query, null, 3, 0);
+    	// Try comparing an integer against a string-valued field
+    	query = "count(collection()[2 eq lux:field-values('actstr')])";
+    	try {
+    		assertSearch ("0", query, null, 0, 0);
+    		fail ("expected exception not thrown");
+    	} catch (LuxException e) {
+    		assertEquals("Cannot compare xs:integer to xs:string", e.getMessage());
+    	}
+    }
+    
     // TODO: test range comparisons when some documents have null values
-    // TODO: test non-optimizable comparisons due to type or cardinality mismatch
     // TODO: test automatic optimizations of range queries (ie not involving field-values()).
 }
 

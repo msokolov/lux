@@ -1,7 +1,6 @@
 package lux.xml;
 
-/** These types correspond roughly to the XDM / XML Schema types, and there are some extensions,
- * like BOOLEAN_FALSE, which is just like boolean, but takes on the opposite sense: BOOLEAN_FALSE.true==!BOOLEAN.true.
+/** These types correspond roughly to the XDM / XML Schema types
  */
 public enum ValueType {
     
@@ -16,8 +15,8 @@ public enum ValueType {
         
     ATOMIC("xs:anyAtomicType", true), 
     STRING("xs:string", true), 
-    INT("xs:int", true), 
-    INTEGER("xs:integer", true), 
+    INT("xs:int", true, false, true), 
+    INTEGER("xs:integer", true, false, true), 
     BOOLEAN("xs:boolean", true), 
     DATE("xs:date", true), 
     DATE_TIME("xs:dateTime", true),
@@ -27,9 +26,9 @@ public enum ValueType {
     YEAR("xs:gYear", true),
     YEAR_MONTH("xs:gYearMonth", true),    
     YEAR_MONTH_DURATION("xs:YearMonthDuration", true),
-    FLOAT("xs:float", true), 
-    DOUBLE("xs:double", true), 
-    DECIMAL("xs:decimal", true), 
+    FLOAT("xs:float", true, false, true), 
+    DOUBLE("xs:double", true, false, true), 
+    DECIMAL("xs:decimal", true, false, true), 
     TIME("xs:time", true), 
     HEX_BINARY("xs:hexBinary", true), 
     BASE64_BINARY("xs:base64Binary", true), 
@@ -50,23 +49,25 @@ public enum ValueType {
 
     public final boolean isNode;
     public final boolean isAtomic;
+    public final boolean isNumeric;
     public final String name;
 
     ValueType(String nodeTest) {
-        this.isNode = true;
-        this.isAtomic = false;
-        this.name = nodeTest;
+    	this (nodeTest, false, true, false);
     }
 
     ValueType(String typeName, boolean isAtomic) {
-        this.isAtomic = isAtomic;
-        isNode = false;
-        name = typeName;
+    	this (typeName, isAtomic, false, false);
     }
     
     ValueType(String typeName, boolean isAtomic, boolean isNode) {
+    	this (typeName, isAtomic, isNode, false);
+    }
+
+    ValueType(String typeName, boolean isAtomic, boolean isNode, boolean isNumeric) {
         this.isAtomic = isAtomic;        
         this.isNode = isNode;
+        this.isNumeric = isNumeric;
         name = typeName;
     }
 

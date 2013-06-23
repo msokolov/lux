@@ -47,14 +47,24 @@ public abstract class FieldDefinition {
      * other types provide each values as a Java object.
      */
     public enum Type {
-        TOKENS, STRING, BYTES, INT, LONG, TEXT;
+        TOKENS(SortField.Type.DOC, "string"), STRING(SortField.Type.STRING, "string"), 
+        BYTES(SortField.Type.BYTES, null), INT(SortField.Type.INT, "int"), LONG(SortField.Type.LONG, "long"), 
+        TEXT(SortField.Type.DOC, "string");
+        
+        private SortField.Type sortFieldType;
+        private String rangeTermType;
+        
+        Type (SortField.Type sortFieldType, String rangeTermType) {
+        	this.sortFieldType = sortFieldType;
+        	this.rangeTermType = rangeTermType;
+        }
+        
         public SortField.Type getLuceneSortFieldType () {
-            switch (this) {
-            case STRING: return SortField.Type.STRING;
-            case INT: return SortField.Type.INT;
-            case LONG: return SortField.Type.LONG;
-            default: return SortField.Type.DOC; // ignore??
-            }
+        	return sortFieldType;
+        }
+        
+        public String getRangeTermType () {
+        	return rangeTermType;
         }
     };
     
