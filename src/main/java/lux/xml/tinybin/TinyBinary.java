@@ -36,7 +36,10 @@ import org.apache.lucene.store.ByteArrayDataOutput;
 public class TinyBinary {
 
 	public final static byte CURRENT_FORMAT = 1;
-	private final static int TINY = ('T' << 24) | ('I' << 16) | ('N' << 8) | CURRENT_FORMAT;
+	private final static int TIN0 = ('T' << 24) | ('I' << 16) | ('N' << 8);
+	private final static int TINY(byte version) {
+		return TIN0 | version;
+	}
 	private final ByteBuffer byteBuffer;
 	private final byte formatVersion;
 	private int charBufferLength;
@@ -76,14 +79,13 @@ public class TinyBinary {
 	public TinyBinary(byte[] buf, Charset charset) {
 		this.byteBuffer = ByteBuffer.wrap(buf);
 		int signature = byteBuffer.getInt();
-		if ((signature & 0xffffff00) != (TINY & 0xffffff00)) {
+		if ((signature & 0xffffff00) != TIN0) {
 			throw new LuxException ("bytes lack TINY signature");
 		}
-		if (signature == TINY) {
-			formatVersion = 0;
-		} else {
-			// versions 1+ are encoded as TIN{version byte}
-			formatVersion = (byte) (signature & 0xff);
+		byte v = (byte) (signature & 0xff);
+		formatVersion = (v == 'Y') ? 0 : v; // the first version (version 0) was labeled 'Y'
+		if (formatVersion > CURRENT_FORMAT) {
+			throw new LuxException ("Uknown tiny binary format version: " + formatVersion);
 		}
 		charBufferLength = byteBuffer.getInt();
 		commentBufferLength = byteBuffer.getInt();
@@ -348,7 +350,7 @@ public class TinyBinary {
 		this.formatVersion = formatVersion;
 		int totalSize = calculateTotalSize(tree);
 		byteBuffer = ByteBuffer.allocate(totalSize);
-		byteBuffer.putInt(TINY); // signature of the TINY format
+		byteBuffer.putInt(TINY(formatVersion)); // signature of the current TINY format
 		byteBuffer.putInt(tree.getCharacterBuffer().length());
 		if (tree.getCommentBuffer() == null)
 			byteBuffer.putInt(0);
