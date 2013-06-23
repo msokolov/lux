@@ -885,6 +885,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             rq = varBinding.getQuery();
         }
         */
+        // if there is no context item, lux:field-values() returns ()
         if (op1.getType() == Type.LITERAL) {
             value = (LiteralExpression) op1;
             expr = op2;
@@ -930,7 +931,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                         return null;
                     }
                     push (new XPathQuery(rangeQuery, MINIMAL|SINGULAR, ValueType.BOOLEAN));
-                    return LiteralExpression.TRUE;
+                    // If we could ensure that the context expression would be limited by the query
+                    // we're pushing, we could:
+                    // return LiteralExpression.TRUE;
+                    return op;
                 }
             }
         }
