@@ -27,11 +27,18 @@ import net.sf.saxon.type.Type;
 import org.apache.lucene.store.ByteArrayDataInput;
 import org.apache.lucene.store.ByteArrayDataOutput;
 
+/**
+ * format version 0 corresponds to release 0.9.x
+ * format version 1 is 0.10.x 
+ *
+ */
 // TODO: baseURI
 public class TinyBinary {
 
-	private final static int TINY = ('T' << 24) | ('I' << 16) | ('N' << 8) | 'Y';
+	public final static byte CURRENT_FORMAT = 1;
+	private final static int TINY = ('T' << 24) | ('I' << 16) | ('N' << 8) | CURRENT_FORMAT;
 	private final ByteBuffer byteBuffer;
+	private final byte formatVersion;
 	private int charBufferLength;
 	private int commentBufferLength;
 	private int nodeCount; // number of (non-attribute) nodes
@@ -69,8 +76,14 @@ public class TinyBinary {
 	public TinyBinary(byte[] buf, Charset charset) {
 		this.byteBuffer = ByteBuffer.wrap(buf);
 		int signature = byteBuffer.getInt();
-		if (signature != TINY) {
+		if ((signature & 0xffffff00) != (TINY & 0xffffff00)) {
 			throw new LuxException ("bytes lack TINY signature");
+		}
+		if (signature == TINY) {
+			formatVersion = 0;
+		} else {
+			// versions 1+ are encoded as TIN{version byte}
+			formatVersion = (byte) (signature & 0xff);
 		}
 		charBufferLength = byteBuffer.getInt();
 		commentBufferLength = byteBuffer.getInt();
@@ -116,17 +129,19 @@ public class TinyBinary {
 		// System.out.println ("nodeCount: " + nodeCount);
 		
 		byteBuffer.get(nodeKind);
-
-		readVInts(byteBuffer, next, nodeCount);
-		readAlpha(byteBuffer, alpha, nodeKind, nodeCount);
-		readBeta(byteBuffer, beta, nodeKind, nodeCount);
-		readMappedNameCodes(nameCode, nodeCount, byteBuffer);
-		readDeltas(byteBuffer, attParent, attCount);
-		readMappedNameCodes(attNameCode, attCount, byteBuffer);
-		readDeltas(byteBuffer, nsParent, nsCount);
-		readMappedNameCodes(nsNameCode, nsCount, byteBuffer);
-		readVInts(byteBuffer, attValueIndex, attCount);
-		readShortDeltas(byteBuffer, depth, nodeCount);
+		ByteArrayDataInput in = new ByteArrayDataInput(byteBuffer.array(), byteBuffer.arrayOffset()+ byteBuffer.position(), byteBuffer.remaining());
+		readVInts(in, next, nodeCount);
+		readAlpha(in, alpha, nodeKind, nodeCount);
+		readBeta(in, beta, nodeKind, nodeCount);
+		readMappedNameCodes(in, nameCode, nodeCount);
+		readDeltas(in, attParent, attCount);
+		readMappedNameCodes(in, attNameCode, attCount);
+		readDeltas(in, nsParent, nsCount);
+		readMappedNameCodes(in, nsNameCode, nsCount);
+		readVInts(in, attValueIndex, attCount);
+		readShortDeltas(in, depth, nodeCount);
+		byteBuffer.position(in.getPosition() - byteBuffer.arrayOffset());
+		
 		readChars(charBuffer, charBufferLength);
 		if (commentBufferLength > 0) {
 			readChars(commentBuffer, commentBufferLength);
@@ -319,6 +334,10 @@ public class TinyBinary {
 	}
 
 	public TinyBinary(TinyTree tree, Charset charset) {
+		this (tree, charset, CURRENT_FORMAT);
+	}
+	
+	public TinyBinary(TinyTree tree, Charset charset, byte formatVersion) {
 		names = new LinkedHashMap<CharSequence, Integer>();
 		namespaces = new LinkedHashMap<CharSequence, Integer>();
 		attValues = new LinkedHashMap<CharSequence, Integer>();
@@ -326,6 +345,7 @@ public class TinyBinary {
 		if (charset != null) {
 			charsetEncoder = charset.newEncoder();
 		}
+		this.formatVersion = formatVersion;
 		int totalSize = calculateTotalSize(tree);
 		byteBuffer = ByteBuffer.allocate(totalSize);
 		byteBuffer.putInt(TINY); // signature of the TINY format
@@ -342,17 +362,17 @@ public class TinyBinary {
 		byteBuffer.putInt(attValues.size());
 
 		byteBuffer.put(tree.nodeKind, 0, nodeCount);
-		writeVInts(byteBuffer, tree.getNextPointerArray(), nodeCount);
-		writeAlpha(byteBuffer, tree.getAlphaArray(), tree.nodeKind, nodeCount);
-		writeBeta(byteBuffer, tree.getBetaArray(), tree.nodeKind, nodeCount);
-		writeMappedNameCodes(tree.getNameCodeArray(), nodeCount, byteBuffer);
-		writeDeltas(byteBuffer, tree.getAttributeParentArray(), attCount);
-		writeMappedNameCodes(tree.getAttributeNameCodeArray(), attCount, byteBuffer);
-		writeDeltas(byteBuffer, tree.getNamespaceParentArray(), nsCount);
-
-		// put ns decl string references
 		ByteArrayDataOutput out = new ByteArrayDataOutput(byteBuffer.array(),
 				byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
+		writeVInts(out, tree.getNextPointerArray(), nodeCount);
+		writeAlpha(out, tree.getAlphaArray(), tree.nodeKind, nodeCount);
+		writeBeta(out, tree.getBetaArray(), tree.nodeKind, nodeCount);
+		writeMappedNameCodes(out, tree.getNameCodeArray(), nodeCount);
+		writeDeltas(out, tree.getAttributeParentArray(), attCount);
+		writeMappedNameCodes(out, tree.getAttributeNameCodeArray(), attCount);
+		writeDeltas(out, tree.getNamespaceParentArray(), nsCount);
+
+		// put ns decl string references
 		NamespaceBinding[] bindings = tree.getNamespaceCodeArray();
 		try {
             // write namespace binding pointers: these are pairs of indexes into the namespaces string array
@@ -371,9 +391,9 @@ public class TinyBinary {
 			}
 		} catch (IOException e) {
 		}
-		byteBuffer.position(out.getPosition() - byteBuffer.arrayOffset());
+		writeShortDeltas(out, tree.getNodeDepthArray(), nodeCount);
 
-		writeShortDeltas(byteBuffer, tree.getNodeDepthArray(), nodeCount);
+		byteBuffer.position(out.getPosition() - byteBuffer.arrayOffset());
 
 		putCharacterBuffer(tree.getCharacterBuffer(), charsetEncoder);
 		if (tree.getCommentBuffer() != null) {
@@ -394,15 +414,13 @@ public class TinyBinary {
 		byteBuffer.position(0);
     }
 
-	private void writeAlpha(ByteBuffer bytes, int[] alpha, byte[] nodeKind,
+	private void writeAlpha(ByteArrayDataOutput out, int[] alpha, byte[] nodeKind,
 			int count) {
 		// the alpha array stores offset into the character buffer for text,
 		// offset into the
 		// comment buffer for comments and pis, and index of the first attribute
 		// for elements (or -1)
 		int textOffset = 0, commentOffset = 0, attrIndex = -1;
-		ByteArrayDataOutput out = new ByteArrayDataOutput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
 		try {
 			int k;
 			for (int i = 0; i < count; i++) {
@@ -440,14 +458,10 @@ public class TinyBinary {
 			}
 		} catch (IOException e) {
 		}
-		bytes.position(out.getPosition() - bytes.arrayOffset());
 	}
 
-	private void readAlpha(ByteBuffer bytes, int[] alpha, byte[] nodeKind,
-			int count) {
+	private void readAlpha(ByteArrayDataInput in, int[] alpha, byte[] nodeKind, int count) {
 		int textOffset = 0, commentOffset = 0, attrIndex = -1;
-		ByteArrayDataInput in = new ByteArrayDataInput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
 		for (int i = 0; i < count; i++) {
 			int k;
 			switch (nodeKind[i]) {
@@ -484,16 +498,13 @@ public class TinyBinary {
 						+ nodeKind[i]);
 			}
 		}
-		bytes.position(in.getPosition() - bytes.arrayOffset());
 	}
 
-	private void writeBeta(ByteBuffer bytes, int[] beta, byte[] nodeKind,
+	private void writeBeta(ByteArrayDataOutput out, int[] beta, byte[] nodeKind,
 			int count) {
 		// the beta array stores length of text, comment and pi nodes,
 		// and index of the first namespace decl for elements (or -1)
 		int nsIndex = -1;
-		ByteArrayDataOutput out = new ByteArrayDataOutput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
 		try {
 			int k;
 			for (int i = 0; i < count; i++) {
@@ -523,14 +534,11 @@ public class TinyBinary {
 			}
 		} catch (IOException e) {
 		}
-		bytes.position(out.getPosition() - bytes.arrayOffset());
 	}
 
-	private void readBeta(ByteBuffer bytes, int[] beta, byte[] nodeKind,
+	private void readBeta(ByteArrayDataInput in, int[] beta, byte[] nodeKind,
 			int count) {
 		int attrIndex = -1;
-		ByteArrayDataInput in = new ByteArrayDataInput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
 		for (int i = 0; i < count; i++) {
 			switch (nodeKind[i]) {
 			case Type.ELEMENT:
@@ -551,67 +559,94 @@ public class TinyBinary {
 						+ nodeKind[i]);
 			}
 		}
-		bytes.position(in.getPosition() - bytes.arrayOffset());
 	}
 
-	private void writeVInts(ByteBuffer bytes, int[] ints, int count) {
-		ByteArrayDataOutput out = new ByteArrayDataOutput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
+	private void readVInts(ByteArrayDataInput in, int[] ints, int count) {
+		for (int i = 0; i < count; i++) {
+			ints[i] = in.readVInt();
+		}
+	}
+
+	private void readDeltas(ByteArrayDataInput in, int[] ints, int count) {
+		int k = 0;
+		if (formatVersion < 1) {
+			for (int i = 0; i < count; i++) {
+				k = k + in.readByte();
+				ints[i] = k;
+			}
+		} else {
+			for (int i = 0; i < count; i++) {
+				k = k + in.readVInt();
+				ints[i] = k;
+			}
+		}
+		// System.out.println ("after readDeltas " + count + " pos=" +
+		// bytes.position());
+	}
+
+	private void readShortDeltas(ByteArrayDataInput in, short[] shorts, int count) {
+		short k = 0;
+		if (formatVersion < 1) {
+			for (int i = 0; i < count; i++) {
+				k = (short) (k + in.readByte());
+				shorts[i] = k;
+			}
+		} else {
+			for (int i = 0; i < count; i++) {
+				k = (short) (k + in.readVInt());
+				shorts[i] = k;
+			}
+		}
+	}
+
+	private void writeVInts(ByteArrayDataOutput out, int[] ints, int count) {
 		try {
 			for (int i = 0; i < count; i++) {
 				out.writeVInt(ints[i]);
 			}
 		} catch (IOException e) {
 		}
-		bytes.position(out.getPosition() - bytes.arrayOffset());
 	}
 
-	private void readVInts(ByteBuffer bytes, int[] ints, int count) {
-		ByteArrayDataInput in = new ByteArrayDataInput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
-		for (int i = 0; i < count; i++) {
-			ints[i] = in.readVInt();
-		}
-		bytes.position(in.getPosition() - bytes.arrayOffset());
-	}
-
-	private void readDeltas(ByteBuffer bytes, int[] ints, int count) {
+	private void writeDeltas(ByteArrayDataOutput out, int[] ints, int count) {
 		int k = 0;
-		for (int i = 0; i < count; i++) {
-			k = k + bytes.get();
-			ints[i] = k;
-		}
-		// System.out.println ("after readDeltas " + count + " pos=" +
-		// bytes.position());
-	}
-
-	private void readShortDeltas(ByteBuffer bytes, short[] shorts, int count) {
-		short k = 0;
-		for (int i = 0; i < count; i++) {
-			k = (short) (k + bytes.get());
-			shorts[i] = k;
-		}
-	}
-
-	private void writeDeltas(ByteBuffer bytes, int[] ints, int count) {
-		int k = 0;
-		for (int i = 0; i < count; i++) {
-			k = ints[i] - k;
-			assert (k <= 127 && k >= -128);
-			bytes.put((byte) (k & 0xff));
-			k = ints[i];
+		try {
+			if (formatVersion < 1) {
+				for (int i = 0; i < count; i++) {
+					k = ints[i] - k;
+					out.writeByte((byte) (k & 0xff));
+					k = ints[i];
+				}
+			} else {
+				for (int i = 0; i < count; i++) {
+					k = ints[i] - k;
+					out.writeVInt(k);
+					k = ints[i];
+				}
+			}
+		} catch (IOException e) {
 		}
 		// System.out.println ("after writeDeltas " + count + " pos=" +
 		// bytes.position());
 	}
 
-	private void writeShortDeltas(ByteBuffer bytes, short[] shorts, int count) {
+	private void writeShortDeltas(ByteArrayDataOutput out, short[] shorts, int count) {
 		int k = 0;
-		for (int i = 0; i < count; i++) {
-			k = shorts[i] - k;
-			assert (k <= 127 && k >= -128);
-			bytes.put((byte) (k & 0xff));
-			k = shorts[i];
+		try {
+			if (formatVersion < 1) {
+				for (int i = 0; i < count; i++) {
+					k = shorts[i] - k;
+					out.writeByte((byte) (k & 0xff));
+					k = shorts[i];
+				}
+			} else {
+				for (int i = 0; i < count; i++) {
+					k = shorts[i] - k;
+					out.writeVInt(k);
+					k = shorts[i];
+				}
+			}
+		} catch (IOException e) {
 		}
 	}
 
@@ -632,9 +667,7 @@ public class TinyBinary {
 		}
 	}
 
-	private void writeMappedNameCodes(int[] nameCodes, int count, ByteBuffer bytes) {
-		ByteArrayDataOutput out = new ByteArrayDataOutput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
+	private void writeMappedNameCodes(ByteArrayDataOutput out, int[] nameCodes, int count) {
 		try {
 			for (int i = 0; i < count; i++) {
 				int nameCode = nameCodes[i];
@@ -647,12 +680,9 @@ public class TinyBinary {
 			}
 		} catch (IOException e) {
 		}
-		bytes.position(out.getPosition() - bytes.arrayOffset());
 	}
 
-	private void readMappedNameCodes(int[] nameCodes, int count, ByteBuffer bytes) {
-		ByteArrayDataInput in = new ByteArrayDataInput(bytes.array(),
-				bytes.arrayOffset() + bytes.position(), bytes.remaining());
+	private void readMappedNameCodes(ByteArrayDataInput in, int[] nameCodes, int count) {
 		for (int i = 0; i < count; i++) {
 			int nameCode = in.readVInt();
 			if (nameCode > 0) {
@@ -661,7 +691,6 @@ public class TinyBinary {
 				nameCodes[i] = -1;
 			}
 		}
-		bytes.position(in.getPosition() - bytes.arrayOffset());
 	}
 
 	private void writeStrings(LinkedHashMap<CharSequence, Integer> map, CharsetEncoder encoder) {
