@@ -110,7 +110,7 @@ public class CachingDocReader {
             } else {
                 bytes = binaryValue.bytes;
             }
-        	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N' && bytes[3] == 'Y') {
+        	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N') {
             	// An XML document stored in tiny binary format
 				TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
             	node = new XdmNode (tb.getTinyDocument(config));
