@@ -55,6 +55,12 @@ public class TinyBinaryTest {
     }
     
     @Test
+    public void testReadVersion0 () throws Exception {
+        assertRoundTrip("lux/reader-test.xml", null, (byte) 0);
+        assertRoundTrip("lux/reader-test.xml", "utf-8", (byte) 0);
+    }
+    
+    @Test
     public void testAttributes () throws Exception {
         assertRoundTrip ("conf/solrconfig.xml", null);
         assertRoundTrip ("conf/solrconfig.xml", "utf-8");
@@ -103,9 +109,7 @@ public class TinyBinaryTest {
         System.out.println (String.format("DocBuilder: %dms; TinyBinary: %dms", (t1-start)/1000000, (t2-t1)/1000000));        
     }
     
-    private void assertRoundTrip (String docpath, String charsetName)
-            throws SaxonApiException, XPathException, IOException 
-    {
+    private void assertRoundTrip (String docpath, String charsetName, byte formatVersion) throws XPathException, SaxonApiException, IOException {
     	// get a file from the class path
         InputStream in = SearchTest.class.getClassLoader().getResourceAsStream(docpath);
         // build a document from that file
@@ -113,7 +117,7 @@ public class TinyBinaryTest {
         in.close();
         Charset charset = charsetName == null ? null : Charset.forName(charsetName);
         // Make a TinyBinary from the TinyTree
-        TinyBinary tinyBin = new TinyBinary(((TinyDocumentImpl) doc.getUnderlyingNode()).getTree(), charset);
+        TinyBinary tinyBin = new TinyBinary(((TinyDocumentImpl) doc.getUnderlyingNode()).getTree(), charset, formatVersion);
         byte[] b = tinyBin.getBytes();
         // Copy the TinyBinary using its byte array 
         TinyBinary copy = new TinyBinary (b, charset);
@@ -134,6 +138,13 @@ public class TinyBinaryTest {
                     DeepEqual.INCLUDE_COMMENTS |
                     DeepEqual.COMPARE_STRING_VALUES |
                     DeepEqual.INCLUDE_PROCESSING_INSTRUCTIONS));
+    	
+    }
+    
+    private void assertRoundTrip (String docpath, String charsetName)
+            throws SaxonApiException, XPathException, IOException 
+    {
+    	assertRoundTrip (docpath, charsetName, TinyBinary.CURRENT_FORMAT);
     }
     
 }
