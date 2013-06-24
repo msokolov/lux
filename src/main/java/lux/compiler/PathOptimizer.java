@@ -905,73 +905,89 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return null;
         }
         */
+        /*
+         * 1) rewrite minimax(AtmoizedSequence(... expr )) to expr
+         * 2) gen query when expr matches an XPathField (call XmlIndexer.fieldMatch (expr));
+         *    expr == XPathField comparing AbstractExpressions with equals()?
+         *    possibly implement FieldDefinition.matchesExpression()??
+         * 3) gen query when expr is field-values
+         */
         String v = value.getValue().toString();
+    	expr = rewriteMinMax (expr);
+    	FieldDefinition field = fieldMatching (expr);
+    	if (field == null) {
+    		return null;
+    	}
+    	FieldDefinition.Type fieldType = field.getType();
+    	if (! isComparableType(value.getValueType(), fieldType)) {
+    		// will throw a run-time error if it gets executed
+    		return null;
+    	}
+    	String fieldName = indexConfig.getFieldName(field);
+    	RangePQuery.Type rangeTermType = fieldType.getRangeTermType();
+    	ParseableQuery rangeQuery;
+    	Operator operator = op.getOperator();
+    	switch (operator) {
+    	case AEQ: case EQUALS:
+    	case ANE: case NE:
+    		if ("string".equals(rangeTermType)) {
+    			rangeQuery = new TermPQuery (new Term(fieldName, v)); 
+    		} else {
+    			rangeQuery = new RangePQuery (fieldName, rangeTermType, v, v, true, true); 
+    		}
+    		if (operator == Operator.ANE || operator == Operator.NE) {
+    			rangeQuery = new BooleanPQuery(Occur.MUST_NOT, rangeQuery);
+    		}
+    		break;
+    	case ALE: case LE:
+    		rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, true, true); break;
+    	case ALT: case LT:
+    		rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, false, false); break;
+    	case AGE: case GE:
+    		rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, true, true); break;
+    	case AGT: case GT:
+    		rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, false, false); break;
+    	default:
+    		return null;
+    	}
+    	push (new XPathQuery(rangeQuery, MINIMAL|SINGULAR, ValueType.BOOLEAN));
+    	// If we could ensure that the context expression would be limited by the query
+    	// we're pushing, we could:
+    	// return LiteralExpression.TRUE;
+    	return op;
+    }
+    
+	private FieldDefinition fieldMatching(AbstractExpression expr) {
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
             QName funcName = funcall.getName();
-            if (funcName.equals(FunCall.FN_MIN) || funcName.equals(FunCall.FN_MAX)) {
-            	// Undo an unhelpful optimization supplied by Saxon
-            	if (funcall.getSubs()[0] instanceof AtomizedSequence) {
-            		AbstractExpression flwor = funcall.getSubs()[0].getSubs()[0]; 
-                	// this will be an expression of the form min/max(for $x in (seq) return $x treat as (type))
-            		if (flwor instanceof FLWOR) {
-            			expr = ((FLWOR) flwor).getClauses()[0].getSequence();
-            			if (expr instanceof FunCall) {
-            				funcall = (FunCall) expr;
-            				funcName = funcall.getName();
-            			}
-            		}
-            	}
-            }
 			if (funcName.equals(FunCall.LUX_FIELD_VALUES)) {
                 AbstractExpression arg = funcall.getSubs()[0];
                 if (arg instanceof LiteralExpression) {
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
-                    FieldDefinition field = indexConfig.getField(fieldName);
-                    if (field == null) {
-                    	return null; // this will generate a warning during evaluation
-                    }
-                    FieldDefinition.Type fieldType = field.getType();
-                    if (! isComparableType(value.getValueType(), fieldType)) {
-                    	// will throw a run-time error if it gets executed
-                    	return null;
-                    }
-                	RangePQuery.Type rangeTermType = fieldType.getRangeTermType();
-                    ParseableQuery rangeQuery;
-                    Operator operator = op.getOperator();
-					switch (operator) {
-                    case AEQ: case EQUALS:
-                    case ANE: case NE:
-						if ("string".equals(rangeTermType)) {
-                    		rangeQuery = new TermPQuery (new Term(fieldName, v)); 
-                    	} else {
-                    		rangeQuery = new RangePQuery (fieldName, rangeTermType, v, v, true, true); 
-                    	}
-						if (operator == Operator.ANE || operator == Operator.NE) {
-							rangeQuery = new BooleanPQuery(Occur.MUST_NOT, rangeQuery);
-						}
-                        break;
-                    case ALE: case LE:
-                        rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, true, true); break;
-                    case ALT: case LT:
-                        rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, false, false); break;
-                    case AGE: case GE:
-                        rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, true, true); break;
-                    case AGT: case GT:
-                        rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, false, false); break;
-                    default:
-                        return null;
-                    }
-                    push (new XPathQuery(rangeQuery, MINIMAL|SINGULAR, ValueType.BOOLEAN));
-                    // If we could ensure that the context expression would be limited by the query
-                    // we're pushing, we could:
-                    // return LiteralExpression.TRUE;
-                    return op;
+                    return indexConfig.getField(fieldName);
                 }
+			}
+        }
+		return null;
+	}
+
+	// Undo an unhelpful optimization supplied by Saxon
+    private AbstractExpression rewriteMinMax (AbstractExpression expr) {
+        if (expr.getType() == Type.FUNCTION_CALL) {
+            FunCall funcall = (FunCall) expr;
+            QName funcName = funcall.getName();
+            if (funcName.equals(FunCall.FN_MIN) || funcName.equals(FunCall.FN_MAX)) {
+            	if (funcall.getSubs()[0] instanceof AtomizedSequence) {
+            		AbstractExpression flwor = funcall.getSubs()[0].getSubs()[0]; 
+                	// this will be an expression of the form min/max(for $x in (seq) return $x treat as (type))
+            		if (flwor instanceof FLWOR) {
+            			return ((FLWOR) flwor).getClauses()[0].getSequence();
+            		}
+            	}
             }
         }
-        
-        return null;
+        return expr;
     }
     
     private boolean isComparableType(ValueType valueType, FieldDefinition.Type fieldType) {
