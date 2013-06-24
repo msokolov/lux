@@ -2,6 +2,7 @@ package lux.index.field;
 
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
+import lux.query.RangePQuery;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -47,14 +48,14 @@ public abstract class FieldDefinition {
      * other types provide each values as a Java object.
      */
     public enum Type {
-        TOKENS(SortField.Type.DOC, "string"), STRING(SortField.Type.STRING, "string"), 
-        BYTES(SortField.Type.BYTES, null), INT(SortField.Type.INT, "int"), LONG(SortField.Type.LONG, "long"), 
-        TEXT(SortField.Type.DOC, "string");
+        TOKENS(SortField.Type.DOC, RangePQuery.Type.STRING), STRING(SortField.Type.STRING, RangePQuery.Type.STRING), 
+        BYTES(SortField.Type.BYTES, null), INT(SortField.Type.INT, RangePQuery.Type.INT), LONG(SortField.Type.LONG, RangePQuery.Type.LONG), 
+        TEXT(SortField.Type.DOC, RangePQuery.Type.STRING);
         
         private SortField.Type sortFieldType;
-        private String rangeTermType;
+        private lux.query.RangePQuery.Type rangeTermType;
         
-        Type (SortField.Type sortFieldType, String rangeTermType) {
+        Type (SortField.Type sortFieldType, lux.query.RangePQuery.Type rangeTermType) {
         	this.sortFieldType = sortFieldType;
         	this.rangeTermType = rangeTermType;
         }
@@ -63,7 +64,7 @@ public abstract class FieldDefinition {
         	return sortFieldType;
         }
         
-        public String getRangeTermType () {
+        public RangePQuery.Type getRangeTermType () {
         	return rangeTermType;
         }
     };

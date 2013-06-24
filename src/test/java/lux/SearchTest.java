@@ -710,6 +710,17 @@ public class SearchTest extends BaseSearchTest {
     }
 
     // TODO: test automatic optimizations of range queries (ie not involving field-values()).
+    
+    @Test
+    public void testAttributePredicate() throws Exception {
+    	// from Geet Gangwar
+    	//context /@id[.='I2009']
+    	String query = "count(//SCENE/@act[.='2'])";
+    	assertSearch ("6", query, null, 4, 4);
+    	query = "//SCENE/@act[.='2']";
+    	XdmResultSet results = assertSearch (query, (Integer) null, 4, 4);
+    	assertEquals (6, results.getXdmValue().size());
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

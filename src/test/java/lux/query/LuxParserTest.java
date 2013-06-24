@@ -292,17 +292,64 @@ public class LuxParserTest {
         // Lucene's original query parser has no support for numeric range queries.
         // If we want to support this, we would have to switch to the newer "pluggable" query parser
         // assertParseQuery (numericRangeQuery, "lux_path:[1 TO 2}");
-        ParseableQuery numericRangePQuery = makeNumericRangePQuery(LUX_PATH, "int", "1", "2", true, false);
+        ParseableQuery numericRangePQuery = makeNumericRangePQuery(LUX_PATH, RangePQuery.Type.INT, "1", "2", true, false);
         assertUnparseQuery ("lux_path:[1 TO 2}", numericRangePQuery);
         assertQueryXMLRoundtrip (numericRangeQuery, numericRangePQuery);
 
         numericRangeQuery = makeNumericRangeQuery(LUX_PATH, 1, null, true, false);
-        numericRangePQuery = makeNumericRangePQuery(LUX_PATH, "int", "1", null, true, false);
+        numericRangePQuery = makeNumericRangePQuery(LUX_PATH, RangePQuery.Type.INT, "1", null, true, false);
         assertUnparseQuery ("lux_path:[1 TO *}", numericRangePQuery);
         assertQueryXMLRoundtrip (numericRangeQuery, numericRangePQuery);
-
     }
 
+    @Test
+    public void testIntersectRangeQuery () throws Exception {
+    	assertIntersection ("{A TO Z]", "[A TO Z]", "{A TO Z]");
+    	assertIntersection ("{M TO R]", "[A TO R]", "{M TO Z]");
+    	assertIntersection ("[M TO F}", "[A TO F}", "[M TO Z]"); // ??
+    	assertIntersection ("[* TO F]", "[* TO Z]", "[* TO F]");
+    	assertIntersection ("{A TO Z}", "[* TO Z}", "{A TO *]");
+    	assertIntersection ("[F TO M]", "{A TO Z}", "[F TO M]");
+    }
+    
+    @Test
+    public void testIntersectNumericRangeQuery () throws Exception {
+    	assertNumericIntersect ("{1 TO 10]", "[1 TO 10]", "{1 TO 10]");
+    	assertNumericIntersect ("{2 TO 8]", "[1 TO 8]", "{2 TO 10]");
+    	assertNumericIntersect ("[4 TO 2}", "[1 TO 2}", "[4 TO 10]"); // ??
+    	assertNumericIntersect ("[* TO 5]", "[* TO 10]", "[* TO 5]");
+    	assertNumericIntersect ("{1 TO 10}", "[* TO 10}", "{1 TO *]");
+    	assertNumericIntersect ("[5 TO 8]", "{1 TO 10}", "[5 TO 8]");
+    }
+    
+    public void assertIntersection (String expected, String q1, String q2) throws ParseException {
+    	RangePQuery qq1 = makeTermRangePQuery((TermRangeQuery) parser.parse(q1));
+    	RangePQuery qq2 = makeTermRangePQuery((TermRangeQuery) parser.parse(q2));
+    	assertIntersection (expected, qq1, qq2);
+    	qq1 = makeTermRangePQuery((TermRangeQuery) parser.parse(q1));
+    	assertIntersection (expected, qq2, qq1);
+    }
+
+    public void assertNumericIntersect(String expected, String q1, String q2) throws ParseException {
+    	RangePQuery qq1 = makeNumericRangePQuery((TermRangeQuery) parser.parse(q1));
+    	RangePQuery qq2 = makeNumericRangePQuery((TermRangeQuery) parser.parse(q2));
+    	assertIntersection (expected, qq1, qq2);
+    	qq1 = makeNumericRangePQuery((TermRangeQuery) parser.parse(q1));
+    	assertIntersection (expected, qq2, qq1);
+    }
+
+    private void assertIntersection (String expected, RangePQuery q1, RangePQuery q2) throws ParseException {
+    	boolean intersects = q1.intersect (q2);
+    	if (intersects && expected == null) {
+    		fail ("queries " + q1 + " and " + q2 + " should not intersect");
+    	}
+    	if (!intersects && expected != null) {
+    		fail ("queries " + q1 + " and " + q2 + " should intersect");
+    	}
+    	RangePQuery eq = makeTermRangePQuery ((TermRangeQuery) parser.parse(expected));
+    	assertEquals ("unexpected range query intersection", eq, q1);
+    }
+    
     // query construction helpers:
     
     public static TermQuery makeTermQuery (String text) {
@@ -404,12 +451,26 @@ public class LuxParserTest {
         return NumericRangeQuery.newIntRange(field, lower, upper, includeLower, includeUpper);
     }
     
-    public static ParseableQuery makeTermRangePQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {
-        return new RangePQuery(field, "string", lower, upper, includeLower, includeUpper);
+    public static RangePQuery makeTermRangePQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {
+        return new RangePQuery(field, RangePQuery.Type.STRING, lower, upper, includeLower, includeUpper);
     }
 
-    public static ParseableQuery makeNumericRangePQuery(String field, String type, String lower, String upper, boolean includeLower, boolean includeUpper) {
+    public static RangePQuery makeNumericRangePQuery(String field, RangePQuery.Type type, String lower, String upper, boolean includeLower, boolean includeUpper) {
         return new RangePQuery(field, type, lower, upper, includeLower, includeUpper);
+    }
+
+    public static RangePQuery makeTermRangePQuery(TermRangeQuery q) {
+        return new RangePQuery(q.getField(), RangePQuery.Type.STRING, 
+        		q.getLowerTerm() == null ? null : q.getLowerTerm().utf8ToString(), 
+        				q.getUpperTerm() == null ? null : q.getUpperTerm().utf8ToString(), 
+        						q.includesLower(), q.includesUpper());
+    }
+    
+    public static RangePQuery makeNumericRangePQuery(TermRangeQuery q) {
+        return new RangePQuery(q.getField(), RangePQuery.Type.INT, 
+        		q.getLowerTerm() == null ? null : q.getLowerTerm().utf8ToString(), 
+        				q.getUpperTerm() == null ? null : q.getUpperTerm().utf8ToString(), 
+        						q.includesLower(), q.includesUpper());
     }
 
     // assertions:

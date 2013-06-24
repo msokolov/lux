@@ -936,7 +936,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     	// will throw a run-time error if it gets executed
                     	return null;
                     }
-                	String rangeTermType = fieldType.getRangeTermType();
+                	RangePQuery.Type rangeTermType = fieldType.getRangeTermType();
                     ParseableQuery rangeQuery;
                     Operator operator = op.getOperator();
 					switch (operator) {

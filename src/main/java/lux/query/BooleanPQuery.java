@@ -44,6 +44,7 @@ public class BooleanPQuery extends ParseableQuery {
         // We assume all the clauses have the same occur 
         // otherwise possibly merge the clauses if some of them are BooleanPQuery
         ArrayList<Clause> cl = new ArrayList<Clause> ();
+        RangePQuery rangeQuery = null;
         for (Clause clause : clauses) {
             ParseableQuery query = clause.getQuery();
             if (query instanceof BooleanPQuery) {
@@ -55,6 +56,18 @@ public class BooleanPQuery extends ParseableQuery {
                     }
                     continue;
                 }
+            } else if (query instanceof RangePQuery) {
+            	RangePQuery rquery = (RangePQuery) query;
+				if (rangeQuery == null) {
+            		rangeQuery = rquery;
+            	} else {
+            		if (rangeQuery.intersect (rquery)) {
+            			continue;
+            		} else {
+            			// assume similar fields are adjacent?
+            			rangeQuery = rquery;
+            		}
+            	}
             }
             // no merging possible
             cl.add (clause);
