@@ -10,9 +10,8 @@ import org.junit.runners.model.Statement;
 
 /**
  * Runs all tests in parallel and waits for them to complete. 
- * Up to {@link #maxThreads} will be run at once.
+ * Up to {@link #maxThreads} (default=8) will be run at once.
  * 
- * @author Michael Sokolov
  */
 public class MultiThreadedRunner extends BlockJUnit4ClassRunner {
     
@@ -76,4 +75,3 @@ public class MultiThreadedRunner extends BlockJUnit4ClassRunner {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
