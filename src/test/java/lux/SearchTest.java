@@ -703,10 +703,21 @@ public class SearchTest extends BaseSearchTest {
 
     @Test
     public void testLongFieldInequality() throws Exception {
-    	String query;
     	// do a basic long comparison, and make sure comparison with other numeric types is allowed
-    	query = "count(collection()[lux:field-values('scnlong') gt xs:int(5)])";
+    	String query = "count(collection()[lux:field-values('scnlong') gt xs:int(5)])";
     	assertSearch ("2", query, null, 2, 0);
+    }
+    
+    @Test
+    public void testXPathRangeQuery () throws Exception {
+    	String query;
+    	// do a basic integer comparison; the cast is required for atomic comparison
+    	query = "count(//SCENE[xs:integer(@act) lt 2])";
+    	assertSearch ("8", query, null, 6, 6);
+    	query = "count(//SCENE[@act < 2])";
+    	assertSearch ("6", query, null, 4, 4);
+    	query = "count(//SCENE[xs:integer(@act) > 2][xs:integer(@act) <= 3])";
+    	assertSearch ("9", query, null, 7, 7);
     }
 
     // TODO: test automatic optimizations of range queries (ie not involving field-values()).

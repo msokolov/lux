@@ -574,7 +574,7 @@ public class BasicQueryTest {
                 "</BooleanQuery>";
         case TITLE:
             return "<TermQuery fieldName=\"lux_elt_name\">TITLE</TermQuery>";
-        case MATCH_ALL_Q: return "<MatchAllDocsQuery />";
+        case MATCH_ALL_Q: return "<MatchAllDocsQuery/>";
         case AND: return "<TermQuery fieldName=\"lux_elt_name\">AND</TermQuery>";
         case LUX_FOO: return "<TermQuery fieldName=\"lux_elt_name\">foo&#x7B;http://luxdb.net&#x7D;</TermQuery>";
         case SCENE_3:

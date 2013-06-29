@@ -105,7 +105,7 @@ public class PathOccurrenceQueryTest extends BasicQueryTest {
         case ACT_ID:
             return "<RegexpQuery fieldName=\"lux_path\">@id\\/ACT(\\/.*)?</RegexpQuery>";
 
-        case MATCH_ALL_Q: return "<MatchAllDocsQuery />";
+        case MATCH_ALL_Q: return "<MatchAllDocsQuery/>";
         case AND: return "<RegexpQuery fieldName=\"lux_path\">AND(\\/.*)?</RegexpQuery>";
         case TITLE: return "<RegexpQuery fieldName=\"lux_path\">TITLE(\\/.*)?</RegexpQuery>";
         case LUX_FOO: return "<RegexpQuery fieldName=\"lux_path\">foo\\&#x7B;http\\:\\/\\/luxdb.net\\&#x7D;(\\/.*)?</RegexpQuery>";
