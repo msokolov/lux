@@ -708,7 +708,7 @@ public class SearchTest extends BaseSearchTest {
     	assertSearch ("2", query, null, 2, 0);
     }
     
-    @Test
+    @Test @Ignore
     public void testXPathRangeQuery () throws Exception {
     	String query;
     	// do a basic integer comparison; the cast is required for atomic comparison
