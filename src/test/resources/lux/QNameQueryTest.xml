@@ -1,0 +1,601 @@
+<test-suite>
+  <meta>
+    <title>Basic Test Queries</title>
+    <setup>
+      <keys>
+        <!-- define XPath indexes as key elements -->
+        <key>//a</key>
+      </keys>
+    </setup>
+  </meta>
+  <test-cases>
+    <test-case name="no-query">
+      <!-- empty query produces an error -->
+      <query></query>
+      <expect><error /></expect>
+    </test-case>
+    <test-case name="parse-error">
+      <query>bad xpath here</query>
+      <expect><error /></expect>
+    </test-case>
+    <test-case name="match-all-0">
+      <query type="element">/*</query>
+      <expect>
+        <query id="MATCH_ALL_Q">lux:search(#MATCH_ALL_Q#)/child::element()</query>
+      </expect>
+    </test-case>
+    <test-case name="match-all-1">
+      <query>/node()</query>
+      <expect>
+        <query type="NODE" id="MATCH_ALL_Q"></query>
+      </expect>
+    </test-case>
+    <test-case name="match-all-2">
+      <query>/</query>
+      <expect>
+        <query type="DOCUMENT" id="MATCH_ALL_Q"></query>
+      </expect>
+    </test-case>
+    <test-case name="element-predicate">
+      <query>(/)[.//ACT]</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="element-path-0">
+      <query>//ACT</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="element-path-1">
+      <query>/*/ACT</query>
+      <expect><query id="ACT2" /></expect>
+    </test-case>
+    <test-case name="element-path-2">
+      <query>/ACT//*</query>
+      <expect><query id="ACT1" /></expect>
+    </test-case>
+    <test-case name="element-path-3">
+      <query>/ACT</query>
+      <expect><query id="ACT1" /></expect>
+    </test-case>
+    <test-case name="element-path-4">
+      <query>/ACT/text()</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="element-path-5">
+      <query>//*/@attr</query>
+      <expect><query id="ATTR" /></expect>
+    </test-case>
+    <test-case name="element-path-6">
+      <query>//node()/@attr</query>
+      <expect><query id="ATTR" /></expect>
+    </test-case>
+    <test-case name="rooted-path-to-predicate">
+      <query>//ACT/SCENE/root()</query>
+      <expect><query id="ACT_SCENE">lux:search(#ACT_SCENE#)[(descendant::element(ACT)/child::element(SCENE))/root(.)]</query></expect>
+    </test-case>
+    <test-case name="attr-predicate-0">
+      <query>//*[@attr]</query>
+      <expect><query id="ATTR" /></expect>
+    </test-case>
+    <test-case name="attr-predicate-1">
+      <query>(/)[.//*/@attr]</query>
+      <expect><query id="ATTR" /></expect>
+    </test-case>
+    <test-case name="element-attribute-path-0">
+      <query>//ACT/@id</query>
+      <expect><query id="ACT_ID" /></expect>
+    </test-case>
+    <test-case name="element-attribute-path-1">
+      <query>//ACT/@*</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="two-element-path-0">
+      <query>//*/ACT/SCENE</query>
+      <expect><query id="ACT_SCENE" /></expect>
+    </test-case>
+    <test-case name="two-element-path-1">
+      <query>/ACT/SCENE</query>
+      <expect><query id="ACT_SCENE1" /></expect>
+    </test-case>
+    <test-case name="two-element-path-2">
+      <query>/ACT//SCENE</query>
+      <expect><query id="ACT_SCENE2" /></expect>
+    </test-case>
+    <test-case name="two-element-predicate">
+      <query>(/)[.//ACT][.//SCENE]</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="union">
+      <query>//ACT|//SCENE</query>
+      <expect><query id="ACT_OR_SCENE" /></expect>
+    </test-case>
+    <test-case name="positional-predicate-0">
+      <query>//ACT/SCENE[1]</query>
+      <expect><query id="ACT_SCENE" /></expect>
+    </test-case>
+    <test-case name="positional-predicate-1">
+      <query>/descendant-or-self::SCENE[1]</query>
+      <expect><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="positional-predicate-2">
+      <query>//SCENE[1]</query>
+      <expect><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="positional-predicate-3">
+      <query>//SCENE[last()]</query>
+      <expect><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="positional-predicate-4">
+      <query>//SCENE[2]</query>
+      <expect><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="positional-predicate-5">
+      <query>(//ACT)[1]</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="subsequence-0">
+      <query>subsequence (//ACT, 1, 1)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <!--
+    <test-case>
+      <query>subsequence (//ACT, 2)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    -->
+    <test-case name="subsequence-1">
+      <query>subsequence (//ACT, 1, 10)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <!--
+    <test-case>
+      <query>subsequence (//ACT, 10, 10)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    -->
+    <test-case name="multi-element-path-0">
+      <query>//ACT/TITLE | //SCENE/TITLE| //SPEECH/TITLE</query>
+      <expect><query id="ACT_SCENE_SPEECH" /></expect>
+    </test-case>
+    <test-case name="multi-element-path-1">
+      <!--
+        This was three separate queries, whose results would then have to be merged together,
+        but our Optimizer declares all these expressions as ordered, enabling Saxon to merge them 
+        together into a single query
+      -->
+      <query>/PLAY/(ACT|PERSONAE)/TITLE</query>
+      <expect><query id="PLAY_ACT_OR_PERSONAE_TITLE" /></expect>
+    </test-case>
+    <!-- 
+    <test-case name="boolean-span-combo">
+      <query>//ACT/TITLE/root()//SCENE/TITLE/root()//SPEECH/TITLE/root()</query>
+      <expect><query id="ACT_SCENE_SPEECH_AND" /></expect>
+    </test-case>
+    -->
+    <test-case name="many-small-docs">
+      <query>/LINE</query>
+      <expect><query id="LINE" /></expect>
+    </test-case>
+    <test-case name="element-value-0">
+      <query>/ACT[.='content']</query>
+      <expect><query id="ACT_CONTENT1" /></expect>
+    </test-case>
+    <test-case name="element-value-1">
+      <query>/ACT[SCENE='content']</query>
+      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+    </test-case>
+    <test-case name="element-value-2">
+      <query>/ACT['content'=SCENE]</query>
+      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+    </test-case>
+    <test-case name="element-value-3">
+      <query>/ACT/SCENE[.='content']</query>
+      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+    </test-case>
+    <test-case name="element-value-4">
+      <query>//ACT[.='content']</query>
+      <expect><query id="ACT_CONTENT" /></expect>
+    </test-case>
+    <test-case name="element-value-5">
+      <query>//ACT[SCENE='content']</query>
+      <expect><query id="ACT_SCENE_CONTENT" /></expect>
+    </test-case>
+    <test-case name="element-value-self-0">
+      <query>/*[self::ACT/SCENE='content']</query>
+      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+    </test-case>
+    <test-case name="element-value-self-1">
+      <query>/*[self::ACT/SCENE/self::*='content']</query>
+      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+    </test-case>
+    <test-case name="attribute-value">
+      <query>/ACT[@id=123]</query>
+      <expect><query id="ACT_ID_123" /></expect>
+    </test-case>
+    <test-case name="attribute-value">
+      <query>/ACT[SCENE/@id=123]</query>
+      <expect><query id="ACT_SCENE_ID_123" /></expect>
+    </test-case>
+    <test-case name="ancestor-or-self">
+      <query>/ancestor-or-self::node()</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
+    <test-case name="self">
+      <query>/self::node()</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
+    <!--
+    TODO: facts
+    -->
+    <test-case name="number-0">
+      <query>number((/ACT/SCENE)[1])</query>
+      <expect><query id="ACT_SCENE1" /></expect>
+    </test-case>
+    <test-case name="number-1">
+      <query>number((/descendant-or-self::ACT)[1])</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="count-0">
+      <query>count(/)</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
+    <test-case name="count-1">
+      <query>count(//ACT)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="count-2">
+      <query>count(//ACT/root())</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="count-3">
+      <query>count(//ACT/ancestor::document-node())</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="count-4">
+      <query>count(//ACT/SCENE/ancestor::document-node())</query>
+      <expect><query id="ACT_SCENE" /></expect>
+    </test-case>
+    <test-case name="count-5">
+      <query>count(//ACT/root()//SCENE)</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="exists-0">
+      <query>exists(/)</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
+    <test-case name="exists-1">
+      <query>exists(//ACT)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="exists-2">
+      <query>exists(//ACT/root())</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <!--
+      TODO: merge queries such as this into one query:
+      <test-case name="exists-fail">
+        <query>exists(//ACT/root() intersect //SCENE/root()) </query>
+        <expect><query id="Q.ACT_SCENE" /></expect>
+      </test-case>
+    -->
+    <test-case name="exists-3">
+      <query>exists(//ACT) and exists(//SCENE)</query>
+      <expect><query id="ACT" /><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="exists-4">
+      <query>exists(//ACT/root()//SCENE)</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="exists-5">
+      <!--  TODO: we only need a single query here; the intersection can be obliterated -->
+      <query>exists(//ACT/root() intersect //SCENE/root())</query>
+      <expect><query id="ACT" /><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="exists-6">
+      <query>exists((/)[.//ACT and .//SCENE])</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="exists-predicate">
+      <query>//ACT[exists(SCENE)]</query>
+      <expect><query id="ACT_SCENE" /></expect>
+    </test-case>
+    <test-case name="empty-0">
+      <query>empty(/)</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
+    <test-case name="empty-1">
+      <query>empty(//ACT)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="empty-2">
+      <query>empty(//ACT/root())</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="empty-3">
+      <query>empty(//ACT) and empty(//SCENE)</query>
+      <expect><query id="ACT" /><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="empty-4">
+      <query>empty(//ACT/root()//SCENE)</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="empty-5">
+      <query>empty((/)[.//ACT and .//SCENE])</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="empty-predicate">
+      <query>//ACT[empty(SCENE)]</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="not-0">
+      <query>not(/)</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
+    <test-case name="not-1">
+      <query>not(//ACT)</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="not-2">
+      <query>not(//ACT/root())</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="not-3">
+      <query>not(//ACT) and empty(//SCENE)</query>
+      <expect><query id="ACT"/><query id="SCENE" /></expect>
+    </test-case>
+    <test-case name="not-4">
+      <query>not(//ACT/root()//SCENE)</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="not-5">
+      <query>not((/)[.//ACT and .//SCENE])</query>
+      <expect><query id="ACT_AND_SCENE" /></expect>
+    </test-case>
+    <test-case name="not-predicate-0">
+      <query>//ACT[not(SCENE)]</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="not-predicate-1">
+      <query>//ACT[count(SCENE) = 0]</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="path-predicate-combine-0">
+      <query>//ACT[.//SCENE]</query>
+      <expect><query id="ACT_SCENE3" /></expect>
+    </test-case>
+    <test-case name="path-predicate-combine-1">
+      <query>//ACT[exists(.//SCENE)]</query>
+      <expect><query id="ACT_SCENE3" /></expect>
+    </test-case>
+    <test-case name="path-predicate-combine-2">
+      <query>//ACT[not(empty(.//SCENE))]</query>
+      <expect><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="reserved-word">
+      <!-- internally, we use certain words to denote search operations.  Make sure these are not
+           confused with query terms -->
+      <query>//AND</query>
+      <expect><query id="AND" /></expect>
+    </test-case>
+    <test-case name="namespace-aware">
+      <query>//lux:foo</query>
+      <expect><query id="LUX_FOO" /></expect>
+    </test-case>
+    <test-case name="collection">
+      <!-- fn:collection() is implicit -->
+      <query>collection()//SCENE</query>
+      <expect>
+        <query id="SCENE">lux:search(#SCENE#)/descendant::element(SCENE)</query>
+      </expect>
+    </test-case>
+    <test-case name="order-by">
+      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc</query>
+      <expect order-by="sortkey"><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="order-by-context-argument">
+      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey', $doc) return $doc</query>
+      <expect order-by="sortkey"><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="order-by-search-funcall">
+      <query>for $doc in lux:search("foo") order by $doc/lux:field-values('sortkey', $doc) return $doc</query>
+      <expect order-by="sortkey"><query id="LUX_FOO" /></expect>
+    </test-case>
+    <test-case name="order-by-2keys">
+      <!-- two indexed sortkeys -->
+      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc</query>
+      <expect order-by="sortkey,sk2"><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="order-by-descending">
+      <!-- two indexed sortkeys, plus descending -->
+      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') descending, $doc/lux:field-values('sk2') return $doc</query>
+      <expect order-by="sortkey descending,sk2"><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="order-by-noindex-0">
+      <!--  one indexed sortkey, one xpath sort -->
+      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') descending, $doc/date descending return $doc</query>
+      <expect order-by="sortkey"><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="order-by-no-index-1">
+      <!--  one xpath sort, one indexed sortkey -->
+      <query>for $doc in //ACT order by $doc/date, $doc/lux:field-values('sortkey') ascending return $doc</query>
+      <expect order-by=""><query id="ACT" /></expect>
+    </test-case>
+    <test-case name="atomizing-empty-sequence-0">
+      <!-- 
+           This test ensures that the optimizer ignores the argument of string(), and does not 
+           use it to limit the set of documents evaluated by the query
+      -->
+      <query>(for $doc in collection() return string($doc/*/TITLE))[2]</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
+    <test-case name="atomizing-empty-sequence-1">
+      <!-- 
+           Should return the titles of the second document in document order (which is a TITLE 
+           and has no TITLE), but this was failing because we fetched only documents containing TITLE
+      -->
+      <query>(for $doc in collection() return data($doc//TITLE))[2]</query>
+      <expect><query id="TITLE" /></expect>
+    </test-case>
+    <test-case name="three-predicates">
+      <query>/SCENE[TITLE][SPEECH][STAGEDIR]</query>
+      <expect><query id="SCENE_3" /></expect>
+    </test-case>
+    <test-case name="four-predicates">
+      <query>/SCENE[TITLE][SPEECH][STAGEDIR][MISC]</query>
+      <expect><query id="SCENE_4" /></expect>
+    </test-case>
+  </test-cases>
+  <queries id="qname-index">
+    <query id="ATTR"><TermQuery fieldName="lux_att_name">attr</TermQuery></query>
+    <query id="SCENE"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></query>
+    <query id="ACT_SCENE">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE1">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE2">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE3">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_AND_SCENE">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_CONTENT">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_CONTENT1">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="SCENE_ACT">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_OR_SCENE">
+      <BooleanQuery>
+        <Clause occurs="should"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="should"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_SPEECH">
+      <BooleanQuery>
+        <Clause occurs="should">
+          <BooleanQuery>
+            <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+            <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+          </BooleanQuery>
+        </Clause>
+        <Clause occurs="should">
+          <BooleanQuery>
+            <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause> 
+            <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+          </BooleanQuery>
+        </Clause>
+        <Clause occurs="should">
+          <BooleanQuery>
+            <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause> 
+            <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+          </BooleanQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="LINE">
+      <TermQuery fieldName="lux_elt_name">LINE</TermQuery>
+    </query>
+    <query id="ACT">
+      <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+    </query>
+    <query id="ACT1">
+      <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+    </query>
+    <query id="ACT2">
+      <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+    </query>
+    <query id="ACT_CONTENT">
+      <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+    </query>
+    <query id="ACT_CONTENT1">
+      <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+    </query>
+    <query id="ACT_ID">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_att_name">id</TermQuery></Clause> 
+      </BooleanQuery>
+    </query>
+    <query id="ACT_ID_123">
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_att_name">id</TermQuery></Clause> 
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_ID_123"> 
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_att_name">id</TermQuery></Clause> 
+      </BooleanQuery>
+    </query>
+    <query id="PLAY_ACT_OR_PERSONAE_TITLE"> 
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">PLAY</TermQuery></Clause> 
+        <Clause occurs="must"><BooleanQuery>
+          <Clause occurs="should"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause> 
+          <Clause occurs="should"><TermQuery fieldName="lux_elt_name">PERSONAE</TermQuery></Clause> 
+        </BooleanQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause> 
+      </BooleanQuery>
+    </query>
+    <query id="TITLE">
+      <TermQuery fieldName="lux_elt_name">TITLE</TermQuery>
+    </query>
+    <query id="MATCH_ALL_Q"><MatchAllDocsQuery /></query>
+    <query id="AND">
+      <TermQuery fieldName="lux_elt_name">AND</TermQuery>
+    </query>
+    <query id="LUX_FOO">
+      <TermQuery fieldName="lux_elt_name">foo&#x7B;http://luxdb.net&#x7D;</TermQuery>
+    </query>
+    <query id="SCENE_3"> 
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">STAGEDIR</TermQuery></Clause> 
+      </BooleanQuery>
+    </query>
+    <query id="SCENE_4"> 
+      <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">STAGEDIR</TermQuery></Clause> 
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">MISC</TermQuery></Clause> 
+      </BooleanQuery>
+    </query>
+  </queries>
+</test-suite>
