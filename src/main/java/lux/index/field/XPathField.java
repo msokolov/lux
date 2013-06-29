@@ -35,6 +35,10 @@ public class XPathField<T> extends FieldDefinition {
         super (name, analyzer, isStored, type);
         this.xpath = xpath;
     }
+
+    public String getXPath () {
+    	return xpath;
+    }
     
     @Override
     public Iterable<T> getValues(XmlIndexer indexer) {
@@ -82,6 +86,7 @@ public class XPathField<T> extends FieldDefinition {
         public Iterator<T> iterator() {
             return this;
         }
+        
     }
 
 }
