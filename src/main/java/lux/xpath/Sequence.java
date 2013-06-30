@@ -1,6 +1,5 @@
 package lux.xpath;
 
-
 public class Sequence extends AbstractExpression {
     
     public Sequence (AbstractExpression ... contents) {

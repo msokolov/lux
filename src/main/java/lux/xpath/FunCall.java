@@ -130,6 +130,12 @@ public class FunCall extends AbstractExpression {
         return null;
     }
 
+    @Override
+    public boolean equals (Object other) {
+        return super.equals (other) && name.equals(((FunCall) other).name) && 
+            returnType.equals(((FunCall) other).returnType);
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

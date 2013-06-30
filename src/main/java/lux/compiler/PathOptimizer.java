@@ -8,12 +8,14 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import lux.Compiler;
 import lux.Compiler.SearchStrategy;
 import lux.SearchResultIterator;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
+import lux.index.field.XPathField;
 import lux.query.BooleanPQuery;
 import lux.query.NodeTextQuery;
 import lux.query.ParseableQuery;
@@ -53,6 +55,8 @@ import lux.xquery.VariableContext;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
 
+import net.sf.saxon.s9api.SaxonApiException;
+
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.SortField;
@@ -89,8 +93,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private final ArrayList<XPathQuery> queryStack;
     private final HashMap<QName, VarBinding> varBindings;
     private final IndexConfiguration indexConfig;
+    private final Compiler compiler;
     private final XPathQuery MATCH_ALL;
-
+    private SaxonTranslator translator;
+    private HashMap<String, AbstractExpression> fieldXPaths;
     private final String attrQNameField;
     private final String elementQNameField;
     private boolean optimizeForOrderedResults;
@@ -98,16 +104,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private static final boolean DEBUG = false;
     
-    public PathOptimizer(IndexConfiguration indexConfig) {
+    public PathOptimizer(Compiler compiler) {
         queryStack = new ArrayList<XPathQuery>();
         varBindings = new HashMap<QName, VarBinding>();
+        this.compiler = compiler;
+        this.indexConfig = compiler.getIndexConfiguration();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
-        this.indexConfig = indexConfig;
         attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
         elementQNameField = indexConfig.getFieldName(FieldName.ELT_QNAME);
         optimizeForOrderedResults = true;
         log = LoggerFactory.getLogger(PathOptimizer.class);
-
     }
 
     /**
@@ -957,20 +963,42 @@ public class PathOptimizer extends ExpressionVisitorBase {
     	return op;
     }
     
-	private FieldDefinition fieldMatching(AbstractExpression expr) {
+    private FieldDefinition fieldMatching(AbstractExpression expr) {
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
             QName funcName = funcall.getName();
-			if (funcName.equals(FunCall.LUX_FIELD_VALUES)) {
+            if (funcName.equals(FunCall.LUX_FIELD_VALUES)) {
                 AbstractExpression arg = funcall.getSubs()[0];
                 if (arg instanceof LiteralExpression) {
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
                     return indexConfig.getField(fieldName);
                 }
-			}
+            }
         }
-		return null;
-	}
+        for (FieldDefinition field : indexConfig.getFields()) {
+            if (field instanceof XPathField) {
+                String xpath = ((XPathField<?>) field).getXPath();
+                AbstractExpression fieldExpr = compilePath (xpath);
+                if (fieldExpr != null && fieldExpr.equals(expr)) {
+                    return field;
+                }
+            }
+        }
+        return null;
+    }
+	
+    private AbstractExpression compilePath (String xpath) {
+        AbstractExpression fieldPath = getFieldXPaths().get(xpath);
+        if (fieldPath == null) {
+        	try {
+        		fieldPath = getTranslator().exprFor (compiler.getXPathCompiler().compile(xpath).getUnderlyingExpression().getInternalExpression());
+        		getFieldXPaths().put(xpath, fieldPath);
+        	} catch (SaxonApiException e) {
+        		log.error("Error compiling xpath for field", e);
+        	}
+        }
+        return fieldPath;
+    }
 
 	// Undo an unhelpful optimization supplied by Saxon
     private AbstractExpression rewriteMinMax (AbstractExpression expr) {
@@ -1464,6 +1492,20 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     public void setSearchStrategy(SearchStrategy searchStrategy) {
         this.optimizeForOrderedResults = (searchStrategy == SearchStrategy.LUX_SEARCH);
+    }
+    
+    private SaxonTranslator getTranslator () {
+    	if (translator == null) {
+    		translator = new SaxonTranslator(compiler.getProcessor().getUnderlyingConfiguration());
+    	}
+    	return translator;
+    }
+    
+    private HashMap<String, AbstractExpression> getFieldXPaths() {
+    	if (fieldXPaths == null) {
+    		fieldXPaths = new HashMap<String, AbstractExpression>();
+    	}
+    	return fieldXPaths;
     }
 
 }

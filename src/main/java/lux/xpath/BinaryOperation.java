@@ -90,6 +90,11 @@ public class BinaryOperation extends AbstractExpression {
     public int getPrecedence () {
         return operator.precedence;
     }
+
+    @Override
+    public boolean equals (Object other) {
+        return super.equals (other) && operator == ((BinaryOperation)other).operator;
+    }
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

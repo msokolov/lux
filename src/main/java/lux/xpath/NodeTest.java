@@ -106,6 +106,13 @@ public class NodeTest {
             throw new IllegalArgumentException ("invalid node type " + type);
         }
     }
+
+    @Override
+    public boolean equals (Object other) {
+        return other != null && other instanceof NodeTest && type == ((NodeTest) other).type &&
+            name.equals(((NodeTest) other).name);
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

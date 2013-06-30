@@ -1,5 +1,6 @@
 package lux.xpath;
 
+import lux.Compiler;
 import lux.compiler.PathOptimizer;
 import lux.index.IndexConfiguration;
 import lux.xml.QName;
@@ -11,7 +12,7 @@ import org.junit.Test;
 public class TestVisitor {
 
     @Test public void testVisit () {
-        PathOptimizer opt = new PathOptimizer (IndexConfiguration.DEFAULT);
+        PathOptimizer opt = new PathOptimizer (new Compiler(IndexConfiguration.DEFAULT));
         PathExpression expr = new PathExpression (
                 new Root(),
                 new Predicate(

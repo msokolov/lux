@@ -195,6 +195,38 @@ public abstract class AbstractExpression implements Visitable {
      */
     public abstract int getPrecedence ();
 
+    @Override
+    public boolean equals (Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (! (getClass().isAssignableFrom(other.getClass()))) {
+            return false;
+        }
+        AbstractExpression oex = (AbstractExpression) other;
+        if (oex.getType() != type) {
+            return false;
+        }
+        if (subs == oex.subs) {
+        	return true;
+        }
+        if (subs == null || oex.subs == null) {
+        	return false;
+        }
+        if (subs.length != oex.subs.length) {
+        	return false;
+        }
+        for (int i = 0; i < subs.length; i++) {
+        	if (! (subs[i].equals(oex.subs[i]))) {
+        		return false;
+        	}
+        }
+        return true;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

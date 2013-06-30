@@ -190,12 +190,12 @@ public abstract class FieldDefinition {
         }
         return options;
     }
-    
+
     @Override
     public String toString () {
         return name;
     }
-
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
