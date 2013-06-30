@@ -150,7 +150,7 @@
       <RegexpQuery fieldName="lux_path">AND(/.*)?</RegexpQuery>
     </query>
     <query id="LUX_FOO">
-      <RegexpQuery fieldName="lux_path">foo{http://luxdb.net}(/.*)?</RegexpQuery>
+      <RegexpQuery fieldName="lux_path">foo\{http\:\/\/luxdb.net\}(/.*)?</RegexpQuery>
     </query>
     <query id="SCENE_3">
       <BooleanQuery> 
