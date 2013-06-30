@@ -57,7 +57,8 @@ class QueryTestCase {
         AbstractExpression ex = optimizedQuery.getBody();
         String expectedOptimized = expectedResult.queryText;
         if (!StringUtils.isEmpty(expectedOptimized)) {
-            assertEquals (expectedOptimized, optimizedQuery.toString());
+        	String oq = optimizedQuery.toString().replaceAll ("&#x7B;", "{").replaceAll("&#x7D;", "}");
+            assertEquals (expectedOptimized, oq);
         }
         SearchExtractor extractor = new SearchExtractor();
         ex.accept(extractor);
