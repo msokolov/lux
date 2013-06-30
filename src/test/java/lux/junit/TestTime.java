@@ -1,5 +1,8 @@
 package lux.junit;
 
+import org.junit.Ignore;
+
+@Ignore
 class TestTime {
     TestTime (String condition, String query, int n) {
         this.condition = condition;

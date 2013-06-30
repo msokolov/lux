@@ -16,7 +16,9 @@ import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.store.LockObtainFailedException;
+import org.junit.Ignore;
 
+@Ignore
 public class SearchTestCase extends QueryTestCase {
 
     private static long elapsed=0;
