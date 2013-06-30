@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import lux.Compiler.SearchStrategy;
 import lux.exception.LuxException;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
@@ -110,6 +111,7 @@ public class SearchPathQueryTest extends BasicQueryTest {
             fail (e.toString());
         }
         Evaluator baselineEval = new Evaluator(new Compiler (baselineIndexer.getConfiguration()), baselineIndex.searcher, null);
+        baselineEval.getCompiler().setSearchStrategy(SearchStrategy.LUX_UNOPTIMIZED);
         if (repeatCount > 1) {
             benchmark (xpath, baselineEval, testEval);
         } else {

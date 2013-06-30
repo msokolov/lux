@@ -59,7 +59,10 @@ public class Compiler {
     private XQuery lastOptimized;
     
     public enum SearchStrategy {
-        NONE, LUX_SEARCH, SAXON_LICENSE
+        NONE, // the query is evaluated without any modification 
+        LUX_UNOPTIMIZED, // collection() is inserted for Root()
+        LUX_SEARCH, // full suite of Lux optimizations are applied, consistent with available indexes 
+        SAXON_LICENSE, // Only optimizations compatible with Saxon-PE/EE are applied  
     }
     private SearchStrategy searchStrategy;
 
