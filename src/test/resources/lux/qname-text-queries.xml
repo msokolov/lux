@@ -1,0 +1,63 @@
+<queries>
+  <query id="ACT_CONTENT">
+    <BooleanQuery>
+      <Clause occurs="must">
+        <QNameTextQuery fieldName="lux_elt_text" qName="ACT">content</QNameTextQuery>
+      </Clause>
+      <Clause occurs="must">
+        <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="ACT_CONTENT1">
+    <BooleanQuery>
+      <Clause occurs="must">
+        <QNameTextQuery fieldName="lux_elt_text" qName="ACT">content</QNameTextQuery>
+      </Clause>
+      <Clause occurs="must">
+        <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="ACT_SCENE_CONTENT">
+    <BooleanQuery>
+      <Clause occurs="must">
+        <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+      </Clause>
+      <Clause occurs="must">
+        <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+      </Clause>
+      <Clause occurs="must">
+        <TermQuery fieldName="lux_elt_name">SCENE</TermQuery>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="ACT_SCENE_CONTENT1">
+    <BooleanQuery>
+      <Clause occurs="must">
+        <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+      </Clause>
+      <Clause occurs="must">
+        <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+      </Clause>
+      <Clause occurs="must">
+        <TermQuery fieldName="lux_elt_name">SCENE</TermQuery>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="ACT_ID_123">
+    <BooleanQuery>
+      <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="id">123</QNameTextQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">id</TermQuery></Clause>
+    </BooleanQuery>
+  </query>
+  <query id="ACT_SCENE_ID_123">
+    <BooleanQuery>
+      <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="id">123</QNameTextQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">id</TermQuery></Clause>
+    </BooleanQuery>
+  </query>
+</queries>

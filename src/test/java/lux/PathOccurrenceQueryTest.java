@@ -3,7 +3,6 @@ package lux;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 
-
 public class PathOccurrenceQueryTest extends QNameQueryTest {
     
     @Override

@@ -18,6 +18,7 @@ import lux.QueryContext;
 import lux.XdmResultSet;
 import lux.index.XmlIndexer;
 import net.sf.saxon.s9api.DocumentBuilder;
+import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
@@ -38,8 +39,27 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 
 	// private String description;
     private List<QueryTestCase> cases;
+    private HashMap<String,XdmNode> queryMap = new HashMap<String, XdmNode>();
     protected Evaluator eval;
+    protected DocumentBuilder builder; 
     
+    public QueryTestRunner(Class<? extends QNameQueryTest> klass) throws InitializationError {
+        super (klass);
+        eval = new Evaluator(new Compiler(getIndexer().getConfiguration()), null, null);
+        builder = eval.getCompiler().getProcessor().newDocumentBuilder();
+        queryMap = new HashMap<String, XdmNode>();
+        cases = new ArrayList<QueryTestCase>(100);
+        try {
+            eval.getCompiler().setSearchStrategy (Compiler.SearchStrategy.NONE);
+			loadTests ();
+	        eval.getCompiler().setSearchStrategy (Compiler.SearchStrategy.LUX_SEARCH);
+		} catch (IOException e) {
+			throw new InitializationError(e);
+		} catch (SaxonApiException e) {
+			throw new InitializationError(e);
+		}
+    }
+
     /** @return an indexer whose optimizations are to be tested.
      * @throws InitializationError 
      */
@@ -51,20 +71,6 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 			throw new InitializationError (e);
 		} 
 		return test.getIndexer();
-    }
-
-    public QueryTestRunner(Class<? extends QNameQueryTest> klass) throws InitializationError {
-        super (klass);
-        eval = new Evaluator(new Compiler(getIndexer().getConfiguration()), null, null);
-        try {
-            eval.getCompiler().setSearchStrategy (Compiler.SearchStrategy.NONE);
-			loadTests ();
-	        eval.getCompiler().setSearchStrategy (Compiler.SearchStrategy.LUX_SEARCH);
-		} catch (IOException e) {
-			throw new InitializationError(e);
-		} catch (SaxonApiException e) {
-			throw new InitializationError(e);
-		}
     }
 
     /**
@@ -102,35 +108,53 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
      * @throws SaxonApiException 
      */
     protected void loadTests () throws IOException, SaxonApiException {
-        DocumentBuilder builder = eval.getCompiler().getProcessor().newDocumentBuilder();
         String suiteFileName = getTestClass().getJavaClass().getSimpleName() + ".xml";
-        XdmNode suite = readFile (suiteFileName, builder);
+        XdmNode suite = readFile (suiteFileName);
+        for (XdmItem queryItem : eval ("/test-suite/queries", suite)) {
+        	loadQueries (queryItem);
+        }
+        loadTestCases (suite);
         // description = evalStr ("/test-suite/meta/title", suite);
         // /test-suite/meta/setup/keys
-        HashMap<String,XdmNode> queryMap = new HashMap<String, XdmNode>();
-        for (XdmItem queryItem : eval ("/test-suite/queries/query", suite)) {
-            String queryID = evalStr ("@id", queryItem);
-            XdmValue queries = eval ("*", queryItem);
-            if (queries.size() > 0) {
-            	XdmNode firstQuery = (XdmNode) queries.iterator().next();
-            	queryMap.put (queryID, firstQuery);
-            }
-        }
-        cases = new ArrayList<QueryTestCase>(100);
-        XdmValue includes = eval ("/test-suite/test-cases/include/@file/string()", suite);
-        for (XdmItem include : includes) {
-            XdmNode tests = readFile (include.getStringValue(), builder);
-        	for (XdmItem testItem : eval ("/test-cases/test-case", tests)) {
-        		addTestCase (queryMap, testItem);
+    }
+    
+    private void loadTestCases(XdmNode top) throws IOException, SaxonApiException {
+        XdmValue kids = eval ("test-suite/test-cases/*", top);
+        for (XdmItem item: kids) {
+        	XdmNode kid = (XdmNode) item;
+        	if (kid.getNodeName().getClarkName().equals("include")) {
+                XdmNode tests = readFile (kid.getAttributeValue(new QName("file")));
+                loadTestCases (tests);
         	}
-        }
-        XdmValue testCases = eval ("/test-suite/test-cases/test-case", suite);
-        for (XdmItem testItem : testCases) {
-            addTestCase(queryMap, testItem);
+        	else if (kid.getNodeName().getClarkName().equals("test-case")) {
+        		addTestCase (kid);
+        	}
         }
     }
     
-    XdmNode readFile (String fileName, DocumentBuilder builder) throws IOException, SaxonApiException {
+    private void loadQueries(XdmItem top) throws IOException, SaxonApiException {
+        for (XdmItem queryItem : eval ("*", top)) {
+        	XdmNode node = (XdmNode) queryItem;
+        	if (node.getNodeName().getLocalName().equals("query")) {
+                String queryID = evalStr ("@id", queryItem);
+                XdmValue queries = eval ("*", queryItem);
+                if (queries.size() > 0) {
+                	XdmNode firstQuery = (XdmNode) queries.iterator().next();
+                	queryMap.put (queryID, firstQuery);
+                }
+        	} 
+        	else if (node.getNodeName().getLocalName().equals("include")) {
+        		String fileName = evalStr ("@file", node);
+        		XdmNode include = readFile (fileName);
+        		XdmValue queries = eval("queries", include);
+        		for (XdmItem q : queries) {
+        			loadQueries (q);
+        		}
+        	}
+         }
+	}
+
+	XdmNode readFile (String fileName) throws IOException, SaxonApiException {
         InputStream in = getTestClass().getJavaClass().getResourceAsStream (fileName);
         if (in == null) {
             throw new FileNotFoundException (fileName);
@@ -140,7 +164,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
     	return node;
     }
 
-	private void addTestCase(HashMap<String, XdmNode> queryMap, XdmItem testItem) {
+	private void addTestCase(XdmItem testItem) {
 		String name = evalStr ("@name", testItem);
 		String queryText = evalStr ("query", testItem);
 		boolean expectError = evalStr ("exists(expect/error)", testItem).equals("true");
@@ -149,13 +173,13 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 		String expectedResultType = evalStr ("expect/query[1]/@type", testItem);
 		String expectedOrderBy= evalStr ("expect/query[1]/@order-by", testItem);
 		QueryTestResult expectedResult = new QueryTestResult 
-		    (expectError, expectedError, getExpectedQueryText(queryMap, testItem), expectedQueries,
+		    (expectError, expectedError, getExpectedQueryText(testItem), expectedQueries,
 		     expectedResultType, expectedOrderBy);
 		QueryTestCase testCase = new QueryTestCase (name, queryText, expectedResult);
 		cases.add (testCase);
 	}
     
-    private String getExpectedQueryText (HashMap<String,XdmNode> queryMap , XdmItem testItem) {
+    private String getExpectedQueryText (XdmItem testItem) {
         String expectedQueryText  = evalStr ("expect/query", testItem);
         if (expectedQueryText != null) {
         	// replace query id tokens like #QUERY#
