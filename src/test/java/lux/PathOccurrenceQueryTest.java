@@ -4,7 +4,7 @@ import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 
 
-public class PathOccurrenceQueryTest extends BasicQueryTest {
+public class PathOccurrenceQueryTest extends QNameQueryTest {
     
     @Override
     public XmlIndexer getIndexer() {

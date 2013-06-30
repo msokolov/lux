@@ -55,7 +55,7 @@ public class SpanNearPQuery extends ParseableQuery {
     @Override
     public ElementConstructor toXmlNode(String field, IndexConfiguration config) {
         if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
-            String qs = toPathOccurrenceQueryString(field, config);
+            String qs = toPathOccurrenceQueryString(field, config, false);
             // TODO: get the path field name from config
             AttributeConstructor fieldAtt = new AttributeConstructor(TermPQuery.FIELD_ATTR_NAME, new LiteralExpression ("lux_path"));
             // TODO: boost (and refactor)
@@ -81,7 +81,7 @@ public class SpanNearPQuery extends ParseableQuery {
     public String toQueryString(String field, IndexConfiguration config) {
         StringBuilder buf = new StringBuilder();
         if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
-            buf.append(field).append(":/").append(toPathOccurrenceQueryString(field, config))
+            buf.append(field).append(":/").append(toPathOccurrenceQueryString(field, config, true))
                 .append('/');
         }
         String markerName = inOrder ? "lux_within:" : "lux_near:";
@@ -93,8 +93,9 @@ public class SpanNearPQuery extends ParseableQuery {
         return buf.toString();
     }
     
-    private String toPathOccurrenceQueryString (String field, IndexConfiguration config) {
+    private String toPathOccurrenceQueryString (String field, IndexConfiguration config, boolean escape) {
         StringBuilder buf = new StringBuilder();
+        // Escape slashes for the Lucene query parser since they are *part of the string to match*
         if (clauses.length > 0) {
             buf.append (toPathOccurrenceQueryString(clauses[clauses.length-1], field, config));
             for (int i = clauses.length-2; i >= 0; i--) {
@@ -102,23 +103,23 @@ public class SpanNearPQuery extends ParseableQuery {
                 ParseableQuery clause = clauses[i];
                 if (clause instanceof SpanMatchAll) {
                     if (slop > 0) {
-                        buf.append("(\\/.*)?");
+                        buf.append(escape ? "(\\/.*)?" : "(/.*)?");
                     }
                     continue;
                 }
                 if (slop > 0) {
-                    buf.append("\\/.*");
+                    buf.append(escape ? "\\/.*" : "/.*");
                 } else {
                     // don't translate a//b into b/*/a since that enforces an extra step
                     // TODO: index this differently so we can distinguish and not have names
                     // bleeding into wildcards.  Use two slashes to separate?
-                    buf.append ("\\/"); // slash must be escaped for the LuceneQueryParser
+                    buf.append (escape ? "\\/" : "/");
                 }
                 buf.append (toPathOccurrenceQueryString(clause, field, config));
             }
             if (clauses[0] instanceof SpanTermPQuery) {
                 // the path is not rooted, append a wildcard to get a prefix query
-                buf.append ("(\\/.*)?");
+                buf.append(escape ? "(\\/.*)?" : "(/.*)?");
             }
         }
         return buf.toString();
@@ -129,7 +130,7 @@ public class SpanNearPQuery extends ParseableQuery {
         if (q instanceof SpanTermPQuery) {
             return (LuxQueryParser.escapeQParser(((SpanTermPQuery)q).getTerm().text()));
         } else if (q instanceof SpanNearPQuery) {
-            return (((SpanNearPQuery) q).toPathOccurrenceQueryString(field, config));
+            return (((SpanNearPQuery) q).toPathOccurrenceQueryString(field, config, true));
         } else  if (q instanceof SpanBooleanPQuery) {
             // FIXME: you can also have a SpanOrQuery here: a/(b|c)/d
             // We'll implement using regex just as shown above

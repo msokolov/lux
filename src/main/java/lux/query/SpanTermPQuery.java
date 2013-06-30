@@ -5,7 +5,6 @@ import lux.xml.QName;
 import lux.xquery.ElementConstructor;
 
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.ext.ExtendableQueryParser;
 
 /**
  * Extends TermPQuery for use in contexts where a SpanTerm is required
@@ -22,8 +21,7 @@ public class SpanTermPQuery extends TermPQuery {
     @Override
     public ElementConstructor toXmlNode (String field, IndexConfiguration config) {
         if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
-            Term wildTerm = new Term (getTerm().field(), 
-                    ExtendableQueryParser.escape(getTerm().text()) + "(\\/.*)?");
+            Term wildTerm = new Term (getTerm().field(), getTerm().text() + "(/.*)?");
             return new TermPQuery(wildTerm, getBoost()).toXmlNode(field, REGEXP_TERM_QNAME);
         }
         return toXmlNode(field, SPAN_TERM_QNAME);
