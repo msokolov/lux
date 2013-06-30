@@ -147,12 +147,11 @@ public class Compiler {
             throw new LuxException (e);
         }
         SaxonTranslator translator = makeTranslator();
+        if (searchStrategy == SearchStrategy.NONE) {
+        	return xquery;
+        }
         XQuery abstractQuery = translator.queryFor (xquery);
-        /*if (searchStrategy == SearchStrategy.NONE) {
-            String expanded = new Expandifier().expandify(abstractQuery).toString();
-            return xquery;
-        }*/
-        PathOptimizer optimizer = new PathOptimizer(indexConfig);
+        PathOptimizer optimizer = new PathOptimizer(this);
         optimizer.setSearchStrategy(searchStrategy);
         XQuery optimizedQuery = null;
         try {
