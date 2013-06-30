@@ -9,7 +9,7 @@
     </setup>
   </meta>
   <test-cases>
-    <include file="basic-cases.xml" />
+    <include file="base-cases.xml" />
   </test-cases>
   <queries id="qname-index">
     <query id="ATTR"><TermQuery fieldName="lux_att_name">attr</TermQuery></query>
