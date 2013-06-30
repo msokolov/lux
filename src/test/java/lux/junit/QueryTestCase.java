@@ -10,7 +10,7 @@ import lux.Compiler;
 import lux.Evaluator;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
-import lux.xml.ValueType;
+import lux.support.SearchExtractor;
 import lux.xpath.AbstractExpression;
 import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
@@ -67,9 +67,9 @@ class QueryTestCase {
         ex.accept(extractor);
         List<XdmNode> queries = expectedResult.searchQueries;
         if (queries != null) {
-        	assertEquals ("wrong number of queries for " + query, queries.size(), extractor.queries.size());
+        	assertEquals ("wrong number of queries for " + query, queries.size(), extractor.getQueries().size());
         	for (int i = 0; i < queries.size(); i++) {
-        		AbstractExpression xmlQuery = extractor.queries.get(i).getQuery();
+        		AbstractExpression xmlQuery = extractor.getQueries().get(i).getQuery();
         		if (xmlQuery instanceof LiteralExpression) {
         			continue;
         			// we don't have a way to "unparse" these
@@ -86,7 +86,7 @@ class QueryTestCase {
         	}
         	if (queries.size() > 0) {
         		if (expectedResult.resultType != null) {
-        			assertSame (expectedResult.resultType, extractor.queries.get(0).getResultType());
+        			assertSame (expectedResult.resultType, extractor.getQueries().get(0).getResultType());
         		}
         	}
         }
@@ -130,43 +130,7 @@ class QueryTestCase {
 		return expectedResult;
 	}
 
-	static class MockQuery {
-        private final AbstractExpression queryNode;
-        private final ValueType resultType;
-        
-        MockQuery (AbstractExpression queryNode, ValueType valueType) {
-            this.resultType = valueType;
-            this.queryNode= queryNode;
-        }
-
-        public AbstractExpression getQuery() {
-            return queryNode;
-        }
-        
-        public ValueType getResultType () {
-        	return resultType;
-        }
-        
-    }
-
-    static class SearchExtractor extends ExpressionVisitorBase {
-        ArrayList<MockQuery> queries = new ArrayList<MockQuery>();
-        
-        @Override
-        public FunCall visit (FunCall funcall) {
-            if (funcall.getName().equals (FunCall.LUX_SEARCH)
-                    || funcall.getName().equals (FunCall.LUX_COUNT) 
-                    || funcall.getName().equals (FunCall.LUX_EXISTS)) 
-            {
-                AbstractExpression queryArg = funcall.getSubs()[0];
-                queries.add( new MockQuery (queryArg, funcall.getReturnType()));
-            }
-            return funcall;
-        }
-        
-    }
-    
-    static class SortExtractor extends ExpressionVisitorBase {
+	static class SortExtractor extends ExpressionVisitorBase {
         ArrayList<String> sorts = new ArrayList<String>();
         
         @Override

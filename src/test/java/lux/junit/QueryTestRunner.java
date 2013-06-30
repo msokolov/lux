@@ -17,6 +17,8 @@ import lux.QNameQueryTest;
 import lux.QueryContext;
 import lux.XdmResultSet;
 import lux.index.XmlIndexer;
+import lux.index.field.XPathField;
+import lux.index.field.FieldDefinition.Type;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -24,6 +26,7 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmValue;
 
+import org.apache.lucene.document.Field;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.ParentRunner;
@@ -37,7 +40,10 @@ import org.junit.runners.model.Statement;
  */
 public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 
-	// private String description;
+    private static final QName ID_QNAME = new QName("id");
+    private static final QName TYPE_QNAME = new QName("type");
+
+    // private String description;
     private List<QueryTestCase> cases;
     private HashMap<String,XdmNode> queryMap = new HashMap<String, XdmNode>();
     protected Evaluator eval;
@@ -106,14 +112,16 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
      * parses the document and creates the QueryTestCases from it.
      * @throws FileNotFoundException 
      * @throws SaxonApiException 
+     * @throws InitializationError 
      */
-    protected void loadTests () throws IOException, SaxonApiException {
+    protected void loadTests () throws IOException, SaxonApiException, InitializationError {
         String suiteFileName = getTestClass().getJavaClass().getSimpleName() + ".xml";
         XdmNode suite = readFile (suiteFileName);
         for (XdmItem queryItem : eval ("/test-suite/queries", suite)) {
         	loadQueries (queryItem);
         }
         loadTestCases (suite);
+        loadIndexes (suite);
         // description = evalStr ("/test-suite/meta/title", suite);
         // /test-suite/meta/setup/keys
     }
@@ -129,6 +137,18 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         	else if (kid.getNodeName().getClarkName().equals("test-case")) {
         		addTestCase (kid);
         	}
+        }
+    }
+    
+    private void  loadIndexes(XdmNode top) throws IOException, SaxonApiException, InitializationError {
+        XdmValue kids = eval ("/test-suite/setup/keys/key", top);
+        for (XdmItem item: kids) {
+        	XdmNode key = (XdmNode) item;
+			String keyID = key.getAttributeValue(ID_QNAME);
+			String keyType = key.getAttributeValue(TYPE_QNAME);
+			Type type = keyType == null ? Type.STRING : Type.valueOf(keyType.toUpperCase());
+			XPathField field = new XPathField(keyID, key.getStringValue(), null, Field.Store.YES, type);
+        	getIndexer().getConfiguration().addField (field);
         }
     }
     
