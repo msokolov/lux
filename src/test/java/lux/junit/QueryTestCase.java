@@ -24,7 +24,9 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
 
 import org.apache.commons.lang.StringUtils;
+import org.junit.Ignore;
 
+@Ignore
 class QueryTestCase {
     
     private final String name;
