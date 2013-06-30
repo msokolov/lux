@@ -195,8 +195,11 @@ public abstract class AbstractExpression implements Visitable {
      */
     public abstract int getPrecedence ();
 
-    @Override
-    public boolean equals (Object other) {
+    /**
+     * @param other another expression
+     * @return whether the two expressions are of the same type and share the same local properties
+     */
+    public boolean equivalent (AbstractExpression other) {
         if (other == this) {
             return true;
         }
@@ -206,10 +209,29 @@ public abstract class AbstractExpression implements Visitable {
         if (! (getClass().isAssignableFrom(other.getClass()))) {
             return false;
         }
-        AbstractExpression oex = (AbstractExpression) other;
-        if (oex.getType() != type) {
-            return false;
-        }
+        return propEquals ((AbstractExpression) other);
+    }
+    
+    /**
+     * @return a hashcode that is consistent with {@link #equivalent(AbstractExpression)}
+     */
+    int equivHash () {
+    	return type.ordinal();
+    }
+    
+    /**
+     * @param oex another expression
+     * @return whether the other expression and this one have all the same local properties,
+     * consistent with equals()
+     */
+    protected boolean propEquals (AbstractExpression oex) {
+    	return (oex.getType() == type);
+    }
+    
+    public boolean deepEquals (AbstractExpression oex) {
+    	if (! equivalent(oex)) {
+    		return false;
+    	}
         if (subs == oex.subs) {
         	return true;
         }
@@ -220,7 +242,7 @@ public abstract class AbstractExpression implements Visitable {
         	return false;
         }
         for (int i = 0; i < subs.length; i++) {
-        	if (! (subs[i].equals(oex.subs[i]))) {
+        	if (! (subs[i].deepEquals(oex.subs[i]))) {
         		return false;
         	}
         }

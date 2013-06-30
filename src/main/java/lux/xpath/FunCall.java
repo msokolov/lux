@@ -131,9 +131,14 @@ public class FunCall extends AbstractExpression {
     }
 
     @Override
-    public boolean equals (Object other) {
-        return super.equals (other) && name.equals(((FunCall) other).name) && 
-            returnType.equals(((FunCall) other).returnType);
+    public boolean propEquals (AbstractExpression other) {
+        return name.equals(((FunCall) other).name) &&
+        		returnType.equals(((FunCall) other).returnType);
+    }
+    
+    @Override
+    public int equivHash () {
+    	return 43 + returnType.ordinal() + name.hashCode();
     }
 
 }

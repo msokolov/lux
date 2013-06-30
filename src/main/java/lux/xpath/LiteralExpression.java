@@ -223,16 +223,14 @@ public class LiteralExpression extends AbstractExpression {
     }
     
     @Override 
-    public boolean equals (Object other) {
-        if (other instanceof LiteralExpression) {
-            return value.equals(((LiteralExpression)other).value);
-        }
-        return false;
+    public boolean propEquals (AbstractExpression other) {
+    	return value.equals(((LiteralExpression)other).value) &&
+    			valueType.equals(((LiteralExpression)other).valueType);
     }
     
     @Override
-    public int hashCode () {
-        return value.hashCode();
+    public int equivHash () {
+        return value.hashCode() + valueType.ordinal();
     }
 }
 

@@ -92,9 +92,15 @@ public class BinaryOperation extends AbstractExpression {
     }
 
     @Override
-    public boolean equals (Object other) {
-        return super.equals (other) && operator == ((BinaryOperation)other).operator;
+    protected boolean propEquals (AbstractExpression other) {
+        return operator == ((BinaryOperation)other).operator;
     }
+    
+    @Override
+    public int equivHash () {
+    	return 13 + operator.ordinal();
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

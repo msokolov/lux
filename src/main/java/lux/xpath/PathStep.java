@@ -75,9 +75,14 @@ public class PathStep extends AbstractExpression {
     }
 
     @Override
-    public boolean equals (Object other) {
-        return super.equals (other) && axis == ((PathStep) other).axis &&
-            nodeTest.equals(((PathStep) other).nodeTest);
+    public boolean propEquals (AbstractExpression other) {
+        return axis == ((PathStep) other).axis &&
+            nodeTest.equivalent(((PathStep) other).nodeTest);
+    }
+    
+    @Override
+    public int equivHash () {
+    	return axis.ordinal() * nodeTest.equivHash();
     }
 
 }

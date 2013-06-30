@@ -107,10 +107,13 @@ public class NodeTest {
         }
     }
 
-    @Override
-    public boolean equals (Object other) {
+    public boolean equivalent (Object other) {
         return other != null && other instanceof NodeTest && type == ((NodeTest) other).type &&
             name.equals(((NodeTest) other).name);
+    }
+    
+    public int equivHash () {
+    	return type.ordinal() * name.hashCode();
     }
 
 }
