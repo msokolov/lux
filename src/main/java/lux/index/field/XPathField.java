@@ -17,7 +17,7 @@ import org.apache.lucene.document.Field.Store;
  * @param <T> the type of value stored in or indexed by the field; must correspond with the {@link FieldDefinition.Type}:
  * STRING =&gt; String, and INT =&gt; Integer
  */
-public class XPathField<T> extends FieldDefinition {
+public class XPathField extends FieldDefinition {
     
     private final String xpath;
     
@@ -41,7 +41,7 @@ public class XPathField<T> extends FieldDefinition {
     }
     
     @Override
-    public Iterable<T> getValues(XmlIndexer indexer) {
+    public Iterable<?> getValues(XmlIndexer indexer) {
         XdmValue value;
         try {
             value = indexer.evaluateXPath (xpath);
@@ -51,7 +51,7 @@ public class XPathField<T> extends FieldDefinition {
         return new XPathValueIterator(value.iterator());
     }
 
-    class XPathValueIterator implements Iterator<T>, Iterable<T> {
+    class XPathValueIterator implements Iterator<Object>, Iterable<Object> {
         private final XdmSequenceIterator sequence;
 
         XPathValueIterator (XdmSequenceIterator sequence) {
@@ -64,15 +64,14 @@ public class XPathField<T> extends FieldDefinition {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public T next() {
+        public Object next() {
             XdmItem item = sequence.next();
             switch (getType()) {
             case STRING: 
             case TEXT:
-                return (T) item.getStringValue();
-            case INT: return (T) Integer.valueOf (item.getStringValue());
-            case LONG: return (T) Long.valueOf (item.getStringValue());
+                return item.getStringValue();
+            case INT: return Integer.valueOf (item.getStringValue());
+            case LONG: return Long.valueOf (item.getStringValue());
             default: throw new IllegalStateException (getType() + " is not a valid type for an XPathField");
             }
         }
@@ -83,7 +82,7 @@ public class XPathField<T> extends FieldDefinition {
         }
 
         @Override
-        public Iterator<T> iterator() {
+        public Iterator<Object> iterator() {
             return this;
         }
         
