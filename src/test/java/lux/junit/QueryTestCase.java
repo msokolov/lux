@@ -8,6 +8,7 @@ import java.util.List;
 
 import lux.Compiler;
 import lux.Evaluator;
+import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.xml.ValueType;
 import lux.xpath.AbstractExpression;
@@ -39,7 +40,7 @@ class QueryTestCase {
         this.expectedResult = expected;
     }
 
-    public void evaluate (Evaluator eval) {
+    public XdmResultSet evaluate (Evaluator eval) {
         Compiler compiler = eval.getCompiler();
         try {
         	compiler.compile(query);
@@ -50,7 +51,7 @@ class QueryTestCase {
         	if (! StringUtils.isEmpty(expectedResult.errorText)) {
         		assertEquals (expectedResult.errorText, e.getMessage());
         	}
-        	return;
+        	return null;
         }
     	if (expectedResult.isError) {
     		fail ("expected exception not thrown");
@@ -100,6 +101,7 @@ class QueryTestCase {
                 assertEquals (sortFields[i], sortExtractor.sorts.get(i));
             }
         }
+        return null;
     }
 
     protected boolean compareNodes (Evaluator eval, XdmNode node1, XdmNode node2) throws XPathException {
@@ -118,6 +120,14 @@ class QueryTestCase {
 
     public String getName() {
 		return name;
+	}
+    
+    public String getQuery() {
+    	return query;
+    }
+
+    public QueryTestResult getExpectedResult() {
+		return expectedResult;
 	}
 
 	static class MockQuery {

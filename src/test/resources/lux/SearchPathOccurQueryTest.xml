@@ -2,10 +2,6 @@
   <meta>
     <title>Path Test Queries</title>
     <setup>
-      <keys>
-        <!-- define XPath indexes as key elements -->
-        <key>//a</key>
-      </keys>
     </setup>
   </meta>
   <test-cases>

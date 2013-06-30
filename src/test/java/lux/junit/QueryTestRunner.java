@@ -175,8 +175,12 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 		QueryTestResult expectedResult = new QueryTestResult 
 		    (expectError, expectedError, getExpectedQueryText(testItem), expectedQueries,
 		     expectedResultType, expectedOrderBy);
-		QueryTestCase testCase = new QueryTestCase (name, queryText, expectedResult);
+		QueryTestCase testCase = newTestCase (name, queryText, expectedResult);
 		cases.add (testCase);
+	}
+	
+	protected QueryTestCase newTestCase (String name, String queryText, QueryTestResult expectedResult) {
+		return new QueryTestCase (name, queryText, expectedResult);
 	}
     
     private String getExpectedQueryText (XdmItem testItem) {

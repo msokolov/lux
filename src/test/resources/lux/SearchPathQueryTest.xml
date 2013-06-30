@@ -2,10 +2,6 @@
   <meta>
     <title>Path Test Queries</title>
     <setup>
-      <keys>
-        <!-- define XPath indexes as key elements -->
-        <key>//a</key>
-      </keys>
     </setup>
   </meta>
   <test-cases>
@@ -13,6 +9,15 @@
   </test-cases>
   <queries>
     <include file="path-queries.xml" />
+    <query id="ACT">
+        <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
+    </query>
+    <query id="SCENE">
+        <RegexpQuery fieldName="lux_path">SCENE(/.*)?</RegexpQuery>
+    </query>
+    <query id="ACT_SCENE">
+       <RegexpQuery fieldName="lux_path">SCENE/ACT(/.*)?</RegexpQuery>
+    </query>
   </queries>
 </test-suite>
 <!--

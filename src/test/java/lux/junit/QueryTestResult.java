@@ -31,11 +31,11 @@ class QueryTestResult {
     QueryTestResult (boolean isError, String errorText, String queryText, List<XdmNode> queryNode,
                      String resultType, String orderBy) {
         this.isError=isError;
-        this.errorText=errorText;
+        this.errorText=StringUtils.isEmpty(errorText) ? null : errorText;
         this.queryText=queryText;
         this.searchQueries=queryNode;
         this.resultType= StringUtils.isEmpty(resultType) ? null : ValueType.valueOf(resultType);
-        this.orderBy=orderBy;
+        this.orderBy=StringUtils.isEmpty(orderBy) ? null : orderBy;
     }
 
 }

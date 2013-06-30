@@ -38,7 +38,11 @@ public class IndexTestSupport {
 
     Directory dir;
     LuxSearcher searcher;
-    XmlIndexer indexer;
+    public LuxSearcher getSearcher() {
+		return searcher;
+	}
+
+	XmlIndexer indexer;
     IndexWriter indexWriter;
     int totalDocs;
     Compiler compiler;
