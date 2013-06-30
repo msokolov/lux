@@ -38,9 +38,9 @@ public class HamletXPathFieldTest {
     @BeforeClass
     public static void setup () throws Exception {
         XmlIndexer indexer = new XmlIndexer ();
-        indexer.getConfiguration().addField(new XPathField<String>("doctype", "name(/*)", null, Store.NO, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField<String>("doctype-stored", "name(/*)", null, Store.YES, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField<String>("title", "/*/TITLE", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("doctype", "name(/*)", null, Store.NO, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("doctype-stored", "name(/*)", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("title", "/*/TITLE", null, Store.YES, Type.STRING));
         dir = new RAMDirectory();
         indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
     }

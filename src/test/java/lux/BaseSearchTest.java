@@ -37,10 +37,10 @@ public abstract class BaseSearchTest {
 
     public static void setup(String ... xmlfile) throws Exception {
         XmlIndexer indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT|STORE_TINY_BINARY);
-        indexer.getConfiguration().addField(new XPathField<String>("doctype", "name(/*)", null, Store.YES, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField<Integer>("actnum", "/*/@act", null, Store.YES, Type.INT));
-        indexer.getConfiguration().addField(new XPathField<Integer>("scnlong", "/*/@scene", null, Store.YES, Type.LONG));
-        indexer.getConfiguration().addField(new XPathField<String>("actstr", "/*/@act", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("doctype", "name(/*)", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("actnum", "/*/@act", null, Store.YES, Type.INT));
+        indexer.getConfiguration().addField(new XPathField("scnlong", "/*/@scene", null, Store.YES, Type.LONG));
+        indexer.getConfiguration().addField(new XPathField("actstr", "/*/@act", null, Store.YES, Type.STRING));
         index = new IndexTestSupport(xmlfile, indexer, new RAMDirectory());
         
         totalDocs= index.totalDocs;

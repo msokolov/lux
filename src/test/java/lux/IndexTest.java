@@ -275,8 +275,8 @@ public class IndexTest {
     @Test
     public void testXPathIndexes () throws Exception {
         XmlIndexer indexer = new XmlIndexer (BUILD_DOCUMENT);
-        indexer.getConfiguration().addField(new XPathField<Integer>("nodecount", "count(//node())", null, Store.NO, Type.INT));
-        indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("nodecount", "count(//node())", null, Store.NO, Type.INT));
+        indexer.getConfiguration().addField(new XPathField("doctype", "name(/*)", null, Store.NO, Type.STRING));
         IndexTestSupport indexTestSupport = buildIndex("xpath", indexer);
         assertXPathIntField(indexTestSupport);
         assertXPathStringField(5, "doctype", "ACT", indexTestSupport);
@@ -287,7 +287,7 @@ public class IndexTest {
         XmlIndexer indexer = new XmlIndexer (BUILD_DOCUMENT);
         // SCENE comes in as ACT/*[2] - immediately following TITLE
         // These can be encoded within a single XPath - we don't allow multiple indexes with the same name
-        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*/*[2]),name(/*)", null, Store.NO, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("x", "name(/*/*[2]),name(/*)", null, Store.NO, Type.STRING));
         IndexTestSupport indexTestSupport = buildIndex("xpath", indexer);
         assertXPathStringField(25, "x", "SCENE", indexTestSupport);
     }
@@ -296,9 +296,9 @@ public class IndexTest {
     public void testMultipleXPathIndexesFail () throws Exception {
         XmlIndexer indexer = new XmlIndexer (BUILD_DOCUMENT);
         // SCENE comes in as ACT/*[2] - immediately following TITLE
-        indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*/*[2])", null, Store.NO, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("x", "name(/*/*[2])", null, Store.NO, Type.STRING));
         try {
-            indexer.getConfiguration().addField(new XPathField<Integer>("x", "name(/*)", null, Store.NO, Type.STRING));
+            indexer.getConfiguration().addField(new XPathField("x", "name(/*)", null, Store.NO, Type.STRING));
             assertTrue ("expected exception not thrown", false);
         } catch (IllegalStateException e) {
             assertEquals ("Duplicate field name: x", e.getMessage());
@@ -310,7 +310,7 @@ public class IndexTest {
         IndexConfiguration indexConfig = IndexConfiguration.DEFAULT;
         indexConfig.defineNamespaceMapping("", "");
         indexConfig.defineNamespaceMapping("x", "http://lux.net{test}");
-        indexConfig.addField(new XPathField<String>("title", "//x:title", new KeywordAnalyzer(), Store.NO, Type.STRING));
+        indexConfig.addField(new XPathField("title", "//x:title", new KeywordAnalyzer(), Store.NO, Type.STRING));
         XmlIndexer indexer = new XmlIndexer (indexConfig);
         IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/reader-test-ns.xml", indexer, dir);
         assertXPathStringField(2, "title", "TEST", indexTestSupport);

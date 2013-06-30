@@ -977,7 +977,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         for (FieldDefinition field : indexConfig.getFields()) {
             if (field instanceof XPathField) {
-                String xpath = ((XPathField<?>) field).getXPath();
+                String xpath = ((XPathField) field).getXPath();
                 AbstractExpression fieldExpr = compilePath (xpath);
                 if (fieldExpr != null && fieldExpr.equals(expr)) {
                     return field;

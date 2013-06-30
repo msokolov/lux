@@ -27,12 +27,12 @@ public class XPathFieldTest {
     @BeforeClass
     public static void init() throws Exception {
         XmlIndexer indexer = new XmlIndexer();
-        indexer.getConfiguration().addField(new XPathField<Integer>("string-length", "string-length(.)", null, Store.YES, Type.INT));
-        indexer.getConfiguration().addField(new XPathField<Integer>("string-length-string", "string-length(.)", null, Store.YES, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField<Integer>("string-length-long", "string-length(.)", null, Store.YES, Type.LONG));
-        indexer.getConfiguration().addField(new XPathField<String>("name", "name(*)", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("string-length", "string-length(.)", null, Store.YES, Type.INT));
+        indexer.getConfiguration().addField(new XPathField("string-length-string", "string-length(.)", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("string-length-long", "string-length(.)", null, Store.YES, Type.LONG));
+        indexer.getConfiguration().addField(new XPathField("name", "name(*)", null, Store.YES, Type.STRING));
         // if the root element has a numeric id, index it as an int:
-        indexer.getConfiguration().addField(new XPathField<Integer>("id", "*[@id]/string-length()", null, Store.YES, Type.INT));
+        indexer.getConfiguration().addField(new XPathField("id", "*[@id]/string-length()", null, Store.YES, Type.INT));
         indexTestSupport = new IndexTestSupport(indexer, new RAMDirectory());
         indexTestSupport.indexAllElements("lux/reader-test.xml");
         indexTestSupport.reopen(); // commit, make the commit visible
