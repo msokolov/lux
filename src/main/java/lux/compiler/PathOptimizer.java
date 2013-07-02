@@ -15,7 +15,6 @@ import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
-import lux.index.field.XPathField;
 import lux.query.BooleanPQuery;
 import lux.query.NodeTextQuery;
 import lux.query.ParseableQuery;
@@ -37,6 +36,7 @@ import lux.xpath.PathExpression;
 import lux.xpath.PathStep;
 import lux.xpath.PathStep.Axis;
 import lux.xpath.Predicate;
+import lux.xpath.PropEquiv;
 import lux.xpath.Root;
 import lux.xpath.SearchCall;
 import lux.xpath.Sequence;
@@ -54,8 +54,6 @@ import lux.xquery.VariableBindingClause;
 import lux.xquery.VariableContext;
 import lux.xquery.WhereClause;
 import lux.xquery.XQuery;
-
-import net.sf.saxon.s9api.SaxonApiException;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -95,10 +93,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private final IndexConfiguration indexConfig;
     private final Compiler compiler;
     private final XPathQuery MATCH_ALL;
-    private SaxonTranslator translator;
-    private HashMap<String, AbstractExpression> fieldXPaths;
     private final String attrQNameField;
     private final String elementQNameField;
+    private final PropEquiv tempEquiv;
     private boolean optimizeForOrderedResults;
     private Logger log;
 
@@ -107,6 +104,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public PathOptimizer(Compiler compiler) {
         queryStack = new ArrayList<XPathQuery>();
         varBindings = new HashMap<QName, VarBinding>();
+        tempEquiv = new PropEquiv(null);
         this.compiler = compiler;
         this.indexConfig = compiler.getIndexConfiguration();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
@@ -879,19 +877,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private AbstractExpression optimizeRangeComparison(XPathQuery lq, XPathQuery rq, BinaryOperation op) {
         LiteralExpression value = null;
         AbstractExpression op1 = op.getOperand1(), op2 = op.getOperand2(), expr = null;
-        /*
-         * TODO: handle variables
-        if (op1.getType() == Type.VARIABLE) {
-            VarBinding varBinding = varBindings.get(((Variable)op1).getQName());
-            op1 = varBinding.getExpr();
-            lq = varBinding.getQuery();
-        }
-        if (op2.getType() == Type.VARIABLE) {
-            VarBinding varBinding = varBindings.get(((Variable)op2).getQName());
-            op2 = varBinding.getExpr();
-            rq = varBinding.getQuery();
-        }
-        */
         // if there is no context item, lux:field-values() returns ()
         if (op1.getType() == Type.LITERAL) {
             value = (LiteralExpression) op1;
@@ -902,26 +887,40 @@ public class PathOptimizer extends ExpressionVisitorBase {
         } else {
             return null;
         }
+        /* resolve variable */
+        if (expr.getType() == Type.VARIABLE) {
+            VarBinding varBinding = varBindings.get(((Variable) expr).getQName());
+            if (varBinding == null) {
+            	return null;
+            }
+            if (expr == op1) {
+                lq = varBinding.getQuery();
+            } else {
+            	rq = varBinding.getQuery();
+            }
+            expr = varBinding.getExpr();
+            if (expr == null) {
+            	return null;
+            }
+        }
+        // rewrite minimax(AtomizedSequence(... expr )) to expr
+        expr = rewriteMinMax (expr);
+        // Check for a call to lux:field-values()
+        FieldDefinition field = fieldMatching(expr);
+        if (field == null) {
+      		// analyze the xpath for equivalence to indexed fields
+        	AbstractExpression last = expr.getLastContextStep();
+        	field = matchFieldFromLeaf (last);
+        }
         /*
-         // TODO: analyze the non-literal expression -- compare against its final path step  
-        AbstractExpression last = expr.getLastContextStep();
             // TODO: handle comparisons that reference the context item
         if (last.getType() == Type.DOT) {
             last = getSuper().getLastContextStep(); // predicate.getBase() ...
             return null;
         }
         */
-        /*
-         * 1) rewrite minimax(AtmoizedSequence(... expr )) to expr
-         * 2) gen query when expr matches an XPathField (call XmlIndexer.fieldMatch (expr));
-         *    expr == XPathField comparing AbstractExpressions with equals()?
-         *    possibly implement FieldDefinition.matchesExpression()??
-         * 3) gen query when expr is field-values
-         */
-        String v = value.getValue().toString();
-    	expr = rewriteMinMax (expr);
-    	FieldDefinition field = fieldMatching (expr);
     	if (field == null) {
+    		// no matching field found
     		return null;
     	}
     	FieldDefinition.Type fieldType = field.getType();
@@ -932,6 +931,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     	String fieldName = indexConfig.getFieldName(field);
     	RangePQuery.Type rangeTermType = fieldType.getRangeTermType();
     	ParseableQuery rangeQuery;
+        String v = value.getValue().toString();
     	Operator operator = op.getOperator();
     	switch (operator) {
     	case AEQ: case EQUALS:
@@ -963,6 +963,98 @@ public class PathOptimizer extends ExpressionVisitorBase {
     	return op;
     }
     
+    /**
+     * find fields whose leaves match the expression and walk up the expression trees in parallel
+     * checking if the entire field expression matches
+     * 
+     * keep a list of possible matches; these are expressions tied to
+     * fields - on a successful match we will have the topmost node of the
+     * expression tree, and can look the field up from there?
+     */
+    private FieldDefinition matchFieldFromLeaf (AbstractExpression leafExpr) {
+    	tempEquiv.setExpression(leafExpr);
+        for (AbstractExpression fieldLeaf : compiler.getFieldLeaves (tempEquiv)) {
+            AbstractExpression fieldExpr = matchUpwards (leafExpr, fieldLeaf);
+            if (fieldExpr != null) {
+                return compiler.getFieldForExpr (fieldExpr);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * test whether the fieldExpr >= (a subtree of) the queryExpr, and if so,
+     * @return the root of the fieldExpr.
+     */
+    private AbstractExpression matchUpwards (AbstractExpression queryExpr, AbstractExpression fieldExpr) {
+        // assume that the caller has ensured that queryExpr.equivalent(fieldExpr)
+        AbstractExpression fieldSuper = fieldExpr.getSuper(), querySuper = queryExpr.getSuper();
+        // TODO: traverse past "uninteresting" nodes
+        if (fieldSuper == null) {
+            return fieldExpr;
+        }
+        if (querySuper == null) {
+            return null;
+        }
+        if (! matchDown (queryExpr, fieldExpr)) {
+            return null;
+        }
+        if (!fieldSuper.equivalent(querySuper)) {
+        	return null;
+        }
+        return matchUpwards (querySuper, fieldSuper);
+    }
+
+    /**
+       Traverse downwards from queryExpr and fieldExpr,
+       comparing for equivalence until one bottoms out.
+       @param queryExpr
+       @param fieldExpr
+       @return whether fieldExpr >= queryExpr
+    */
+    private boolean matchDown (AbstractExpression queryExpr, AbstractExpression fieldExpr) {
+        if (! queryExpr.equivalent(fieldExpr)) {
+            // if these nodes are different type, or have different properties, they don't match
+            return false;
+        }
+        // all of queryExpr's subs *must* return a value (for a
+        // non-empty result), so a sufficient condition for fieldExpr
+        // >= queryExpr is that every sub of fieldExpr match *some*
+        // sub of queryExpr
+        AbstractExpression[] fsubs = fieldExpr.getSubs();
+        AbstractExpression[] qsubs = queryExpr.getSubs();
+        if (fsubs == null) {
+        	return qsubs == null || queryExpr.isRestrictive();
+        }
+		OUTER:
+        for (AbstractExpression fsub : fsubs) {
+            // TODO: skip already matched fsub
+            for (AbstractExpression qsub : queryExpr.getSubs()) {
+                if (matchDown (qsub, fsub)) {
+                    continue OUTER;
+                }
+            }
+            // no equivalent sub found
+            return false;
+        }
+        if (!queryExpr.isRestrictive()) {
+            // at least one of queryExpr's children must return a value, so
+            // in addition it is necessary that every child of queryExpr be
+            // matched by some child of fieldExpr
+        	OUTER:
+            for (AbstractExpression qsub : queryExpr.getSubs()) {
+                // TODO: skip checking those we've already matched above
+                for (AbstractExpression fsub : fsubs) {
+                    if (matchDown (qsub, fsub)) {
+                        continue OUTER;
+                    }
+                }
+                return false;
+            }
+        }
+        return true;
+    }    
+
     private FieldDefinition fieldMatching(AbstractExpression expr) {
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
@@ -975,31 +1067,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 }
             }
         }
-        for (FieldDefinition field : indexConfig.getFields()) {
-            if (field instanceof XPathField) {
-                String xpath = ((XPathField) field).getXPath();
-                AbstractExpression fieldExpr = compilePath (xpath);
-                if (fieldExpr != null && fieldExpr.equals(expr)) {
-                    return field;
-                }
-            }
-        }
         return null;
     }
 	
-    private AbstractExpression compilePath (String xpath) {
-        AbstractExpression fieldPath = getFieldXPaths().get(xpath);
-        if (fieldPath == null) {
-        	try {
-        		fieldPath = getTranslator().exprFor (compiler.getXPathCompiler().compile(xpath).getUnderlyingExpression().getInternalExpression());
-        		getFieldXPaths().put(xpath, fieldPath);
-        	} catch (SaxonApiException e) {
-        		log.error("Error compiling xpath for field", e);
-        	}
-        }
-        return fieldPath;
-    }
-
 	// Undo an unhelpful optimization supplied by Saxon
     private AbstractExpression rewriteMinMax (AbstractExpression expr) {
         if (expr.getType() == Type.FUNCTION_CALL) {
@@ -1492,20 +1562,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     public void setSearchStrategy(SearchStrategy searchStrategy) {
         this.optimizeForOrderedResults = (searchStrategy == SearchStrategy.LUX_SEARCH);
-    }
-    
-    private SaxonTranslator getTranslator () {
-    	if (translator == null) {
-    		translator = new SaxonTranslator(compiler.getProcessor().getUnderlyingConfiguration());
-    	}
-    	return translator;
-    }
-    
-    private HashMap<String, AbstractExpression> getFieldXPaths() {
-    	if (fieldXPaths == null) {
-    		fieldXPaths = new HashMap<String, AbstractExpression>();
-    	}
-    	return fieldXPaths;
     }
 
 }
