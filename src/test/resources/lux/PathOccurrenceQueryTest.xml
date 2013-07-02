@@ -180,6 +180,22 @@
           <RegexpQuery fieldName="lux_path">MISC/SCENE</RegexpQuery>
         </Clause>
       </BooleanQuery>
+    </query><query id="SCENE_scene">
+      <BooleanQuery> 
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">/SCENE/@scene</RegexpQuery>
+        </Clause>
+      </BooleanQuery>    
+    </query>
+    <query id="SCENE_actnum">
+      <BooleanQuery> 
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">/SCENE/@act</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RangePQuery fieldName="actnum" type="int" lower="1" upper="1" includeUpper="true" includeLower="true" />
+        </Clause>
+      </BooleanQuery>    
     </query>
   </queries>
 </test-suite>
