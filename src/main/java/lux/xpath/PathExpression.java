@@ -93,6 +93,11 @@ public class PathExpression extends AbstractExpression {
         return subs[0].getBindingContext();
     }
 
+    @Override
+    public boolean isRestrictive () {
+        return true;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

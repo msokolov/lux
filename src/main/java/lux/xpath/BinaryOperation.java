@@ -15,15 +15,15 @@ public class BinaryOperation extends AbstractExpression {
         // boolean operators
         AND("and", ValueType.BOOLEAN, 5), OR("or", ValueType.BOOLEAN, 4), 
         // set operators
-            INTERSECT("intersect", ValueType.VALUE, 11), EXCEPT("except", ValueType.VALUE, 11), UNION("|", ValueType.VALUE, 10), 
+        INTERSECT("intersect", ValueType.VALUE, 11), EXCEPT("except", ValueType.VALUE, 11), UNION("|", ValueType.VALUE, 10), 
         // arithmetic operators
-            ADD("+", ValueType.ATOMIC, 8), SUB("-", ValueType.ATOMIC, 8), MUL("*", ValueType.ATOMIC, 9), DIV("div", ValueType.ATOMIC, 9), IDIV("idiv", ValueType.ATOMIC, 9), MOD("mod", ValueType.ATOMIC, 9),
+        ADD("+", ValueType.ATOMIC, 8), SUB("-", ValueType.ATOMIC, 8), MUL("*", ValueType.ATOMIC, 9), DIV("div", ValueType.ATOMIC, 9), IDIV("idiv", ValueType.ATOMIC, 9), MOD("mod", ValueType.ATOMIC, 9),
         // general comparisons
-            EQUALS("=", ValueType.BOOLEAN, 6), NE("!=", ValueType.BOOLEAN, 6), LT("<", ValueType.BOOLEAN, 6), GT(">", ValueType.BOOLEAN, 6), LE("<=", ValueType.BOOLEAN, 6), GE(">=", ValueType.BOOLEAN, 6), 
+        EQUALS("=", ValueType.BOOLEAN, 6), NE("!=", ValueType.BOOLEAN, 6), LT("<", ValueType.BOOLEAN, 6), GT(">", ValueType.BOOLEAN, 6), LE("<=", ValueType.BOOLEAN, 6), GE(">=", ValueType.BOOLEAN, 6), 
         // atomic comparisons
-            AEQ("eq", ValueType.BOOLEAN, 6), ANE("ne", ValueType.BOOLEAN, 6), ALT("lt", ValueType.BOOLEAN, 6), ALE("le", ValueType.BOOLEAN, 6), AGT("gt", ValueType.BOOLEAN, 6), AGE("ge", ValueType.BOOLEAN, 6),
+        AEQ("eq", ValueType.BOOLEAN, 6), ANE("ne", ValueType.BOOLEAN, 6), ALT("lt", ValueType.BOOLEAN, 6), ALE("le", ValueType.BOOLEAN, 6), AGT("gt", ValueType.BOOLEAN, 6), AGE("ge", ValueType.BOOLEAN, 6),
         // node operators
-            IS("is", ValueType.BOOLEAN, 6), BEFORE("<<", ValueType.BOOLEAN, 6), AFTER(">>", ValueType.BOOLEAN, 6), TO("to", ValueType.ATOMIC, 7);
+        IS("is", ValueType.BOOLEAN, 6), BEFORE("<<", ValueType.BOOLEAN, 6), AFTER(">>", ValueType.BOOLEAN, 6), TO("to", ValueType.ATOMIC, 7);
         
         private String token;
         private ValueType resultType;
@@ -99,6 +99,11 @@ public class BinaryOperation extends AbstractExpression {
     @Override
     public int equivHash () {
     	return 13 + operator.ordinal();
+    }
+    
+    @Override
+    public boolean isRestrictive () {
+        return (operator == Operator.AND || operator == Operator.INTERSECT);
     }
 
 }

@@ -141,6 +141,11 @@ public class FunCall extends AbstractExpression {
     	return 43 + returnType.ordinal() + name.hashCode();
     }
 
+    @Override
+    public boolean isRestrictive () {
+        return (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS));
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -85,6 +85,11 @@ public class PathStep extends AbstractExpression {
     	return axis.ordinal() * nodeTest.equivHash();
     }
 
+    @Override
+    public boolean isRestrictive () {
+        return true;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

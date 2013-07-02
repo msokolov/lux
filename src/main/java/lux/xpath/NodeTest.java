@@ -113,7 +113,7 @@ public class NodeTest {
     }
     
     public int equivHash () {
-    	return type.ordinal() * name.hashCode();
+    	return type.ordinal() * (name == null ? 91 : name.hashCode());
     }
 
 }

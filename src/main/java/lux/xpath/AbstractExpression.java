@@ -249,6 +249,15 @@ public abstract class AbstractExpression implements Visitable {
         return true;
     }
 
+    /**
+     * An expression is restrictive when any empty sub implies the expression is empty.
+     * In other words, restrictive expressions only return results when all of their 
+     * subs are non-empty.  Eg: and, intersect, predicate, path step.
+     */
+    public boolean isRestrictive () {
+        return false;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

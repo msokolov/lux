@@ -98,6 +98,12 @@ public class Subsequence extends AbstractExpression {
         }
     }
 
+    @Override
+    public boolean isRestrictive () {
+        // true for the first, sequence, argument. TODO: special case this in the optimizer
+        return false;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

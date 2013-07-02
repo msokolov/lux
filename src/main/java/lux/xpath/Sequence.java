@@ -69,6 +69,7 @@ public class Sequence extends AbstractExpression {
     public int getPrecedence () {
         return 1;
     }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

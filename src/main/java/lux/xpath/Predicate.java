@@ -57,6 +57,11 @@ public class Predicate extends AbstractExpression {
         return getBase().isDocumentOrdered();
     }
 
+    @Override
+    public boolean isRestrictive () {
+        return true;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
