@@ -64,6 +64,8 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 		} catch (SaxonApiException e) {
 			throw new InitializationError(e);
 		}
+        // update the compiler with the XPath fields
+        eval.getCompiler().compileFieldExpressions();
     }
 
     /** @return an indexer whose optimizations are to be tested.
@@ -148,7 +150,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 			String keyType = key.getAttributeValue(TYPE_QNAME);
 			Type type = keyType == null ? Type.STRING : Type.valueOf(keyType.toUpperCase());
 			XPathField field = new XPathField(keyID, key.getStringValue(), null, Field.Store.YES, type);
-        	getIndexer().getConfiguration().addField (field);
+        	eval.getCompiler().getIndexConfiguration().addField (field);
         }
     }
     
