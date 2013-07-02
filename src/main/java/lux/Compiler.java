@@ -1,6 +1,11 @@
 package lux;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.transform.ErrorListener;
 
@@ -23,9 +28,12 @@ import lux.functions.Transform;
 import lux.functions.file.FileExtensions;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.field.FieldDefinition;
+import lux.index.field.XPathField;
 import lux.xml.GentleXmlReader;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
+import lux.xpath.PropEquiv;
 import lux.xquery.XQuery;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.Configuration.LicenseFeature;
@@ -34,6 +42,7 @@ import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
+import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XsltCompiler;
@@ -54,6 +63,8 @@ public class Compiler {
     private final String uriFieldName;
     private final IndexConfiguration indexConfig;
     private final boolean isSaxonLicensed;
+    private final HashMap<PropEquiv,ArrayList<AbstractExpression>> fieldLeaves;
+    private final HashMap<AbstractExpression, XPathField> fieldExpressions;
 
     // for testing
     private XQuery lastOptimized;
@@ -108,6 +119,9 @@ public class Compiler {
         uriFieldName = indexConfig.getFieldName(FieldName.URI);
         //this.dialect = dialect;
         logger = LoggerFactory.getLogger(getClass());
+        fieldLeaves = new HashMap<PropEquiv, ArrayList<AbstractExpression>>();
+        fieldExpressions = new HashMap<AbstractExpression, XPathField>();
+        compileFieldExpressions ();
     }
     
     /**
@@ -272,6 +286,53 @@ public class Compiler {
     public XQuery getLastOptimized () { 
         return lastOptimized; 
     }
+	
+    public List<AbstractExpression> getFieldLeaves(PropEquiv leafEquivalent) {
+    	ArrayList<AbstractExpression> leaves = fieldLeaves.get(leafEquivalent);
+    	if (leaves != null) {
+    		return Collections.unmodifiableList(leaves);
+    	}
+    	return Collections.emptyList();
+	}
+
+	public FieldDefinition getFieldForExpr(AbstractExpression fieldExpr) {
+		return fieldExpressions.get(fieldExpr);
+	}
+	
+	/**
+	 *  Save an AbstractExpression version of each XPathField's xpath, for use when optimizing.
+	 *  This must be called whenever the underlying indexConfiguration's collection of XPath fields
+	 *  changes.  TODO: consider moving the addField method to Compiler?
+	 */
+	public void compileFieldExpressions () {
+		SaxonTranslator translator = new SaxonTranslator(processor.getUnderlyingConfiguration());
+		XPathCompiler xPathCompiler = getXPathCompiler();
+		for (Map.Entry<String,String> e : indexConfig.getNamespaceMap().entrySet()) {
+			xPathCompiler.declareNamespace(e.getKey(), e.getValue());
+		}
+		for (FieldDefinition field : indexConfig.getFields()) {
+			if (field instanceof XPathField) {
+				String xpath = ((XPathField) field).getXPath();
+				XPathExecutable xpathExec;
+				try {
+					xpathExec = xPathCompiler.compile(xpath);
+				} catch (SaxonApiException e) {
+					throw new LuxException("Error compiling index expression " + xpath + " for field " + field.getDefaultName());
+				}
+				AbstractExpression xpathExpr = translator.exprFor(xpathExec.getUnderlyingExpression().getInternalExpression());
+				AbstractExpression leaf = xpathExpr.getLastContextStep();
+				PropEquiv leafEquiv = new PropEquiv(leaf);
+				if (fieldLeaves.containsKey(leaf)) {
+					fieldLeaves.get(leafEquiv).add(leaf);
+				} else {
+					ArrayList<AbstractExpression> leaves = new ArrayList<AbstractExpression>();
+					leaves.add (leaf);
+					fieldLeaves.put(leafEquiv, leaves);
+				}
+				fieldExpressions.put(xpathExpr, (XPathField) field);
+			}
+		}
+	}
     
 }
 
