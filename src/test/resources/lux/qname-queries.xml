@@ -151,4 +151,18 @@
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">MISC</TermQuery></Clause> 
     </BooleanQuery>
   </query>
+  <query id="SCENE_scene">
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
+    </BooleanQuery>    
+  </query>
+  <query id="SCENE_actnum">
+    <BooleanQuery> 
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must">
+        <NumericRangeQuery fieldName="actnum" type="INT" lowerTerm="1" upperTerm="1" includeUpper="true" includeLower="true" />
+      </Clause>
+    </BooleanQuery>    
+  </query>
 </queries>

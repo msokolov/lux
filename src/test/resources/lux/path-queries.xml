@@ -211,11 +211,38 @@
         </Clause>
         <Clause occurs="must">
           <SpanNear inOrder="true" slop="0">
-            <SpanTerm fieldName="lux_path">&#x7B;&#x7D;</SpanTerm>
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
             <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
             <SpanTerm fieldName="lux_path">MISC</SpanTerm>
           </SpanNear>
         </Clause>
       </BooleanQuery>
+    </query>
+    <query id="SCENE_act">
+      <BooleanQuery> 
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">@act</SpanTerm>
+          </SpanNear>            
+        </Clause>
+      </BooleanQuery>    
+    </query>
+    <query id="SCENE_actnum">
+      <BooleanQuery> 
+        <Clause occurs="must">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">@act</SpanTerm>
+          </SpanNear>            
+        </Clause>
+        <Clause occurs="must">
+          <RangePQuery fieldName="actnum" type="int" lower="1" upper="1" includeUpper="true" includeLower="true" />
+        </Clause>
+      </BooleanQuery>    
     </query>
   </queries>

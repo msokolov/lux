@@ -257,6 +257,11 @@
       <query>exists((/)[.//ACT and .//SCENE])</query>
       <expect><query id="ACT_AND_SCENE" /></expect>
     </test-case>
+    <test-case name="boolean-and">
+      <!-- Don't overgeneralize booleans -->
+      <query>exists((/)[(.//ACT and .//SCENE) eq false()])</query>
+      <expect><query id="MATCH_ALL_Q" /></expect>
+    </test-case>
     <test-case name="exists-predicate">
       <query>//ACT[exists(SCENE)]</query>
       <expect><query id="ACT_SCENE" /></expect>
@@ -405,6 +410,14 @@
     <test-case name="four-predicates">
       <query>/SCENE[TITLE][SPEECH][STAGEDIR][MISC]</query>
       <expect><query id="SCENE_4" /></expect>
+    </test-case>
+    <test-case name="range-predicate-nomatch">
+      <query>//SCENE[@scene=1]</query>
+      <expect><query id="SCENE_scene" /></expect>
+    </test-case>
+    <test-case name="range-predicate">
+      <query>/SCENE[@act=1]</query>
+      <expect><query id="SCENE_actnum" /></expect>
     </test-case>
   </test-cases>
 </test-suite>
