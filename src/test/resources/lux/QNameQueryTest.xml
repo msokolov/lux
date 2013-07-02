@@ -7,7 +7,7 @@
       <key id="doctype">name(/*)</key>
       <key id="title">/*/TITLE</key>
       <key id="title_all">//TITLE</key>
-      <key id="scnnum" type="int">/*/@scene</key>
+      <key id="scnnum" type="int">/SCENE/@scene</key>
       <key id="actnum" type="int">/*/@act</key>
     </keys>
   </setup>

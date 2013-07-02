@@ -1,13 +1,16 @@
 <test-suite>
   <meta>
     <title>Path Test Queries</title>
-    <setup>
-      <keys>
-        <!-- define XPath indexes as key elements -->
-        <key>//a</key>
-      </keys>
-    </setup>
   </meta>
+  <setup>
+    <keys>
+      <key id="doctype">name(/*)</key>
+      <key id="title">/*/TITLE</key>
+      <key id="title_all">//TITLE</key>
+      <key id="scnnum" type="int">/SCENE/@scene</key>
+      <key id="actnum" type="int">/*/@act</key>
+    </keys>
+  </setup>
   <test-cases>
     <include file="base-cases.xml" />
   </test-cases>
