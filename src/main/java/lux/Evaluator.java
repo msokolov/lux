@@ -109,7 +109,7 @@ public class Evaluator {
     public static Evaluator createEvaluator (Directory dir) throws IOException {
     	XmlIndexer indexer = new XmlIndexer();
     	IndexWriter indexWriter = indexer.newIndexWriter(dir);
-      DirectDocWriter writer = new DirectDocWriter(indexer, indexWriter);
+    	DirectDocWriter writer = new DirectDocWriter(indexer, indexWriter);
     	Compiler compiler = new Compiler(indexer.getConfiguration());
     	LuxSearcher searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
     	Evaluator eval = new Evaluator (compiler, searcher, writer);
