@@ -437,7 +437,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 query = lq.getBaseQuery().combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
                 query = combineQueries(lq, Occur.MUST, query, query.getResultType());
         	} else {
-                query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
+        		if (lq.getParseableQuery().isSpan() && rq.getParseableQuery().isSpan()) {
+        			query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
+        		} else {
+                    query = combineQueries(lq, Occur.MUST, rq, resultType);
+        		}
         	}
             query.setBaseQuery(bq);
         } else {
@@ -909,8 +913,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         FieldDefinition field = fieldMatching(expr);
         if (field == null) {
       		// analyze the xpath for equivalence to indexed fields
-        	AbstractExpression last = expr.getLastContextStep();
-        	field = matchFieldFromLeaf (last);
+        	// TODO: match multiple fields
+        	field = matchField (expr, op);
         }
         /*
             // TODO: handle comparisons that reference the context item
@@ -971,10 +975,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * fields - on a successful match we will have the topmost node of the
      * expression tree, and can look the field up from there?
      */
-    private FieldDefinition matchFieldFromLeaf (AbstractExpression leafExpr) {
+    private FieldDefinition matchField(AbstractExpression expr, BinaryOperation comparison) {
+    	AbstractExpression leafExpr = expr.getLastContextStep();
     	tempEquiv.setExpression(leafExpr);
         for (AbstractExpression fieldLeaf : compiler.getFieldLeaves (tempEquiv)) {
-            AbstractExpression fieldExpr = matchUpwards (leafExpr, fieldLeaf);
+            AbstractExpression fieldExpr = matchUpwards (leafExpr, fieldLeaf, comparison);
             if (fieldExpr != null) {
                 return compiler.getFieldForExpr (fieldExpr);
             }
@@ -983,26 +988,43 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     /**
-     * test whether the fieldExpr >= (a subtree of) the queryExpr, and if so,
+     * test whether the fieldExpr >= (a subtree of) the queryExpr, and ...
+     * 
      * @return the root of the fieldExpr.
      */
-    private AbstractExpression matchUpwards (AbstractExpression queryExpr, AbstractExpression fieldExpr) {
+    private AbstractExpression matchUpwards (AbstractExpression queryExpr, AbstractExpression fieldExpr, AbstractExpression enclosingExpr) {
         // assume that the caller has ensured that queryExpr.equivalent(fieldExpr)
-        AbstractExpression fieldSuper = fieldExpr.getSuper(), querySuper = queryExpr.getSuper();
+        AbstractExpression fieldSuper = getEquivSuper(fieldExpr), querySuper = getEquivSuper(queryExpr);
         // TODO: traverse past "uninteresting" nodes
         if (fieldSuper == null) {
             return fieldExpr;
         }
+        if (querySuper == enclosingExpr) {
+        	querySuper = getEquivSuper (querySuper);
+        }
         if (querySuper == null) {
             return null;
         }
-        if (! matchDown (queryExpr, fieldExpr)) {
+        if (! matchDown (querySuper, fieldSuper, fieldExpr)) {
             return null;
         }
-        if (!fieldSuper.equivalent(querySuper)) {
+        if (!fieldSuper.geq(querySuper)) {
         	return null;
         }
-        return matchUpwards (querySuper, fieldSuper);
+        return matchUpwards (querySuper, fieldSuper, enclosingExpr);
+    }
+    
+    private AbstractExpression getEquivSuper (AbstractExpression expr) {
+    	// walk up the tree, skipping nodes that preserve query-equivalence
+    	// TODO: if this gets more complex, break into a method on AE
+    	AbstractExpression sup = expr.getSuper();
+    	if (sup != null && sup.getType() == Type.FUNCTION_CALL) {
+    		// data(), exists(),  
+    		if (sup.isRestrictive()) {
+    			return getEquivSuper (sup);
+    		}
+    	}
+    	return sup;
     }
 
     /**
@@ -1012,9 +1034,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
        @param fieldExpr
        @return whether fieldExpr >= queryExpr
     */
-    private boolean matchDown (AbstractExpression queryExpr, AbstractExpression fieldExpr) {
-        if (! queryExpr.equivalent(fieldExpr)) {
-            // if these nodes are different type, or have different properties, they don't match
+    private boolean matchDown (AbstractExpression queryExpr, AbstractExpression fieldExpr, AbstractExpression fromExpr) {
+        if (! fieldExpr.geq(queryExpr)) {
+            // if fieldExpr does not encompass queryExpr, it is too restrictive
             return false;
         }
         // all of queryExpr's subs *must* return a value (for a
@@ -1026,11 +1048,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (fsubs == null) {
         	return qsubs == null || queryExpr.isRestrictive();
         }
+        AbstractExpression qsubMatched = null;
 		OUTER:
         for (AbstractExpression fsub : fsubs) {
             // TODO: skip already matched fsub
+        	if (fsub == fromExpr) {
+        		continue;
+        	}
             for (AbstractExpression qsub : queryExpr.getSubs()) {
-                if (matchDown (qsub, fsub)) {
+                if (matchDown (qsub, fsub, null)) {
+                	qsubMatched = qsub;
                     continue OUTER;
                 }
             }
@@ -1043,9 +1070,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // matched by some child of fieldExpr
         	OUTER:
             for (AbstractExpression qsub : queryExpr.getSubs()) {
-                // TODO: skip checking those we've already matched above
+            	if (qsub == qsubMatched) {
+            		continue;
+            	}
                 for (AbstractExpression fsub : fsubs) {
-                    if (matchDown (qsub, fsub)) {
+                    if (matchDown (qsub, fsub, null)) {
                         continue OUTER;
                     }
                 }
