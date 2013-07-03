@@ -19,6 +19,8 @@ try w/XQTS
 ** OOM
 On buda, lux:search ("<@imagepage:123")[1]/root() fails w OOM while
 lux:search ("<@imagepage:123")[1] works fine ... ??
+*** more OOM
+On buda, (//formatthingy[@format="video"])[1] is OK, but append /root() to it and OOM?
 ** boolean/span nesting
 there must be some combination of paths that will result in booleans inside
 of spans.
@@ -27,6 +29,10 @@ of spans.
 I think this is working now - let's measure and document the improvement.
 *** execute app from index
 * optimization
+cache translated AbstractExpressions for indexed XPaths somewhere.
+IndexConfiguration seems like the right place, but it doesn't have any
+access to an XPathCompiler (nor a SaxonTranslator).  These are available to
+XmlIndexer, Compiler, and (for the translator) PathOptimizer.
 ** not() optimization:
 *** invert the query:
 count(collection()[not(.//pubdate)])
