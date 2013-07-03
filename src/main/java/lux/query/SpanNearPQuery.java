@@ -150,6 +150,11 @@ public class SpanNearPQuery extends ParseableQuery {
         }
     }
 
+    @Override 
+    public boolean isSpan() {
+    	return true;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

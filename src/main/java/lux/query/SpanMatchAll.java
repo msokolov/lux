@@ -37,6 +37,11 @@ public class SpanMatchAll extends ParseableQuery {
     public String toQueryString(String defaultField, IndexConfiguration config) {
     	return "*:*";
     }
+    
+    @Override
+    public boolean isSpan() {
+    	return true;
+    }
 
 }
 

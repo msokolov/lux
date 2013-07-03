@@ -50,6 +50,12 @@ public class SpanBooleanPQuery extends BooleanPQuery {
         buf.append(')');
         return buf.toString();
     }
+    
+    @Override
+    public boolean isSpan() {
+    	return true;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

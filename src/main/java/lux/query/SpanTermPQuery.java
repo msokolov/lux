@@ -29,6 +29,11 @@ public class SpanTermPQuery extends TermPQuery {
         return toXmlNode(field, SPAN_TERM_QNAME);
     }
 
+    @Override 
+    public boolean isSpan() {
+    	return true;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -27,5 +27,9 @@ public abstract class ParseableQuery {
     public String toString () {
         return toQueryString ("", IndexConfiguration.DEFAULT);
     }
+    
+    public boolean isSpan() {
+    	return false;
+    }
 
 }
