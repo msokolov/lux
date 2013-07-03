@@ -98,6 +98,15 @@ public class PathExpression extends AbstractExpression {
         return true;
     }
 
+    /**
+     * @param other another expression
+     * @return whether the two expressions are s.t. this expr is non-empty
+     * whenever (for whichever contexts) the other one is.
+     */
+    public boolean geq (AbstractExpression other) {
+        return other instanceof PathExpression || other instanceof Predicate;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

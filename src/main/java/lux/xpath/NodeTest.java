@@ -111,6 +111,13 @@ public class NodeTest {
         return other != null && other instanceof NodeTest && type == ((NodeTest) other).type &&
             name.equals(((NodeTest) other).name);
     }
+
+    public boolean propGreaterEqual (NodeTest other) {
+        // TODO: wildcard namespace
+        return (type == other.type || type == ValueType.NODE) &&
+            (isWild() || 
+             (!other.isWild() && name.equals(((NodeTest) other).name)));
+    }
     
     public int equivHash () {
     	return type.ordinal() * (name == null ? 91 : name.hashCode());

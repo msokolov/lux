@@ -211,21 +211,46 @@ public abstract class AbstractExpression implements Visitable {
         }
         return propEquals ((AbstractExpression) other);
     }
+
+    /**
+     * @param other another expression
+     * @return whether the two expressions are of the same type have local properties
+     * s.t. this expr is non-empty whenever (for whichever contexts) the other one is.
+     */
+    public boolean geq (AbstractExpression other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (! (getClass().isAssignableFrom(other.getClass()))) {
+            return false;
+        }
+        return propGreaterEqual ((AbstractExpression) other);
+    }
     
     /**
      * @return a hashcode that is consistent with {@link #equivalent(AbstractExpression)}
      */
     int equivHash () {
-    	return type.ordinal();
+        return type.ordinal();
     }
     
     /**
      * @param oex another expression
-     * @return whether the other expression and this one have all the same local properties,
-     * consistent with equals()
+     * @return whether the other expression and this one have all the same local properties
      */
     protected boolean propEquals (AbstractExpression oex) {
-    	return (oex.getType() == type);
+        return (oex.getType() == type);
+    }
+    
+    /**
+     * @param oex another expression of the same type as this
+     * @return whether the expressions' properties imply: <code>this ge oex</code>
+     */
+    public boolean propGreaterEqual (AbstractExpression oex) {
+        return propEquals(oex);
     }
     
     public boolean deepEquals (AbstractExpression oex) {
