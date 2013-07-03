@@ -13,12 +13,12 @@ import javax.xml.transform.stream.StreamSource;
 
 import lux.Compiler;
 import lux.Evaluator;
-import lux.QNameQueryTest;
 import lux.QueryContext;
 import lux.XdmResultSet;
 import lux.index.XmlIndexer;
 import lux.index.field.XPathField;
 import lux.index.field.FieldDefinition.Type;
+import lux.query.QNameQueryTest;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;

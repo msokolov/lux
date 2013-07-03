@@ -5,10 +5,10 @@
     </setup>
   </meta>
   <test-cases>
-    <include file="base-cases.xml" />
+    <include file="query/base-cases.xml" />
   </test-cases>
   <queries>
-    <include file="path-queries.xml" />
+    <include file="query/path-queries.xml" />
     <query id="ACT">
         <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
     </query>

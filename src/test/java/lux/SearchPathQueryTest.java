@@ -1,6 +1,7 @@
 package lux;
 
 import lux.junit.SearchTestRunner;
+import lux.query.QNameQueryTest;
 
 import org.junit.runner.RunWith;
 

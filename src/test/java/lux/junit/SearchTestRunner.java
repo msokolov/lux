@@ -6,9 +6,9 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.Evaluator;
 import lux.IndexTestSupport;
-import lux.QNameQueryTest;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
+import lux.query.QNameQueryTest;
 import net.sf.saxon.s9api.SaxonApiException;
 
 import org.apache.lucene.store.RAMDirectory;
