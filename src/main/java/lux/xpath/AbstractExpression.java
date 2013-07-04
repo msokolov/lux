@@ -214,8 +214,10 @@ public abstract class AbstractExpression implements Visitable {
 
     /**
      * @param other another expression
-     * @return whether the two expressions are of the same type have local properties
-     * s.t. this expr is non-empty whenever (for whichever contexts) the other one is.
+     * @return whether this expression is query-geq (fgreater-than-or-equal) to the other, in the sense
+     * that for all contexts c, exists(other|c) => exists(this|c). In particular, this implementation tests that 
+     * the two expressions are of the same type and have local properties consistent with geq, by calling
+     * propGreaterEqual.
      */
     public boolean geq (AbstractExpression other) {
         if (other == this) {

@@ -36,7 +36,6 @@ import lux.xpath.PathExpression;
 import lux.xpath.PathStep;
 import lux.xpath.PathStep.Axis;
 import lux.xpath.Predicate;
-import lux.xpath.PropEquiv;
 import lux.xpath.Root;
 import lux.xpath.SearchCall;
 import lux.xpath.Sequence;
@@ -95,7 +94,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private final XPathQuery MATCH_ALL;
     private final String attrQNameField;
     private final String elementQNameField;
-    private final PropEquiv tempEquiv;
     private boolean optimizeForOrderedResults;
     private Logger log;
 
@@ -104,7 +102,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     public PathOptimizer(Compiler compiler) {
         queryStack = new ArrayList<XPathQuery>();
         varBindings = new HashMap<QName, VarBinding>();
-        tempEquiv = new PropEquiv(null);
         this.compiler = compiler;
         this.indexConfig = compiler.getIndexConfiguration();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
@@ -788,7 +785,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         Occur occur = Occur.SHOULD;
         boolean minimal = false;
         boolean required = false;
-        // We need to answer the question: is it possible to 
+        AbstractExpression rangeOptimized = null; 
         switch (op.getOperator()) {
 
         case AND:
@@ -824,12 +821,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         		required = true;
         		occur = Occur.MUST;
         	}
-            AbstractExpression optimized = optimizeRangeComparison (lq, rq, op);
-            if (optimized != null) {
-                // Replace this comparison with an equivalent indexed query; skip the generic 
-                // query combination below
-                return optimized;
-            }
+        	rangeOptimized = optimizeRangeComparison (lq, rq, op);
         	resultType = ValueType.BOOLEAN;
             break;
 
@@ -858,6 +850,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
         case TO:
         	resultType = ValueType.INTEGER;
         	break;
+        }
+        if (rangeOptimized != null) {
+        	// TODO: figure out how to combine range query w/span queries
+        	// maybe drop the range query in a separate place (not on the stack)
+        	// and pull it back at an outermost scope
+        	return rangeOptimized;
         }
         XPathQuery query = combineQueries(lq, occur, rq, resultType);
         if (minimal == false) {
@@ -977,8 +975,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
     private FieldDefinition matchField(AbstractExpression expr, BinaryOperation comparison) {
     	AbstractExpression leafExpr = expr.getLastContextStep();
-    	tempEquiv.setExpression(leafExpr);
-        for (AbstractExpression fieldLeaf : compiler.getFieldLeaves (tempEquiv)) {
+        for (AbstractExpression fieldLeaf : compiler.getFieldLeaves (leafExpr)) {
             AbstractExpression fieldExpr = matchUpwards (leafExpr, fieldLeaf, comparison);
             if (fieldExpr != null) {
                 return compiler.getFieldForExpr (fieldExpr);

@@ -33,6 +33,9 @@ import lux.index.field.XPathField;
 import lux.xml.GentleXmlReader;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
+import lux.xpath.NodeTest;
+import lux.xpath.PathStep;
+import lux.xpath.PathStep.Axis;
 import lux.xpath.PropEquiv;
 import lux.xquery.XQuery;
 import net.sf.saxon.Configuration;
@@ -65,6 +68,7 @@ public class Compiler {
     private final boolean isSaxonLicensed;
     private final HashMap<PropEquiv,ArrayList<AbstractExpression>> fieldLeaves;
     private final HashMap<AbstractExpression, XPathField> fieldExpressions;
+    private final PropEquiv tempEquiv;
 
     // for testing
     private XQuery lastOptimized;
@@ -121,6 +125,7 @@ public class Compiler {
         logger = LoggerFactory.getLogger(getClass());
         fieldLeaves = new HashMap<PropEquiv, ArrayList<AbstractExpression>>();
         fieldExpressions = new HashMap<AbstractExpression, XPathField>();
+        tempEquiv = new PropEquiv(null);
         compileFieldExpressions ();
     }
     
@@ -287,13 +292,41 @@ public class Compiler {
         return lastOptimized; 
     }
 	
-    public List<AbstractExpression> getFieldLeaves(PropEquiv leafEquivalent) {
-    	ArrayList<AbstractExpression> leaves = fieldLeaves.get(leafEquivalent);
-    	if (leaves != null) {
-    		return Collections.unmodifiableList(leaves);
+    public List<AbstractExpression> getFieldLeaves(AbstractExpression leafExpr) {
+    	List<AbstractExpression> allLeaves = new ArrayList<AbstractExpression>();
+    	// get leaves that are equivalent to leafExpr
+    	addMatchingLeaves (leafExpr, allLeaves);
+    	if (leafExpr instanceof PathStep) {
+        	// also get leaves that are geq leafExpr
+    		PathStep.Axis axis = ((PathStep) leafExpr).getAxis();
+    		NodeTest nodeTest = ((PathStep) leafExpr).getNodeTest();
+    		PathStep step;
+    		for (Axis extAxis : axis.extensions) {
+        		// try various generalizations: self->ancestor-or-self, etc
+    			step = new PathStep (extAxis, nodeTest);
+    	    	addMatchingLeaves (step, allLeaves);
+    		}
+    		if (! nodeTest.isWild()) {
+    			// try matching indexes with "*"
+    			nodeTest = new NodeTest (nodeTest.getType());
+    			step = new PathStep (axis, nodeTest);
+    	    	addMatchingLeaves (step, allLeaves);
+        		for (Axis extAxis : axis.extensions) {
+        			step = new PathStep (extAxis, nodeTest);
+        	    	addMatchingLeaves (step, allLeaves);
+        		}
+    		}
     	}
-    	return Collections.emptyList();
+    	return allLeaves;
 	}
+    
+    private void addMatchingLeaves (AbstractExpression expr, List<AbstractExpression> allLeaves) {
+    	tempEquiv.setExpression(expr);
+    	ArrayList<AbstractExpression> leaves = fieldLeaves.get(tempEquiv);
+    	if (leaves != null) {
+    		allLeaves.addAll (leaves);
+    	}
+    }
 
 	public FieldDefinition getFieldForExpr(AbstractExpression fieldExpr) {
 		return fieldExpressions.get(fieldExpr);

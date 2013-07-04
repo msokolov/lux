@@ -39,6 +39,12 @@ public class Root extends AbstractExpression {
     public AbstractExpression replaceRoot(AbstractExpression replacement) {        
         return replacement;
     }
+    
+    @Override
+    public boolean geq (AbstractExpression other) {
+    	// this returns non empty for every (non-empty) context
+    	return true;
+    }
 
 }
 
