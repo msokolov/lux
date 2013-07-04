@@ -15,6 +15,7 @@ import lux.Compiler;
 import lux.Evaluator;
 import lux.QueryContext;
 import lux.XdmResultSet;
+import lux.exception.LuxException;
 import lux.index.XmlIndexer;
 import lux.index.field.XPathField;
 import lux.index.field.FieldDefinition.Type;
@@ -128,12 +129,20 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         // /test-suite/meta/setup/keys
     }
     
-    private void loadTestCases(XdmNode top) throws IOException, SaxonApiException {
+    private void loadTestCases(XdmNode top) {
         XdmValue kids = eval ("test-suite/test-cases/*", top);
         for (XdmItem item: kids) {
         	XdmNode kid = (XdmNode) item;
         	if (kid.getNodeName().getClarkName().equals("include")) {
-                XdmNode tests = readFile (kid.getAttributeValue(new QName("file")));
+				String fileName = kid.getAttributeValue(new QName("file"));
+                XdmNode tests;
+				try {
+					tests = readFile (fileName);
+				} catch (IOException e) {
+					throw new LuxException ("Error reading file " + fileName, e);
+				} catch (SaxonApiException e) {
+					throw new LuxException ("Error reading file " + fileName, e);
+				}
                 loadTestCases (tests);
         	}
         	else if (kid.getNodeName().getClarkName().equals("test-case")) {
@@ -154,7 +163,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         }
     }
     
-    private void loadQueries(XdmItem top) throws IOException, SaxonApiException {
+    private void loadQueries(XdmItem top) {
         for (XdmItem queryItem : eval ("*", top)) {
         	XdmNode node = (XdmNode) queryItem;
         	if (node.getNodeName().getLocalName().equals("query")) {
@@ -167,7 +176,14 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         	} 
         	else if (node.getNodeName().getLocalName().equals("include")) {
         		String fileName = evalStr ("@file", node);
-        		XdmNode include = readFile (fileName);
+        		XdmNode include;
+				try {
+					include = readFile (fileName);
+				} catch (IOException e) {
+					throw new LuxException("Failed to read file " + fileName, e);
+				} catch (SaxonApiException e) {
+					throw new LuxException("Failed to read file " + fileName, e);
+				}
         		XdmValue queries = eval("queries", include);
         		for (XdmItem q : queries) {
         			loadQueries (q);
