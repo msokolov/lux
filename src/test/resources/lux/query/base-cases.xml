@@ -360,11 +360,11 @@
       <expect order-by="sortkey"><query id="ACT" /></expect>
     </test-case>
     <test-case name="order-by-context-argument">
-      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey', $doc) return $doc</query>
+      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc</query>
       <expect order-by="sortkey"><query id="ACT" /></expect>
     </test-case>
     <test-case name="order-by-search-funcall">
-      <query>for $doc in lux:search("foo") order by $doc/lux:field-values('sortkey', $doc) return $doc</query>
+      <query>for $doc in lux:search("foo") order by $doc/lux:field-values('sortkey') return $doc</query>
       <expect order-by="sortkey"><query id="LUX_FOO" /></expect>
     </test-case>
     <test-case name="order-by-2keys">
@@ -418,6 +418,54 @@
     <test-case name="range-predicate">
       <query>/SCENE[@act=1]</query>
       <expect><query id="SCENE_actnum" /></expect>
+    </test-case>
+    <test-case name="string-range-desc">
+      <query>//SCENE[TITLE="SCENE I.  A churchyard."]</query>
+      <expect><query id="string-range-desc" /></expect>
+    </test-case>
+    <test-case name="string-range-path">
+      <query>/ACT/SCENE[TITLE="SCENE I.  A churchyard."]</query>
+      <expect><query id="string-range-path" /></expect>
+    </test-case>
+    <test-case name="range-inequality">
+      <query>//TITLE[. &lt; "B"]</query>
+      <expect><query id="range-inequality" /></expect>
+    </test-case>
+    <test-case name="range-type-mismatch">
+      <query>//TITLE[. &lt; 10]</query>
+      <expect><query id="range-type-mismatch" /></expect>
+    </test-case>
+    <test-case name="range-inequality-2">
+      <query>//TITLE[. >= "SCENE V"]</query>
+      <expect><query id="range-inequality-2" /></expect>
+    </test-case>
+    <test-case name="range-dot-unequal">
+      <query>//TITLE[. != "SCENE I.  A churchyard."]</query>
+      <expect><query id="range-dot-unequal" /></expect>
+    </test-case>
+    <test-case name="string-range-dot">
+      <query>/ACT/SCENE/TITLE[.="SCENE I.  A churchyard."]</query>
+      <expect><query id="string-range-dot" /></expect>
+    </test-case>
+    <test-case name="range-lt">
+      <query>//TITLE[. lt "B"]</query>
+      <expect><query id="range-lt" /></expect>
+    </test-case>
+    <test-case name="range-ne">
+      <query>//TITLE[. ne "SCENE I.  A churchyard."]</query>
+      <expect><query id="range-ne" /></expect>
+    </test-case>
+    <test-case name="range-pred-1">
+      <query>(/SCENE[@scene=2]/TITLE)[1]</query>
+      <expect><query id="range-pred-1" /></expect>
+    </test-case>
+    <test-case name="range-pred-2">
+      <query>/SCENE[@act=1][@scene>=1]/TITLE</query>
+      <expect><query id="range-pred-2" /></expect>
+    </test-case>
+    <test-case name="range-pred-3">
+      <query>count(/ACT[@act=1][SCENE/@scene=3])    </query>
+      <expect><query id="range-pred-3" /></expect>
     </test-case>
   </test-cases>
 </test-suite>

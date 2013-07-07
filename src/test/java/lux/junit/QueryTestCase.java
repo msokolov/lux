@@ -78,7 +78,7 @@ class QueryTestCase {
         		// These are node trees, but let's use string comparison to display something meaningful to the user
         		try {
 					if (!compareNodes (eval, queries.get(i), queryNode)) {
-						assertEquals (queries.get(i).toString(), queryNode.toString().trim());
+						assertEquals (indent(queries.get(i).toString().trim()), indent(queryNode.toString().trim()));
 					}
 				} catch (XPathException e) {
 					fail (e.getMessage());
@@ -116,6 +116,29 @@ class QueryTestCase {
              DeepEqual.EXCLUDE_WHITESPACE_TEXT_NODES |
              DeepEqual.COMPARE_STRING_VALUES
              );
+    }
+    
+    protected String indent (String s) {
+    	// attempt to normalize indentation with some heuristic
+    	String[] lines = s.split("\r?\n");
+    	StringBuilder buf = new StringBuilder();
+    	int lastOriginalIndent = 0;
+    	int curIndent = 0;
+    	for (String line : lines) {
+    		String unindented = line.replaceFirst("^\\s+", "");
+    		int indentSize = line.length() - unindented.length();
+    		if (indentSize < lastOriginalIndent) {
+    			curIndent -= 2;
+    		} else if (indentSize > lastOriginalIndent) {
+    			curIndent += 2;
+    		}
+    		lastOriginalIndent = indentSize;
+    		for (int i = 0; i < curIndent; i++) {
+    			buf.append (' ');
+    		}
+    		buf.append (unindented).append ('\n');
+    	}
+    	return buf.toString();
     }
 
     public String getName() {

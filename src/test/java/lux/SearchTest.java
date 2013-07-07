@@ -104,8 +104,10 @@ public class SearchTest extends BaseSearchTest {
     	assertSearch  ("1", "count(/FM[exists(BLAH) = exists(BLARG)])", 0, 1);
     	assertSearch  ("0", "count(/FM[exists(BLAH) != exists(BLARG)])", 0, 1);
     	assertSearch  ("0", "count(/FM[BLAH eq string(BLARG)])", 0, 0);
+    	// NOTE: () eq () === ()
     	assertSearch  ("0", "count(/FM[BLAH eq BLARG])", 0, 0);
-    	assertSearch  ("0", "count(/FM[BLAH = BLARG])", 0, 1);
+    	// NOTE: () = () === false()
+    	assertSearch  ("0", "count(/FM[BLAH = BLARG])", 0, 0);
 
         // we don't optimize along the parent axis
         assertSearch  ("20", "count(//SCENE[not(exists(parent::ACT))])", 0, 26);
@@ -477,8 +479,12 @@ public class SearchTest extends BaseSearchTest {
         
     @Test
     public void testOrderByPagination () throws Exception {
+    	// We can't optimize the subsequence (pagination) here because $/doc/*name() looks like
+    	// it might return multiple nodes per matching document.
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 1);
+            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
+        assertSearch ("<SPEAKER>BERNARDO</SPEAKER>", "(for $doc in lux:search('bernardo')" + 
+                " order by lux:field-values('doctype', $doc) return $doc)[21]", 0, 1);
     }
     
     @Test

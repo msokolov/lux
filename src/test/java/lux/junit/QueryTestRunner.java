@@ -45,7 +45,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
     private static final QName TYPE_QNAME = new QName("type");
 
     // private String description;
-    private List<QueryTestCase> cases;
+    private HashMap<String, QueryTestCase> cases;
     private HashMap<String,XdmNode> queryMap = new HashMap<String, XdmNode>();
     protected Evaluator eval;
     protected DocumentBuilder builder; 
@@ -55,7 +55,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         eval = new Evaluator(new Compiler(getIndexer().getConfiguration()), null, null);
         builder = eval.getCompiler().getProcessor().newDocumentBuilder();
         queryMap = new HashMap<String, XdmNode>();
-        cases = new ArrayList<QueryTestCase>(100);
+        cases = new HashMap<String, QueryTestCase>();
         try {
             eval.getCompiler().setSearchStrategy (Compiler.SearchStrategy.NONE);
 			loadTests ();
@@ -86,7 +86,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
      * @return a list of QueryTestCases that define the children of this Runner.
      */
     protected List<QueryTestCase> getChildren() {
-        return cases;
+        return new ArrayList<QueryTestCase>(cases.values());
     }
 
     /**
@@ -214,7 +214,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 		    (expectError, expectedError, getExpectedQueryText(testItem), expectedQueries,
 		     expectedResultType, expectedOrderBy);
 		QueryTestCase testCase = newTestCase (name, queryText, expectedResult);
-		cases.add (testCase);
+		cases.put (name, testCase);
 	}
 	
 	protected QueryTestCase newTestCase (String name, String queryText, QueryTestResult expectedResult) {

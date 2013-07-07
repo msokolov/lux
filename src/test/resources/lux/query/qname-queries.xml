@@ -160,9 +160,138 @@
   <query id="SCENE_actnum">
     <BooleanQuery> 
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
       <Clause occurs="must">
         <NumericRangeQuery fieldName="actnum" type="INT" lowerTerm="1" upperTerm="1" includeUpper="true" includeLower="true" />
       </Clause>
     </BooleanQuery>    
+  </query>
+  <query id="string-range-desc">
+    <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <TermRangeQuery fieldName="title_all" lowerTerm="SCENE I.  A churchyard." upperTerm="SCENE I.  A churchyard." includeLower="true" includeUpper="true" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="string-range-path">
+    <!-- /ACT/SCENE[TITLE="SCENE I.  A churchyard."] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <TermRangeQuery fieldName="title_all" lowerTerm="SCENE I.  A churchyard." upperTerm="SCENE I.  A churchyard." includeLower="true" includeUpper="true" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="string-range-dot">
+    <!-- /ACT/SCENE/TITLE[.="SCENE I.  A churchyard."] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <TermRangeQuery fieldName="title_all" lowerTerm="SCENE I.  A churchyard." upperTerm="SCENE I.  A churchyard." includeLower="true" includeUpper="true" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-inequality">
+    <!-- //TITLE[. &lt; "B"] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <TermRangeQuery fieldName="title_all" upperTerm="B" includeLower="false" includeUpper="false" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-type-mismatch">
+    <!-- //TITLE[. &lt; 10] -->
+    <TermQuery fieldName="lux_elt_name">TITLE</TermQuery>
+  </query>
+  <query id="range-inequality-2">
+    <!-- //TITLE[. >= "SCENE V"] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <TermRangeQuery fieldName="title_all" lowerTerm="SCENE V" includeLower="true" includeUpper="false" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-dot-unequal">
+    <!-- //TITLE[. != "SCENE I.  A churchyard."] -->
+    <!--  TODO possibly collapse the extract BooleanQuery nesting here -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <BooleanQuery>
+          <Clause occurs="mustNot">
+            <TermRangeQuery fieldName="title_all" lowerTerm="SCENE I.  A churchyard." upperTerm="SCENE I.  A churchyard." includeLower="true" includeUpper="true" />
+          </Clause>
+        </BooleanQuery>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-lt">
+    <!-- //TITLE[. lt "B"] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <TermRangeQuery fieldName="title_all" upperTerm="B" includeLower="false" includeUpper="false" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-ne">
+    <!-- //TITLE[. ne "SCENE I.  A churchyard."] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <BooleanQuery>
+          <Clause occurs="mustNot">
+            <TermRangeQuery fieldName="title_all" lowerTerm="SCENE I.  A churchyard." upperTerm="SCENE I.  A churchyard." includeLower="true" includeUpper="true" />
+          </Clause>
+        </BooleanQuery>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-pred-1">
+    <!-- (/SCENE[@scene=2]/TITLE)[1] -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <NumericRangeQuery fieldName="scnnum" lowerTerm="2" upperTerm="2" includeLower="true" includeUpper="true" type="INT" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-pred-2">
+    <!-- /SCENE[@act=1][@scene>=1]/TITLE -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
+        <NumericRangeQuery fieldName="actnum" lowerTerm="1" upperTerm="1" includeLower="true" includeUpper="true" type="INT" />
+      </Clause>
+      <Clause occurs="must">
+        <NumericRangeQuery fieldName="scnnum" lowerTerm="1" includeLower="true" includeUpper="false" type="INT" />
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-pred-3">
+    <!-- count(/ACT[@act=1][SCENE/@scene=3]) -->
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
+      <Clause occurs="must">
+        <NumericRangeQuery fieldName="actnum" lowerTerm="1" upperTerm="1" includeLower="true" includeUpper="true" type="INT"/>
+      </Clause>
+    </BooleanQuery>
   </query>
 </queries>
