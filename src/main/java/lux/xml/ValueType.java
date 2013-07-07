@@ -119,11 +119,16 @@ public enum ValueType {
     
     @Override
     public String toString () {
-        // We lose type qualifications (like element(foo) - they become just element())
-    	// but that's OK since the type assertion is preserved in a dynamic "treat as" expression,
-    	// and static type checking will already have been performed by the compiler.
+        // Any type qualifications is lost (like element(foo) - they become just element())
         if (!isAtomic) {
             return name + "()";
+        }
+        return name;
+    }
+
+    public String toString (QName qName) {
+        if (!isAtomic) {
+            return name + '(' + (qName != null ? qName.toString()  : "") + ')';
         }
         return name;
     }
