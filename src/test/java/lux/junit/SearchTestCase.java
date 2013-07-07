@@ -35,7 +35,7 @@ public class SearchTestCase extends QueryTestCase {
 		}
 	}
 	
-	public void evaluate (Evaluator eval, Evaluator baselineEval, int repeatCount) {
+	public void evaluate (Evaluator eval, Evaluator baselineEval) {
         baselineEval.getCompiler().setSearchStrategy(SearchStrategy.LUX_UNOPTIMIZED);
         if (repeatCount > 1) {
             try {
@@ -58,7 +58,8 @@ public class SearchTestCase extends QueryTestCase {
         }
 	}
 	
-	public XdmResultSet evaluate(Evaluator eval) {
+	@Override
+    public XdmResultSet evaluate(Evaluator eval) {
 		if (eval.getDocReader() != null) {
 			eval.getDocReader().clear();
 		}

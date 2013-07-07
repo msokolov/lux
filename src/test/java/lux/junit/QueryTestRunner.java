@@ -17,8 +17,8 @@ import lux.QueryContext;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
-import lux.index.field.XPathField;
 import lux.index.field.FieldDefinition.Type;
+import lux.index.field.XPathField;
 import lux.query.QNameQueryTest;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.QName;
@@ -85,6 +85,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
     /**
      * @return a list of QueryTestCases that define the children of this Runner.
      */
+    @Override
     protected List<QueryTestCase> getChildren() {
         return new ArrayList<QueryTestCase>(cases.values());
     }
@@ -93,6 +94,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
      * Returns a {@link Description} for the {@code child} test case, an
      *  element of the list returned by {@link ParentRunner#getChildren()}
      */
+    @Override
     protected Description describeChild(QueryTestCase child) {
         return Description.createTestDescription (getTestClass().getJavaClass(), child.getName());
     }
@@ -103,6 +105,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
      * Subclasses are responsible for making sure that relevant test events are
      * reported through {@code notifier}
      */
+    @Override
     protected void runChild(final QueryTestCase child, RunNotifier notifier) {
         runLeaf (new Statement() { @Override public void evaluate () { child.evaluate(eval); } }, 
                  describeChild(child), 
@@ -207,7 +210,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 		String queryText = evalStr ("query", testItem);
 		boolean expectError = evalStr ("exists(expect/error)", testItem).equals("true");
 		String expectedError  = evalStr ("expect/error", testItem);
-		List<XdmNode> expectedQueries = getExpectedQueries (queryMap, testItem);
+		List<XdmNode> expectedQueries = getExpectedQueries (testItem);
 		String expectedResultType = evalStr ("expect/query[1]/@type", testItem);
 		String expectedOrderBy= evalStr ("expect/query[1]/@order-by", testItem);
 		QueryTestResult expectedResult = new QueryTestResult 
@@ -239,7 +242,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         return expectedQueryText;
     }
 
-    private List<XdmNode> getExpectedQueries (HashMap<String,XdmNode> queryMap, XdmItem testItem) {
+    private List<XdmNode> getExpectedQueries (XdmItem testItem) {
         List<XdmNode> expectedQueries = new ArrayList<XdmNode>();
         for (XdmItem queryID : eval ("expect/query/@id", testItem)) {
         	String expectedQueryID  = queryID.getStringValue();

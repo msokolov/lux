@@ -14,8 +14,6 @@ import org.apache.lucene.document.Field.Store;
 
 /**
  * Indexes the values of the XPath expression evaluated with the document as the context item
- * @param <T> the type of value stored in or indexed by the field; must correspond with the {@link FieldDefinition.Type}:
- * STRING =&gt; String, and INT =&gt; Integer
  */
 public class XPathField extends FieldDefinition {
     

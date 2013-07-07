@@ -103,10 +103,12 @@ public class PathExpression extends AbstractExpression {
      * @return whether the two expressions are s.t. this expr is non-empty
      * whenever (for whichever contexts) the other one is.
      */
+    @Override
     public boolean geq (AbstractExpression other) {
         return other instanceof PathExpression || other instanceof Predicate;
     }
 
+    @Override
     public boolean matchDown (AbstractExpression fieldExpr, AbstractExpression fromExpr) {
     	if (! fieldExpr.geq(this)) {
     		// if fieldExpr does not encompass this at least formally, it is too restrictive
