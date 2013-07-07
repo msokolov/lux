@@ -40,7 +40,6 @@ import lux.xpath.Root;
 import lux.xpath.SearchCall;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
-import lux.xquery.AtomizedSequence;
 import lux.xquery.FLWOR;
 import lux.xquery.FLWORClause;
 import lux.xquery.ForClause;
@@ -88,6 +87,7 @@ import org.slf4j.LoggerFactory;
 public class PathOptimizer extends ExpressionVisitorBase {
 
     private final ArrayList<XPathQuery> queryStack;
+    private final ArrayList<XPathQuery> rangeQueries;
     private final HashMap<QName, VarBinding> varBindings;
     private final IndexConfiguration indexConfig;
     private final Compiler compiler;
@@ -97,10 +97,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private boolean optimizeForOrderedResults;
     private Logger log;
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     
     public PathOptimizer(Compiler compiler) {
         queryStack = new ArrayList<XPathQuery>();
+        rangeQueries = new ArrayList<XPathQuery>();
         varBindings = new HashMap<QName, VarBinding>();
         this.compiler = compiler;
         this.indexConfig = compiler.getIndexConfiguration();
@@ -123,12 +124,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         queryStack.clear();
         push(MATCH_ALL);
         AbstractExpression main = query.getBody();
-        // Don't attempt to optimize if no indexes are available, or if the
-        // query has no body
         if (main != null) {
             if (indexConfig.isIndexingEnabled()) {
                 main = optimize(main);
             } else {
+                // Don't attempt to optimize if no indexes are available
                 main = main.replaceRoot(new FunCall(FunCall.FN_COLLECTION, ValueType.DOCUMENT));
             }
             return new XQuery(query.getDefaultElementNamespace(), query.getDefaultFunctionNamespace(),
@@ -150,7 +150,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
             AbstractExpression body = optimize(function.getBody());
             function = new FunctionDefinition(function.getName(), 
-                    function.getReturnType(), function.getCardinality(),
+                    function.getReturnType(), function.getCardinality(), function.getReturnTypeName(),
                     (Variable[]) function.getSubs(), body);
             functionDefinitions[i] = function;
             for (AbstractExpression var : function.getSubs()) {
@@ -346,13 +346,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // opportunity to combine the
         // predicate query with the base query
         AbstractExpression filter = predicate.getFilter();
-		predicate.setFilter(optimizeExpression(filter, peek()));
+        predicate.setFilter(optimizeExpression(filter, peek()));
         XPathQuery filterQuery = pop();
         XPathQuery baseQuery = pop();
         if (DEBUG) {
         	log.debug("base: {} [ {} ]", baseQuery, filterQuery);
         }
-
+        if (filter.equals(LiteralExpression.TRUE)) {
+        	push (baseQuery);
+        	return predicate.getBase();
+        }
         // In a path like /A[B]/C we need to generate /A/B AND /A/C, not /A/B/C
         // and from A[B[C]/D]/E we want A/B/C AND A/B/D and A/E
         // so leave the combined query on the stack, but save the base query for
@@ -683,7 +686,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // is properly indexed - MINIMAL here guarantees that every document
         // matching the query will
         // produce a non-empty result in the function's argument
-        if (query.isMinimal()) {
+        if (searchArg != null || query.isMinimal()) {
+        	// TODO simplify the logic here -- there are two different conditions overlapping
             int functionFacts = 0;
             ValueType returnType = null;
             QName qname = null;
@@ -698,18 +702,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 functionFacts = BOOLEAN_FALSE;
                 returnType = ValueType.BOOLEAN;
                 qname = FunCall.LUX_EXISTS;
-            } else if (fname.equals(FunCall.FN_CONTAINS)) {
-                // also see optimizeComparison
-                if (!subs[0].isAbsolute()) {
-                    // don't query if the sequence arg isn't absolute??
-                    // if the arg is relative, presumably the contains is in a
-                    // predicate somewhere
-                    // and may have been optimized there?
-                    push(query);
-                    return funcall;
-                }
-                returnType = ValueType.BOOLEAN;
-                qname = FunCall.LUX_SEARCH;
             }
             if (qname != null) {
                 // We will insert a searching function. apply no restrictions to
@@ -785,7 +777,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         Occur occur = Occur.SHOULD;
         boolean minimal = false;
         boolean required = false;
-        AbstractExpression rangeOptimized = null; 
+        AbstractExpression rangeOptimized = null;
         switch (op.getOperator()) {
 
         case AND:
@@ -851,21 +843,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
         	resultType = ValueType.INTEGER;
         	break;
         }
-        if (rangeOptimized != null) {
-        	// TODO: figure out how to combine range query w/span queries
-        	// maybe drop the range query in a separate place (not on the stack)
-        	// and pull it back at an outermost scope
-        	return rangeOptimized;
-        }
         XPathQuery query = combineQueries(lq, occur, rq, resultType);
-        if (minimal == false) {
-            query = query.setFact(MINIMAL, false);
-        }
-        if (!required) {
-        	query = query.setFact(IGNORABLE, true);
-        }
+    	if (rangeOptimized != null) {
+    		query.setFact(MINIMAL|SINGULAR, true);
+    		query.setFact(IGNORABLE, false);
+    	}
+    	else {
+    		if (minimal == false) {
+    			query = query.setFact(MINIMAL, false);
+    		}
+    		if (!required) {
+    			query = query.setFact(IGNORABLE, true);
+    		}
+    	}
         push(query);
-        return op;
+        return rangeOptimized == null ? op : rangeOptimized;
     }
 
     /** Attempt to replace the XQuery comparison with an equivalent indexed query.
@@ -893,76 +885,73 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (expr.getType() == Type.VARIABLE) {
             VarBinding varBinding = varBindings.get(((Variable) expr).getQName());
             if (varBinding == null) {
-            	return null;
+                return null;
             }
             if (expr == op1) {
                 lq = varBinding.getQuery();
             } else {
-            	rq = varBinding.getQuery();
+                rq = varBinding.getQuery();
             }
             expr = varBinding.getExpr();
             if (expr == null) {
-            	return null;
+                return null;
             }
-        }
+        } 
         // rewrite minimax(AtomizedSequence(... expr )) to expr
         expr = rewriteMinMax (expr);
         // Check for a call to lux:field-values()
+        boolean directKeyMatch;
         FieldDefinition field = fieldMatching(expr);
-        if (field == null) {
-      		// analyze the xpath for equivalence to indexed fields
-        	// TODO: match multiple fields
-        	field = matchField (expr, op);
+        if (field != null) {
+        	directKeyMatch = true;
         }
-        /*
-            // TODO: handle comparisons that reference the context item
-        if (last.getType() == Type.DOT) {
-            last = getSuper().getLastContextStep(); // predicate.getBase() ...
+        else {
+            directKeyMatch = false;
+            // analyze the xpath for equivalence to indexed fields
+            // TODO: match multiple fields
+            field = matchField (expr, op);
+        }
+        if (field == null) {
+            // no matching field found
             return null;
         }
-        */
-    	if (field == null) {
-    		// no matching field found
-    		return null;
-    	}
-    	FieldDefinition.Type fieldType = field.getType();
-    	if (! isComparableType(value.getValueType(), fieldType)) {
-    		// will throw a run-time error if it gets executed
-    		return null;
-    	}
-    	String fieldName = indexConfig.getFieldName(field);
-    	RangePQuery.Type rangeTermType = fieldType.getRangeTermType();
-    	ParseableQuery rangeQuery;
+        FieldDefinition.Type fieldType = field.getType();
+        if (! isComparableType(value.getValueType(), fieldType)) {
+            // will throw a run-time error if it gets executed
+            return null;
+        }
+        String fieldName = indexConfig.getFieldName(field);
+        RangePQuery.Type rangeTermType = fieldType.getRangeTermType();
+        ParseableQuery rangeQuery;
         String v = value.getValue().toString();
-    	Operator operator = op.getOperator();
-    	switch (operator) {
-    	case AEQ: case EQUALS:
-    	case ANE: case NE:
-    		if ("string".equals(rangeTermType)) {
-    			rangeQuery = new TermPQuery (new Term(fieldName, v)); 
-    		} else {
-    			rangeQuery = new RangePQuery (fieldName, rangeTermType, v, v, true, true); 
-    		}
-    		if (operator == Operator.ANE || operator == Operator.NE) {
-    			rangeQuery = new BooleanPQuery(Occur.MUST_NOT, rangeQuery);
-    		}
-    		break;
-    	case ALE: case LE:
-    		rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, true, true); break;
-    	case ALT: case LT:
-    		rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, false, false); break;
-    	case AGE: case GE:
-    		rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, true, true); break;
-    	case AGT: case GT:
-    		rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, false, false); break;
-    	default:
-    		return null;
-    	}
-    	push (new XPathQuery(rangeQuery, MINIMAL|SINGULAR, ValueType.BOOLEAN));
-    	// If we could ensure that the context expression would be limited by the query
-    	// we're pushing, we could:
-    	// return LiteralExpression.TRUE;
-    	return op;
+        Operator operator = op.getOperator();
+        switch (operator) {
+        case AEQ: case EQUALS:
+        case ANE: case NE:
+            if ("string".equals(rangeTermType)) {
+                rangeQuery = new TermPQuery (new Term(fieldName, v)); 
+            } else {
+                rangeQuery = new RangePQuery (fieldName, rangeTermType, v, v, true, true); 
+            }
+            if (operator == Operator.ANE || operator == Operator.NE) {
+                rangeQuery = new BooleanPQuery(Occur.MUST_NOT, rangeQuery);
+            }
+            break;
+        case ALE: case LE:
+            rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, false, true); break;
+        case ALT: case LT:
+            rangeQuery = new RangePQuery (fieldName, rangeTermType, null, v, false, false); break;
+        case AGE: case GE:
+            rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, true, false); break;
+        case AGT: case GT:
+            rangeQuery = new RangePQuery (fieldName, rangeTermType, v, null, false, false); break;
+        default:
+            return null;
+        }
+        rangeQueries.add (new XPathQuery(rangeQuery, MINIMAL|SINGULAR, ValueType.BOOLEAN));
+        // If we are sure that the expression will evaluate to true when the query matches,
+        // just return true()
+        return directKeyMatch ? LiteralExpression.TRUE : op;
     }
     
     /**
@@ -975,6 +964,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
     private FieldDefinition matchField(AbstractExpression expr, BinaryOperation comparison) {
     	AbstractExpression leafExpr = expr.getLastContextStep();
+    	if (leafExpr instanceof Dot) {
+    		leafExpr = getBaseContextStep (expr);
+    	}
+    	// TODO: this just picks some matching index -- it should either pick the one that is most
+    	// restrictive, or use all of them
         for (AbstractExpression fieldLeaf : compiler.getFieldLeaves (leafExpr)) {
             AbstractExpression fieldExpr = matchUpwards (leafExpr, fieldLeaf, comparison);
             if (fieldExpr != null) {
@@ -983,16 +977,25 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         return null;
     }
+    
+    // return the last context step of the base expression of the enclosing predicate
+    private AbstractExpression getBaseContextStep (AbstractExpression expr) {
+    	while (expr != null && expr.getType() != Type.PREDICATE) {
+    		expr = expr.getSuper();
+    	}
+    	if (expr == null) {
+    		return null;
+    	}
+    	return ((Predicate)expr).getBase().getLastContextStep();
+    }
 
     /**
-     * test whether the fieldExpr >= (a subtree of) the queryExpr, and ...
+     * test whether the fieldExpr >= (a subtree of) the queryExpr, and ...  TODO explain!
      * 
      * @return the root of the fieldExpr.
      */
     private AbstractExpression matchUpwards (AbstractExpression queryExpr, AbstractExpression fieldExpr, AbstractExpression enclosingExpr) {
-        // assume that the caller has ensured that queryExpr.equivalent(fieldExpr)
         AbstractExpression fieldSuper = getEquivSuper(fieldExpr), querySuper = getEquivSuper(queryExpr);
-        // TODO: traverse past "uninteresting" nodes
         if (fieldSuper == null) {
             return fieldExpr;
         }
@@ -1002,11 +1005,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (querySuper == null) {
             return null;
         }
-        if (! matchDown (querySuper, fieldSuper, fieldExpr)) {
+        if (! querySuper.matchDown (fieldSuper, fieldExpr)) {
             return null;
-        }
-        if (!fieldSuper.geq(querySuper)) {
-        	return null;
         }
         return matchUpwards (querySuper, fieldSuper, enclosingExpr);
     }
@@ -1024,63 +1024,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     	return sup;
     }
 
-    /**
-       Traverse downwards from queryExpr and fieldExpr,
-       comparing for equivalence until one bottoms out.
-       @param queryExpr
-       @param fieldExpr
-       @return whether fieldExpr >= queryExpr
-    */
-    private boolean matchDown (AbstractExpression queryExpr, AbstractExpression fieldExpr, AbstractExpression fromExpr) {
-        if (! fieldExpr.geq(queryExpr)) {
-            // if fieldExpr does not encompass queryExpr, it is too restrictive
-            return false;
-        }
-        // all of queryExpr's subs *must* return a value (for a
-        // non-empty result), so a sufficient condition for fieldExpr
-        // >= queryExpr is that every sub of fieldExpr match *some*
-        // sub of queryExpr
-        AbstractExpression[] fsubs = fieldExpr.getSubs();
-        AbstractExpression[] qsubs = queryExpr.getSubs();
-        if (fsubs == null) {
-        	return qsubs == null || queryExpr.isRestrictive();
-        }
-        AbstractExpression qsubMatched = null;
-		OUTER:
-        for (AbstractExpression fsub : fsubs) {
-            // TODO: skip already matched fsub
-        	if (fsub == fromExpr) {
-        		continue;
-        	}
-            for (AbstractExpression qsub : queryExpr.getSubs()) {
-                if (matchDown (qsub, fsub, null)) {
-                	qsubMatched = qsub;
-                    continue OUTER;
-                }
-            }
-            // no equivalent sub found
-            return false;
-        }
-        if (!queryExpr.isRestrictive()) {
-            // at least one of queryExpr's children must return a value, so
-            // in addition it is necessary that every child of queryExpr be
-            // matched by some child of fieldExpr
-        	OUTER:
-            for (AbstractExpression qsub : queryExpr.getSubs()) {
-            	if (qsub == qsubMatched) {
-            		continue;
-            	}
-                for (AbstractExpression fsub : fsubs) {
-                    if (matchDown (qsub, fsub, null)) {
-                        continue OUTER;
-                    }
-                }
-                return false;
-            }
-        }
-        return true;
-    }    
-
     private FieldDefinition fieldMatching(AbstractExpression expr) {
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
@@ -1096,18 +1039,17 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return null;
     }
 	
-	// Undo an unhelpful optimization supplied by Saxon
+	// Undo an unhelpful rewrite for general comparisons supplied by Saxon.
+    // Range indexes will match docs s.t. any
+    // instance of the range expressions matches the criterion
     private AbstractExpression rewriteMinMax (AbstractExpression expr) {
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
             QName funcName = funcall.getName();
             if (funcName.equals(FunCall.FN_MIN) || funcName.equals(FunCall.FN_MAX)) {
-            	if (funcall.getSubs()[0] instanceof AtomizedSequence) {
-            		AbstractExpression flwor = funcall.getSubs()[0].getSubs()[0]; 
-                	// this will be an expression of the form min/max(for $x in (seq) return $x treat as (type))
-            		if (flwor instanceof FLWOR) {
-            			return ((FLWOR) flwor).getClauses()[0].getSequence();
-            		}
+            	AbstractExpression arg = funcall.getSubs()[0];
+				if (arg instanceof FunCall && ((FunCall) arg).getName().equals(FunCall.LUX_FIELD_VALUES)) {
+            		return arg;
             	}
             }
         }
@@ -1336,6 +1278,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     private FunCall createSearchCall(QName functionName, XPathQuery query) {
+        for (XPathQuery rangeq : rangeQueries) {
+            query = combineQueries (query, Occur.MUST, rangeq, query.getResultType());
+        }
+        rangeQueries.clear();
         if (functionName.equals(FunCall.LUX_SEARCH)) {
             // searchCall.setFnCollection (!optimizeForOrderedResults);
             return new SearchCall(query, indexConfig);
