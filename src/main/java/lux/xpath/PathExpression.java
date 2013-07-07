@@ -107,6 +107,20 @@ public class PathExpression extends AbstractExpression {
         return other instanceof PathExpression || other instanceof Predicate;
     }
 
+    public boolean matchDown (AbstractExpression fieldExpr, AbstractExpression fromExpr) {
+    	if (! fieldExpr.geq(this)) {
+    		// if fieldExpr does not encompass this at least formally, it is too restrictive
+    		return false;
+		}
+    	if (fieldExpr.subs == null || fieldExpr.subs.length == 0) {
+    		return true;
+    	}
+    	// fieldExpr must be either a path expression or a predicate
+		return subs[0].matchDown(fieldExpr.subs[0], fromExpr)
+				&&
+				subs[1].matchDown(fieldExpr.subs[1], fromExpr);
+	}
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

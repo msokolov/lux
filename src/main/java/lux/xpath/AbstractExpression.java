@@ -233,6 +233,67 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     /**
+    	Traverse downwards from queryExpr and fieldExpr, comparing for equivalence until one bottoms out,
+    	ignoring fromExpr (since it has already been checked).
+    	@param queryExpr
+    	@param fieldExpr
+    	@return whether fieldExpr >= queryExpr
+     */
+    public boolean matchDown (AbstractExpression fieldExpr, AbstractExpression fromExpr) {
+    	if (fieldExpr == fromExpr) {
+    		return true;
+    	}
+    	if (! fieldExpr.geq(this)) {
+    		// if fieldExpr does not encompass this at least formally, it is too restrictive
+    		return false;
+		}
+		// all of queryExpr's subs *must* return a value (for a
+		// non-empty result), so a necessary condition for fieldExpr
+		// >= queryExpr is that every sub of fieldExpr match *some*
+		// sub of queryExpr
+		AbstractExpression[] fsubs = fieldExpr.getSubs();
+		if (fsubs == null) {
+			return subs == null || subs.length == 0 || isRestrictive();
+		}
+		AbstractExpression qsubMatched = null;
+		OUTER: for (AbstractExpression fsub : fsubs) {
+			// TODO: skip already matched fsub
+			if (fsub == fromExpr) {
+				continue;
+			}
+			// FIXME -- this has to work differently for PathExpressions than it
+			// does for Booleans (say) -- in the former
+			// case the order matches -- we can't just be matching (a/b) against
+			// (b/a)
+			for (AbstractExpression sub : subs) {
+				if (sub.matchDown(fsub, null)) {
+					qsubMatched = sub;
+					continue OUTER;
+				}
+			}
+			// no equivalent sub found
+			return false;
+		}
+		if (!isRestrictive()) {
+			// at least one of queryExpr's children must return a value, so
+			// in addition it is necessary that every child of queryExpr be
+			// matched by some child of fieldExpr
+			OUTER: for (AbstractExpression sub : subs) {
+				if (sub == qsubMatched) {
+					continue;
+				}
+				for (AbstractExpression fsub : fsubs) {
+					if (sub.matchDown(fsub, null)) {
+						continue OUTER;
+					}
+				}
+				return false;
+			}
+		}
+		return true;
+	}
+
+    /**
      * @return a hashcode that is consistent with {@link #equivalent(AbstractExpression)}
      */
     int equivHash () {

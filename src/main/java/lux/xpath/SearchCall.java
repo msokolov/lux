@@ -16,6 +16,7 @@ import org.apache.lucene.search.SortField;
  * A special search function call; this holds a query that is used to accumulate constraints
  * while optimizing.  The function arguments are inferred from the supplied XPathQuery so as to
  * result in the same query when evaluated at run time.
+ * TODO: rename either this or the runtime class (lux.functions.SearchBase$SearchCall) of the same name!
  */
 public class SearchCall extends FunCall {
 

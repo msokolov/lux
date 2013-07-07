@@ -1,5 +1,7 @@
 package lux.xpath;
 
+import lux.xpath.PathStep.Axis;
+
 
 public class Root extends AbstractExpression {
     
@@ -42,10 +44,16 @@ public class Root extends AbstractExpression {
     
     @Override
     public boolean geq (AbstractExpression other) {
-    	// this returns non empty for every (non-empty) context
-    	return true;
+    	if (other instanceof Root) {
+    		return true;
+    	}
+    	// Get the axis of the next path step
+    	// assume that Root() is always part of a PathExpression with a PathStep?
+    	Axis axis = ((PathStep)(getSuper().getSubs()[1])).getAxis();
+    	// If the path step includes all the nodes
+		return axis.isAxisMask(PathStep.MDESCENDANT|PathStep.MFOLLOWING);
     }
-
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
