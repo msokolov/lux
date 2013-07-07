@@ -1,5 +1,8 @@
 package lux.compiler;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
 import lux.query.BooleanPQuery.Clause;
@@ -194,10 +197,14 @@ public class XPathQuery {
     private SortField[] combineSortFields(XPathQuery precursor) {
         if (sortFields != null) {
             if (precursor.sortFields != null) {
-                SortField[] combined = new SortField [sortFields.length + precursor.sortFields.length];
-                System.arraycopy(sortFields, 0, combined, 0, sortFields.length);
-                System.arraycopy(precursor.sortFields, 0, combined, sortFields.length, precursor.sortFields.length);
-                return combined;
+            	ArrayList<SortField> combined = new ArrayList<SortField>(Arrays.asList(sortFields));
+            	SortField prevSort = combined.get(combined.size()-1);
+            	for (SortField sortField : precursor.sortFields) {
+            		if (! sortField.equals(prevSort)) {
+            			combined.add(sortField);
+            		}
+            	}
+                return combined.toArray(new SortField[combined.size()]);
             } else {
                 return sortFields;
             }
@@ -242,10 +249,10 @@ public class XPathQuery {
     }
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
-        if (b.isEmpty()) {
+        if (b.isEmpty() && b.isMinimal()) {
             return a.facts; 
         }
-        else if (a.isEmpty()) {
+        else if (a.isEmpty() && a.isMinimal()) {
             return b.facts;
         }
         else {
