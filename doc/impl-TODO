@@ -16,6 +16,9 @@ try w/XQTS
 see exprFor(FLWORExpression)
 try w/XQTS
 * bugs
+** consider possible problems w/range query optos
+*** test combinations with "or", "|", "intersect", "union", "except"
+
 ** OOM
 On buda, lux:search ("<@imagepage:123")[1]/root() fails w OOM while
 lux:search ("<@imagepage:123")[1] works fine ... ??

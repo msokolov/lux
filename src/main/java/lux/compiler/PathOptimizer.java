@@ -990,9 +990,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     /**
-     * test whether the fieldExpr >= (a subtree of) the queryExpr, and ...  TODO explain!
-     * 
-     * @return the root of the fieldExpr.
+     * @param queryExpr query expression that is being optimized 
+     * @param fieldExpr XPath field expression to search for
+     * @param enclosingExpr starting point of the search.  Used to avoid re-scanning subtrees that
+     * have already been visited.
+     * @return the root of the fieldExpr, if it matches a subtree of the queryExpr, or null if it doesn't.
      */
     private AbstractExpression matchUpwards (AbstractExpression queryExpr, AbstractExpression fieldExpr, AbstractExpression enclosingExpr) {
         AbstractExpression fieldSuper = getEquivSuper(fieldExpr), querySuper = getEquivSuper(queryExpr);
