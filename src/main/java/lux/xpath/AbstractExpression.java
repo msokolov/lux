@@ -233,9 +233,9 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     /**
-    	Traverse downwards from queryExpr and fieldExpr, comparing for equivalence until one bottoms out,
+    	Traverse downwards, comparing with fromExpr for equivalence until one bottoms out,
     	ignoring fromExpr (since it has already been checked).
-    	@param queryExpr
+    	@param fromExpr
     	@param fieldExpr
     	@return whether fieldExpr >= queryExpr
      */
@@ -336,6 +336,7 @@ public abstract class AbstractExpression implements Visitable {
      * An expression is restrictive when any empty sub implies the expression is empty.
      * In other words, restrictive expressions only return results when all of their 
      * subs are non-empty.  Eg: and, intersect, predicate, path step.
+     * @return whether this expression is restrictive
      */
     public boolean isRestrictive () {
         return false;

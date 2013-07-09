@@ -31,10 +31,12 @@ public class SearchTestRunner extends QueryTestRunner {
 		}
     }
 
+    @Override
     protected QueryTestCase newTestCase (String name, String queryText, QueryTestResult expectedResult) {
 		return new SearchTestCase (name, queryText, expectedResult);
 	}
     
+    @Override
     public void run (RunNotifier notifier) {
     	try {
     		super.run(notifier);

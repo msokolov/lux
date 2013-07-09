@@ -105,6 +105,7 @@ public class PathStep extends AbstractExpression {
             nodeTest.equivalent(((PathStep) other).nodeTest);
     }
 
+    @Override
     public boolean propGreaterEqual (AbstractExpression other) {
     	PathStep otherStep = (PathStep) other;
         int oax = otherStep.axis.rangeMask;
