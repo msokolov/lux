@@ -97,7 +97,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private boolean optimizeForOrderedResults;
     private Logger log;
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     
     public PathOptimizer(Compiler compiler) {
         queryStack = new ArrayList<XPathQuery>();
