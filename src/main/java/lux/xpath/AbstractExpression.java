@@ -257,14 +257,9 @@ public abstract class AbstractExpression implements Visitable {
 		}
 		AbstractExpression qsubMatched = null;
 		OUTER: for (AbstractExpression fsub : fsubs) {
-			// TODO: skip already matched fsub
 			if (fsub == fromExpr) {
 				continue;
 			}
-			// FIXME -- this has to work differently for PathExpressions than it
-			// does for Booleans (say) -- in the former
-			// case the order matches -- we can't just be matching (a/b) against
-			// (b/a)
 			for (AbstractExpression sub : subs) {
 				if (sub.matchDown(fsub, null)) {
 					qsubMatched = sub;

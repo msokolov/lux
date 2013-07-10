@@ -299,10 +299,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
     }
     
-    // FIXME This may be a bit fragile - I worry we'll have serialization bugs -
-    // but the only alternative I can see is to provide a special xquery function
-    // and pass the map into the Saxon Evaluator object - but we can't get that
-    // from here, and it would be thread-unsafe anyway
+    // Hand-coded serialization may be a bit fragile, but the only alternative 
+    // using Saxon is too inconvenient
     private String buildHttpInfo(SolrParams params, Map<Object, Object> context) {
         StringBuilder buf = new StringBuilder();
         // TODO: http method

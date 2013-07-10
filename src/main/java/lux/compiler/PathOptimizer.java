@@ -205,8 +205,17 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (!expr.isAbsolute()) {
             return expr;
         }
-        FunCall search = createSearchCall(FunCall.LUX_SEARCH, query);
-        if (search.getReturnType().equals(ValueType.DOCUMENT)) {
+        AbstractExpression root = expr.getRoot();
+        FunCall search;
+        if (root instanceof FunCall) {
+        	search = (FunCall) root;
+        } else {
+        	search = createSearchCall(FunCall.LUX_SEARCH, query);
+        }
+        // This optimization attempts to take advantage of the fact that a path like:
+        // lux:search($q)/.../root() is equivalent to lux:search($q)[...]
+        // The advantage of the latter is that it is already marked as *in document order*
+        if (query.getResultType().equals(ValueType.DOCUMENT) && search.getReturnType().equals(ValueType.DOCUMENT)) {
             // Avoid the need to sort the results of this expression so that it
             // can be
             // embedded in a subsequence or similar and evaluated lazily.
@@ -215,7 +224,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 return new Predicate(search, tail);
             }
         }
-        AbstractExpression root = expr.getRoot();
         if (root instanceof Root) {
             // update variable bindings, but only if there is an (/) in there,
             // don't this for a search expression, which we sometimes consider to be a "Root"
@@ -990,9 +998,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     /**
-     * test whether the fieldExpr >= (a subtree of) the queryExpr, and ...  TODO explain!
-     * 
-     * @return the root of the fieldExpr.
+     * @param queryExpr query expression that is being optimized 
+     * @param fieldExpr XPath field expression to search for
+     * @param enclosingExpr starting point of the search.  Used to avoid re-scanning subtrees that
+     * have already been visited.
+     * @return the root of the fieldExpr, if it matches a subtree of the queryExpr, or null if it doesn't.
      */
     private AbstractExpression matchUpwards (AbstractExpression queryExpr, AbstractExpression fieldExpr, AbstractExpression enclosingExpr) {
         AbstractExpression fieldSuper = getEquivSuper(fieldExpr), querySuper = getEquivSuper(queryExpr);
