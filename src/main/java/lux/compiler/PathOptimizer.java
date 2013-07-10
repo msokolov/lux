@@ -94,7 +94,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private static final boolean DEBUG = false;
 
     public PathOptimizer(IndexConfiguration indexConfig) {
-ents;
         queryStack = new ArrayList<XPathQuery>();
         varBindings = new HashMap<QName, VarBinding>();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
