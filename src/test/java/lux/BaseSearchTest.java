@@ -92,7 +92,9 @@ public abstract class BaseSearchTest {
             return results;
         }
         assertTrue ("no results", hasResults);
-        assertEquals ("incorrect query result", expectedResult, result);
+        if (! expectedResult.equals("__IGNORE__")) {
+        	assertEquals ("incorrect query result", expectedResult, result);
+        }
         return results;
     }
     
