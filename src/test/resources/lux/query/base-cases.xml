@@ -464,8 +464,19 @@
       <expect><query id="range-pred-2" /></expect>
     </test-case>
     <test-case name="range-pred-3">
-      <query>count(/ACT[@act=1][SCENE/@scene=3])    </query>
+      <query>count(/ACT[@act=1][SCENE/@scene=3])</query>
       <expect><query id="range-pred-3" /></expect>
     </test-case>
+    <!-- TODO work on these additional test cases -->
+    <!--
+    <test-case name="range-conj">
+      <query>count(/ACT[@act=1 and SCENE/@scene=1])</query>
+      <expect><query id="range-pred-2" /></expect>
+    </test-case>
+    <test-case name="range-disj">
+      <query>count(/ACT[@act=1 or SCENE/@scene=1])</query>
+      <expect><query id="range-disj" /></expect>
+    </test-case>
+    -->
   </test-cases>
 </test-suite>
