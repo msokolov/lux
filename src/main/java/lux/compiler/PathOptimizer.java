@@ -215,7 +215,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // This optimization attempts to take advantage of the fact that a path like:
         // lux:search($q)/.../root() is equivalent to lux:search($q)[...]
         // The advantage of the latter is that it is already marked as *in document order*
-        if (search.getReturnType().equals(ValueType.DOCUMENT)) {
+        if (query.getResultType().equals(ValueType.DOCUMENT) && search.getReturnType().equals(ValueType.DOCUMENT)) {
             // Avoid the need to sort the results of this expression so that it
             // can be
             // embedded in a subsequence or similar and evaluated lazily.
