@@ -2,15 +2,23 @@ i---
 layout: page
 title: Lux Release 0.10
 group: release
-pos: 6
+pos: 5
 ---
 
 # Changes in Lux release 0.10.0
+
+The major improvement in this release is optimization of comparisons
+between indexed expressions and suitable constants.  Comparisons between
+lux:field-values('index') and a constant of a compatible type are now
+handled using Lucene queries.  In many cases it is also possible to simply
+use the indexed expression in a comparison. If the optimizer can match it,
+it will substitute the Lucene query.
 
 ## New Features
 
 1. LUX-37: optimize comparisons with lux:key()
 2. LUX-44: optimize comparisons with indexed XPath expressions 
+3. Improved app-server startup scripts for Unix and provided a Windows batch file
 
 ## Bug Fixes
 
