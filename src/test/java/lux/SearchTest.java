@@ -445,9 +445,9 @@ public class SearchTest extends BaseSearchTest {
     public void testLuxSearchRoot () throws Exception {
         // This is the actual bug:
         String query = "lux:search (\"<@scene:5\")[1]/root()";
-    	assertSearch ("__IGNORE__", query, null, 1, 1);
-    	// Some attempts to reproduce, kept for posterity?
-    	// first result is LINE due to TFIDF (relevance) scoring
+        assertSearch ("__IGNORE__", query, null, 1, 1);
+        // Some attempts to reproduce, kept for posterity?
+        // first result is LINE due to TFIDF (relevance) scoring
         assertSearch ("LINE", "lux:search('\"holla bernardo\"')[1]/root()/*/name()", null, 1, 1);
         assertSearch (null, "lux:search('<@id:100')[1]/root()/*/name()", null, 0, 0);
     }
