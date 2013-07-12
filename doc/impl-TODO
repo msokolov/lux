@@ -25,7 +25,8 @@ or
 or
 for $att in /book[@id="10001L2PPYTHONBEG"]//clip/@seq
 return string ($att)
-
+** consider possible problems w/range query optos
+*** test combinations with "or", "|", "intersect", "union", "except"
 * enhancements
 ** binary documents
 I think this is working now - let's measure and document the improvement.

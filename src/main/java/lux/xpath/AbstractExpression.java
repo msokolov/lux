@@ -214,8 +214,10 @@ public abstract class AbstractExpression implements Visitable {
 
     /**
      * @param other another expression
-     * @return whether the two expressions are of the same type have local properties
-     * s.t. this expr is non-empty whenever (for whichever contexts) the other one is.
+     * @return whether this expression is query-geq (fgreater-than-or-equal) to the other, in the sense
+     * that for all contexts c, exists(other|c) => exists(this|c). In particular, this implementation tests that 
+     * the two expressions are of the same type and have local properties consistent with geq, by calling
+     * propGreaterEqual.
      */
     public boolean geq (AbstractExpression other) {
         if (other == this) {
@@ -230,6 +232,62 @@ public abstract class AbstractExpression implements Visitable {
         return propGreaterEqual ((AbstractExpression) other);
     }
     
+    /**
+    	Traverse downwards, comparing with fromExpr for equivalence until one bottoms out,
+    	ignoring fromExpr (since it has already been checked).
+    	@param fromExpr
+    	@param fieldExpr
+    	@return whether fieldExpr >= queryExpr
+     */
+    public boolean matchDown (AbstractExpression fieldExpr, AbstractExpression fromExpr) {
+    	if (fieldExpr == fromExpr) {
+    		return true;
+    	}
+    	if (! fieldExpr.geq(this)) {
+    		// if fieldExpr does not encompass this at least formally, it is too restrictive
+    		return false;
+		}
+		// all of queryExpr's subs *must* return a value (for a
+		// non-empty result), so a necessary condition for fieldExpr
+		// >= queryExpr is that every sub of fieldExpr match *some*
+		// sub of queryExpr
+		AbstractExpression[] fsubs = fieldExpr.getSubs();
+		if (fsubs == null) {
+			return subs == null || subs.length == 0 || isRestrictive();
+		}
+		AbstractExpression qsubMatched = null;
+		OUTER: for (AbstractExpression fsub : fsubs) {
+			if (fsub == fromExpr) {
+				continue;
+			}
+			for (AbstractExpression sub : subs) {
+				if (sub.matchDown(fsub, null)) {
+					qsubMatched = sub;
+					continue OUTER;
+				}
+			}
+			// no equivalent sub found
+			return false;
+		}
+		if (!isRestrictive()) {
+			// at least one of queryExpr's children must return a value, so
+			// in addition it is necessary that every child of queryExpr be
+			// matched by some child of fieldExpr
+			OUTER: for (AbstractExpression sub : subs) {
+				if (sub == qsubMatched) {
+					continue;
+				}
+				for (AbstractExpression fsub : fsubs) {
+					if (sub.matchDown(fsub, null)) {
+						continue OUTER;
+					}
+				}
+				return false;
+			}
+		}
+		return true;
+	}
+
     /**
      * @return a hashcode that is consistent with {@link #equivalent(AbstractExpression)}
      */
@@ -278,6 +336,7 @@ public abstract class AbstractExpression implements Visitable {
      * An expression is restrictive when any empty sub implies the expression is empty.
      * In other words, restrictive expressions only return results when all of their 
      * subs are non-empty.  Eg: and, intersect, predicate, path step.
+     * @return whether this expression is restrictive
      */
     public boolean isRestrictive () {
         return false;

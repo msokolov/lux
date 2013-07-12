@@ -6,6 +6,13 @@
   </meta>
   <test-cases>
     <include file="query/base-cases.xml" />
+    <test-case name="range-type-mismatch">
+      <query>//TITLE[. &lt; 10]</query>
+      <expect>
+        <query id="range-type-mismatch" />
+        <error>Cannot convert string to double: "The Tragedy of Hamlet, Prince ..."</error>
+      </expect>
+    </test-case>
   </test-cases>
   <queries>
     <include file="query/path-queries.xml" />

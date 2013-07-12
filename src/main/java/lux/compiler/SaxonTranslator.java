@@ -24,7 +24,6 @@ import lux.xpath.Root;
 import lux.xpath.Sequence;
 import lux.xpath.Subsequence;
 import lux.xpath.UnaryMinus;
-import lux.xquery.AtomizedSequence;
 import lux.xquery.AttributeConstructor;
 import lux.xquery.CommentConstructor;
 import lux.xquery.ComputedElementConstructor;
@@ -44,7 +43,6 @@ import lux.xquery.Satisfies;
 import lux.xquery.Satisfies.Quantifier;
 import lux.xquery.SortKey;
 import lux.xquery.TextConstructor;
-import lux.xquery.TreatAs;
 import lux.xquery.Variable;
 import lux.xquery.VariableDefinition;
 import lux.xquery.WhereClause;
@@ -116,6 +114,7 @@ import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.CombinedNodeTest;
 import net.sf.saxon.pattern.DocumentNodeTest;
 import net.sf.saxon.pattern.LocalNameTest;
+import net.sf.saxon.pattern.NameTest;
 import net.sf.saxon.pattern.NamespaceTest;
 import net.sf.saxon.pattern.NodeTest;
 import net.sf.saxon.query.GlobalVariableDefinition;
@@ -155,7 +154,6 @@ public class SaxonTranslator {
         } 
     }
     private QueryModule queryModule;
-    private ItemType lastTypeSeen;
     
     public SaxonTranslator (Configuration config) {
         this.config = config;
@@ -291,9 +289,14 @@ public class SaxonTranslator {
             QName fname = qnameFor(function.getFunctionName());
             addNamespaceDeclaration(fname);
             SequenceType resultType = function.getResultType();
+            ItemType returnType = resultType.getPrimaryType();
+            QName returnTypeName = null;
+            if (returnType instanceof NameTest) {
+            	returnTypeName = qnameForNameCode (((NameTest) returnType).getFingerprint());
+            }
             FunctionDefinition fdef = new FunctionDefinition(fname, 
                     valueTypeForItemType(resultType.getPrimaryType()), 
-                    cardinalityOf(resultType),
+                    cardinalityOf(resultType), returnTypeName,  
                     args, exprFor (function.getBody()));  
             functionDefinitions.add (fdef);
         }
@@ -328,20 +331,7 @@ public class SaxonTranslator {
     }
     
     public AbstractExpression exprFor (AtomicSequenceConverter atomizer) {
-        // This is a painful hack - we can't tell for sure in some cases which type is intended
-        // because the ASC doesn't expose it, so in those cases we rely on a type we may
-        // have just seen in an ItemChecker
-        ItemType type = (atomizer.isAllItemsConverted() || lastTypeSeen == null) ?
-                atomizer.getItemType(config.getTypeHierarchy()) : lastTypeSeen;
-        if (!type.isAtomicType()) {
-            throw new LuxException ("AtomicSequenceConverter converting to non-atomic type: " + type);
-        }
-        AtomicType atomicType = (AtomicType) type;
-        Variable var = new Variable(new QName("x"));
-        return new FLWOR(castExprFor(var, atomicType), 
-                new ForClause (var, null, exprFor(atomizer.getBaseExpression())));        
-        // this often works, doesn't provide the type conversion:
-        // return exprFor (atomizer.getBaseExpression());
+        return exprFor (atomizer.getBaseExpression());
     }
 
     /* return a QName suitable for use as a constructor of the given type */
@@ -354,7 +344,8 @@ public class SaxonTranslator {
 
     public AbstractExpression exprFor (Atomizer atomizer) {
         Expression base = atomizer.getBaseExpression();
-        return new FunCall (FunCall.FN_DATA, ValueType.ATOMIC, exprFor (base));
+        return exprFor (base);
+        //return new FunCall (FunCall.FN_DATA, ValueType.ATOMIC, exprFor (base));
     }
     
     public AbstractExpression exprFor (AxisExpression expr) {
@@ -559,20 +550,8 @@ public class SaxonTranslator {
     
     public AbstractExpression exprFor (ItemChecker checker) {
         Expression base = checker.getBaseExpression();
-        ItemType type = checker.getRequiredType();
-        ItemType previousLastTypeSeen = lastTypeSeen;
-        lastTypeSeen = type; // record the type of this expression
-        ValueType valueType = valueTypeForItemType(type);
-        
-        int cardinality = checker.getCardinality();
-        String occurrence = cardinality == StaticProperty.EMPTY ? "" :
-            Cardinality.getOccurrenceIndicator(cardinality);
         AbstractExpression baseExpr = exprFor(base);
-        lastTypeSeen = previousLastTypeSeen;  // restore the previous type context
-        if (valueType.isNode) {
-            return new TreatAs (baseExpr, nodeTestFor((NodeTest) type), occurrence);            
-        }
-        return new AtomizedSequence(baseExpr, valueType, occurrence);
+        return baseExpr;
     }
 
     private Sequence exprFor (Expression[] exprs) {

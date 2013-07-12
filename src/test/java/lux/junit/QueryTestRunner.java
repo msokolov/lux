@@ -15,9 +15,10 @@ import lux.Compiler;
 import lux.Evaluator;
 import lux.QueryContext;
 import lux.XdmResultSet;
+import lux.exception.LuxException;
 import lux.index.XmlIndexer;
-import lux.index.field.XPathField;
 import lux.index.field.FieldDefinition.Type;
+import lux.index.field.XPathField;
 import lux.query.QNameQueryTest;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.QName;
@@ -44,7 +45,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
     private static final QName TYPE_QNAME = new QName("type");
 
     // private String description;
-    private List<QueryTestCase> cases;
+    private HashMap<String, QueryTestCase> cases;
     private HashMap<String,XdmNode> queryMap = new HashMap<String, XdmNode>();
     protected Evaluator eval;
     protected DocumentBuilder builder; 
@@ -54,7 +55,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         eval = new Evaluator(new Compiler(getIndexer().getConfiguration()), null, null);
         builder = eval.getCompiler().getProcessor().newDocumentBuilder();
         queryMap = new HashMap<String, XdmNode>();
-        cases = new ArrayList<QueryTestCase>(100);
+        cases = new HashMap<String, QueryTestCase>();
         try {
             eval.getCompiler().setSearchStrategy (Compiler.SearchStrategy.NONE);
 			loadTests ();
@@ -84,14 +85,16 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
     /**
      * @return a list of QueryTestCases that define the children of this Runner.
      */
+    @Override
     protected List<QueryTestCase> getChildren() {
-        return cases;
+        return new ArrayList<QueryTestCase>(cases.values());
     }
 
     /**
      * Returns a {@link Description} for the {@code child} test case, an
      *  element of the list returned by {@link ParentRunner#getChildren()}
      */
+    @Override
     protected Description describeChild(QueryTestCase child) {
         return Description.createTestDescription (getTestClass().getJavaClass(), child.getName());
     }
@@ -102,6 +105,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
      * Subclasses are responsible for making sure that relevant test events are
      * reported through {@code notifier}
      */
+    @Override
     protected void runChild(final QueryTestCase child, RunNotifier notifier) {
         runLeaf (new Statement() { @Override public void evaluate () { child.evaluate(eval); } }, 
                  describeChild(child), 
@@ -128,12 +132,20 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         // /test-suite/meta/setup/keys
     }
     
-    private void loadTestCases(XdmNode top) throws IOException, SaxonApiException {
+    private void loadTestCases(XdmNode top) {
         XdmValue kids = eval ("test-suite/test-cases/*", top);
         for (XdmItem item: kids) {
         	XdmNode kid = (XdmNode) item;
         	if (kid.getNodeName().getClarkName().equals("include")) {
-                XdmNode tests = readFile (kid.getAttributeValue(new QName("file")));
+				String fileName = kid.getAttributeValue(new QName("file"));
+                XdmNode tests;
+				try {
+					tests = readFile (fileName);
+				} catch (IOException e) {
+					throw new LuxException ("Error reading file " + fileName, e);
+				} catch (SaxonApiException e) {
+					throw new LuxException ("Error reading file " + fileName, e);
+				}
                 loadTestCases (tests);
         	}
         	else if (kid.getNodeName().getClarkName().equals("test-case")) {
@@ -154,7 +166,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         }
     }
     
-    private void loadQueries(XdmItem top) throws IOException, SaxonApiException {
+    private void loadQueries(XdmItem top) {
         for (XdmItem queryItem : eval ("*", top)) {
         	XdmNode node = (XdmNode) queryItem;
         	if (node.getNodeName().getLocalName().equals("query")) {
@@ -167,7 +179,14 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         	} 
         	else if (node.getNodeName().getLocalName().equals("include")) {
         		String fileName = evalStr ("@file", node);
-        		XdmNode include = readFile (fileName);
+        		XdmNode include;
+				try {
+					include = readFile (fileName);
+				} catch (IOException e) {
+					throw new LuxException("Failed to read file " + fileName, e);
+				} catch (SaxonApiException e) {
+					throw new LuxException("Failed to read file " + fileName, e);
+				}
         		XdmValue queries = eval("queries", include);
         		for (XdmItem q : queries) {
         			loadQueries (q);
@@ -191,14 +210,14 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
 		String queryText = evalStr ("query", testItem);
 		boolean expectError = evalStr ("exists(expect/error)", testItem).equals("true");
 		String expectedError  = evalStr ("expect/error", testItem);
-		List<XdmNode> expectedQueries = getExpectedQueries (queryMap, testItem);
+		List<XdmNode> expectedQueries = getExpectedQueries (testItem);
 		String expectedResultType = evalStr ("expect/query[1]/@type", testItem);
 		String expectedOrderBy= evalStr ("expect/query[1]/@order-by", testItem);
 		QueryTestResult expectedResult = new QueryTestResult 
 		    (expectError, expectedError, getExpectedQueryText(testItem), expectedQueries,
 		     expectedResultType, expectedOrderBy);
 		QueryTestCase testCase = newTestCase (name, queryText, expectedResult);
-		cases.add (testCase);
+		cases.put (name, testCase);
 	}
 	
 	protected QueryTestCase newTestCase (String name, String queryText, QueryTestResult expectedResult) {
@@ -223,7 +242,7 @@ public class QueryTestRunner extends ParentRunner<QueryTestCase> {
         return expectedQueryText;
     }
 
-    private List<XdmNode> getExpectedQueries (HashMap<String,XdmNode> queryMap, XdmItem testItem) {
+    private List<XdmNode> getExpectedQueries (XdmItem testItem) {
         List<XdmNode> expectedQueries = new ArrayList<XdmNode>();
         for (XdmItem queryID : eval ("expect/query/@id", testItem)) {
         	String expectedQueryID  = queryID.getStringValue();

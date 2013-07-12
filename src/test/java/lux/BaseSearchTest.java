@@ -56,7 +56,7 @@ public abstract class BaseSearchTest {
     }
 
     protected void assertResultValue(XdmResultSet results, int sceneDocCount) {
-        assertEquals (String.valueOf(sceneDocCount), results.iterator().next().toString());
+        assertEquals ("incorrect query result", String.valueOf(sceneDocCount), results.iterator().next().toString());
     }
 
     protected XdmResultSet assertSearch(String query) throws Exception {
@@ -95,7 +95,9 @@ public abstract class BaseSearchTest {
             return results;
         }
         assertTrue ("no results", hasResults);
-        assertEquals ("incorrect query result", expectedResult, result);
+        if (! expectedResult.equals("__IGNORE__")) {
+        	assertEquals ("incorrect query result", expectedResult, result);
+        }
         return results;
     }
     

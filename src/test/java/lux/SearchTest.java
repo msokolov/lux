@@ -104,8 +104,10 @@ public class SearchTest extends BaseSearchTest {
     	assertSearch  ("1", "count(/FM[exists(BLAH) = exists(BLARG)])", 0, 1);
     	assertSearch  ("0", "count(/FM[exists(BLAH) != exists(BLARG)])", 0, 1);
     	assertSearch  ("0", "count(/FM[BLAH eq string(BLARG)])", 0, 0);
+    	// NOTE: () eq () === ()
     	assertSearch  ("0", "count(/FM[BLAH eq BLARG])", 0, 0);
-    	assertSearch  ("0", "count(/FM[BLAH = BLARG])", 0, 1);
+    	// NOTE: () = () === false()
+    	assertSearch  ("0", "count(/FM[BLAH = BLARG])", 0, 0);
 
         // we don't optimize along the parent axis
         assertSearch  ("20", "count(//SCENE[not(exists(parent::ACT))])", 0, 26);
@@ -437,10 +439,14 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("1", "count(lux:search('\"holla bernardo\"')/SPEECH)", null, 5, 5);   
     }
     
-    /* Something like this failed (with OOME) in the wild, but not reproducible here? I think it was
-     * a bug in 0.7.1; no longer though. */
+    /* Bug found in the wild - the opto that preserves document-ordering by embedding the trailing path 
+     * in a predicate applied an incorrect query. */
     @Test
     public void testLuxSearchRoot () throws Exception {
+        // This is the actual bug:
+        String query = "lux:search (\"<@scene:5\")[1]/root()";
+        assertSearch ("__IGNORE__", query, null, 1, 1);
+        // Some attempts to reproduce, kept for posterity?
         // first result is LINE due to TFIDF (relevance) scoring
         assertSearch ("LINE", "lux:search('\"holla bernardo\"')[1]/root()/*/name()", null, 1, 1);
         assertSearch (null, "lux:search('<@id:100')[1]/root()/*/name()", null, 0, 0);
@@ -477,8 +483,12 @@ public class SearchTest extends BaseSearchTest {
         
     @Test
     public void testOrderByPagination () throws Exception {
+    	// We can't optimize the subsequence (pagination) here because $/doc/*name() looks like
+    	// it might return multiple nodes per matching document.
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 1);
+            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
+        assertSearch ("<SPEAKER>BERNARDO</SPEAKER>", "(for $doc in lux:search('bernardo')" + 
+                " order by lux:field-values('doctype', $doc) return $doc)[21]", 0, 1);
     }
     
     @Test
@@ -720,8 +730,6 @@ public class SearchTest extends BaseSearchTest {
     	assertSearch ("9", query, null, 7, 7);
     }
 
-    // TODO: test automatic optimizations of range queries (ie not involving field-values()).
-    
     @Test
     public void testAttributePredicate() throws Exception {
     	// from Geet Gangwar
@@ -732,6 +740,7 @@ public class SearchTest extends BaseSearchTest {
     	XdmResultSet results = assertSearch (query, (Integer) null, 4, 4);
     	assertEquals (6, results.getXdmValue().size());
     }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

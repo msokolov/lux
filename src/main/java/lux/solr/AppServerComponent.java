@@ -86,7 +86,7 @@ public class AppServerComponent extends XQueryComponent {
                     URL url = new URL (queryPath);
                     String scheme = url.getProtocol();
                     if (scheme.equals("lux")) {
-                        // TODO
+                        // TODO implement lux: uri resolution
                     	throw new SolrException (ErrorCode.NOT_FOUND, queryPath + " not found (actually lux: scheme is not implemented)");
                     } else {
                         InputStream in = null;
