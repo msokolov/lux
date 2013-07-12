@@ -338,6 +338,10 @@
       <query>//ACT[not(empty(.//SCENE))]</query>
       <expect><query id="ACT" /></expect>
     </test-case>
+    <test-case name="path-predicate-combine-3">
+      <query>/SCENE[@act="5"][@scene="1"]/SPEECH[1]/SPEAKER</query>
+      <expect><query id="SCENE_act_scene_SPEECH_SPEAKER" /></expect>
+    </test-case>
     <test-case name="reserved-word">
       <!-- internally, we use certain words to denote search operations.  Make sure these are not
            confused with query terms -->

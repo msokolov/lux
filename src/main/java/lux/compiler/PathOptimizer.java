@@ -1,7 +1,12 @@
 package lux.compiler;
 
-import static lux.compiler.XPathQuery.*;
-import static lux.index.IndexConfiguration.*;
+import static lux.compiler.XPathQuery.BOOLEAN_FALSE;
+import static lux.compiler.XPathQuery.EMPTY;
+import static lux.compiler.XPathQuery.IGNORABLE;
+import static lux.compiler.XPathQuery.MINIMAL;
+import static lux.compiler.XPathQuery.SINGULAR;
+import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
+import static lux.index.IndexConfiguration.INDEX_PATHS;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -97,7 +102,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private boolean optimizeForOrderedResults;
     private Logger log;
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     
     public PathOptimizer(Compiler compiler) {
         queryStack = new ArrayList<XPathQuery>();
@@ -451,7 +456,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     query = combineQueries(lq, Occur.MUST, rq, resultType);
         		}
         	}
-            query.setBaseQuery(bq);
+        	if (orient == ResultOrientation.LEFT) {
+        		query.setBaseQuery(bq);
+        	}
         } else {
             query = combineQueries(lq, Occur.MUST, rq, resultType);
         }

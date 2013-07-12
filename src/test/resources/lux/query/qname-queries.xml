@@ -166,6 +166,15 @@
       </Clause>
     </BooleanQuery>    
   </query>
+  <query id="SCENE_act_scene_SPEECH_SPEAKER">
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEAKER</TermQuery></Clause> 
+    </BooleanQuery>
+  </query>
   <query id="string-range-desc">
     <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->
     <BooleanQuery>
