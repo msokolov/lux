@@ -16,14 +16,16 @@ try w/XQTS
 see exprFor(FLWORExpression)
 try w/XQTS
 * bugs
-** OOM
-On buda, lux:search ("<@imagepage:123")[1]/root() fails w OOM while
-lux:search ("<@imagepage:123")[1] works fine ... ??
-*** more OOM
-On buda, (//formatthingy[@format="video"])[1] is OK, but append /root() to it and OOM?
-** boolean/span nesting
-there must be some combination of paths that will result in booleans inside
-of spans.
+** empty ??
+/book[@id="10001L2PPYTHONBEG"]//clip[@seq]
+or
+/book[@id="10001L2PPYTHONBEG"]//clip/@seq
+or
+/book[@id="10001L2PPYTHONBEG"]//clip/@seq/string()
+or
+for $att in /book[@id="10001L2PPYTHONBEG"]//clip/@seq
+return string ($att)
+
 * enhancements
 ** binary documents
 I think this is working now - let's measure and document the improvement.
