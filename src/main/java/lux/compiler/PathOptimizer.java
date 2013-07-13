@@ -1,12 +1,7 @@
 package lux.compiler;
 
-import static lux.compiler.XPathQuery.BOOLEAN_FALSE;
-import static lux.compiler.XPathQuery.EMPTY;
-import static lux.compiler.XPathQuery.IGNORABLE;
-import static lux.compiler.XPathQuery.MINIMAL;
-import static lux.compiler.XPathQuery.SINGULAR;
-import static lux.index.IndexConfiguration.INDEX_FULLTEXT;
-import static lux.index.IndexConfiguration.INDEX_PATHS;
+import static lux.compiler.XPathQuery.*;
+import static lux.index.IndexConfiguration.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -621,7 +616,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (occur == Occur.SHOULD) {
             push(pop().setFact(IGNORABLE, true));
         }
-        if (name.equals(FunCall.LUX_FIELD_VALUES)) {
+        if (name.equals(FunCall.LUX_KEY) || name.equals(FunCall.LUX_FIELD_VALUES)) {
             if (args.length > 0) {
                 AbstractExpression arg = args[0];
                 AbstractExpression sortContext;
@@ -886,7 +881,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private AbstractExpression optimizeRangeComparison(XPathQuery lq, XPathQuery rq, BinaryOperation op) {
         LiteralExpression value = null;
         AbstractExpression op1 = op.getOperand1(), op2 = op.getOperand2(), expr = null;
-        // if there is no context item, lux:field-values() returns ()
+        // if there is no context item, lux:key() returns ()
         if (op1.getType() == Type.LITERAL) {
             value = (LiteralExpression) op1;
             expr = op2;
@@ -914,7 +909,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         } 
         // rewrite minimax(AtomizedSequence(... expr )) to expr
         expr = rewriteMinMax (expr);
-        // Check for a call to lux:field-values()
+        // Check for a call to lux:key()
         boolean directKeyMatch;
         FieldDefinition field = fieldMatching(expr);
         if (field != null) {
@@ -1045,7 +1040,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
             QName funcName = funcall.getName();
-            if (funcName.equals(FunCall.LUX_FIELD_VALUES)) {
+            if (funcName.equals(FunCall.LUX_KEY) || funcName.equals(FunCall.LUX_FIELD_VALUES)) {
                 AbstractExpression arg = funcall.getSubs()[0];
                 if (arg instanceof LiteralExpression) {
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
@@ -1065,8 +1060,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
             QName funcName = funcall.getName();
             if (funcName.equals(FunCall.FN_MIN) || funcName.equals(FunCall.FN_MAX)) {
             	AbstractExpression arg = funcall.getSubs()[0];
-				if (arg instanceof FunCall && ((FunCall) arg).getName().equals(FunCall.LUX_FIELD_VALUES)) {
-            		return arg;
+				if (arg instanceof FunCall) {
+				    FunCall fnarg = (FunCall) arg;
+				    if (fnarg.getName().equals(FunCall.LUX_KEY) || fnarg.getName().equals(FunCall.LUX_FIELD_VALUES)) {
+	                    return fnarg;
+	                }
             	}
             }
         }
@@ -1449,10 +1447,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 if (key instanceof FunCall) {
                     // field-values() with one argument depends on context 
                     FunCall keyFun = (FunCall) key;
-                    if (keyFun.getName().equals(FunCall.LUX_FIELD_VALUES)) { 
+                    if (keyFun.getName().equals(FunCall.LUX_KEY) || keyFun.getName().equals(FunCall.LUX_FIELD_VALUES)) { 
                     	if (keyFun.getSubs().length < 2) {
                     		throw new LuxException(
-                    				"lux:field-values($key) depends on the context where there is no context defined");
+                    				"lux:key($key) depends on the context where there is no context defined");
                     	}
                     }
                 }

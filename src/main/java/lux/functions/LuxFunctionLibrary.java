@@ -7,6 +7,7 @@ import net.sf.saxon.functions.IntegratedFunctionCall;
 import net.sf.saxon.functions.IntegratedFunctionLibrary;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.trans.XPathException;
 
 /**
@@ -27,6 +28,21 @@ public class LuxFunctionLibrary extends IntegratedFunctionLibrary {
         fc.setFunctionName(functionName);
         fc.setArguments(staticArgs);
         return fc;
+    }
+    
+    public static void registerFunctions (Processor processor) {
+        processor.registerExtensionFunction(new Search());
+        processor.registerExtensionFunction(new Count());
+        processor.registerExtensionFunction(new Exists());
+        processor.registerExtensionFunction(new FieldTerms());
+        processor.registerExtensionFunction(new Key());
+        processor.registerExtensionFunction(new FieldValues());
+        processor.registerExtensionFunction(new Transform());
+        processor.registerExtensionFunction(new Eval());
+        processor.registerExtensionFunction(new InsertDocument());
+        processor.registerExtensionFunction(new DeleteDocument());
+        processor.registerExtensionFunction(new Commit());
+        processor.registerExtensionFunction(new Highlight());
     }
 
 }

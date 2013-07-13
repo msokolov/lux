@@ -68,6 +68,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     protected Set<String> fields = new HashSet<String>();
 
     protected SolrIndexConfig solrIndexConfig;
+    
+    // FIXME: pool these serializers so that a different one can be used for each request
     private Serializer serializer;
     
     protected String queryPath;

@@ -360,35 +360,35 @@
       </expect>
     </test-case>
     <test-case name="order-by">
-      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc</query>
+      <query>for $doc in //ACT order by $doc/lux:key('sortkey') return $doc</query>
       <expect order-by="sortkey"><query id="ACT" /></expect>
     </test-case>
     <test-case name="order-by-context-argument">
-      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') return $doc</query>
+      <query>for $doc in //ACT order by $doc/lux:key('sortkey') return $doc</query>
       <expect order-by="sortkey"><query id="ACT" /></expect>
     </test-case>
     <test-case name="order-by-search-funcall">
-      <query>for $doc in lux:search("foo") order by $doc/lux:field-values('sortkey') return $doc</query>
+      <query>for $doc in lux:search("foo") order by $doc/lux:key('sortkey') return $doc</query>
       <expect order-by="sortkey"><query id="LUX_FOO" /></expect>
     </test-case>
     <test-case name="order-by-2keys">
       <!-- two indexed sortkeys -->
-      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey'), $doc/lux:field-values('sk2') return $doc</query>
+      <query>for $doc in //ACT order by $doc/lux:key('sortkey'), $doc/lux:key('sk2') return $doc</query>
       <expect order-by="sortkey,sk2"><query id="ACT" /></expect>
     </test-case>
     <test-case name="order-by-descending">
       <!-- two indexed sortkeys, plus descending -->
-      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') descending, $doc/lux:field-values('sk2') return $doc</query>
+      <query>for $doc in //ACT order by $doc/lux:key('sortkey') descending, $doc/lux:key('sk2') return $doc</query>
       <expect order-by="sortkey descending,sk2"><query id="ACT" /></expect>
     </test-case>
     <test-case name="order-by-noindex-0">
       <!--  one indexed sortkey, one xpath sort -->
-      <query>for $doc in //ACT order by $doc/lux:field-values('sortkey') descending, $doc/date descending return $doc</query>
+      <query>for $doc in //ACT order by $doc/lux:key('sortkey') descending, $doc/date descending return $doc</query>
       <expect order-by="sortkey"><query id="ACT" /></expect>
     </test-case>
     <test-case name="order-by-no-index-1">
       <!--  one xpath sort, one indexed sortkey -->
-      <query>for $doc in //ACT order by $doc/date, $doc/lux:field-values('sortkey') ascending return $doc</query>
+      <query>for $doc in //ACT order by $doc/date, $doc/lux:key('sortkey') ascending return $doc</query>
       <expect order-by=""><query id="ACT" /></expect>
     </test-case>
     <test-case name="atomizing-empty-sequence-0">
