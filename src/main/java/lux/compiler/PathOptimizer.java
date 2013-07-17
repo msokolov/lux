@@ -97,7 +97,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private boolean optimizeForOrderedResults;
     private Logger log;
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     
     public PathOptimizer(Compiler compiler) {
         queryStack = new ArrayList<XPathQuery>();
@@ -891,7 +891,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         } else {
             return null;
         }
-        /* resolve variable */
+        /* resolve variable
+         *  TODO: when the bound expression depends on the context expression (is Dot, in this simplified view), 
+         *  we actually are interested in the context of the variable, not in the bound expression, so this isn't
+         *  actually doing what we think it is...
+         */
         if (expr.getType() == Type.VARIABLE) {
             VarBinding varBinding = varBindings.get(((Variable) expr).getQName());
             if (varBinding == null) {
@@ -971,6 +975,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * keep a list of possible matches; these are expressions tied to
      * fields - on a successful match we will have the topmost node of the
      * expression tree, and can look the field up from there?
+     * 
      */
     private FieldDefinition matchField(AbstractExpression expr, BinaryOperation comparison) {
     	AbstractExpression leafExpr = expr.getLastContextStep();
