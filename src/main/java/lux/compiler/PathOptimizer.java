@@ -989,14 +989,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     // return the last context step of the base expression of the enclosing predicate
-    private AbstractExpression getBaseContextStep (AbstractExpression expr) {
-    	while (expr != null && expr.getType() != Type.PREDICATE) {
-    		expr = expr.getSuper();
+    private AbstractExpression getBaseContextStep (final AbstractExpression expr) {
+        AbstractExpression e;
+        for (e = expr; 
+                e != null && e.getType() != Type.PREDICATE; 
+                e = e.getSuper()) {
+        }
+    	if (e == null) {
+    		return expr;
     	}
-    	if (expr == null) {
-    		return null;
-    	}
-    	return ((Predicate)expr).getBase().getLastContextStep();
+    	return ((Predicate)e).getBase().getLastContextStep();
     }
 
     /**
