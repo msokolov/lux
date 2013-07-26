@@ -46,12 +46,6 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(PathStep step) {
-        if (done) {
-            // FIXME: tests never hit this?  There might be some confused logic
-            // The idea was that once you hit a named (non-wild) node, you can terminate the visit
-            // since you've counted the width of the gap.
-            return step;
-        }
         NodeTest nodeTest = step.getNodeTest();
         switch (step.getAxis()) {
         case Child:
@@ -123,15 +117,34 @@ public class SlopCounter extends ExpressionVisitorBase {
 
     @Override
     public AbstractExpression visit(Sequence seq) {
+    	computeMaxSubSlop(seq);
         done = true;
         return seq;
     }
 
     @Override
     public AbstractExpression visit(BinaryOperation exp) {
+    	computeMaxSubSlop(exp);
         done = true;
         return exp;
     }
+
+	private void computeMaxSubSlop(AbstractExpression exp) {
+		int maxSlop = -1;
+    	Integer origSlop = slop;
+    	for (AbstractExpression sub : exp.getSubs()) {
+    		sub.accept(this);
+    		if (slop == null) {
+    			return;
+    		}
+    		done = false; // child step may have indicated we're done ...
+    		maxSlop = Math.max(maxSlop, slop);
+    		slop = origSlop;
+    	}
+    	if (maxSlop >= 0) {
+    		slop = maxSlop;
+    	}
+	}
 
     public Integer getSlop () {
         return slop;

@@ -16,6 +16,13 @@ try w/XQTS
 see exprFor(FLWORExpression)
 try w/XQTS
 * bugs
+** move optimizeComparison from visit(Predicate) to visit(BinaryOperation)
+Otherwise how can we properly handle foo[bar = 1 or baz = 1]?  And there
+are other problems with expressions like that: our SlopCounter doesn't seem
+to notice that should generate path:(foo/bar or foo/baz), does it?
+Actually the slopcounter does that, but generates a bad query for:
+foo[bar or .//baz] since it computes a single distance for the whole "or".
+Fix by taking the max. slop of children of booleans and unions, etc
 ** consider possible problems w/range query optos
 *** test combinations with "or", "|", "intersect", "union", "except"
 

@@ -13,6 +13,10 @@
   </setup>
   <test-cases>
     <include file="base-cases.xml" />
+    <test-case name="path-boolean">
+        <query>//ACT[TITLE | .//SCENE]</query>
+        <expect><query id="ACT_TITLE_OR_SCENE" /> </expect>
+    </test-case>
   </test-cases>
   <queries>
     <include file="path-queries.xml" />
