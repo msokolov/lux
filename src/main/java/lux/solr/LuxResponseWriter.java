@@ -40,7 +40,10 @@ public class LuxResponseWriter implements QueryResponseWriter {
             throw new SolrException(ErrorCode.BAD_REQUEST, buf.toString());
             // writeError(writer, error);
         } else if (response.getException() != null) {
-            String error = (String) ((NamedList<?>) response.getValues().get("error")).get("msg"); 
+            String error = (String) ((NamedList<?>) response.getValues().get("error")).get("msg");
+            if (error == null) {
+                error = response.getException().toString();
+            }
             writeError (writer, error);
         }
         else {

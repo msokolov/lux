@@ -451,7 +451,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     query = combineQueries(lq, Occur.MUST, rq, resultType);
         		}
         	}
-            query.setBaseQuery(bq);
+        	if (orient == ResultOrientation.LEFT) {
+        		query.setBaseQuery(bq);
+        	}
         } else {
             query = combineQueries(lq, Occur.MUST, rq, resultType);
         }
@@ -614,7 +616,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (occur == Occur.SHOULD) {
             push(pop().setFact(IGNORABLE, true));
         }
-        if (name.equals(FunCall.LUX_FIELD_VALUES)) {
+        if (name.equals(FunCall.LUX_KEY) || name.equals(FunCall.LUX_FIELD_VALUES)) {
             if (args.length > 0) {
                 AbstractExpression arg = args[0];
                 AbstractExpression sortContext;
@@ -879,7 +881,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private AbstractExpression optimizeRangeComparison(XPathQuery lq, XPathQuery rq, BinaryOperation op) {
         LiteralExpression value = null;
         AbstractExpression op1 = op.getOperand1(), op2 = op.getOperand2(), expr = null;
-        // if there is no context item, lux:field-values() returns ()
+        // if there is no context item, lux:key() returns ()
         if (op1.getType() == Type.LITERAL) {
             value = (LiteralExpression) op1;
             expr = op2;
@@ -889,7 +891,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
         } else {
             return null;
         }
-        /* resolve variable */
+        /* resolve variable
+         *  TODO: when the bound expression depends on the context expression (is Dot, in this simplified view), 
+         *  we actually are interested in the context of the variable, not in the bound expression, so this isn't
+         *  actually doing what we think it is...
+         */
         if (expr.getType() == Type.VARIABLE) {
             VarBinding varBinding = varBindings.get(((Variable) expr).getQName());
             if (varBinding == null) {
@@ -907,7 +913,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         } 
         // rewrite minimax(AtomizedSequence(... expr )) to expr
         expr = rewriteMinMax (expr);
-        // Check for a call to lux:field-values()
+        // Check for a call to lux:key()
         boolean directKeyMatch;
         FieldDefinition field = fieldMatching(expr);
         if (field != null) {
@@ -969,6 +975,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      * keep a list of possible matches; these are expressions tied to
      * fields - on a successful match we will have the topmost node of the
      * expression tree, and can look the field up from there?
+     * 
      */
     private FieldDefinition matchField(AbstractExpression expr, BinaryOperation comparison) {
     	AbstractExpression leafExpr = expr.getLastContextStep();
@@ -987,14 +994,16 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     // return the last context step of the base expression of the enclosing predicate
-    private AbstractExpression getBaseContextStep (AbstractExpression expr) {
-    	while (expr != null && expr.getType() != Type.PREDICATE) {
-    		expr = expr.getSuper();
+    private AbstractExpression getBaseContextStep (final AbstractExpression expr) {
+        AbstractExpression e;
+        for (e = expr; 
+                e != null && e.getType() != Type.PREDICATE; 
+                e = e.getSuper()) {
+        }
+    	if (e == null) {
+    		return expr;
     	}
-    	if (expr == null) {
-    		return null;
-    	}
-    	return ((Predicate)expr).getBase().getLastContextStep();
+    	return ((Predicate)e).getBase().getLastContextStep();
     }
 
     /**
@@ -1038,7 +1047,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (expr.getType() == Type.FUNCTION_CALL) {
             FunCall funcall = (FunCall) expr;
             QName funcName = funcall.getName();
-            if (funcName.equals(FunCall.LUX_FIELD_VALUES)) {
+            if (funcName.equals(FunCall.LUX_KEY) || funcName.equals(FunCall.LUX_FIELD_VALUES)) {
                 AbstractExpression arg = funcall.getSubs()[0];
                 if (arg instanceof LiteralExpression) {
                     String fieldName = ((LiteralExpression) arg).getValue().toString();
@@ -1058,8 +1067,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
             QName funcName = funcall.getName();
             if (funcName.equals(FunCall.FN_MIN) || funcName.equals(FunCall.FN_MAX)) {
             	AbstractExpression arg = funcall.getSubs()[0];
-				if (arg instanceof FunCall && ((FunCall) arg).getName().equals(FunCall.LUX_FIELD_VALUES)) {
-            		return arg;
+				if (arg instanceof FunCall) {
+				    FunCall fnarg = (FunCall) arg;
+				    if (fnarg.getName().equals(FunCall.LUX_KEY) || fnarg.getName().equals(FunCall.LUX_FIELD_VALUES)) {
+	                    return fnarg;
+	                }
             	}
             }
         }
@@ -1442,10 +1454,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 if (key instanceof FunCall) {
                     // field-values() with one argument depends on context 
                     FunCall keyFun = (FunCall) key;
-                    if (keyFun.getName().equals(FunCall.LUX_FIELD_VALUES)) { 
+                    if (keyFun.getName().equals(FunCall.LUX_KEY) || keyFun.getName().equals(FunCall.LUX_FIELD_VALUES)) { 
                     	if (keyFun.getSubs().length < 2) {
                     		throw new LuxException(
-                    				"lux:field-values($key) depends on the context where there is no context defined");
+                    				"lux:key($key) depends on the context where there is no context defined");
                     	}
                     }
                 }

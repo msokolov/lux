@@ -1,10 +1,10 @@
 package lux.query;
 
-import org.junit.runner.RunWith;
-
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.junit.QueryTestRunner;
+
+import org.junit.runner.RunWith;
 
 @RunWith(QueryTestRunner.class)
 public class QNameQueryTest {
@@ -14,4 +14,5 @@ public class QNameQueryTest {
     public XmlIndexer getIndexer() {
     	return new XmlIndexer(IndexConfiguration.INDEX_QNAMES);
     }
+    
 }

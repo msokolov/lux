@@ -12,18 +12,8 @@ import lux.compiler.EXPathSupport;
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
-import lux.functions.Commit;
-import lux.functions.Count;
-import lux.functions.DeleteDocument;
-import lux.functions.Eval;
-import lux.functions.Exists;
 import lux.functions.ExtensionFunctions;
-import lux.functions.FieldTerms;
-import lux.functions.FieldValues;
-import lux.functions.Highlight;
-import lux.functions.InsertDocument;
-import lux.functions.Search;
-import lux.functions.Transform;
+import lux.functions.LuxFunctionLibrary;
 import lux.functions.file.FileExtensions;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
@@ -215,19 +205,7 @@ public class Compiler {
     }
 
     private void registerExtensionFunctions() {
-        // TODO: move this list into a single class in the lux.functions package
-        processor.registerExtensionFunction(new Search());
-        processor.registerExtensionFunction(new Count());
-        processor.registerExtensionFunction(new Exists());
-        processor.registerExtensionFunction(new FieldTerms());
-        processor.registerExtensionFunction(new FieldValues());
-        processor.registerExtensionFunction(new Transform());
-        processor.registerExtensionFunction(new Eval());
-        processor.registerExtensionFunction(new InsertDocument());
-        processor.registerExtensionFunction(new DeleteDocument());
-        processor.registerExtensionFunction(new Commit());
-        processor.registerExtensionFunction(new Highlight());
-
+        LuxFunctionLibrary.registerFunctions(processor);
         FileExtensions.registerFunctions(processor);
         ExtensionFunctions.registerFunctions(processor);
     }

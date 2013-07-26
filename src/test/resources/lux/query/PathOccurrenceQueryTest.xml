@@ -200,6 +200,25 @@
         </Clause>
       </BooleanQuery>    
     </query>
+    <query id="SCENE_act_scene_SPEECH_SPEAKER"> 
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">5</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@act/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SPEAKER/SPEECH/SCENE</RegexpQuery>
+        </Clause>
+      </BooleanQuery>    
+    </query>
     <query id="string-range-desc">
       <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->
       <BooleanQuery>

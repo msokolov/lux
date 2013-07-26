@@ -257,6 +257,38 @@
         </Clause>
       </BooleanQuery>    
     </query>
+    <query id="SCENE_act_scene_SPEECH_SPEAKER"> 
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">5</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">@act</SpanTerm>
+          </SpanNear>
+        </Clause>
+        <Clause occurs="must">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">@scene</SpanTerm>
+          </SpanNear>
+        </Clause>
+        <Clause occurs="must">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">SPEECH</SpanTerm>
+            <SpanTerm fieldName="lux_path">SPEAKER</SpanTerm>
+          </SpanNear>            
+        </Clause>
+      </BooleanQuery>    
+    </query>
     <query id="string-range-desc">
       <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->
       <BooleanQuery>
@@ -466,6 +498,41 @@
         </Clause>
         <Clause occurs="must">
           <NumericRangeQuery fieldName="actnum" lowerTerm="1" upperTerm="1" includeLower="true" includeUpper="true" type="INT"/>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="range-disj">
+      <!-- /SCENE[@act=1 or @scene>=1]/TITLE -->
+      <BooleanQuery>
+        <Clause occurs="should">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="should">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">@act</SpanTerm>
+          </SpanNear>
+        </Clause>
+        <Clause occurs="should">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">@scene</SpanTerm>
+          </SpanNear>
+        </Clause>
+        <Clause occurs="should">
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">TITLE</SpanTerm>
+          </SpanNear>
+        </Clause>
+        <Clause occurs="should">
+          <NumericRangeQuery fieldName="actnum" lowerTerm="1" upperTerm="1" includeLower="true" includeUpper="true" type="INT" />
+        </Clause>
+        <Clause occurs="should">
+          <NumericRangeQuery fieldName="scnnum" lowerTerm="1" includeLower="true" includeUpper="false" type="INT" />
         </Clause>
       </BooleanQuery>
     </query>

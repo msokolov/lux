@@ -166,6 +166,15 @@
       </Clause>
     </BooleanQuery>    
   </query>
+  <query id="SCENE_act_scene_SPEECH_SPEAKER">
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEAKER</TermQuery></Clause> 
+    </BooleanQuery>
+  </query>
   <query id="string-range-desc">
     <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->
     <BooleanQuery>
@@ -290,6 +299,31 @@
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
       <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
       <Clause occurs="must">
+        <NumericRangeQuery fieldName="actnum" lowerTerm="1" upperTerm="1" includeLower="true" includeUpper="true" type="INT"/>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="range-disj">
+    <!-- count(/ACT[@act=1 or SCENE/@scene=3]) -->
+    <BooleanQuery>
+      <Clause occurs="must">
+        <BooleanQuery>
+          <Clause occurs="should">
+            <TermQuery fieldName="lux_att_name">act</TermQuery>
+          </Clause>
+          <Clause occurs="should">
+            <BooleanQuery>
+              <Clause occurs="must">
+                <TermQuery fieldName="lux_elt_name">SCENE</TermQuery>
+              </Clause>
+              <Clause occurs="must">
+                <TermQuery fieldName="lux_att_name">scene</TermQuery>
+              </Clause>
+            </BooleanQuery>
+          </Clause>
+        </BooleanQuery>
+      </Clause>
+      <Clause occurs="should">
         <NumericRangeQuery fieldName="actnum" lowerTerm="1" upperTerm="1" includeLower="true" includeUpper="true" type="INT"/>
       </Clause>
     </BooleanQuery>

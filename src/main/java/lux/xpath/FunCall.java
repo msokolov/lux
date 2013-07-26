@@ -52,6 +52,7 @@ public class FunCall extends AbstractExpression {
     public static final QName LUX_SEARCH = new QName (LUX_NAMESPACE, "search", "lux");
     public static final QName LUX_COUNT = new QName (LUX_NAMESPACE, "count", "lux");
     public static final QName LUX_EXISTS = new QName (LUX_NAMESPACE, "exists", "lux");
+    public static final QName LUX_KEY = new QName (LUX_NAMESPACE, "key", "lux");
     public static final QName LUX_FIELD_VALUES = new QName (LUX_NAMESPACE, "field-values", "lux");
     
     public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";

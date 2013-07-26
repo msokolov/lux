@@ -445,9 +445,9 @@ public class SearchTest extends BaseSearchTest {
     public void testLuxSearchRoot () throws Exception {
         // This is the actual bug:
         String query = "lux:search (\"<@scene:5\")[1]/root()";
-    	assertSearch ("__IGNORE__", query, null, 1, 1);
-    	// Some attempts to reproduce, kept for posterity?
-    	// first result is LINE due to TFIDF (relevance) scoring
+        assertSearch ("__IGNORE__", query, null, 1, 1);
+        // Some attempts to reproduce, kept for posterity?
+        // first result is LINE due to TFIDF (relevance) scoring
         assertSearch ("LINE", "lux:search('\"holla bernardo\"')[1]/root()/*/name()", null, 1, 1);
         assertSearch (null, "lux:search('<@id:100')[1]/root()/*/name()", null, 0, 0);
     }
@@ -478,7 +478,7 @@ public class SearchTest extends BaseSearchTest {
         // optimization (to say nothing of additional constraints) into a user-supplied
         // query using the string query syntax.
         assertSearch ("ACT", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name())[1]", 0, 1);
+            " order by lux:key('doctype', $doc) return $doc/*/name())[1]", 0, 1);
     }
         
     @Test
@@ -486,9 +486,9 @@ public class SearchTest extends BaseSearchTest {
     	// We can't optimize the subsequence (pagination) here because $/doc/*name() looks like
     	// it might return multiple nodes per matching document.
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 21);
+            " order by lux:key('doctype', $doc) return $doc/*/name())[21]", 0, 21);
         assertSearch ("<SPEAKER>BERNARDO</SPEAKER>", "(for $doc in lux:search('bernardo')" + 
-                " order by lux:field-values('doctype', $doc) return $doc)[21]", 0, 1);
+                " order by lux:key('doctype', $doc) return $doc)[21]", 0, 1);
     }
     
     @Test
@@ -616,14 +616,14 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testFieldValuesComparison () throws Exception {
-    	String query = "collection()[lux:field-values('doctype')='SCENE'][1]/descendant::SPEECH[1]/SPEAKER/string()";
+    	String query = "collection()[lux:key('doctype')='SCENE'][1]/descendant::SPEECH[1]/SPEAKER/string()";
     	// there are 20 scenes in Hamlet, but we only need to pull the first one for this query
     	assertSearch ("BERNARDO", query, null, 1, 1);
         
-    	query = "collection()[lux:field-values('doctype')='SCENE'][1]/descendant::SPEAKER[1]/string()";
+    	query = "collection()[lux:key('doctype')='SCENE'][1]/descendant::SPEAKER[1]/string()";
         assertSearch ("BERNARDO", query, null, 1, 1);
 
-        query = "count(collection()[lux:field-values('doctype')='SCENE'])";
+        query = "count(collection()[lux:key('doctype')='SCENE'])";
     	assertSearch ("20", query, null, 20, 0);
     }
 
@@ -642,36 +642,36 @@ public class SearchTest extends BaseSearchTest {
     @Test
     public void testRangeInequality() throws Exception {
         // we have five ACTs 
-        String query = "count((/)[lux:field-values('doctype') <= 'ACT'])";
+        String query = "count((/)[lux:key('doctype') <= 'ACT'])";
         assertSearch ("5", query, null, 5, 0);
-        query = "count((/)[lux:field-values('doctype') le 'ACT'])";
+        query = "count((/)[lux:key('doctype') le 'ACT'])";
         assertSearch ("5", query, null, 5, 0);
     }
 
     @Test
     public void testCombinedRange() throws Exception {
-        String query = "count((/)[lux:field-values('doctype') >= 'A'][lux:field-values('doctype') <= 'B'])";
+        String query = "count((/)[lux:key('doctype') >= 'A'][lux:key('doctype') <= 'B'])";
         assertSearch ("5", query, null, 5, 0);
 
         // we have one FM and two GRPDESCR
-        query = "count((/)[lux:field-values('doctype') > 'F'][lux:field-values('doctype') < 'H'])";
+        query = "count((/)[lux:key('doctype') > 'F'][lux:key('doctype') < 'H'])";
         assertSearch ("3", query, null, 3, 0);
-        query = "count((/)[lux:field-values('doctype') gt 'F' and lux:field-values('doctype') lt 'H'])";
+        query = "count((/)[lux:key('doctype') gt 'F' and lux:key('doctype') lt 'H'])";
         assertSearch ("3", query, null, 3, 0);
     }
     
     @Test
     public void testRangeGenComp() throws Exception {
         // we have only one SCNDESCR, but we don't optimize this yet
-        String query = "count((/)[lux:field-values('doctype') gt 'S' and lux:field-values('doctype') lt 'T' " +
-        		"and not(lux:field-values('doctype') = ('SCENE','SPEECH','SPEAKER','STAGEDIR'))])";
+        String query = "count((/)[lux:key('doctype') gt 'S' and lux:key('doctype') lt 'T' " +
+        		"and not(lux:key('doctype') = ('SCENE','SPEECH','SPEAKER','STAGEDIR'))])";
         assertSearch ("1", query, null, 2552, 2552);
     }
     
     @Test
     public void testFieldValuesNoContext () throws Exception {
     	// compare an integer against a string-valued field
-    	String query = "if (2 eq lux:field-values('xxx')) then 'yes' else 'no'";
+    	String query = "if (2 eq lux:key('xxx')) then 'yes' else 'no'";
         try {
             assertSearch ("false", query, null, 0, 0);
         	fail ("expected exception not thrown");
@@ -684,13 +684,13 @@ public class SearchTest extends BaseSearchTest {
     public void testIntFieldEquality() throws Exception {
     	String query;
     	// check that our int-valued field was indexed correctly:
-    	query = "(/ACT)[2]/lux:field-values('actnum')";
+    	query = "(/ACT)[2]/lux:key('actnum')";
     	assertSearch ("2", query, null, 1, 1);
     	// do a basic int comparison
-    	query = "count(collection()[2 eq lux:field-values('actnum')])";
+    	query = "count(collection()[2 eq lux:key('actnum')])";
     	assertSearch ("3", query, null, 3, 0);
     	// Try comparing an integer against a string-valued field
-    	query = "count(collection()[2 eq lux:field-values('actstr')])";
+    	query = "count(collection()[2 eq lux:key('actstr')])";
     	try {
     		assertSearch ("0", query, null, 0, 0);
     		fail ("expected exception not thrown");
@@ -703,18 +703,18 @@ public class SearchTest extends BaseSearchTest {
     public void testIntFieldInequality() throws Exception {
     	String query;
     	// do a basic int comparison
-    	query = "count(collection()[lux:field-values('actnum') lt 2])";
+    	query = "count(collection()[lux:key('actnum') lt 2])";
     	assertSearch ("6", query, null, 6, 0);
-    	query = "count(collection()[lux:field-values('actnum') < 2])";
+    	query = "count(collection()[lux:key('actnum') < 2])";
     	assertSearch ("6", query, null, 6, 0);
-    	query = "count(collection()[lux:field-values('actnum') > 2][lux:field-values('actnum') <= 3])";
+    	query = "count(collection()[lux:key('actnum') > 2][lux:key('actnum') <= 3])";
     	assertSearch ("5", query, null, 5, 0);
     }
 
     @Test
     public void testLongFieldInequality() throws Exception {
     	// do a basic long comparison, and make sure comparison with other numeric types is allowed
-    	String query = "count(collection()[lux:field-values('scnlong') gt xs:int(5)])";
+    	String query = "count(collection()[lux:key('scnlong') gt xs:int(5)])";
     	assertSearch ("2", query, null, 2, 0);
     }
     
