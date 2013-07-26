@@ -852,18 +852,18 @@ public class PathOptimizer extends ExpressionVisitorBase {
         	break;
         }
         XPathQuery query = combineQueries(lq, occur, rq, resultType);
-    	if (rangeOptimized != null) {
-    		query.setFact(MINIMAL|SINGULAR, true);
-    		query.setFact(IGNORABLE, false);
-    	}
-    	else {
-    		if (minimal == false) {
-    			query = query.setFact(MINIMAL, false);
-    		}
-    		if (!required) {
-    			query = query.setFact(IGNORABLE, true);
-    		}
-    	}
+        if (rangeOptimized != null) {
+            query.setFact(MINIMAL|SINGULAR, true);
+            query.setFact(IGNORABLE, false);
+        }
+        else {
+            if (minimal == false) {
+                query = query.setFact(MINIMAL, false);
+            }
+            if (!required) {
+                query = query.setFact(IGNORABLE, true);
+            }
+        }
         push(query);
         return rangeOptimized == null ? op : rangeOptimized;
     }
@@ -1067,21 +1067,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     private boolean isComparableType(ValueType valueType, FieldDefinition.Type fieldType) {
-    	if (valueType.isNode || valueType == ValueType.VALUE || valueType == ValueType.ATOMIC) {
-    		// These are plausible: will be determined at run-time
-    		return true;
-    	}
-    	switch (fieldType) {
-    	case STRING:
-    		return valueType == ValueType.STRING || valueType == ValueType.UNTYPED_ATOMIC;
-    	case INT: case LONG:
-    		return valueType.isNumeric;
-    	default:
-    		return false;
-    	}
-	}
+        if (valueType.isNode || valueType == ValueType.VALUE || valueType == ValueType.ATOMIC) {
+            // These are plausible: will be determined at run-time
+            return true;
+        }
+        switch (fieldType) {
+        case STRING:
+            return valueType == ValueType.STRING || valueType == ValueType.UNTYPED_ATOMIC;
+        case INT: case LONG:
+            return valueType.isNumeric;
+        default:
+            return false;
+        }
+    }
 
-	private void optimizeComparison(Predicate predicate) {
+    private void optimizeComparison(Predicate predicate) {
         if (!indexConfig.isOption(INDEX_FULLTEXT)) {
             return;
         }
@@ -1096,7 +1096,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 return;
             }
         } else if (filter.getType() == Type.FUNCTION_CALL) {
-        	FunCall funcall = (FunCall) filter;
+            FunCall funcall = (FunCall) filter;
             if (! (funcall.getName().equals(FunCall.FN_CONTAINS))) {
                 return;
             }
@@ -1122,7 +1122,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         String v = value.getValue().toString();
         if (last.getType() == Type.PATH_STEP) {
-        	ParseableQuery termQuery = null;
+            ParseableQuery termQuery = null;
             if (filter.getType() == Type.FUNCTION_CALL) {
                 if (v.matches("\\w+")) {
                     // when optimizing contains(), we have to do a wildcard
@@ -1135,7 +1135,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 termQuery = createTermQuery((PathStep) last, path, v);
             }
             if (termQuery != null) {
-            	combineTermQuery (termQuery, ((PathStep) last).getNodeTest().getType());
+                combineTermQuery (termQuery, ((PathStep) last).getNodeTest().getType());
             }
         }
     }
