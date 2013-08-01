@@ -5,6 +5,32 @@ group: release
 pos: 5
 ---
 
+# Changes in Lux release 0.10.2
+
+This is a minor release containing mostly bug fixes.  One new feature
+is (LUX-45) the introduction of the lux:key() function as a replacement for
+lux:field-values().
+
+1. Fix for field renaming; this is typically only relevant when integrating
+with an existing Solr installation.  If you renamed the uri field, its new
+name wasn't propagated to the Compiler, causing document not found errors
+when calling doc().
+
+2. Fix for incorrect path distance computation for some predicates like: foo[bar or .//baz].
+
+3. Fix for an NPE in the Solr ResponseWriter when an error occurs but there
+is no message (eg if an NPE occurs downstream).
+
+4. Fix for an NPE when optimizing comparison with Dot.
+
+# Changes in Lux release 0.10.1
+
+This is a minor release containing bug fixes only.
+
+1. LUX-48; don't cache a base query for PathExpressions (only for
+Predicates).  This fixes some incorrect optimizations for complex path
+expressions.
+
 # Changes in Lux release 0.10
 
 The major improvement in this release is optimization of comparisons
