@@ -16,7 +16,7 @@ with an existing Solr installation.  If you renamed the uri field, its new
 name wasn't propagated to the Compiler, causing document not found errors
 when calling doc().
 
-2. Fix for incorrect path distance computation for some predicates like: foo[bar or .//baz].
+2. Fix for incorrect path distance computation for some predicates like: foo\[bar or .//baz\].
 
 3. Fix for an NPE in the Solr ResponseWriter when an error occurs but there
 is no message (eg if an NPE occurs downstream).
