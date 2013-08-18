@@ -22,5 +22,12 @@ public final class MatchAllPQuery extends ParseableQuery {
     public String toQueryString(String field, IndexConfiguration config) {
         return "*:*";
     }
+    
+    @Override
+    public boolean isSpan () {
+        // not really a span, but this is used to trigger combination with 
+        // paths.  Probably should rename/refactor
+        return true;
+    }
 
 }

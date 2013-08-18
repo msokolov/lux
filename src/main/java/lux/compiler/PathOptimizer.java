@@ -16,6 +16,7 @@ import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
 import lux.query.BooleanPQuery;
+import lux.query.MatchAllPQuery;
 import lux.query.NodeTextQuery;
 import lux.query.ParseableQuery;
 import lux.query.RangePQuery;
@@ -445,7 +446,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 query = lq.getBaseQuery().combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
                 query = combineQueries(lq, Occur.MUST, query, query.getResultType());
         	} else {
-        		if (lq.getParseableQuery().isSpan() && rq.getParseableQuery().isSpan()) {
+        	    if (lq.getParseableQuery() instanceof MatchAllPQuery && rq.getParseableQuery().isSpan()) {
+        	        query = MATCH_ALL.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
+        	    }
+        	    else if (lq.getParseableQuery().isSpan() && rq.getParseableQuery().isSpan()) {
         			query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
         		} else {
                     query = combineQueries(lq, Occur.MUST, rq, resultType);
