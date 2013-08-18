@@ -122,7 +122,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
     public XQuery optimize(XQuery query) {
         queryStack.clear();
-        push(MATCH_ALL);
+        push(XPathQuery.MATCH_ALL);
         AbstractExpression main = query.getBody();
         if (main != null) {
             if (indexConfig.isIndexingEnabled()) {
@@ -269,7 +269,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
      */
     private void combineTopQueries(int n, Occur occur, ValueType valueType) {
         if (n <= 0) {
-            push(MATCH_ALL);
+            push(XPathQuery.MATCH_ALL);
             return;
         }
         XPathQuery query = pop();
@@ -687,7 +687,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         if (fname.equals(FunCall.FN_COLLECTION) && subs.length == 0) {
             // Optimize when no arguments to collection()
-            push(MATCH_ALL);
+            push(XPathQuery.MATCH_ALL);
             return new Root();
         }
         XPathQuery query = pop();
@@ -719,14 +719,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 if (searchArg != null) {
                     // create a searching function call using the argument to
                     // the enclosed lux:search call
-                    push(MATCH_ALL);
+                    push(XPathQuery.MATCH_ALL);
                     return new FunCall(qname, returnType, searchArg);
                 }
                 query = query.setType(returnType);
                 query =  query.setFact(functionFacts, true);
                 AbstractExpression root = subs[0].getRoot();
                 if (! isSearchCall(root)) {
-                    push(MATCH_ALL);
+                    push(XPathQuery.MATCH_ALL);
                     return createSearchCall(qname, query);
                 }
             }
@@ -1192,7 +1192,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (DEBUG) {
             debug("visit", literal);
         }
-        push(MATCH_ALL.setFact(IGNORABLE, true));
+        push(XPathQuery.MATCH_ALL.setFact(IGNORABLE, true));
         return literal;
     }
 
@@ -1211,7 +1211,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             variable.setBindingContext(varBinding.getContext());
         } else {
             // this happens when the variables represent function arguments
-            push(MATCH_ALL.setFact(IGNORABLE, true));
+            push(XPathQuery.MATCH_ALL.setFact(IGNORABLE, true));
         }
         return variable;
     }
@@ -1334,7 +1334,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         for (int i = 0; i < expr.getSubs().length; i++) {
             pop();
         }
-        push(MATCH_ALL);
+        push(XPathQuery.MATCH_ALL);
     }
 
     @Override

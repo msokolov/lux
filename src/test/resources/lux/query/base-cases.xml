@@ -12,19 +12,19 @@
     <test-case name="match-all-0">
       <query type="element">/*</query>
       <expect>
-        <query id="MATCH_ALL_Q">lux:search(#MATCH_ALL_Q#)/child::element()</query>
+        <query id="PATH_MATCH_ALL_Q">lux:search(#PATH_MATCH_ALL_Q#)/child::element()</query>
       </expect>
     </test-case>
     <test-case name="match-all-1">
       <query>/node()</query>
       <expect>
-        <query type="NODE" id="MATCH_ALL_Q"></query>
+        <query type="NODE" id="PATH_MATCH_ALL_Q"></query>
       </expect>
     </test-case>
     <test-case name="match-all-2">
       <query>/</query>
       <expect>
-        <query type="DOCUMENT" id="MATCH_ALL_Q"></query>
+        <query type="DOCUMENT" id="PATH_MATCH_ALL_Q"></query>
       </expect>
     </test-case>
     <test-case name="element-predicate">
@@ -190,11 +190,11 @@
     </test-case>
     <test-case name="ancestor-or-self">
       <query>/ancestor-or-self::node()</query>
-      <expect><query id="MATCH_ALL_Q" /></expect>
+      <expect><query id="PATH_MATCH_ALL_Q" /></expect>
     </test-case>
     <test-case name="self">
       <query>/self::node()</query>
-      <expect><query id="MATCH_ALL_Q" /></expect>
+      <expect><query id="PATH_MATCH_ALL_Q" /></expect>
     </test-case>
     <test-case name="number-0">
       <query>number((/ACT/SCENE)[1])</query>
@@ -206,7 +206,7 @@
     </test-case>
     <test-case name="count-0">
       <query>count(/)</query>
-      <expect><query id="MATCH_ALL_Q" /></expect>
+      <expect><query id="PATH_MATCH_ALL_Q" /></expect>
     </test-case>
     <test-case name="count-1">
       <query>count(//ACT)</query>
@@ -230,7 +230,7 @@
     </test-case>
     <test-case name="exists-0">
       <query>exists(/)</query>
-      <expect><query id="MATCH_ALL_Q" /></expect>
+      <expect><query id="PATH_MATCH_ALL_Q" /></expect>
     </test-case>
     <test-case name="exists-1">
       <query>exists(//ACT)</query>
@@ -260,7 +260,7 @@
     <test-case name="boolean-and">
       <!-- Don't overgeneralize booleans -->
       <query>exists((/)[(.//ACT and .//SCENE) eq false()])</query>
-      <expect><query id="MATCH_ALL_Q" /></expect>
+      <expect><query id="PATH_MATCH_ALL_Q" /></expect>
     </test-case>
     <test-case name="exists-predicate">
       <query>//ACT[exists(SCENE)]</query>
@@ -268,7 +268,7 @@
     </test-case>
     <test-case name="empty-0">
       <query>empty(/)</query>
-      <expect><query id="MATCH_ALL_Q" /></expect>
+      <expect><query id="PATH_MATCH_ALL_Q" /></expect>
     </test-case>
     <test-case name="empty-1">
       <query>empty(//ACT)</query>
@@ -296,7 +296,7 @@
     </test-case>
     <test-case name="not-0">
       <query>not(/)</query>
-      <expect><query id="MATCH_ALL_Q" /></expect>
+      <expect><query id="PATH_MATCH_ALL_Q" /></expect>
     </test-case>
     <test-case name="not-1">
       <query>not(//ACT)</query>

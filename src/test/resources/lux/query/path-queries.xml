@@ -162,6 +162,9 @@
       <SpanTerm fieldName="lux_path">TITLE</SpanTerm>
     </query>
     <query id="MATCH_ALL_Q">
+      <MatchAllDocsQuery />
+    </query>
+    <query id="PATH_MATCH_ALL_Q">
       <SpanTerm fieldName="lux_path">{}</SpanTerm>
     </query>
     <query id="AND">

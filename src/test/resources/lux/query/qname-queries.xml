@@ -128,6 +128,7 @@
     <TermQuery fieldName="lux_elt_name">TITLE</TermQuery>
   </query>
   <query id="MATCH_ALL_Q"><MatchAllDocsQuery /></query>
+  <query id="PATH_MATCH_ALL_Q"><MatchAllDocsQuery /></query>
   <query id="AND">
     <TermQuery fieldName="lux_elt_name">AND</TermQuery>
   </query>

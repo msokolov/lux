@@ -146,6 +146,9 @@
     <query id="MATCH_ALL_Q">
       <MatchAllDocsQuery/>
     </query>
+    <query id="PATH_MATCH_ALL_Q">
+      <MatchAllDocsQuery/>
+    </query>
     <query id="AND">
       <RegexpQuery fieldName="lux_path">AND(/.*)?</RegexpQuery>
     </query>

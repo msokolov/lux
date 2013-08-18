@@ -68,6 +68,8 @@ public class BooleanPQuery extends ParseableQuery {
             			rangeQuery = rquery;
             		}
             	}
+            } else if (query instanceof MatchAllPQuery && oc == Occur.MUST) {
+                continue;
             }
             // no merging possible
             cl.add (clause);
