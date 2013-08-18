@@ -13,16 +13,9 @@
    git push origin master
    git push origin v0.6
 8) post binary files to luxdb.org
-   mvn -Pmaven-deploy verify
-   cd target
-   jar -cvf bundle.jar lux-*.jar lux-*.asc
-   # go to https://oss.sonatype.org/index.html#stagingRepositories
-   # Staging Upload / Artifact Bundle
+   cp target/lux-{version}.jar /var/www/lux-dist
 9) deploy to maven central:
-mvn -Pmaven-deploy deploy
-# OR:
-# cd target
-# jar -cvf bundle.jar lux-*.jar lux-*.asc
+   mvn -Pmaven-deploy deploy
 # go to https://oss.sonatype.org/index.html#stagingRepositories
 # Staging Upload / Artifact Bundle (password is in .m2/settings-security.xml)
 

@@ -110,9 +110,12 @@ public class SolrIndexConfig implements SolrInfoMBean {
             	}
             }
         }
-        SolrIndexConfig config = new SolrIndexConfig(IndexConfiguration.makeIndexConfiguration (options));
+        IndexConfiguration indexConfig = IndexConfiguration.makeIndexConfiguration (options);
         if (args != null) {
-            config.renameFields (args);
+            renameFields (indexConfig, args);
+        }
+        SolrIndexConfig config = new SolrIndexConfig(indexConfig);
+        if (args != null) {
             NamedList<String> fields = (NamedList<String>) args.get("fields");
             if (fields != null) {
                 config.applyFieldConfiguration(fields);
@@ -136,7 +139,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         }
     }
     
-    private void renameFields (@SuppressWarnings("rawtypes") final NamedList args) {
+    private static void renameFields (IndexConfiguration indexConfig, @SuppressWarnings("rawtypes") final NamedList args) {
         NamedList<?> aliases = (NamedList<?>) args.get ("fieldAliases");
         if (aliases == null) {
             return;
@@ -146,14 +149,14 @@ public class SolrIndexConfig implements SolrInfoMBean {
             Object value = aliases.getVal(i);
             if ("xmlFieldName".equals(name)) {
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_STORE), value.toString());
-                LoggerFactory.getLogger(getClass()).info("XML storage field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("XML storage field name: {}", value.toString());
             }
             else if ("uriFieldName".equals(name)) {
-                LoggerFactory.getLogger(getClass()).info("URI field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("URI field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.URI), value.toString());
             }
             else if ("textFieldName".equals(name)) {
-                LoggerFactory.getLogger(getClass()).info("XML text field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("XML text field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_TEXT), value.toString());
             }
         }

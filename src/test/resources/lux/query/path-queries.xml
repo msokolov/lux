@@ -149,6 +149,15 @@
         <SpanTerm fieldName="lux_path">TITLE</SpanTerm>
       </SpanNear>
     </query>
+    <query id="ACT_TITLE_OR_SCENE">
+      <SpanNear inOrder="true" slop="98">
+        <SpanTerm fieldName="lux_path">ACT</SpanTerm>
+        <SpanOr>
+          <SpanTerm fieldName="lux_path">TITLE</SpanTerm>
+          <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+        </SpanOr>
+      </SpanNear>
+    </query>
     <query id="TITLE">
       <SpanTerm fieldName="lux_path">TITLE</SpanTerm>
     </query>

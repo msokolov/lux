@@ -13,7 +13,17 @@
   </setup>
   <test-cases>
     <include file="base-cases.xml" />
+    <test-case name="path-boolean">
+      <!-- SlopCounter had a bug - now we use the max slop of children
+           of BinaryOperation and Sequence
+      -->
+      <query>//ACT[TITLE | .//SCENE]</query>
+      <expect><query id="ACT_TITLE_OR_SCENE" /> </expect>
+    </test-case>
     <test-case name="variable-1">
+      <!-- TODO: what is this testing? I think we had introduced a bug
+           that showed up in the autocomplete?
+      -->
       <query>declare namespace lux="http://luxdb.net";
 declare variable $lux:http as document-node() external;
 

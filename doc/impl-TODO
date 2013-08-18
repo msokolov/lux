@@ -16,18 +16,15 @@ try w/XQTS
 see exprFor(FLWORExpression)
 try w/XQTS
 * bugs
-** empty ??
-/book[@id="10001L2PPYTHONBEG"]//clip[@seq]
-or
-/book[@id="10001L2PPYTHONBEG"]//clip/@seq
-or
-/book[@id="10001L2PPYTHONBEG"]//clip/@seq/string()
-or
-for $att in /book[@id="10001L2PPYTHONBEG"]//clip/@seq
-return string ($att)
 ** consider possible problems w/range query optos
 *** test combinations with "or", "|", "intersect", "union", "except"
 * enhancements
+** move optimizeComparison from visit(Predicate) to visit(BinaryOperation)
+Otherwise how can we properly handle foo[bar = 1 or baz = 1]?  And we could
+improve SlopCounter in this situation as well: currently it takes the max
+of the child slops and generates foo NEAR/{maxslop} (bar OR baz), but it
+could do (foo NEAR bar) OR (foo NEAR baz) with the appropriate slop for
+each.
 ** binary documents
 I think this is working now - let's measure and document the improvement.
 *** execute app from index
