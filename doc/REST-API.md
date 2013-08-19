@@ -7,31 +7,34 @@ pos: 1
 # REST API #
 
 Lux extends Solr's HTTP REST API to provide XML indexing for documents
-inserted via the Solr update API, XQuery processing via the Solr search
-API, and an XQuery application server.
+inserted via the Solr update API (endpoint: `/update`), XQuery processing
+via the Solr search API (endpoint: `/xquery`), and an XQuery application
+server (endpoint: `/lux`).  
 
-For complete documentation on the underlying Solr API, see the [Solr
-wiki](http://wiki.apache.org/solr/).  
+Note: The actual URLs for these services will be of the form:
+`http://{hostname}:{port}/{context}/{core}/{service}`, where hostname is
+the name of the server where Lux is installed, port and context are defined
+in web.xml for the entire Solr service, and Solr cores (each distinct index
+is called a 'core') are defined in solr.xml (see
+[CoreAdmin](http://wiki.apache.org/solr/CoreAdmin) for information about
+administering cores using Solr's REST API).  Lux comes configured so that
+you can access services for its single core at
+`http://localhost:8080/solr/collection1/{service}`.
 
-Lux provides these extensions to Solr: 
+1. [LuxUpdateProcessor](#luxupdateprocessor); enhances the /update endpoint by adding XML indexing
+2. [XQueryComponent](#xquerycomponent); the /xquery endpoint evaluates XQuery 1.0 queries supplied via HTTP GET or POST
+3. [AppServerComponent](#appservercomponent); the /lux endpoint evaluates XQuery stored in modules on the file system, enabling applications to be written in XQuery
 
-1. [LuxUpdateProcessor](#luxupdateprocessor)
-2. [XQueryComponent](#xquerycomponent)
-3. [AppServerComponent](#appservercomponent)
-
-## LuxUpdateProcessor ##
-
-This processor is designed to be inserted into a standard Solr document
-update chain, as in the example solrconfig.xml that comes with Lux. Its job
-is to perform XML-aware indexing.  It generates values for Lux's built-in
-fields, as well as any XPath fields configured in solrconfig.xml.
+## /update - LuxUpdateProcessor ##
 
 The basic structure of API calls for performing document updates (and
-inserts and by the way deletes, too) is the same as the Solr API: you POST
-a document to one of the update request handlers that includes the Lux
-processor in its chain.  Each handler expects you to provide a set of
-fields in a format specific to that handler.  The default handler expects
-an XML syntax.
+deletes) is the same as the Solr API: you POST a document to the update
+request handler `/update`. The update handler detects the format of the
+update message from its HTTP Content-Type header.  Supported formats are:
+[xml](http://wiki.apache.org/solr/UpdateXmlMessages),
+[json](http://wiki.apache.org/solr/UpdateJSON),
+[csv](http://wiki.apache.org/solr/UpdateCSV), or
+[javabin](http://wiki.apache.org/solr/javabin).
 
 In order to trigger XML processing, you must include values for two fields:
 `lux_uri` and `lux_xml`.  The value of `lux_uri` is the unique key that
@@ -41,10 +44,19 @@ document. (Note: these two special fields may be renamed in solrconfig.xml.
 Do this if you have an existing schema with a unique key field and/or an
 existing document storage field you want to re-use).
 
-Note: The example configuration injects the Lux processor into the /update
-(default XML format) and /update/javabin handlers, but not in the
-/update/csv or /update/json handlers, although you could certainly add it
-to those as well if you use them.
+The Lux update processor gets inserted into Solr's update chain in order to
+perform XML-aware indexing.  It generates values for Lux's built-in fields,
+as well as any user-defined XPath fields that have been configured.
+
+If you use the preconfigured application server bundle, you don't need to
+do anything special with this processor.  It is already configured to
+register Lux's XML-aware fields with each Solr core automatically.  If you
+insert documents with values for the `lux_uri` and `lux_xml` fields, the
+Lux update processing chain will add its XML aware indexes. However, you
+should read this section if you are deploying Lux in an existing Solr
+setup, or if you need other more detailed information about the update
+configuration, such as how to configure XPath indexes, or how to
+enable/disable tinybin xml storage.
 
 ### Configuration ###
 
@@ -61,14 +73,18 @@ The update processor is configured in solrconfig.xml.  A sample configuration el
         <str name="doctype_s">local-name(/*)</str>
       </lst>
       <lst name="namespaces">
+        <!--  declare namespace prefix bindings for use in XPath field definition -->
         <str name="wp">http://www.mediawiki.org/xml/export-0.8/</str>
       </lst>
       <lst name="fieldAliases">
+        <!-- rename lux fields in (unlikely?) event there is a conflict -->
         <str name="xmlFieldName">lux_xml</str>
         <str name="uriFieldName">lux_uri</str>
       </lst>
+    <!-- Enable tinybin storage; saves overhead of parsing when retrieving documents -->
       <str name="xml-format">tiny</str>
-      <str name="strip-namespaces">no</str>
+      <!-- Strip all namespaces from indexed content -->
+      <!-- <str name="strip-namespaces">no</str> -->
       <processor class="lux.solr.LuxUpdateProcessorFactory" />
       <processor class="solr.LogUpdateProcessorFactory" />
       <processor class="solr.RunUpdateProcessorFactory" />
@@ -113,8 +129,17 @@ stripped from documents loaded into the index.
 ## XQueryComponent ##
 
 The XQueryComponent (by default at path: `/xquery`) evaluates XQuery
-expressions.  It is a Solr QueryComponent and adheres to Solr's conventions
-regarding the arguments it supports:
+expressions.  
+
+Requests may be submitted as either GET or POST; typically GET should be
+used only for simple tests and ad hoc interactive queries, since XQuery
+modules will tend to be long and will need to be URL-escaped to pass as GET
+query parameters.
+
+### Parameters
+
+The /xquery component is a Solr QueryComponent and adheres to Solr's
+conventions regarding the arguments it supports:
 
 * `q` The text of the query to evaluate is taken from the value of the `q`
 parameter.
@@ -122,38 +147,35 @@ parameter.
 * `rows` Only the first `rows` results (after skipping past `start`) will
 be returned.
 
-XQueryComponent ignores most other standard Solr query parameters, such as
-those to control sorting, faceting, highlighting, etc.  Also - be aware
-that the pagination provided by `start` and `rows` is not fully optimized
-(it post-processes the result set in memory), in contrast with pagination
-using subsequence() expressions within the XQuery expression itself which
-are subject to a deep-paging optimization that can avoid processing unused
-documents.
-
-Requests may be submitted as either GET or POST; typically GET should be
-used only for simple tests and ad hoc interactive queries, since XQuery
-modules will tend to be long and will need to be URL-escaped to pass as GET
-query parameters.
-
-The content-type and serialization regime of the output is controlled by the `lux.content-type` parameter:
+Be aware that the pagination provided by `start` and `rows` is not fully
+optimized (it post-processes the result set in memory), in contrast with
+pagination using subsequence() expressions within the XQuery expression
+itself which are subject to a deep-paging optimization that can avoid
+processing unused documents.
 
 * `lux.content-type` specifies the MIME type of the response; if text/xml
    then XML serialization is used for any nodes in the response; otherwise
    HTML serialization is used.
 
+XQueryComponent ignores most other standard Solr query parameters, such as
+those to control sorting, faceting, highlighting, etc.
+
 ### Result Format ###
 
 Results are marshalled using standard Solr API conventions, which are
 controlled by the RequestWriter that is configured.  By default this is an
-XML format.  This enables any standard Solr client to be used with Lux:
-clients are available for many programming languages; see [Integrating
-Solr](http://wiki.apache.org/solr/IntegratingSolr) for a complete list.
+XML format, although [JSON](http://wiki.apache.org/solr/SolJSON) and
+[binary](http://wiki.apache.org/solr/javabin) response formats are
+available as well, among others.  This enables any standard Solr client to
+be used with Lux: clients are available for many programming languages; see
+[Integrating Solr](http://wiki.apache.org/solr/IntegratingSolr) for a
+complete list.
 
-The XQueryComponent returns the result of the query evalution as a sequence
+The XQueryComponent returns the result of the query evaluation as a sequence
 of elements in the list named "xpath-results" .  The name of each "string"
 returned is the type of the result. So for example:
 
-     http://localhost:8080/solr/xquery?q=(1,2,3)
+     http://localhost:8080/solr/collection1/xquery?q=(1,2,3)
 
 returns:
 
@@ -189,21 +211,28 @@ error:
 
 ## AppServerComponent ##
 
-The AppServer component provides XQuery evaluation services akin to the
-XQuery component, except that it reads its XQuery from a local file, rather
-than from the request, and serializes its results and supplies them as the
-body of the HTTP response.
+The AppServer component (endpoint: `/lux`) evaluates XQuery read from a
+local file and returns the result (as XML or HTML) as the body of the HTTP
+response.  This makes it possible to write web applications in XQuery (and
+XSLT) with data pulled from the Lux data store.
 
--- TODO: rewrite this section; it's not all there yet --
+### Parameters
 
-This component enables the creation of XQuery applications like the Lux
-demo.
+* `lux.xquery` - a url reference to the query body.  The url scheme may be
+either 'file' or 'resource'.  The `resource:` scheme references resources
+on the java classpath, i.e. provided in a java library or in the Solr web
+application and is primarily for internal use.  URLs with no scheme are
+interpreted as file urls relative to the current `lux.baseUri`.  By
+default, the base uri is the "real path" of the servlet context: generally
+this will be the directory where the java container (eg jetty) explodes the
+java war file, which is what people tend to expect.  But if you are
+creating your own application, you will want to to override lux.baseUri in
+solrconfig.xml; see the [detailed instructions
+here](SETUP.html#set_up_an_application).
 
-In particular, AppServer accepts a `lux.xquery` parameter, which is used as
-a url to fetch the query body to evaluate.  The url scheme may be either
-'file' or 'resource'.  URLs with no scheme are interpreted as file urls
-relative to the lux working may be a local path or file URI, but eventually
-will enable retrieving modules from the Lucene document store.
+* `lux.contentType` - see above
+
+### Error Reporting ###
 
 If errors occur, the component returns an HTTP 400 status (or 404 if the
 query cannot be read) with an error message and Java Exception stack trace
@@ -213,5 +242,3 @@ numbering is relative to the rewritten code, rather than the original code,
 and these are often quite different.  The error report contains some
 substantial context from the rewritten query that helps to determine the
 source of errors.
-
-

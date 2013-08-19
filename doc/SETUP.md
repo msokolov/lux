@@ -162,11 +162,13 @@ implemented.
 
 To define an XPath field, edit the lux-update-chain definition stanza in
 solrconfig.xml, as in this example:
+
     <lst name="fields">
       <!--  define additional fields using XPath-->
       <str name="title">/descendant::TITLE</str>
       <str name="doctype_s">local-name(/*)</str>
     </lst>
+
 The Solr field name, as defined in the `str/@name` attribute, must correspond to a field name or field name pattern defined in `schema.xml`.  To define a string-valued field, use a field name ending "_s". Integer- and long-valued fields are denoted by "_i" and "_l" suffixes, respectively.  Multiple XPaths separated by commas \(,\) are allowed.
 
 Once new fields have been defined, restart the Lux service.  All documents
@@ -180,21 +182,6 @@ Your application will most likely require some data.  First, consider how best t
 
 You can insert documents using the REST API that Lux inherits from Solr, or
 using the Lux XQuery API.
-
-#### using XQuery
-
-The lux:insert() function inserts a document into the active Solr core (or
-into an embedded Lucene index if you are using Lux as an extension to a
-Java program).  Following the Solr/Lucene persistence model, you must issue
-a lux:commit() in order for inserted documents to be committed to the index
-and made visible to future queries (note: this area is in flux.  We have an
-open issue to apply automatic commits, and also to delay committing until a
-query is complete in order to respect XQuery/XSLT semantics).
-
-But where will these documents come from?  You can read files using the
-doc() function with a "file:" URI.  You can use the provided EXPath HTTP
-extension module to read documents via HTTP.  Once you have the documents
-in memory, you can process them and then insert them to Lux.
 
 #### Inserting documents using the REST API
 
@@ -224,6 +211,21 @@ The contents of update.xml might look like this:
           </field>
       </add>
     </update>
+
+#### using XQuery
+
+The lux:insert() function inserts a document into the active Solr core (or
+into an embedded Lucene index if you are using Lux as an extension to a
+Java program).  Following the Solr/Lucene persistence model, you must issue
+a lux:commit() in order for inserted documents to be committed to the index
+and made visible to future queries (note: this area is in flux.  We have an
+open issue to apply automatic commits, and also to delay committing until a
+query is complete in order to respect XQuery/XSLT semantics).
+
+But where will these documents come from?  You can read files using the
+doc() function with a "file:" URI.  You can use the provided EXPath HTTP
+extension module to read documents via HTTP.  Once you have the documents
+in memory, you can process them and then insert them to Lux.
 
 ## Linux service setup
 
