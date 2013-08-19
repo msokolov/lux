@@ -26,7 +26,7 @@ public class SolrDocWriterTest extends BaseSolrTest {
         assertQuery ("OK", "('OK',lux:delete('lux:/'),lux:commit())");
         assertQuery (0L, "count(collection())");
     }
-
+    
     private String makeTestDocument(int i) {
         return "<doc><title id='" + i + "'>" + (101-i) + "</title><test>cat</test></doc>";
     }

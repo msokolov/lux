@@ -93,7 +93,7 @@ public class ResponseWriterTest extends BaseSolrTest {
         assertEquals ("<?xml-stylesheet type='text/xsl' href='transform.xsl' ?>\n<test>Hello, World</test>\n", writer.getBuffer().toString());
         
     }
-
+    
     // return multiple xml results 
     @Test
     public void testMultipleXmlResults() throws Exception {

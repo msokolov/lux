@@ -349,7 +349,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     @Override
     public String getSource() {
-        return "http://github.com/lux";
+        return "http://github.com/msokolov/lux";
     }
 
     @Override
