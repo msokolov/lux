@@ -1,3 +1,5 @@
+* demo
+** jump to highlight not working on Mac?
 * coverage 
 SaxonTranslator: 85,87,90
 ** namespace lookup failure during document ordering analysis
@@ -62,21 +64,6 @@ redirect, 404, error, etc
 We currently send Solr the translated path - so it can read the resource,
 but it doesn't have the original url, which it would be nice to have so we
 can give it to the application
-* transfer domains
-dochaus.org (networksolutions)
-luxdb.net (yahoo - will autorenew!)
-luxdb.org (register.com - bastards took me for the private thingy)
-* demo
-** search results format
-*** scene/speech title
-*** highlighting
-** play reading view
-** query sandbox
-*** create an xquery-based one?
-would require eval
-*** improve the one in the loader
-** eval
-execute xquery from within xquery
 * performance evaluation
 ** tests
 StressTest - compare w/ML, Solr, exist
