@@ -157,6 +157,14 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     /**
+     * @return the head of this expression; ie the leftmost path sub-expression, which is just this 
+     * expression (except for PathExpressions).
+     */
+    public AbstractExpression getHead() {
+        return this;
+    }
+    
+    /**
      * @return the tail of this expression; ie everything after the head is removed, which is null 
      * unless this is a PathExpression {@link PathExpression#getTail}.
      */

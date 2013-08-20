@@ -55,7 +55,7 @@ public class Subsequence extends AbstractExpression {
     public AbstractExpression getRoot () {
         return getSequence().getRoot();
     }
-
+    
     /**
      * @return the precedence of comma (,) or predicate ([]), depending
      * on the child expressions.

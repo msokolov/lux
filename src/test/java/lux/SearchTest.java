@@ -483,10 +483,8 @@ public class SearchTest extends BaseSearchTest {
         
     @Test
     public void testOrderByPagination () throws Exception {
-    	// We can't optimize the subsequence (pagination) here because $/doc/*name() looks like
-    	// it might return multiple nodes per matching document.
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:key('doctype', $doc) return $doc/*/name())[21]", 0, 21);
+            " order by lux:key('doctype', $doc) return $doc/*/name())[21]", 0, 1);
         assertSearch ("<SPEAKER>BERNARDO</SPEAKER>", "(for $doc in lux:search('bernardo')" + 
                 " order by lux:key('doctype', $doc) return $doc)[21]", 0, 1);
     }

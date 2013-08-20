@@ -172,25 +172,34 @@ public class XPathQuery {
      * @return the combined query
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
-        ParseableQuery result;
+        XPathQuery result = combineIgnorableQueries(occur, precursor);
+        if (result != null) {
+            return result;
+        }
+        long resultFacts = combineQueryFacts (this, precursor);
+        ParseableQuery combined = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
+        SortField[] combinedSorts = combineSortFields(precursor);
+        return getQuery(combined, resultFacts, type, config, combinedSorts);
+    }
+
+    private XPathQuery combineIgnorableQueries(Occur occur, XPathQuery precursor) {
         if (occur == Occur.MUST && isFact(IGNORABLE) != precursor.isFact(IGNORABLE)) {
             if (isFact(IGNORABLE)) {
                 if (isEmpty() && isMinimal()) {
                     return precursor;
+                } else {
+                    return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
                 }
-                return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
             }
             else {
                 if (precursor.isEmpty() && precursor.isMinimal()) {
                     return this;
+                } else {
+                    return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query
                 }
-                return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query 
             }
         }
-        long resultFacts = combineQueryFacts (this, precursor);
-        result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
-        SortField[] combined = combineSortFields(precursor);
-        return getQuery(result, resultFacts, type, config, combined);
+        return null;
     }
 
     private SortField[] combineSortFields(XPathQuery precursor) {
@@ -225,24 +234,14 @@ public class XPathQuery {
      * @return the combined query
      */
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance, IndexConfiguration config) {
-        if (isFact(IGNORABLE)) {
-            XPathQuery result = precursor.setFact (MINIMAL, false);
-            if (type != null) {
-                result.setType(type);
-            }
-            return result;
-        }
-        if (precursor.isFact(IGNORABLE)) {
-            XPathQuery result = setFact(MINIMAL, false);
-            if (type != null) {
-                result.setType(type);
-            }
+        XPathQuery result = combineIgnorableQueries(occur, precursor);
+        if (result != null) {
             return result;
         }
         long resultFacts = combineQueryFacts (this, precursor);
-        ParseableQuery result = combineSpans (this.pquery, occur, precursor.pquery, distance);
+        ParseableQuery combined = combineSpans (this.pquery, occur, precursor.pquery, distance);
         SortField[] combinedSorts = combineSortFields(precursor);
-        XPathQuery q = new XPathQuery(result, resultFacts, type);
+        XPathQuery q = new XPathQuery(combined, resultFacts, type);
         q.setSortFields(combinedSorts);
         return q;
     }

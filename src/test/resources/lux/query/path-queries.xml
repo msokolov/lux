@@ -283,6 +283,14 @@
           </SpanNear>
         </Clause>
         <Clause occurs="must">
+          <!--  TODO: merge with following clause; they are redundant -->
+          <SpanNear inOrder="true" slop="0">
+            <SpanTerm fieldName="lux_path">{}</SpanTerm>
+            <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+            <SpanTerm fieldName="lux_path">SPEECH</SpanTerm>
+          </SpanNear>            
+        </Clause>
+        <Clause occurs="must">
           <SpanNear inOrder="true" slop="0">
             <SpanTerm fieldName="lux_path">{}</SpanTerm>
             <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
