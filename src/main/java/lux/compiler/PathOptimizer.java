@@ -543,7 +543,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
         }
         XPathQuery query;
-        long facts = currentQuery.getFacts() & ~EMPTY;
+        // do we need currentQuery facts at all??
+        long facts = currentQuery.getFacts() & ~EMPTY & ~IGNORABLE;
         if (!isSingular) {
             facts &= ~SINGULAR;
         } else {
@@ -608,11 +609,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // see if the function args can be converted to searches.
         optimizeSubExpressions(funcall);
         Occur occur;
-        if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS)) {
-        	// require that the function argument's query match
+        if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
+                name.getNamespaceURI().equals(FunCall.XS_NAMESPACE)) {
+        	// require that the function argument's query match if it is a special function,
+            // or an atomic type constructor (functions in the xs: namespace)
         	occur = Occur.MUST;
         } else {
-            // Do not to attempt any optimization; throw away any filters coming from the function arguments
+            // Do not attempt any optimization; throw away any filters coming from the function arguments
         	occur = Occur.SHOULD;
         }
         AbstractExpression[] args = funcall.getSubs();

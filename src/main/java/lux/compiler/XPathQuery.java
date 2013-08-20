@@ -173,20 +173,19 @@ public class XPathQuery {
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
         ParseableQuery result;
-        if (isFact(IGNORABLE)) {
-            if (precursor.isFact(IGNORABLE)) {
-                precursorOccur = occur = Occur.SHOULD;
+        if (occur == Occur.MUST && isFact(IGNORABLE) != precursor.isFact(IGNORABLE)) {
+            if (isFact(IGNORABLE)) {
+                if (isEmpty() && isMinimal()) {
+                    return precursor;
+                }
+                return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
             }
-            if (isEmpty() && isMinimal()) {
-            	return precursor;
+            else {
+                if (precursor.isEmpty() && precursor.isMinimal()) {
+                    return this;
+                }
+                return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query 
             }
-            return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
-        }
-        else if (precursor.isFact(IGNORABLE)) {
-        	if (precursor.isEmpty() && precursor.isMinimal()) {
-        		return this;
-        	}
-        	return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query 
         }
         long resultFacts = combineQueryFacts (this, precursor);
         result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
