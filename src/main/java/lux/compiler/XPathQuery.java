@@ -320,14 +320,23 @@ public class XPathQuery {
     
     private static ParseableQuery combineBooleanWithSpan(ParseableQuery a, ParseableQuery b, int distance) {
         // ((A NEAR B) AND C) NEAR D => ((A NEAR B) AND (C NEAR D))
+        // but what about
+        // A NEAR (B AND C) => (A NEAR B) AND (B NEAR C)
         SpanBooleanPQuery bq = (SpanBooleanPQuery) ((a instanceof SpanBooleanPQuery) ? a : b);
-        Clause[] clauses = new Clause [bq.getClauses().length];
-        System.arraycopy(bq.getClauses(), 0, clauses, 0, clauses.length);
-        int i = clauses.length-1;
-        if (bq == a) {
-            clauses[i] = new Clause (new SpanNearPQuery (distance, true, clauses[i].getQuery(), b), clauses[i].getOccur());
-        } else {
-            clauses[i] = new Clause (new SpanNearPQuery (distance, true, a, clauses[i].getQuery()), clauses[i].getOccur());
+        Clause[] bclauses = bq.getClauses();
+        Clause[] clauses = new Clause [bclauses.length];
+        for (int i = 0; i < clauses.length; i++) {
+            Clause clause = bclauses[i];
+            ParseableQuery query = clause.getQuery();
+            if (! query.isSpanCompatible()) {
+                clauses[i] = clause;
+                continue;
+            }
+            if (bq == a) {
+                clauses[i] = new Clause (new SpanNearPQuery (distance, true, query, b), clause.getOccur());
+            } else {
+                clauses[i] = new Clause (new SpanNearPQuery (distance, true, a, query), clause.getOccur());
+            }
         }
         return new SpanBooleanPQuery (clauses);
     }

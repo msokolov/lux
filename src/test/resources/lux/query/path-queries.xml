@@ -292,6 +292,43 @@
         </Clause>
       </BooleanQuery>    
     </query>
+    <query id="boolean-predicate-0">
+      <SpanNear inOrder="true" slop="0">
+        <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+        <SpanOr>
+          <SpanTerm fieldName="lux_path">@scene</SpanTerm>
+          <SpanTerm fieldName="lux_path">@act</SpanTerm>
+        </SpanOr>
+      </SpanNear>
+    </query>
+  <query id="boolean-predicate-1">
+    <SpanNear inOrder="true" slop="0">
+      <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+      <SpanTerm fieldName="lux_path">@scene</SpanTerm>
+    </SpanNear>
+  </query>
+  <query id="boolean-predicate-2">
+    <SpanNear inOrder="true" slop="0">
+      <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+      <SpanTerm fieldName="lux_path">@scene</SpanTerm>
+    </SpanNear>
+  </query>
+  <query id="boolean-predicate-3">
+    <BooleanQuery>
+      <Clause occurs="must">
+        <SpanNear inOrder="true" slop="0">
+          <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+          <SpanTerm fieldName="lux_path">@act</SpanTerm>
+        </SpanNear>
+      </Clause>
+      <Clause occurs="must">
+        <SpanNear inOrder="true" slop="0">
+          <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+          <SpanTerm fieldName="lux_path">@scene</SpanTerm>
+        </SpanNear>
+      </Clause>
+    </BooleanQuery>
+  </query>
     <query id="string-range-desc">
       <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->
       <BooleanQuery>
