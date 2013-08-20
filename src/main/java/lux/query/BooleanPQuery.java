@@ -162,5 +162,23 @@ public class BooleanPQuery extends ParseableQuery {
         }
         return buf.toString();
     }
+    
+    @Override
+    public boolean equals(ParseableQuery other) {
+        if (! (other instanceof BooleanPQuery)) {
+            return false;
+        }
+        BooleanPQuery oq = (BooleanPQuery) other;
+        if (clauses.length != oq.clauses.length) {
+            return false;
+        }
+        for (int i = 0; i < clauses.length; i++) {
+            if (! (clauses[i].occur == oq.clauses[i].occur &&
+                    clauses[i].query.equals(oq.clauses[i].query))) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 }

@@ -446,10 +446,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 query = lq.getBaseQuery().combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
                 query = combineQueries(lq, Occur.MUST, query, query.getResultType());
         	} else {
-        	    if (lq.getParseableQuery() instanceof MatchAllPQuery && rq.getParseableQuery().isSpan()) {
+        	    if (lq.getParseableQuery() instanceof MatchAllPQuery && rq.getParseableQuery().isSpanCompatible()) {
         	        query = MATCH_ALL.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
         	    }
-        	    else if (lq.getParseableQuery().isSpan() && rq.getParseableQuery().isSpan()) {
+        	    else if (lq.getParseableQuery().isSpanCompatible() && rq.getParseableQuery().isSpanCompatible()) {
         			query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
         		} else {
                     query = combineQueries(lq, Occur.MUST, rq, resultType);

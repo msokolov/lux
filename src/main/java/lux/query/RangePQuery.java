@@ -172,6 +172,20 @@ public class RangePQuery extends ParseableQuery {
     	}
     }
 
+    @Override
+    public boolean equals(ParseableQuery other) {
+        if (other instanceof RangePQuery) {
+            RangePQuery oq = (RangePQuery) other;
+            return oq.includeLower == includeLower &&
+                    oq.includeUpper == includeUpper &&
+                    oq.fieldName.equals(fieldName) &&
+                    oq.lowerTerm.equals(lowerTerm) &&
+                    oq.upperTerm.equals(upperTerm) &&
+                    oq.type.equals(type);
+        }
+        return false;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

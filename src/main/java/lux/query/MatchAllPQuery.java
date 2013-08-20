@@ -24,10 +24,13 @@ public final class MatchAllPQuery extends ParseableQuery {
     }
     
     @Override
-    public boolean isSpan () {
-        // not really a span, but this is used to trigger combination with 
-        // paths.  Probably should rename/refactor
+    public boolean isSpanCompatible () {
         return true;
+    }
+
+    @Override
+    public boolean equals(ParseableQuery other) {
+        return other == this;
     }
 
 }

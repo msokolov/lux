@@ -151,10 +151,27 @@ public class SpanNearPQuery extends ParseableQuery {
     }
 
     @Override 
-    public boolean isSpan() {
+    public boolean isSpanCompatible() {
     	return true;
     }
 
+    @Override
+    public boolean equals(ParseableQuery other) {
+        if (other instanceof SpanNearPQuery) {
+            SpanNearPQuery oq = (SpanNearPQuery) other;
+            if (! (slop == oq.slop && inOrder == oq.inOrder && clauses.length == oq.clauses.length)) {
+                return false;
+            }
+            for (int i = 0; i < clauses.length; i++) {
+                if (! clauses[i].equals(oq.clauses[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

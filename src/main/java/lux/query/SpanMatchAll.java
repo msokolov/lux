@@ -39,8 +39,13 @@ public class SpanMatchAll extends ParseableQuery {
     }
     
     @Override
-    public boolean isSpan() {
+    public boolean isSpanCompatible() {
     	return true;
+    }
+
+    @Override
+    public boolean equals(ParseableQuery other) {
+        return other == this;
     }
 
 }
