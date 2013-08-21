@@ -50,6 +50,14 @@ public class SearchTest extends BaseSearchTest {
         results = assertSearch ("count(lux:search('*:*'))", QUERY_NO_DOCS, totalDocs);
         assertEquals (String.valueOf(totalDocs), results.iterator().next().toString());
     }
+
+    @Test
+    public void testCountActChildren () throws Exception {
+        // Test an assumption about query accuracy:
+        // span query slop is less precise than the XPath here, so 6 documents
+        // must be examined even though only 1 (the PLAY) contains the five child ACTs
+        assertSearch ("5", "count (/*/ACT)", 0, 6);
+    }
     
     @Test
     public void testExists () throws Exception {
