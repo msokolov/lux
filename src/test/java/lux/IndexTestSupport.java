@@ -150,6 +150,10 @@ public class IndexTestSupport {
     }
     
     public void printAllTerms() throws IOException {
+        printAllTerms (dir, indexer);
+    }
+    
+    public static void printAllTerms(Directory dir, XmlIndexer indexer) throws IOException {
         DirectoryReader reader = DirectoryReader.open(dir);
         Fields fields = MultiFields.getFields(reader); 
         System.out.println ("Printing all terms (except uri)");

@@ -63,14 +63,34 @@ import org.junit.Test;
  * qname-words w/o terminal tokens: 2683904 - 2274304 = 18%
  * qname-words + terminal tokens: 2786304 - 2274304 = 22%
  * full-text (with all nodes transparent) 3899392 - 2274304 = 1625088 = 71% (1940480 full text alone)
- * full-text (text only) 2673664 - 2274304 = 18%
+ * full-text (text only) 2673664 - 2274304 = 399360 = 18%
  * full-text (text plus all nodes opaque) 3068928 - 2274304 = 35%
  * 
  */
 public class IndexTest {
     
+    private static final boolean GATHER_TIMING = true;
     private RAMDirectory dir;
 
+    @Test
+    public void testIndexPaths() throws Exception {
+        buildIndex ("paths and xml", INDEX_PATHS | STORE_DOCUMENT | BUILD_DOCUMENT);
+        assertTotalDocs ();
+    }
+
+    private void reset() {
+        dir.close();
+        dir = new RAMDirectory();
+    }
+    
+    @Test
+    public void testIndexPathsOnly () throws Exception {
+        IndexTestSupport indexTestSupport = buildIndex ("paths", INDEX_PATHS | BUILD_DOCUMENT);        
+        assertTotalDocs ();
+        // printAllTerms(indexTestSupport);
+        assertPathQuery (indexTestSupport);
+    }
+    
     @Test
     public void testIndexQNames() throws Exception {
         buildIndex ("qnames and xml", INDEX_QNAMES | STORE_DOCUMENT | BUILD_DOCUMENT);
@@ -84,20 +104,6 @@ public class IndexTest {
     }
 
     @Test
-    public void testIndexPaths() throws Exception {
-        buildIndex ("paths and xml", INDEX_PATHS | STORE_DOCUMENT | BUILD_DOCUMENT);
-        assertTotalDocs ();
-    }
-    
-    @Test
-    public void testIndexPathsOnly () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("paths", INDEX_PATHS | BUILD_DOCUMENT);        
-        assertTotalDocs ();
-        // printAllTerms(indexTestSupport);
-        assertPathQuery (indexTestSupport);
-    }
-    
-    @Test
     public void testIndexPathOccurOnly () throws Exception {
         // IndexTestSupport indexTestSupport = 
         buildIndex ("path-occurrences", INDEX_PATHS | INDEX_EACH_PATH | BUILD_DOCUMENT);
@@ -107,18 +113,16 @@ public class IndexTest {
     
     @Test
     public void testIndexFullText () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text", INDEX_FULLTEXT | STORE_DOCUMENT |BUILD_DOCUMENT);        
+        buildIndex ("full-text", INDEX_FULLTEXT | STORE_DOCUMENT |BUILD_DOCUMENT);        
         assertTotalDocs ();
-        //printAllTerms(indexTestSupport);
-        assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
+        // printAllTerms(indexTestSupport);
     }
 
     @Test
     public void testIndexFullTextOnly () throws Exception {
-        IndexTestSupport indexTestSupport = buildIndex ("full-text-only", INDEX_FULLTEXT | BUILD_DOCUMENT);        
+        buildIndex ("full-text-only", INDEX_FULLTEXT);        
         assertTotalDocs ();
         //printAllTerms(indexTestSupport);
-        assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
     }
 
     private void assertPathQuery(IndexTestSupport indexTestSupport) throws ParseException, IOException {
@@ -179,9 +183,11 @@ public class IndexTest {
         indexWriter.close();
         System.out.println 
              (String.format("indexed path-values for lux/reader-test.xml in %d bytes", dir.sizeInBytes()));
-        IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
-        // printAllTerms(indexTestSupport);
-        assertFullTextQuery (indexTestSupport, "title", "TEST", 1);
+        IndexTestSupport.printAllTerms(dir, indexer);
+        /*
+            IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
+            assertFullTextQuery (indexTestSupport, "title", "TEST", 1);
+        */
     }
     
     @Test
@@ -229,7 +235,8 @@ public class IndexTest {
 
     @Test
     public void testIndexQNameText() throws Exception {
-        buildIndex ("qname-text and docs", INDEX_QNAMES | INDEX_FULLTEXT | STORE_DOCUMENT | BUILD_DOCUMENT);
+        IndexTestSupport indexTestSupport = buildIndex ("qname-text and docs", INDEX_QNAMES | INDEX_FULLTEXT | STORE_DOCUMENT | BUILD_DOCUMENT);
+        assertFullTextQuery (indexTestSupport, "PERSONA", "ROSENCRANTZ", 4);
         assertTotalDocs ();
     }
     
@@ -268,7 +275,7 @@ public class IndexTest {
 
     @Test
     public void testStoreBinaryDocs() throws Exception {
-        buildIndex ("xml binary storage", STORE_TINY_BINARY | BUILD_DOCUMENT);
+        buildIndex ("xml binary storage", STORE_TINY_BINARY | STORE_DOCUMENT | BUILD_DOCUMENT);
         assertTotalDocs ();
     }
     
@@ -280,6 +287,12 @@ public class IndexTest {
         IndexTestSupport indexTestSupport = buildIndex("xpath", indexer);
         assertXPathIntField(indexTestSupport);
         assertXPathStringField(5, "doctype", "ACT", indexTestSupport);
+        if (GATHER_TIMING) {
+            for (int i = 0; i < 5; i++) {
+                reset();
+                indexTestSupport = buildIndex("xpath", indexer);
+            }
+        }
     }
 
     @Test
@@ -328,7 +341,15 @@ public class IndexTest {
     
     private IndexTestSupport buildIndex (String desc, int options) throws XMLStreamException, IOException, SaxonApiException {
         XmlIndexer indexer = new XmlIndexer (options);
-        return buildIndex(desc, indexer);
+        IndexTestSupport index = buildIndex(desc, indexer);
+        if (GATHER_TIMING) {
+            for (int i = 0; i < 3; i++) {
+                reset();
+                indexer = new XmlIndexer (options);
+                index = buildIndex (desc, indexer);
+            }
+        }
+        return index;
     }
 
     private IndexTestSupport buildIndex(String desc, XmlIndexer indexer) throws XMLStreamException, IOException, SaxonApiException {
