@@ -134,9 +134,9 @@ public abstract class BaseSolrTest {
         } else {
             assertNull("got unexpected error: " + error, error);
             long docMatches = rsp.getResults().getNumFound();
-            assertEquals(docCount, docMatches);
-            assertEquals(count, results.size());
-            assertEquals(type, results.getName(0));
+            assertEquals("unexpected number of documents retrieved", docCount, docMatches);
+            assertEquals("unexpected result count", count, results.size());
+            assertEquals("unexpected result type", type, results.getName(0));
             String returnValue = results.getVal(0).toString();
             if (returnValue.startsWith("<")) {
                 // assume the returned value is an element - hack to avoid real

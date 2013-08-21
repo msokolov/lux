@@ -52,7 +52,7 @@ public class SpanBooleanPQuery extends BooleanPQuery {
     }
     
     @Override
-    public boolean isSpan() {
+    public boolean isSpanCompatible() {
     	return true;
     }
 

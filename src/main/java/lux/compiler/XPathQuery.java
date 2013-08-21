@@ -172,26 +172,34 @@ public class XPathQuery {
      * @return the combined query
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
-        ParseableQuery result;
-        if (isFact(IGNORABLE)) {
-            if (precursor.isFact(IGNORABLE)) {
-                precursorOccur = occur = Occur.SHOULD;
-            }
-            if (isEmpty() && isMinimal()) {
-            	return precursor;
-            }
-            return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
-        }
-        else if (precursor.isFact(IGNORABLE)) {
-        	if (precursor.isEmpty() && precursor.isMinimal()) {
-        		return this;
-        	}
-        	return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query 
+        XPathQuery result = combineIgnorableQueries(occur, precursor);
+        if (result != null) {
+            return result;
         }
         long resultFacts = combineQueryFacts (this, precursor);
-        result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
-        SortField[] combined = combineSortFields(precursor);
-        return getQuery(result, resultFacts, type, config, combined);
+        ParseableQuery combined = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
+        SortField[] combinedSorts = combineSortFields(precursor);
+        return getQuery(combined, resultFacts, type, config, combinedSorts);
+    }
+
+    private XPathQuery combineIgnorableQueries(Occur occur, XPathQuery precursor) {
+        if (occur == Occur.MUST && isFact(IGNORABLE) != precursor.isFact(IGNORABLE)) {
+            if (isFact(IGNORABLE)) {
+                if (isEmpty() && isMinimal()) {
+                    return precursor;
+                } else {
+                    return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
+                }
+            }
+            else {
+                if (precursor.isEmpty() && precursor.isMinimal()) {
+                    return this;
+                } else {
+                    return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query
+                }
+            }
+        }
+        return null;
     }
 
     private SortField[] combineSortFields(XPathQuery precursor) {
@@ -226,24 +234,14 @@ public class XPathQuery {
      * @return the combined query
      */
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance, IndexConfiguration config) {
-        if (isFact(IGNORABLE)) {
-            XPathQuery result = precursor.setFact (MINIMAL, false);
-            if (type != null) {
-                result.setType(type);
-            }
-            return result;
-        }
-        if (precursor.isFact(IGNORABLE)) {
-            XPathQuery result = setFact(MINIMAL, false);
-            if (type != null) {
-                result.setType(type);
-            }
+        XPathQuery result = combineIgnorableQueries(occur, precursor);
+        if (result != null) {
             return result;
         }
         long resultFacts = combineQueryFacts (this, precursor);
-        ParseableQuery result = combineSpans (this.pquery, occur, precursor.pquery, distance);
+        ParseableQuery combined = combineSpans (this.pquery, occur, precursor.pquery, distance);
         SortField[] combinedSorts = combineSortFields(precursor);
-        XPathQuery q = new XPathQuery(result, resultFacts, type);
+        XPathQuery q = new XPathQuery(combined, resultFacts, type);
         q.setSortFields(combinedSorts);
         return q;
     }
@@ -321,14 +319,23 @@ public class XPathQuery {
     
     private static ParseableQuery combineBooleanWithSpan(ParseableQuery a, ParseableQuery b, int distance) {
         // ((A NEAR B) AND C) NEAR D => ((A NEAR B) AND (C NEAR D))
+        // but what about
+        // A NEAR (B AND C) => (A NEAR B) AND (B NEAR C)
         SpanBooleanPQuery bq = (SpanBooleanPQuery) ((a instanceof SpanBooleanPQuery) ? a : b);
-        Clause[] clauses = new Clause [bq.getClauses().length];
-        System.arraycopy(bq.getClauses(), 0, clauses, 0, clauses.length);
-        int i = clauses.length-1;
-        if (bq == a) {
-            clauses[i] = new Clause (new SpanNearPQuery (distance, true, clauses[i].getQuery(), b), clauses[i].getOccur());
-        } else {
-            clauses[i] = new Clause (new SpanNearPQuery (distance, true, a, clauses[i].getQuery()), clauses[i].getOccur());
+        Clause[] bclauses = bq.getClauses();
+        Clause[] clauses = new Clause [bclauses.length];
+        for (int i = 0; i < clauses.length; i++) {
+            Clause clause = bclauses[i];
+            ParseableQuery query = clause.getQuery();
+            if (! query.isSpanCompatible()) {
+                clauses[i] = clause;
+                continue;
+            }
+            if (bq == a) {
+                clauses[i] = new Clause (new SpanNearPQuery (distance, true, query, b), clause.getOccur());
+            } else {
+                clauses[i] = new Clause (new SpanNearPQuery (distance, true, a, query), clause.getOccur());
+            }
         }
         return new SpanBooleanPQuery (clauses);
     }

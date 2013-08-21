@@ -146,6 +146,9 @@
     <query id="MATCH_ALL_Q">
       <MatchAllDocsQuery/>
     </query>
+    <query id="PATH_MATCH_ALL_Q">
+      <MatchAllDocsQuery/>
+    </query>
     <query id="AND">
       <RegexpQuery fieldName="lux_path">AND(/.*)?</RegexpQuery>
     </query>
@@ -215,9 +218,32 @@
           <RegexpQuery fieldName="lux_path">@scene/SCENE</RegexpQuery>
         </Clause>
         <Clause occurs="must">
+          <!--  TODO merge with following clause; they are redundant -->
+          <RegexpQuery fieldName="lux_path">SPEECH/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
           <RegexpQuery fieldName="lux_path">SPEAKER/SPEECH/SCENE</RegexpQuery>
         </Clause>
       </BooleanQuery>    
+    </query>
+    <query id="boolean-predicate-0">
+      <RegexpQuery fieldName="lux_path">(@scene|@act)/SCENE(/.*)?</RegexpQuery>
+    </query>
+    <query id="boolean-predicate-1">
+      <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+    </query>
+    <query id="boolean-predicate-2">
+      <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+    </query>
+    <query id="boolean-predicate-3">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@act/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
     </query>
     <query id="string-range-desc">
       <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->

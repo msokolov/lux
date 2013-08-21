@@ -109,6 +109,7 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testCollectionFunction () throws Exception {
         assertXPathSearchCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
+        assertXPathSearchCount (1, 102, "xs:anyURI", "lux:/test100", "collection()[last()]/base-uri()");
         assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())");
     }
     

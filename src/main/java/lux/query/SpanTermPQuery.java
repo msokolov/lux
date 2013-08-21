@@ -30,7 +30,7 @@ public class SpanTermPQuery extends TermPQuery {
     }
 
     @Override 
-    public boolean isSpan() {
+    public boolean isSpanCompatible() {
     	return true;
     }
 

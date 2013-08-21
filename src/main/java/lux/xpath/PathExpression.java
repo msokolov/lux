@@ -59,7 +59,15 @@ public class PathExpression extends AbstractExpression {
         acceptSubs(visitor);
         return visitor.visit(this);
     }
-
+    
+    /**
+     * @return the leftmost path sub-expression
+     */
+    @Override
+    public AbstractExpression getHead() {
+        return subs[0].getHead();
+    }
+    
     /**
      * @return the expression remaining after removing the left-most sub-expression (the CDR).
      */

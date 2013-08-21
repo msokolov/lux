@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +80,16 @@ public class SolrIT {
         String path = (XQUERY_PATH + "?q=subsequence(for $x in collection() order by xs:int($x//@id) return $x,1,2)&lux.contentType=text/xml&wt=lux");
         WebResponse httpResponse = httpclient.getResponse(path);
     	assertEquals ("<results><doc><title id=\"1\">100</title><test>cat</test></doc><doc><title id=\"2\">99</title><test>cat</test></doc></results>", httpResponse.getText());
+    }
+    
+    @Test
+    public void testAttributeEncodingInJSON () throws Exception {
+    	String xmlDoc = "<doc title=\"title with &lt;tag&gt; &amp; &quot;quotes&quot; in it\" />";
+    	String xmlDocEnc = URLEncoder.encode(xmlDoc, "utf-8");
+    	String path = (XQUERY_PATH + "?q=" + xmlDocEnc + "&wt=json");
+        WebResponse httpResponse = httpclient.getResponse(path);
+    	assertEquals ("{\"responseHeader\":{\"status\":0,\"QTime\":2},\"xpath-results\":[\"element\",\"<doc title=\\\"title with &lt;tag&gt; &amp; &#34;quotes&#34; in it\\\"/>\"],\"response\":{\"numFound\":0,\"start\":0,\"docs\":[]}}\n",
+    			httpResponse.getText());
     }
     
     /*

@@ -172,6 +172,11 @@ public class RangePQuery extends ParseableQuery {
     	}
     }
 
+    @Override
+    public boolean equals(ParseableQuery other) {
+        return equals ((Object) other);
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
