@@ -60,6 +60,26 @@
         </Clause>
       </BooleanQuery>
     </query>
+    <query id="ACT_SCENE_CONTENT1_rev">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_CONTENT1_revb">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
     <query id="ACT_OR_SCENE">
       <BooleanQuery>
         <Clause occurs="should">

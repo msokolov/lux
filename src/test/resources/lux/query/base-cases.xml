@@ -182,7 +182,7 @@
     </test-case>
     <test-case name="element-value-3">
       <query>/ACT/SCENE[.='content']</query>
-      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+      <expect><query id="ACT_SCENE_CONTENT1_rev" /></expect>
     </test-case>
     <test-case name="element-value-4">
       <query>//ACT[.='content']</query>
@@ -194,11 +194,11 @@
     </test-case>
     <test-case name="element-value-self-0">
       <query>/*[self::ACT/SCENE='content']</query>
-      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+      <expect><query id="ACT_SCENE_CONTENT1_revb" /></expect>
     </test-case>
     <test-case name="element-value-self-1">
       <query>/*[self::ACT/SCENE/self::*='content']</query>
-      <expect><query id="ACT_SCENE_CONTENT1" /></expect>
+      <expect><query id="ACT_SCENE_CONTENT1_revb" /></expect>
     </test-case>
     <test-case name="attribute-value">
       <query>/ACT[@id=123]</query>
