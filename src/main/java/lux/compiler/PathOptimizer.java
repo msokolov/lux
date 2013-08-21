@@ -1106,6 +1106,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     private void optimizeComparison(Predicate predicate) {
+        // FIXME: move this into visit(BinaryOperation) to address LUX-53 -- at this point we can only
+        // see child comparisons, but we should be able to handle more complex expressions involving
+        // booleans etc
         if (!indexConfig.isOption(INDEX_FULLTEXT)) {
             return;
         }
