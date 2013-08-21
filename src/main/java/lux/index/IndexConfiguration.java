@@ -180,7 +180,7 @@ public class IndexConfiguration {
         }
         if (isOption (INDEX_FULLTEXT)) {
             addField (XML_TEXT);
-            if (isOption (INDEX_QNAMES)) {
+            if (isOption (INDEX_QNAMES) || isOption(INDEX_PATHS)) {
                 addField (ELEMENT_TEXT);
                 addField (ATTRIBUTE_TEXT);
             }
