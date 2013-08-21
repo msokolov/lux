@@ -145,8 +145,7 @@ public class SpanNearPQuery extends ParseableQuery {
             buf.append (')');
             return buf.toString();
         } else {
-        	// TODO: SpanMatchAll ?
-            throw new IllegalStateException(q.getClass().getName());
+            throw new IllegalStateException("Got a " + q.getClass().getName() + " when a SpanQuery was expected");
         }
     }
 
