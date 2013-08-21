@@ -180,8 +180,10 @@ public class IndexConfiguration {
         }
         if (isOption (INDEX_FULLTEXT)) {
             addField (XML_TEXT);
-            addField (ELEMENT_TEXT);
-            addField (ATTRIBUTE_TEXT);
+            if (isOption (INDEX_QNAMES)) {
+                addField (ELEMENT_TEXT);
+                addField (ATTRIBUTE_TEXT);
+            }
             /*
             if (// FIXME: do we need offsets ever?  Perhaps if we make use of a better highlighter
                     XML_TEXT.getTermVector().withOffsets() || 
