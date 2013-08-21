@@ -269,3 +269,12 @@ def match-up (x, e)
  if empty (
 
 Then 
+
+TODO: write up difference between path, predicate, and "standard" tree
+matching.  Does the "standard" approach make any sense?
+
+
+
+
+-------------------------
+

@@ -1,3 +1,14 @@
+* Client APIs
+** REST API 
+This needs work: add an example, show in detail what the protocol is.  How
+do I: insert a document, run a query, get the results out and discuss
+turning them into XML objects.
+*** Add links Python, Ruby bindings
+** Java Client API
+How do I: insert a document, run a query, get the results out and discuss
+turning them into XML objects.
+** Transactional model
+
 * review copy
 it's a bit old, and there are some typos
 * release 0.8.1
