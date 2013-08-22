@@ -660,6 +660,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
         if (fname.equals(FunCall.FN_CONTAINS)) {
             optimizeFnContains (funcall);
+            return funcall;
         }
         // If this function's single argument is a call to lux:search, get its
         // query. We may remove the call
@@ -1167,6 +1168,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             path = op1;
         } else {
             // TODO: handle variables
+            // TODO: handle sequences of literals
             return;
         }
         PathStep step = getLastPathStep (path);
@@ -1197,7 +1199,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private void combineTermQuery (ParseableQuery termQuery, ValueType termType) {
         XPathQuery tq = XPathQuery.getQuery(termQuery, null, MINIMAL, termType, indexConfig, null);
         XPathQuery q = pop();
-        XPathQuery combined = combineQueries(tq, Occur.MUST, q, q.getResultType());
+        XPathQuery combined;
+        if (q.getBooleanQuery() instanceof TermPQuery) {
+            // a single term query must be for the term covered by the termQuery we just created,
+            // so it would be redundant: skip it.
+            combined = tq;
+        } else {
+            combined = combineQueries(tq, Occur.MUST, q, q.getResultType());
+        }
         combined.setPathQuery (q.getPathQuery());
         push(combined);
     }

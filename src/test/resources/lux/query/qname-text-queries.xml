@@ -27,9 +27,6 @@
         <Clause occurs="must">
           <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
         </Clause>
-        <Clause occurs="must">
-          <TermQuery fieldName="lux_elt_name">SCENE</TermQuery>
-        </Clause>
       </BooleanQuery>
     </query>
     <query id="ACT_SCENE_CONTENT1">
@@ -40,18 +37,12 @@
         <Clause occurs="must">
           <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
         </Clause>
-        <Clause occurs="must">
-          <TermQuery fieldName="lux_elt_name">SCENE</TermQuery>
-        </Clause>
       </BooleanQuery>
     </query>
     <query id="ACT_SCENE_CONTENT1_rev">
       <BooleanQuery>
         <Clause occurs="must">
           <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
-        </Clause>
-        <Clause occurs="must">
-          <TermQuery fieldName="lux_elt_name">SCENE</TermQuery>
         </Clause>
         <Clause occurs="must">
           <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
@@ -71,11 +62,23 @@
         </Clause>
       </BooleanQuery>
     </query>
+    <query id="element-value-3">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <TermQuery fieldName="lux_elt_name">ACT</TermQuery>
+        </Clause>
+        <Clause occurs="must">
+          <TermQuery fieldName="lux_elt_name">SCENE</TermQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
     <query id="ACT_ID_123">
       <BooleanQuery>
         <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
         <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="id">123</QNameTextQuery></Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_att_name">id</TermQuery></Clause>
       </BooleanQuery>
     </query>
     <query id="ACT_SCENE_ID_123">
@@ -90,20 +93,17 @@
       <BooleanQuery>
         <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
         <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery></Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
       </BooleanQuery>
     </query>
     <query id="SCENE_actnum">
       <BooleanQuery>
         <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
         <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery></Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
       </BooleanQuery>    
     </query>
   <query id="boolean-predicate-1">
     <BooleanQuery>
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
-      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
       <Clause occurs="must">
         <BooleanQuery>
           <Clause occurs="should"><QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery></Clause>
@@ -115,7 +115,6 @@
   <query id="boolean-predicate-2">
     <BooleanQuery>
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
-      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
       <Clause occurs="must">
         <BooleanQuery>
           <Clause occurs="should"><QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery></Clause>
@@ -127,7 +126,6 @@
   <query id="boolean-predicate-3">
     <BooleanQuery>
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
-      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
       <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery></Clause>
       <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery></Clause>
     </BooleanQuery>
@@ -139,7 +137,6 @@
         <Clause occurs="must">
           <QNameTextQuery fieldName="lux_elt_text" qName="TITLE">SCENE I.  A churchyard.</QNameTextQuery>
         </Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
       </BooleanQuery>
     </query>
     <query id="string-range-path">
@@ -150,7 +147,6 @@
         <Clause occurs="must">
           <QNameTextQuery fieldName="lux_elt_text" qName="TITLE">SCENE I.  A churchyard.</QNameTextQuery>
         </Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
       </BooleanQuery>
     </query>
     <query id="string-range-dot">
@@ -194,7 +190,6 @@
       <BooleanQuery>
         <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
         <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="scene">2</QNameTextQuery></Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
         <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
       </BooleanQuery>
     </query>
@@ -208,7 +203,6 @@
       <BooleanQuery>
         <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
         <Clause occurs="must"><QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery></Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
         <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
         <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
       </BooleanQuery>
@@ -220,7 +214,6 @@
         <Clause occurs="must">
           <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
         </Clause>
-        <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
         <Clause occurs="must">
           <QNameTextQuery fieldName="lux_att_text" qName="scene">3</QNameTextQuery>
         </Clause>
@@ -234,11 +227,9 @@
       <Clause occurs="must">
         <QNameTextQuery fieldName="lux_att_text" qName="act">5</QNameTextQuery>
       </Clause>
-      <Clause occurs="must"><TermQuery fieldName="lux_att_name">act</TermQuery></Clause>
       <Clause occurs="must">
         <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
       </Clause>
-      <Clause occurs="must"><TermQuery fieldName="lux_att_name">scene</TermQuery></Clause>
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause>
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEAKER</TermQuery></Clause> 
     </BooleanQuery>

@@ -226,13 +226,13 @@
     <query id="SCENE_act_scene_SPEECH_SPEAKER"> 
       <BooleanQuery>
         <Clause occurs="must">
-          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
-        </Clause>
-        <Clause occurs="must">
           <QNameTextQuery fieldName="lux_att_text" qName="act">5</QNameTextQuery>
         </Clause>
         <Clause occurs="must">
           <RegexpQuery fieldName="lux_path">@act/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
         </Clause>
         <Clause occurs="must">
           <RegexpQuery fieldName="lux_path">@scene/SCENE</RegexpQuery>
@@ -246,13 +246,47 @@
       <RegexpQuery fieldName="lux_path">(@scene|@act)/SCENE(/.*)?</RegexpQuery>
     </query>
     <query id="boolean-predicate-1">
-      <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+      <BooleanQuery>
+        <Clause occurs="must">
+          <BooleanQuery>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+            </Clause>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">2</QNameTextQuery>
+            </Clause>
+          </BooleanQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
     </query>
     <query id="boolean-predicate-2">
-      <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+      <BooleanQuery>
+        <Clause occurs="must">
+          <BooleanQuery>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+            </Clause>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">2</QNameTextQuery>
+            </Clause>
+          </BooleanQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
     </query>
     <query id="boolean-predicate-3">
       <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+        </Clause>
         <Clause occurs="must">
           <RegexpQuery fieldName="lux_path">@act/SCENE(/.*)?</RegexpQuery>
         </Clause>
@@ -358,13 +392,13 @@
       <!-- count(/ACT[@act=1][SCENE/@scene=3]) -->
       <BooleanQuery>
         <Clause occurs="must">
-          <QNameTextQuery fieldName="lux_att_text" qName="scene">3</QNameTextQuery>
-        </Clause>
-        <Clause occurs="must">
           <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
         </Clause>
         <Clause occurs="must">
           <RegexpQuery fieldName="lux_path">@act/ACT</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">3</QNameTextQuery>
         </Clause>
         <Clause occurs="must">
           <RegexpQuery fieldName="lux_path">@scene/SCENE/ACT</RegexpQuery>
