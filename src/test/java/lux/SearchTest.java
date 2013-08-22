@@ -327,19 +327,12 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testIntersection () throws Exception {
-        // There were issues with 
-        // document order, which we have to assert in order to get lazy evaluation.
-        // Intersect in particular exposes the problem since it's optimized based on
-        // correct sorting (tip from Michael Kay).
-        // NB - count was 1164; reduced to 1138 by path query (20 scenes + 5 acts + 1 play = 26).
-        // Then reduced to 2! by a full text term query
         assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
         // TODO - why is this 141 and not 28?
         assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 141);
         assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7);
         // saxon cleverly optimizes this and gets rid of the intersect
-        // but TODO our optimizer fails to see the opportunity for a word query
-        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1138);
+        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1);
     }
     
     @Test

@@ -592,16 +592,19 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         // see if the function args can be converted to searches.
         optimizeSubExpressions(funcall);
-        Occur occur;
-        if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
-                name.getNamespaceURI().equals(FunCall.XS_NAMESPACE)) {
+        // By default, do not attempt any optimization; throw away any filters coming from the function arguments
+        Occur occur = Occur.SHOULD;;
+        if (name.equals(FunCall.FN_CONTAINS)) {
+            if (optimizeFnContains (funcall)) {
+                occur = Occur.MUST;
+            }
+        }
+        else if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
+             name.getNamespaceURI().equals(FunCall.XS_NAMESPACE)) {
         	// require that the function argument's query match if it is a special function,
             // or an atomic type constructor (functions in the xs: namespace)
         	occur = Occur.MUST;
-        } else {
-            // Do not attempt any optimization; throw away any filters coming from the function arguments
-        	occur = Occur.SHOULD;
-        }
+        } 
         AbstractExpression[] args = funcall.getSubs();
         combineTopQueries(args.length, occur, funcall.getReturnType());
         if (occur == Occur.SHOULD) {
@@ -657,11 +660,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private AbstractExpression optimizeFunCall(FunCall funcall) {
         AbstractExpression[] subs = funcall.getSubs();
         QName fname = funcall.getName();
-
-        if (fname.equals(FunCall.FN_CONTAINS)) {
-            optimizeFnContains (funcall);
-            return funcall;
-        }
         // If this function's single argument is a call to lux:search, get its
         // query. We may remove the call
         // to lux:search if this function can perform the search itself without
@@ -1116,12 +1114,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return null;
     }
 
-    private void optimizeFnContains(FunCall funcall) {
+    private boolean optimizeFnContains(FunCall funcall) {
         if (!indexConfig.isOption(INDEX_FULLTEXT)) {
-            return;
+            return false;
         }
         if (! (funcall.getName().equals(FunCall.FN_CONTAINS))) {
-            return;
+            return false;
         }
         LiteralExpression value = null;
         AbstractExpression path = null;
@@ -1131,23 +1129,27 @@ public class PathOptimizer extends ExpressionVisitorBase {
             path = op1;
         } else {
             // TODO: handle variables
-            return;
+            return false;
         }
         PathStep step = getLastPathStep (path);
         if (step == null) {
-            return;
+            return false;
         }
         String v = value.getValue().toString();
         if (! v.matches("\\w+")) {
             // when optimizing contains(), we have to do a wildcard
             // query; we can only do this if the term contains only
-            // word characters
-            return;
+            // word characters: this depends on the index definition of course,
+            // so this really needs to be tuned if analysis is changed...
+            return false;
         }
         ParseableQuery termQuery = createTermQuery(step, path, "*" + v + "*");
         if (termQuery != null) {
             combineTermQuery (termQuery, step.getNodeTest().getType());
+            peek().setFact(MINIMAL, false); // TODO: if the term matches an index: ie is all lower case, it could be minimal
+            return true;
         }
+        return false;
     }
 
     private void optimizeBinaryOperation (BinaryOperation op) {
