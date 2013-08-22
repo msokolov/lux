@@ -43,6 +43,18 @@
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
     </BooleanQuery>
   </query>
+  <query id="ACT_SCENE_CONTENT1_rev">
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+    </BooleanQuery>
+  </query>
+  <query id="ACT_SCENE_CONTENT1_revb">
+    <BooleanQuery>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
+    </BooleanQuery>
+  </query>
   <query id="SCENE_ACT">
     <BooleanQuery>
       <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>

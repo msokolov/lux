@@ -379,11 +379,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         query.setPathQuery(contextQuery);
         push(query);
-        optimizeComparison(predicate);
-        //if (indexConfig.isOption(INDEX_PATHS)) {
-            // The combined query is singular if its base is
-            peek().setFact(SINGULAR, baseQuery.isFact(SINGULAR));
-        //}
+        // The combined query is singular if its base is
+        peek().setFact(SINGULAR, baseQuery.isFact(SINGULAR));
         return predicate;
     }
 
@@ -661,6 +658,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
         AbstractExpression[] subs = funcall.getSubs();
         QName fname = funcall.getName();
 
+        if (fname.equals(FunCall.FN_CONTAINS)) {
+            optimizeFnContains (funcall);
+        }
         // If this function's single argument is a call to lux:search, get its
         // query. We may remove the call
         // to lux:search if this function can perform the search itself without
@@ -816,19 +816,19 @@ public class PathOptimizer extends ExpressionVisitorBase {
         case GT:
         case LE:
         case GE:
-        	if (lq.getResultType().isNode || rq.getResultType().isNode) {
-        		required = true;
-        		occur = Occur.MUST;
-        	}
-        	rangeOptimized = optimizeRangeComparison (lq, rq, op);
-        	resultType = ValueType.BOOLEAN;
+            if (lq.getResultType().isNode || rq.getResultType().isNode) {
+                required = true;
+                occur = Occur.MUST;
+            }
+            rangeOptimized = optimizeRangeComparison (lq, rq, op);
+            resultType = ValueType.BOOLEAN;
             break;
 
         case IS:
         case BEFORE:
         case AFTER:
             // occur = Occur.MUST;
-        	required = true;
+            required = true;
             resultType = ValueType.BOOLEAN;
             break;
 
@@ -847,13 +847,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return op;
             
         case TO:
-        	resultType = ValueType.INTEGER;
-        	break;
+            resultType = ValueType.INTEGER;
+            break;
         }
         XPathQuery query = combineQueries(lq, occur, rq, resultType);
         if (rangeOptimized != null) {
             query.setFact(MINIMAL|SINGULAR, true);
             query.setFact(IGNORABLE, false);
+            push(query);
         }
         else {
             if (minimal == false) {
@@ -862,8 +863,11 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (!required) {
                 query = query.setFact(IGNORABLE, true);
             }
+            push(query);
+            if (op.getOperator() == Operator.EQUALS || op.getOperator() == Operator.AEQ) {
+                optimizeBinaryOperation (op);
+            }
         }
-        push(query);
         return rangeOptimized == null ? op : rangeOptimized;
     }
 
@@ -1090,62 +1094,90 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
     }
 
-    private void optimizeComparison(Predicate predicate) {
-        if (!indexConfig.isOption(INDEX_FULLTEXT)) {
-            return;
-        }
-        // TODO: test different literal values to ensure we don't run into
-        // trouble during text analysis
-        LiteralExpression value = null;
-        AbstractExpression path = null;
-        AbstractExpression filter = predicate.getFilter();
-        if (filter.getType() == Type.BINARY_OPERATION) {
-            BinaryOperation op = (BinaryOperation) predicate.getFilter();
-            if (!(op.getOperator() == Operator.EQUALS || op.getOperator() == Operator.AEQ)) {
-                return;
-            }
-        } else if (filter.getType() == Type.FUNCTION_CALL) {
-            FunCall funcall = (FunCall) filter;
-            if (! (funcall.getName().equals(FunCall.FN_CONTAINS))) {
-                return;
-            }
-        } else {
-            return;
-        }
-        if (filter.getSubs()[0].getType() == Type.LITERAL) {
-            value = (LiteralExpression) filter.getSubs()[0];
-            path = filter.getSubs()[1];
-        } else if (filter.getSubs()[1].getType() == Type.LITERAL) {
-            value = (LiteralExpression) filter.getSubs()[1];
-            path = filter.getSubs()[0];
-        } else {
-            // TODO: handle variables
-            return;
-        }
+    private PathStep getLastPathStep (AbstractExpression path) {
         AbstractExpression last = path.getLastContextStep();
         if (last.getType() == Type.DOT) {
             // NOTE: we rely on Saxon to collapse paths s.t. a path *only ends in Dot if
             // the entire path is Dot.*  In this case we get the context from the base 
-            // of the predicate.
-            last = predicate.getBase().getLastContextStep();
+            // of the enclosing predicate, if any
+            AbstractExpression p = path;
+            while (p != null && ! (p instanceof Predicate)) {
+                p = p.getSuper();
+            }
+            if (p == null) {
+                return null;
+            }
+            last = ((Predicate)p).getBase().getLastContextStep();
+        }
+        if (last instanceof PathStep) {
+            return (PathStep) last;
+        }
+        return null;
+    }
+
+    private void optimizeFnContains(FunCall funcall) {
+        if (!indexConfig.isOption(INDEX_FULLTEXT)) {
+            return;
+        }
+        if (! (funcall.getName().equals(FunCall.FN_CONTAINS))) {
+            return;
+        }
+        LiteralExpression value = null;
+        AbstractExpression path = null;
+        AbstractExpression op1 = funcall.getSubs()[0], op2 = funcall.getSubs()[1];
+        if (op2.getType() == Type.LITERAL) {
+            value = (LiteralExpression) op2;
+            path = op1;
+        } else {
+            // TODO: handle variables
+            return;
+        }
+        PathStep step = getLastPathStep (path);
+        if (step == null) {
+            return;
         }
         String v = value.getValue().toString();
-        if (last.getType() == Type.PATH_STEP) {
-            ParseableQuery termQuery = null;
-            if (filter.getType() == Type.FUNCTION_CALL) {
-                if (v.matches("\\w+")) {
-                    // when optimizing contains(), we have to do a wildcard
-                    // query;
-                    // we can only do this if the term contains only word
-                    // characters
-                    termQuery = createTermQuery((PathStep) last, path, "*" + v + "*");
-                }
-            } else {
-                termQuery = createTermQuery((PathStep) last, path, v);
-            }
-            if (termQuery != null) {
-                combineTermQuery (termQuery, ((PathStep) last).getNodeTest().getType());
-            }
+        if (! v.matches("\\w+")) {
+            // when optimizing contains(), we have to do a wildcard
+            // query; we can only do this if the term contains only
+            // word characters
+            return;
+        }
+        ParseableQuery termQuery = createTermQuery(step, path, "*" + v + "*");
+        if (termQuery != null) {
+            combineTermQuery (termQuery, step.getNodeTest().getType());
+        }
+    }
+
+    private void optimizeBinaryOperation (BinaryOperation op) {
+        if (!indexConfig.isOption(INDEX_FULLTEXT)) {
+            return;
+        }
+        LiteralExpression value = null;
+        AbstractExpression path = null;
+        if (!(op.getOperator() == Operator.EQUALS || op.getOperator() == Operator.AEQ)) {
+            return;
+        }
+        AbstractExpression op1 = op.getOperand1(), op2 = op.getOperand2();
+        if (op1.getType() == Type.LITERAL) {
+            value = (LiteralExpression) op1;
+            path = op2;
+        } else if (op2.getType() == Type.LITERAL) {
+            value = (LiteralExpression) op2;
+            path = op1;
+        } else {
+            // TODO: handle variables
+            return;
+        }
+        PathStep step = getLastPathStep (path);
+        if (step == null) {
+            return;
+        }
+        String v = value.getValue().toString();
+        ParseableQuery termQuery = null;
+        termQuery = createTermQuery(step, path, v);
+        if (termQuery != null) {
+            combineTermQuery (termQuery, step.getNodeTest().getType());
         }
     }
 

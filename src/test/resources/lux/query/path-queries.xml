@@ -60,6 +60,36 @@
       </Clause>
     </BooleanQuery>
   </query>
+  <query id="ACT_SCENE_CONTENT1_rev">
+    <!-- same as ACT_SCENE_CONTENT1, but clauses are reversed -->
+    <BooleanQuery>
+      <Clause occurs="must">
+        <SpanNear inOrder="true" slop="0">
+          <SpanTerm fieldName="lux_path">&#x7B;&#x7D;</SpanTerm>
+          <SpanTerm fieldName="lux_path">ACT</SpanTerm>
+          <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+        </SpanNear>
+      </Clause>
+      <Clause occurs="must">
+        <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="ACT_SCENE_CONTENT1_revb">
+    <!-- same as ACT_SCENE_CONTENT1_rev, but clauses are in yet another order  -->
+    <BooleanQuery>
+      <Clause occurs="must">
+        <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+      </Clause>
+      <Clause occurs="must">
+        <SpanNear inOrder="true" slop="0">
+          <SpanTerm fieldName="lux_path">&#x7B;&#x7D;</SpanTerm>
+          <SpanTerm fieldName="lux_path">ACT</SpanTerm>
+          <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+        </SpanNear>
+      </Clause>
+    </BooleanQuery>
+  </query>
   <query id="SCENE_ACT">w("SCENE","ACT")</query>
   <query id="ACT_OR_SCENE"><SpanOr>
     <SpanTerm fieldName="lux_path">ACT</SpanTerm>
@@ -76,6 +106,7 @@
     <SpanNear inOrder="true" slop="0">
       <SpanTerm fieldName="lux_path">SPEECH</SpanTerm><SpanTerm fieldName="lux_path">TITLE</SpanTerm>
     </SpanNear>
+<<<<<<< HEAD
   </SpanOr>
   </query>
   <query id="LINE"><SpanNear inOrder="true" slop="0">
