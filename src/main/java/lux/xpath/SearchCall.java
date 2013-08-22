@@ -32,7 +32,7 @@ public class SearchCall extends FunCall {
      * @param config used to determine the default field name
      */
     public SearchCall(XPathQuery query, IndexConfiguration config) {
-        this (query.getParseableQuery().toXmlNode(config.getDefaultFieldName(), config), query.getFacts(), query.getResultType(), query.getSortFields(), true);
+        this (query.getFullQuery().toXmlNode(config.getDefaultFieldName(), config), query.getFacts(), query.getResultType(), query.getSortFields(), true);
     }
 
     /** used to convert a generic lux:search FunCall into a SearchCall 
@@ -47,13 +47,13 @@ public class SearchCall extends FunCall {
         super(FunCall.LUX_SEARCH, resultType);
         this.queryArg = queryArg;
         fnCollection = false;
-        query = XPathQuery.getQuery(null, facts, resultType, null, sortFields);
+        query = XPathQuery.getQuery(null, null, facts, resultType, null, sortFields);
         this.generated = isGenerated;
         generateArguments();
     }
    
     public void combineQuery(XPathQuery additionalQuery, IndexConfiguration config) {
-        ElementConstructor additional = additionalQuery.getParseableQuery().toXmlNode(config.getDefaultFieldName(), config);
+        ElementConstructor additional = additionalQuery.getFullQuery().toXmlNode(config.getDefaultFieldName(), config);
         if (! additional.getName().getLocalPart().equals("MatchAllDocsQuery")) {
             if (queryArg.getType() == Type.ELEMENT) {
                 ElementConstructor addClause = new ElementConstructor(BooleanPQuery.CLAUSE_QNAME, additional, BooleanPQuery.MUST_OCCUR_ATT);

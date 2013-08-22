@@ -131,7 +131,7 @@ public class SpanNearPQuery extends ParseableQuery {
             return (LuxQueryParser.escapeQParser(((SpanTermPQuery)q).getTerm().text()));
         } else if (q instanceof SpanNearPQuery) {
             return (((SpanNearPQuery) q).toPathOccurrenceQueryString(field, config, true));
-        } else  if (q instanceof SpanBooleanPQuery) {
+        } else if (q instanceof SpanBooleanPQuery) {
             // FIXME: you can also have a SpanOrQuery here: a/(b|c)/d
             // We'll implement using regex just as shown above
             StringBuilder buf = new StringBuilder ();
@@ -144,6 +144,8 @@ public class SpanNearPQuery extends ParseableQuery {
             }
             buf.append (')');
             return buf.toString();
+        } else if (q.isMatchAll()) {
+            return "";
         } else {
         	// TODO: SpanMatchAll ?
             throw new IllegalStateException(q.getClass().getName());

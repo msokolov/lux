@@ -381,6 +381,7 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testReversePaths () throws Exception {
+        // expresses a deepish path in reverse order, using predicates
         assertSearch ("Where is your son?", "string(//LINE[3]" +
                 "[parent::SPEECH[not(preceding-sibling::SPEECH)]]" +
                 "[ancestor::SCENE[count(preceding-sibling::SCENE)=0]]" +

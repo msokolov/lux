@@ -218,10 +218,6 @@
           <RegexpQuery fieldName="lux_path">@scene/SCENE</RegexpQuery>
         </Clause>
         <Clause occurs="must">
-          <!--  TODO merge with following clause; they are redundant -->
-          <RegexpQuery fieldName="lux_path">SPEECH/SCENE</RegexpQuery>
-        </Clause>
-        <Clause occurs="must">
           <RegexpQuery fieldName="lux_path">SPEAKER/SPEECH/SCENE</RegexpQuery>
         </Clause>
       </BooleanQuery>    

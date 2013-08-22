@@ -27,6 +27,11 @@ public final class MatchAllPQuery extends ParseableQuery {
     public boolean isSpanCompatible () {
         return true;
     }
+    
+    @Override
+    public boolean isMatchAll () {
+        return true;
+    }
 
     @Override
     public boolean equals(ParseableQuery other) {

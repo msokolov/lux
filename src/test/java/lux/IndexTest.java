@@ -69,7 +69,7 @@ import org.junit.Test;
  */
 public class IndexTest {
     
-    private static final boolean GATHER_TIMING = true;
+    private static final boolean GATHER_TIMING = false;
     private RAMDirectory dir;
 
     @Test

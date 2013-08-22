@@ -39,4 +39,8 @@ public abstract class ParseableQuery {
         return toString().hashCode();
     }
 
+    public boolean isMatchAll() {
+        return false;
+    }
+
 }

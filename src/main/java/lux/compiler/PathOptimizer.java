@@ -16,7 +16,6 @@ import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
 import lux.query.BooleanPQuery;
-import lux.query.MatchAllPQuery;
 import lux.query.NodeTextQuery;
 import lux.query.ParseableQuery;
 import lux.query.RangePQuery;
@@ -275,7 +274,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         XPathQuery query = pop();
         if (n == 1) {
             ValueType type = valueType == null ? query.getResultType() : query.getResultType().promote(valueType);
-            query = XPathQuery.getQuery(query.getParseableQuery(), query.getFacts(), type, indexConfig,
+            query = XPathQuery.getQuery(query.getBooleanQuery(), query.getPathQuery(), query.getFacts(), type, indexConfig,
                     query.getSortFields());
         } else {
             for (int i = 0; i < n - 1; i++) {
@@ -373,12 +372,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // and has a baseQuery that matches only the base
         XPathQuery query = combineAdjacentQueries(predicate.getBase(), filter, baseQuery, filterQuery,
                 ResultOrientation.LEFT);
-        XPathQuery contextQuery = baseQuery.getBaseQuery() == null ? baseQuery : baseQuery.getBaseQuery();
+        ParseableQuery contextQuery = baseQuery.getPathQuery();
         if (DEBUG) {
         	log.debug("combined: {}", query);
         	log.debug("context: {}", contextQuery);
         }
-        query.setBaseQuery(contextQuery);
+        query.setPathQuery(contextQuery);
         push(query);
         optimizeComparison(predicate);
         //if (indexConfig.isOption(INDEX_PATHS)) {
@@ -436,37 +435,25 @@ public class PathOptimizer extends ExpressionVisitorBase {
             }
         }
         ValueType resultType = (orient == ResultOrientation.RIGHT) ? rq.getResultType() : lq.getResultType();
+/*
         if (rSlop != null && lSlop != null) {
-        	XPathQuery bq = combineBaseQueries (lq, rq);
             // total slop is the distance between the two path components.
-        	if (lq.getBaseQuery() != null) {
-        		// the path relation is between baseQuery and rq
-        		// for example, baseQuery[lq]/rq or baseQuery[lq][rq]
-                query = lq.getBaseQuery().combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
-                if (orient == ResultOrientation.RIGHT) {
-                    // if this is a path expression, append rq to its base query; if it's a predicate, don't: 
-                    // just maintain the existing base query
-                    bq = query;
-                }
-                query = combineQueries(lq, Occur.MUST, query, query.getResultType());
-        	} else {
-        	    if (lq.getParseableQuery() instanceof MatchAllPQuery && rq.getParseableQuery().isSpanCompatible()) {
-        	        query = MATCH_ALL.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
-        	    }
-        	    else if (lq.getParseableQuery().isSpanCompatible() && rq.getParseableQuery().isSpanCompatible()) {
-        			query = lq.combineSpanQueries(rq, Occur.MUST, resultType, rSlop + lSlop, indexConfig);
-        		} else {
-                    query = combineQueries(lq, Occur.MUST, rq, resultType);
-        		}
-        	}
-        	query.setBaseQuery(bq);
+            // the path relation is between baseQuery and rq
+            // for example, baseQuery[lq]/rq or baseQuery[lq][rq]
+            boolean isPredicate = orient == ResultOrientation.LEFT;
+            query = lq.combineSpanQueries(rq, Occur.MUST, isPredicate, resultType, rSlop + lSlop, indexConfig);
         } else {
             query = combineQueries(lq, Occur.MUST, rq, resultType);
         }
+        */
+        boolean isPredicate = orient == ResultOrientation.LEFT;
+        int slop = (rSlop != null && lSlop != null) ? rSlop + lSlop : -1;
+        query = lq.combineSpanQueries(rq, Occur.MUST, isPredicate, resultType, slop, indexConfig);
         return query;
     }
     
     // AND the base-queries of the two queries, retaining the result type of q1
+    /*
     private XPathQuery combineBaseQueries (XPathQuery q1, XPathQuery q2) {
     	XPathQuery base1 = q1.getBaseQuery();
     	XPathQuery base2 = q2.getBaseQuery();
@@ -477,7 +464,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     		return base1;
     	}
     	return base1.combineBooleanQueries(Occur.MUST, base2, Occur.MUST, base1.getResultType(), indexConfig);
-    }
+    }*/
 
     @Override
     public AbstractExpression visit(PathStep step) {
@@ -565,10 +552,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     && currentQuery.getResultType() == ValueType.DOCUMENT) {
                 type = ValueType.DOCUMENT;
             }
-
-            query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), facts, type, indexConfig,
+            query = XPathQuery.getQuery(MATCH_ALL.getBooleanQuery(), null, facts, type, indexConfig,
                     currentQuery.getSortFields());
-
         } else {
             ParseableQuery termQuery = nodeNameTermQuery(step.getAxis(), name);
             query = XPathQuery.getQuery(termQuery, facts, step.getNodeTest().getType(), indexConfig,
@@ -754,7 +739,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
     private XPathQuery combineQueries(XPathQuery lq, Occur occur, XPathQuery rq, ValueType resultType) {
         XPathQuery query;
         if (indexConfig.isOption(INDEX_PATHS)) {
-            query = lq.combineSpanQueries(rq, occur, resultType, -1, indexConfig);
+            query = lq.combineSpanQueries(rq, occur, false, resultType, -1, indexConfig);
         } else {
             query = lq.combineBooleanQueries(occur, rq, occur, resultType, indexConfig);
         }
@@ -1178,10 +1163,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
     
     private void combineTermQuery (ParseableQuery termQuery, ValueType termType) {
-        XPathQuery tq = XPathQuery.getQuery(termQuery, MINIMAL, termType, indexConfig, null);
+        XPathQuery tq = XPathQuery.getQuery(termQuery, null, MINIMAL, termType, indexConfig, null);
         XPathQuery q = pop();
         XPathQuery combined = combineQueries(tq, Occur.MUST, q, q.getResultType());
-        combined.setBaseQuery (q.getBaseQuery());
+        combined.setPathQuery (q.getPathQuery());
         push(combined);
     }
 
@@ -1413,7 +1398,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 push(returnq); // restore accumulating return query to top of stack
             } else {
             	XPathQuery q = combineQueries (clauseq, Occur.MUST, returnq, returnq.getResultType());
-            	q.setBaseQuery(combineBaseQueries(returnq, clauseq));
+            	//q.setBaseQuery(combineBaseQueries(returnq, clauseq));
             	push (q);
             }
             if (clause instanceof ForClause) {
@@ -1489,7 +1474,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         if (sortFields.isEmpty()) {
             push(MATCH_ALL);
         } else {
-            XPathQuery query = XPathQuery.getQuery(MATCH_ALL.getParseableQuery(), MATCH_ALL.getFacts(),
+            XPathQuery query = XPathQuery.getQuery(MATCH_ALL.getBooleanQuery(), null, MATCH_ALL.getFacts(),
                     MATCH_ALL.getResultType(), indexConfig, sortFields.toArray(new SortField[sortFields.size()]));
             push(query);
         }
@@ -1518,7 +1503,10 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // Mark let clause queries as ignorable so that expressions that depend
         // on the let variable don't require the variable to be non-empty by
         // default
-        peek().setFact(IGNORABLE, true);
+        // peek().setFact(IGNORABLE, true);
+        // It seems we no longer need this.  Some upstream logic is now cleverer?
+        // TODO: Can we do away with the IGNORABLE flag?  This what its genesis, but something
+        // else probably relies on it now...
         return letClause;
     }
 
