@@ -1146,7 +1146,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         ParseableQuery termQuery = createTermQuery(step, path, "*" + v + "*");
         if (termQuery != null) {
             combineTermQuery (termQuery, step.getNodeTest().getType());
-            peek().setFact(MINIMAL, false); // TODO: if the term matches an index: ie is all lower case, it could be minimal
+            // TODO: if the term matches an index: ie is all lower case, it could be minimal
+            peek().setFact(MINIMAL, false);
             return true;
         }
         return false;
