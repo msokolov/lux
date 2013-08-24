@@ -59,9 +59,6 @@ public class Compiler {
     private final HashMap<AbstractExpression, XPathField> fieldExpressions;
     private final PropEquiv tempEquiv;
 
-    // for testing
-    private XQuery lastOptimized;
-    
     public enum SearchStrategy {
         NONE, // the query is evaluated without any modification 
         LUX_UNOPTIMIZED, // collection() is inserted for Root()
@@ -173,12 +170,12 @@ public class Compiler {
             }
             throw (e);
         }
-        lastOptimized = optimizedQuery;
+        String queryString = optimizedQuery.toString();
         if (logger.isDebugEnabled()) {
-            logger.debug("optimized xquery: " + optimizedQuery.toString());
+            logger.debug("optimized xquery: " + queryString);
         }
         try {
-            xquery = xQueryCompiler.compile(optimizedQuery.toString());
+            xquery = xQueryCompiler.compile(queryString);
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
@@ -262,13 +259,6 @@ public class Compiler {
         return isSaxonLicensed;
     }
     
-    /**
-     * @return the last query that was compiled, in its translated and optimized form.
-     */
-    public XQuery getLastOptimized () { 
-        return lastOptimized; 
-    }
-	
     public List<AbstractExpression> getFieldLeaves(AbstractExpression leafExpr) {
     	List<AbstractExpression> allLeaves = new ArrayList<AbstractExpression>();
     	// get leaves that are equivalent to leafExpr

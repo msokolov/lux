@@ -136,7 +136,7 @@ public abstract class BaseSearchTest {
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));
-        System.out.println ("optimized query=" + stats.optimizedQuery);
+        //System.out.println ("optimized query=" + eval.getCompiler().getLastOptimized());
         System.out.println (String.format("cache hits=%d, misses=%d", 
                 eval.getDocReader().getCacheHits(), eval.getDocReader().getCacheMisses()));
         if (props != null) {
