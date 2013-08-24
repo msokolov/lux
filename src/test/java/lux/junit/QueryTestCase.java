@@ -8,6 +8,7 @@ import java.util.List;
 
 import lux.Compiler;
 import lux.Evaluator;
+import lux.QueryStats;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.support.SearchExtractor;
@@ -42,8 +43,9 @@ class QueryTestCase {
 
     public XdmResultSet evaluate (Evaluator eval) {
         Compiler compiler = eval.getCompiler();
+        QueryStats stats = new QueryStats();
         try {
-        	compiler.compile(query);
+        	compiler.compile(query, null, null, stats);
         } catch (LuxException e) {
         	if (! expectedResult.isError) {
         		throw e;
@@ -56,7 +58,7 @@ class QueryTestCase {
     	if (expectedResult.isError) {
     		fail ("expected exception not thrown");
     	}
-        XQuery optimizedQuery = compiler.getLastOptimized();
+        XQuery optimizedQuery = stats.optimizedXQuery;
         AbstractExpression ex = optimizedQuery.getBody();
         String expectedOptimized = expectedResult.queryText;
         if (!StringUtils.isEmpty(expectedOptimized)) {

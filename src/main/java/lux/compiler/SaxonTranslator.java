@@ -597,7 +597,7 @@ public class SaxonTranslator {
     }
 
     public AbstractExpression exprFor (ContextItemExpression expr) {
-        return Dot.getInstance();
+        return new Dot();
     }
 
     private AbstractExpression exprFor(CopyOf expr) {

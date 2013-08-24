@@ -329,6 +329,7 @@ public class SearchTest extends BaseSearchTest {
     public void testIntersection () throws Exception {
         assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
         // TODO - why is this 141 and not 28?
+        // FIXME - sometimes it *is* 28???
         assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 141);
         assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7);
         // saxon cleverly optimizes this and gets rid of the intersect

@@ -1143,7 +1143,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // so this really needs to be tuned if analysis is changed...
             return false;
         }
-        ParseableQuery termQuery = createTermQuery(step, path, "*" + v + "*");
+        ParseableQuery termQuery = createTermQuery(step, "*" + v + "*");
         if (termQuery != null) {
             combineTermQuery (termQuery, step.getNodeTest().getType());
             // TODO: if the term matches an index: ie is all lower case, it could be minimal
@@ -1180,13 +1180,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
         }
         String v = value.getValue().toString();
         ParseableQuery termQuery = null;
-        termQuery = createTermQuery(step, path, v);
+        termQuery = createTermQuery(step, v);
         if (termQuery != null) {
             combineTermQuery (termQuery, step.getNodeTest().getType());
         }
     }
 
-    private ParseableQuery createTermQuery(PathStep context, AbstractExpression path, String value) {
+    private ParseableQuery createTermQuery(PathStep context, String value) {
         NodeTest nodeTest = context.getNodeTest();
         QName nodeName = nodeTest.getQName();
         if (nodeName == null || "*".equals(nodeName.getPrefix()) || "*".equals(nodeName.getLocalPart())) {

@@ -94,7 +94,7 @@ public class PathStep extends AbstractExpression {
     public AbstractExpression getLastContextStep () {
         // If self::* or self::node(), return Dot instead
         if (axis == Axis.Self && nodeTest.isWild()) {
-            return Dot.getInstance();
+            return new Dot();
         }
         return this;
     }

@@ -3,6 +3,7 @@ package lux.solr;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -12,10 +13,10 @@ import java.util.Set;
 
 import javax.xml.transform.TransformerException;
 
-import lux.Compiler;
 import lux.DocWriter;
 import lux.Evaluator;
 import lux.QueryContext;
+import lux.QueryStats;
 import lux.TransformErrorListener;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
@@ -150,7 +151,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
-        	expr = compiler.compile(query, errorListener, queryPath == null ? null : java.net.URI.create(queryPath));
+        	URI baseURI = queryPath == null ? null : java.net.URI.create(queryPath);
+            expr = compiler.compile(query, errorListener, baseURI, null);
         } catch (LuxException ex) {
         	// ex.printStackTrace();
         	String err = formatError(query, errorListener);
@@ -203,7 +205,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 }
             }
             else {
-                err = formatError(query, queryResults.getErrors());
+                err = formatError(query, queryResults.getErrors(), evaluator.getQueryStats());
             }
             if (err != null) {
             	rsp.add ("xpath-error", err);
@@ -219,11 +221,14 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     private String formatError(String query, TransformErrorListener errorListener) {
         ArrayList<TransformerException> errors = errorListener.getErrors();
-        return formatError(query, errors);
+        return formatError(query, errors, null);
     }
 
-    private String formatError(String query, List<TransformerException> errors) {
+    private String formatError(String query, List<TransformerException> errors, QueryStats queryStats) {
         StringBuilder buf = new StringBuilder();
+        if (queryStats != null) {
+            query = queryStats.optimizedQuery;
+        }
         for (TransformerException te : errors) {
             if (te instanceof XPathException) {
                 String additionalLocationText = ((XPathException)te).getAdditionalLocationText();
@@ -233,13 +238,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             }
             buf.append (te.getMessageAndLocation());
             buf.append ("\n");
-            Compiler compiler = solrIndexConfig.getCompiler();
             if (te.getLocator() != null) {
                 int lineNumber = te.getLocator().getLineNumber();
                 int column = te.getLocator().getColumnNumber();
-                if (compiler.getLastOptimized() != null) {
-                    query = compiler.getLastOptimized().toString();
-                }
                 String[] lines = query.split("\r?\n");
                 if (lineNumber <= lines.length && lineNumber > 0) {
                     String line = lines[lineNumber-1];

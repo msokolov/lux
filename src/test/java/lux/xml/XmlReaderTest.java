@@ -8,7 +8,6 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Arrays;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.stream.StreamSource;
 
