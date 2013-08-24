@@ -29,6 +29,7 @@ public class SolrIT {
 
     private final String APP_SERVER_PATH = "http://localhost:8080/testapp";
     private final String XQUERY_PATH = "http://localhost:8080/xquery";
+    private final String LUX_PATH = "http://localhost:8080/lux/foo.xqy";
     private static WebClient httpclient;
 
     @BeforeClass
@@ -60,6 +61,13 @@ public class SolrIT {
         assertEquals ("Bad Request", httpResponse.getResponseMessage());
         String response = httpResponse.getText();
         assertTrue ("Unexpected error message:\n" + response, response.contains ("The supplied file does not appear to be a stylesheet"));
+    }
+    
+    @Test
+    public void testNotFound () throws Exception {
+        String path = (LUX_PATH + "notfound.xqy");
+        WebResponse response = httpclient.getResponse(path);
+        assertEquals (404, response.getResponseCode());
     }
     
     @Test

@@ -80,7 +80,7 @@
 
   <filter-mapping>
     <filter-name>LuxDispatchFilter</filter-name>
-    <url-pattern>*.xqy</url-pattern>
+    <url-pattern>/*</url-pattern>
     <dispatcher>FORWARD</dispatcher>
     <dispatcher>REQUEST</dispatcher>
   </filter-mapping>
@@ -99,7 +99,7 @@
     <filter-name>SolrRequestFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
-
+ 
   <servlet>
     <servlet-name>Zookeeper</servlet-name>
     <servlet-class>org.apache.solr.servlet.ZookeeperInfoServlet</servlet-class>

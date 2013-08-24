@@ -80,10 +80,17 @@ public class LuxDispatchFilter implements Filter {
             String path = req.getServletPath();
             if (path.contains(".xq")) {
                 String [] pc = path.split("/", 4);
-                if (pc.length > 1) {
-                    String coreName = pc[1];
-                    String handlerName = pc[2];
-                    String xquery= pc[3];
+                if (pc.length > 2) {
+                    String coreName, handlerName, xquery;
+                    if (pc.length > 3) {
+                        coreName = pc[1];
+                        handlerName = pc[2];
+                        xquery= pc[3];
+                    } else {
+                        coreName = "collection1"; // FIXME get default core name 
+                        handlerName = pc[1];
+                        xquery= pc[2];
+                    }
                 
                     Request wrapper = new Request(req);
                     wrapper.setServletPath ('/' + coreName + '/' + handlerName);
