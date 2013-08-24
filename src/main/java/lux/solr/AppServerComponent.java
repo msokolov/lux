@@ -118,7 +118,12 @@ public class AppServerComponent extends XQueryComponent {
         }
         super.prepare(rb);
     }
-    
+
+    @Override
+    public String getDefaultSerialization () {
+        return "html";
+    }
+
     /**
      * ignores start and len query parameters
      */

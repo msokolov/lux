@@ -18,6 +18,8 @@ import lux.index.field.FieldDefinition;
 import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
 
+import net.sf.saxon.s9api.Serializer;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
@@ -50,10 +52,12 @@ public class SolrIndexConfig implements SolrInfoMBean {
     private NamedList<String> xpathFieldConfig;
     private Compiler compiler;
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
+    private ArrayBlockingQueue<Serializer> serializerPool;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
+        serializerPool = new ArrayBlockingQueue<Serializer>(8);
         compiler = new Compiler (indexConfig);
     }
     
@@ -74,6 +78,22 @@ public class SolrIndexConfig implements SolrInfoMBean {
     public void returnXmlIndexer (XmlIndexer doneWithIt) {
         indexerPool.offer(doneWithIt);
         // if the pool was full, we just drop the indexer as garbage
+    }
+    
+    public Serializer checkoutSerializer() {
+        Serializer serializer = serializerPool.poll();
+        if (serializer == null) {
+            serializer = new Serializer();
+            serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
+            serializer.setOutputProperty(Serializer.Property.BYTE_ORDER_MARK, "no");
+            serializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
+        }
+        return serializer;
+    }
+    
+    public void returnSerializer (Serializer doneWithIt) {
+        serializerPool.offer(doneWithIt);
+        // if the pool was full, we just drop the serializer
     }
     
     public static SolrIndexConfig registerIndexConfiguration (SolrCore core) {

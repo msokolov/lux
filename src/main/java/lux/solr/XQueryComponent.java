@@ -70,7 +70,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     protected SolrIndexConfig solrIndexConfig;
     
-    // FIXME: pool these serializers so that a different one can be used for each request
     private Serializer serializer;
     
     protected String queryPath;
@@ -83,10 +82,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
-        serializer = new Serializer();
-        serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
-        serializer.setOutputProperty(Serializer.Property.BYTE_ORDER_MARK, "no");
-        serializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
     }
     
     @Override
@@ -102,17 +97,24 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             rb.setQueryString( params.get( CommonParams.Q ) );
         }
         String contentType= params.get("lux.contentType");
+        serializer = solrIndexConfig.checkoutSerializer();
         if (contentType != null) {
-            if (contentType.equals ("text/xml")) {
+            if (contentType.equals ("text/html")) {
+                serializer.setOutputProperty(Serializer.Property.METHOD, "html");
+            } else if (contentType.equals ("text/xml")) {
                 serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             }
         } else {
-            serializer.setOutputProperty(Serializer.Property.METHOD, "html");
+            serializer.setOutputProperty(Serializer.Property.METHOD, getDefaultSerialization());
         }
         if (queryPath == null) {
         	// allow subclasses to override...
         	queryPath = rb.req.getParams().get(LUX_XQUERY);
         }
+    }
+    
+    public String getDefaultSerialization () {
+        return "xml";
     }
     
     @Override
@@ -126,7 +128,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         int start = params.getInt( CommonParams.START, 1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
         // TODO: implement distributed index with multiple shards
-        evaluateQuery(rb, start, len);
+        try {
+            evaluateQuery(rb, start, len);
+        } finally {
+            solrIndexConfig.returnSerializer(serializer);
+        }
     }
 
     protected void evaluateQuery(ResponseBuilder rb, int start, int len) {
@@ -226,7 +232,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     private String formatError(String query, List<TransformerException> errors, QueryStats queryStats) {
         StringBuilder buf = new StringBuilder();
-        if (queryStats != null) {
+        if (queryStats != null && queryStats.optimizedQuery != null) {
             query = queryStats.optimizedQuery;
         }
         for (TransformerException te : errors) {
