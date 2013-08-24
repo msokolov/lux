@@ -8,7 +8,6 @@ check w/XQTS
 negate
 ** getTypeDescription 
 with ?
-** instance of element(foo)
 ** types
 xs:hexBinary, xs:base64Binary, comment(), empty()
 ** variable binding to constant??
@@ -18,8 +17,6 @@ try w/XQTS
 see exprFor(FLWORExpression)
 try w/XQTS
 * bugs
-** consider possible problems w/range query optos
-*** test combinations with "or", "|", "intersect", "union", "except"
 * enhancements
 ** move optimizeComparison from visit(Predicate) to visit(BinaryOperation)
 Otherwise how can we properly handle foo[bar = 1 or baz = 1]?  And we could
