@@ -33,8 +33,9 @@ public class OptimizerTest {
 
     private void assertQuery(Query expectedOpt, String query) throws ParserException {
         Compiler compiler = eval.getCompiler();
-        compiler.compile(query);
-        XQuery optimizedQuery = compiler.getLastOptimized();
+        QueryStats stats = new QueryStats();
+        compiler.compile(query, null, null, stats);
+        XQuery optimizedQuery = stats.optimizedXQuery;
         AbstractExpression optimizedExpression = optimizedQuery.getBody();
         SearchExtractor extractor = new SearchExtractor();
         optimizedExpression.accept(extractor);

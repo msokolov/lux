@@ -154,10 +154,7 @@ public class Evaluator {
     
     public XdmResultSet evaluate(String query, QueryContext context) {
         errorListener.clear();
-        XQueryExecutable compiledQuery = compiler.compile(query, errorListener);
-        if (queryStats != null && compiler.getLastOptimized() != null) {
-            queryStats.optimizedQuery = compiler.getLastOptimized().toString();
-        }
+        XQueryExecutable compiledQuery = compiler.compile(query, errorListener, queryStats);
         return evaluate (compiledQuery, context);
     }
     

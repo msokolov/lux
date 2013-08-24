@@ -123,11 +123,15 @@ public class Compiler {
      * @throws LuxException if any error occurs while compiling, such as a static XQuery error or syntax error.
      */
     public XQueryExecutable compile(String exprString) throws LuxException {
-        return compile (exprString, null, null);
+        return compile (exprString, null, null, null);
     }
     
     public XQueryExecutable compile(String exprString, ErrorListener errorListener) throws LuxException {
-        return compile (exprString, errorListener, null);
+        return compile (exprString, errorListener, null, null);
+    }
+    
+    public XQueryExecutable compile(String exprString, ErrorListener errorListener, QueryStats stats) throws LuxException {
+        return compile (exprString, errorListener, null, stats);
     }
     
     /**
@@ -140,7 +144,7 @@ public class Compiler {
      * @throws LuxException when a compilation error occurs.  The message is typically unhelpful; meaningful errors
      * are stored in the errorListener
      */
-    public XQueryExecutable compile(String exprString, ErrorListener errorListener, URI baseURI) throws LuxException {
+    public XQueryExecutable compile(String exprString, ErrorListener errorListener, URI baseURI, QueryStats stats) throws LuxException {
         XQueryExecutable xquery;
         XQueryCompiler xQueryCompiler = getXQueryCompiler();
         if (errorListener != null) {
@@ -164,6 +168,9 @@ public class Compiler {
         XQuery optimizedQuery = null;
         try {
             optimizedQuery = optimizer.optimize(abstractQuery);
+            if (stats != null) {
+                stats.optimizedXQuery = optimizedQuery;
+            }
         } catch (LuxException e) {
             if (logger.isDebugEnabled()) {
                 logger.debug ("An error occurred while optimizing: " + abstractQuery.toString());

@@ -283,7 +283,7 @@ public class CompilerTest {
         URL url = classLoader.getResource ("lux/compiler/" + queryFileName);
         String query = IOUtils.toString(url.openStream(), "utf-8");
         URI uri = url.toURI();
-        XQueryExecutable cq = compiler.compile(query, null, uri);
+        XQueryExecutable cq = compiler.compile(query, null, uri, null);
         // System.err.println (compiler.getLastOptimized());
         return cq;
     }

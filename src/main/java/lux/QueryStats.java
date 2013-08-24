@@ -1,5 +1,7 @@
 package lux;
 
+import lux.xquery.XQuery;
+
 /**
  * Holds statistics about a single query execution
  */
@@ -39,6 +41,8 @@ public class QueryStats {
     public long retrievalTime;
 
     public String optimizedQuery;
+
+    public XQuery optimizedXQuery;
     
     @Override
     public String toString () {
