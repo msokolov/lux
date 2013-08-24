@@ -1,0 +1,89 @@
+indexed paths and xml in 4390 ms 1387520 bytes
+indexed paths and xml in 1269 ms 1387520 bytes
+indexed paths and xml in 700 ms 1387520 bytes
+indexed paths and xml in 611 ms 1387520 bytes
+indexed paths in 338 ms 122880 bytes
+indexed paths in 277 ms 122880 bytes
+indexed paths in 243 ms 122880 bytes
+indexed paths in 239 ms 122880 bytes
+indexed qnames and xml in 495 ms 1352704 bytes
+indexed qnames and xml in 501 ms 1352704 bytes
+indexed qnames and xml in 434 ms 1352704 bytes
+indexed qnames and xml in 407 ms 1352704 bytes
+indexed qnames in 264 ms 88064 bytes
+indexed qnames in 237 ms 88064 bytes
+indexed qnames in 244 ms 88064 bytes
+indexed qnames in 241 ms 88064 bytes
+indexed path-occurrences in 540 ms 91136 bytes
+indexed path-occurrences in 369 ms 91136 bytes
+indexed path-occurrences in 368 ms 91136 bytes
+indexed path-occurrences in 356 ms 91136 bytes
+indexed full-text in 1206 ms 1761280 bytes
+indexed full-text in 770 ms 1761280 bytes
+indexed full-text in 556 ms 1761280 bytes
+indexed full-text in 552 ms 1761280 bytes
+indexed full-text-only in 346 ms 497664 bytes
+indexed full-text-only in 339 ms 497664 bytes
+indexed full-text-only in 337 ms 497664 bytes
+indexed full-text-only in 331 ms 497664 bytes
+indexed path-values for lux/reader-test.xml in 12288 bytes
+Printing all terms (except uri)
+lux_text 0 1
+lux_text 12345678 1
+lux_text end 1
+lux_text escaped 1
+lux_text is 1
+lux_text markup 1
+lux_text some 1
+lux_text test 1
+lux_text that 1
+lux_text the 1
+lux_text this 1
+lux_text ģé 1
+indexed path-values for test-module.xqy in 9216 bytes
+indexed path-values in 433 ms 453632 bytes
+indexed path-values in 334 ms 453632 bytes
+indexed path-values in 322 ms 453632 bytes
+indexed path-values in 337 ms 453632 bytes
+indexed path-text in 395 ms 535552 bytes
+indexed path-text in 361 ms 535552 bytes
+indexed path-text in 372 ms 535552 bytes
+indexed path-text in 360 ms 535552 bytes
+indexed qname-values and docs in 522 ms 1596416 bytes
+indexed qname-values and docs in 508 ms 1596416 bytes
+indexed qname-values and docs in 498 ms 1596416 bytes
+indexed qname-values and docs in 495 ms 1596416 bytes
+indexed qname-text and docs in 1334 ms 3035136 bytes
+indexed qname-text and docs in 1051 ms 3035136 bytes
+indexed qname-text and docs in 980 ms 3035136 bytes
+indexed qname-text and docs in 993 ms 3035136 bytes
+indexed qname-text in 817 ms 1770496 bytes
+indexed qname-text in 788 ms 1770496 bytes
+indexed qname-text in 788 ms 1770496 bytes
+indexed qname-text in 785 ms 1770496 bytes
+indexed path-values and docs in 496 ms 1717248 bytes
+indexed path-values and docs in 503 ms 1717248 bytes
+indexed path-values and docs in 500 ms 1717248 bytes
+indexed path-values and docs in 514 ms 1717248 bytes
+indexed qnames and paths and docs in 442 ms 1392640 bytes
+indexed qnames and paths and docs in 437 ms 1392640 bytes
+indexed qnames and paths and docs in 456 ms 1392640 bytes
+indexed qnames and paths and docs in 436 ms 1392640 bytes
+indexed qnames and paths in 290 ms 1514496 bytes
+indexed qnames and paths in 268 ms 128000 bytes
+indexed qnames and paths in 261 ms 128000 bytes
+indexed qnames and paths in 263 ms 128000 bytes
+indexed qnames and paths in 278 ms 128000 bytes
+indexed qnames and paths in 268 ms 128000 bytes
+indexed qnames and paths in 297 ms 128000 bytes
+indexed qnames and paths in 312 ms 128000 bytes
+indexed xml storage in 383 ms 1347584 bytes
+indexed xml storage in 394 ms 1347584 bytes
+indexed xml storage in 347 ms 1347584 bytes
+indexed xml storage in 358 ms 1347584 bytes
+indexed xml binary storage in 644 ms 1045504 bytes
+indexed xml binary storage in 312 ms 1045504 bytes
+indexed xml binary storage in 259 ms 1045504 bytes
+indexed xml binary storage in 273 ms 1045504 bytes
+indexed xpath in 919 ms 96256 bytes
+indexed xpath in 660 ms 89088 bytes

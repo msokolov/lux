@@ -5,10 +5,11 @@ import static javax.xml.stream.XMLStreamConstants.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 
 import lux.xml.StAXHandler;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Accumulate counts of QNames and QName paths.
@@ -25,22 +26,51 @@ import lux.xml.StAXHandler;
  */
 public class XmlPathMapper implements StAXHandler {
     
-    protected StringBuilder currentPath = new StringBuilder();
-    protected QName currentQName;
-    private HashMap<QName, Integer> eltQNameCounts = new HashMap<QName, Integer>();
-    private HashMap<QName, Integer> attQNameCounts = new HashMap<QName, Integer>();
-    private HashMap<String, Integer> pathCounts = new HashMap<String, Integer>();
+    protected MutableString currentPath = new MutableString(2048);
+    private MutableString currentQName = new MutableString();
+    private HashMap<CharSequence, Integer> eltQNameCounts = new HashMap<CharSequence, Integer>();
+    private HashMap<CharSequence, Integer> attQNameCounts = new HashMap<CharSequence, Integer>();
+    private HashMap<CharSequence, Integer> pathCounts = new HashMap<CharSequence, Integer>();
+    private HashMap<CharSequence, CharSequence> names = new HashMap<CharSequence, CharSequence>();
     
-    public Map<QName,Integer> getEltQNameCounts () {
+    public Map<CharSequence,Integer> getEltQNameCounts () {
         return eltQNameCounts;
     }
     
-    public Map<QName,Integer> getAttQNameCounts () {
+    public Map<CharSequence,Integer> getAttQNameCounts () {
         return attQNameCounts;
     }
     
-    public Map<String,Integer> getPathCounts () {
+    public Map<CharSequence,Integer> getPathCounts () {
         return pathCounts;
+    }
+    
+    public int getEltQNameCount (String s) {
+        Integer i = eltQNameCounts.get(new MutableString (s));
+        if (i == null) {
+            return 0;
+        }
+        return i;
+    }
+    
+    public int getAttQNameCount (String s) {
+        Integer i = attQNameCounts.get(new MutableString (s));
+        if (i == null) {
+            return 0;
+        }
+        return i;
+    }
+    
+    public int getPathCount (String s) {
+        Integer i = pathCounts.get(new MutableString (s));
+        if (i == null) {
+            return 0;
+        }
+        return i;
+    }
+    
+    public CharSequence getCurrentQName () {
+        return names.get(currentQName);
     }
     
     private boolean namespaceAware = true;
@@ -60,71 +90,62 @@ public class XmlPathMapper implements StAXHandler {
     @Override
     public void handleEvent(XMLStreamReader reader, int eventType) {
         if (eventType == START_ELEMENT) {
-            currentQName = getEventQName(reader);
+            getEventQName(currentQName, reader);
             // qnameStack.add(qname);
             currentPath.append (' ');
-            currentPath.append(encodeQName(currentQName));
+            currentPath.append(currentQName);
             incrCount(eltQNameCounts, currentQName);
-            String curPath = currentPath.toString();
-            incrCount(pathCounts, curPath);
+            incrCount(pathCounts, currentPath);
+            int len = currentPath.length();
             for (int i = 0; i < reader.getAttributeCount(); i++) {
-                QName attQName = getEventAttQName (reader, i);
-                incrCount (attQNameCounts, attQName);
-                incrCount (pathCounts, curPath + " @" + encodeQName(attQName));
+                getEventAttQName (currentQName, reader, i);
+                incrCount (attQNameCounts, currentQName);
+                currentPath.append(" @").append(currentQName);
+                incrCount (pathCounts, currentPath);
+                currentPath.setLength(len);
             }
         }
         else if (eventType == END_ELEMENT) {
-            currentQName = getEventQName(reader);
+            getEventQName(currentQName, reader);
             // snip off the last path step, including its '/' separator char
-            currentPath.setLength(currentPath.length() - encodeQName(currentQName).length() - 1);
+            currentPath.setLength(currentPath.length() - currentQName.length() - 1);
         }
         else if (eventType == START_DOCUMENT) {
             currentPath.append("{}");
         }
     }
 
-    protected QName getEventAttQName(XMLStreamReader reader, int i) {
-        return createQName (reader.getAttributeLocalName(i), reader.getAttributePrefix(i), reader.getAttributeNamespace(i));
+    protected void getEventAttQName(MutableString buf, XMLStreamReader reader, int i) {
+        encodeQName (buf, reader.getAttributeLocalName(i), reader.getAttributePrefix(i), reader.getAttributeNamespace(i));
     }
 
-    private QName getEventQName(XMLStreamReader reader) {
-        return createQName (reader.getLocalName(), reader.getPrefix(), reader.getNamespaceURI());
+    private void getEventQName(MutableString buf, XMLStreamReader reader) {
+        encodeQName (buf, reader.getLocalName(), reader.getPrefix(), reader.getNamespaceURI());
     }
     
-    private QName createQName (String localName, String prefix, String namespace) {
+    private void encodeQName (MutableString buf, String localName, String prefix, String namespace) {
+        buf.setLength(0);
         if (namespaceAware) {
-            return new QName (namespace, localName);
+            buf.append(localName);
+            if (!StringUtils.isEmpty(namespace)) {
+                buf.append ('{').append(namespace).append("}");
+            }
         } 
         else if (! prefix.isEmpty()) {
-            return new QName (prefix +':' + localName);
+            buf.append(prefix).append(':').append(localName);
         }
         else {
-            return new QName (localName);
+            buf.append (localName);
         } 
     }
 
-    private <T> void incrCount(HashMap<T, Integer> map, T o) {
+    private void incrCount(HashMap<CharSequence, Integer> map, MutableString o) {
         if (map.containsKey(o))
             map.put(o, map.get(o) + 1);
-        else
-            map.put(o, 1);
-    }
-    
-    /**
-     * encode a QName in a suitable form for indexing.
-     * If namespace-aware, the encoding is: local-name{encoded-namespace}.  Otherwise,
-     * if prefix is non-empty, it's local-name{prefix}, otherwise just local-name.
-     * @param qname
-     * @return the encoded qname
-     */
-    protected String encodeQName (QName qname) {
-        if (!isNamespaceAware()) {
-            if (qname.getPrefix().isEmpty()) {
-                return qname.getLocalPart();
-            }
-            return lux.xml.QName.encode(qname.getLocalPart(), qname.getPrefix());
-        } else {
-            return lux.xml.QName.encode(qname.getLocalPart(), qname.getNamespaceURI());
+        else {
+            MutableString copy = new MutableString(o);
+            map.put(copy, 1);
+            names.put(copy, copy);
         }
     }
     
@@ -133,9 +154,11 @@ public class XmlPathMapper implements StAXHandler {
         eltQNameCounts.clear();
         attQNameCounts.clear();
         pathCounts.clear();
+        names.clear();
         currentPath.setLength(0);
+        currentQName.setLength(0);
     }
-
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

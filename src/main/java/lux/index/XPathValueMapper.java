@@ -11,7 +11,6 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 
 /**
@@ -30,6 +29,7 @@ public class XPathValueMapper extends XmlPathMapper {
     int[] valueOffsets = new int[16];
     char[][] values = new char[16][HASH_SIZE];
     char[] attValue = new char[HASH_SIZE];
+    private MutableString charBuffer = new MutableString();
     private ArrayList<char[]> pathValues = new ArrayList<char[]>();
     
     public ArrayList<char[]> getPathValues() {
@@ -62,8 +62,8 @@ public class XPathValueMapper extends XmlPathMapper {
                 // append to the currentPath buffer
                 int l = currentPath.length();
                 for (int i = 0; i < reader.getAttributeCount(); i++) {
-                    QName attQName = getEventAttQName (reader, i);
-                    currentPath.append(" @").append(encodeQName(attQName)).append(' ');                    
+                    getEventAttQName (charBuffer, reader, i);
+                    currentPath.append(" @").append(charBuffer).append(' ');                    
                     hashString (reader.getAttributeValue(i).toCharArray(), attValue);
                     currentPath.append(attValue);
                     addValue();
@@ -76,7 +76,8 @@ public class XPathValueMapper extends XmlPathMapper {
         case END_ELEMENT:
         {
             int l = currentPath.length();
-            currentPath.append(' ').append(values[depth]);
+            currentPath.append(' ');
+            currentPath.append(values[depth]);
             addValue();
             --depth;
             currentPath.setLength(l);
@@ -102,7 +103,7 @@ public class XPathValueMapper extends XmlPathMapper {
 
     private void addValue() {
         char[] value = new char[currentPath.length()];
-        currentPath.getChars(0, currentPath.length(), value, 0);
+        currentPath.toString().getChars(0, currentPath.length(), value, 0);
         pathValues.add(value);
     }
     
