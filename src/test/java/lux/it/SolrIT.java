@@ -86,10 +86,11 @@ public class SolrIT {
     public void testAttributeEncodingInJSON () throws Exception {
     	String xmlDoc = "<doc title=\"title with &lt;tag&gt; &amp; &quot;quotes&quot; in it\" />";
     	String xmlDocEnc = URLEncoder.encode(xmlDoc, "utf-8");
-    	String path = (XQUERY_PATH + "?q=" + xmlDocEnc + "&wt=json");
+    	String path = (XQUERY_PATH + "?q=" + xmlDocEnc + "&wt=json&lux.contentType=text/xml");
         WebResponse httpResponse = httpclient.getResponse(path);
-    	assertEquals ("{\"responseHeader\":{\"status\":0,\"QTime\":2},\"xpath-results\":[\"element\",\"<doc title=\\\"title with &lt;tag&gt; &amp; &#34;quotes&#34; in it\\\"/>\"],\"response\":{\"numFound\":0,\"start\":0,\"docs\":[]}}\n",
-    			httpResponse.getText());
+        String resp = httpResponse.getText(); 
+    	assertEquals ("},\"xpath-results\":[\"element\",\"<doc title=\\\"title with &lt;tag&gt; &amp; &#34;quotes&#34; in it\\\"/>\"],\"response\":{\"numFound\":0,\"start\":0,\"docs\":[]}}\n",
+    			resp.substring(resp.indexOf("},")));
     }
     
     /*
