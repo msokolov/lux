@@ -20,6 +20,7 @@ import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.util.BytesRef;
 import org.slf4j.LoggerFactory;
@@ -56,8 +57,7 @@ public class CachingDocReader {
      * @param indexConfig
      *            supplies the names of the xml storage and uri fields
      */
-    public CachingDocReader(DocumentBuilder builder, Configuration config,
-            IndexConfiguration indexConfig) {
+    public CachingDocReader(DocumentBuilder builder, Configuration config, IndexConfiguration indexConfig) {
         this.builder = builder;
         this.config = config;
         this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
@@ -68,24 +68,44 @@ public class CachingDocReader {
     }
 
     /**
+     * Reads the document with the given relative id from an atomic reader.
+     * If cached, the cached copy is returned. Otherwise the document is read from the index. 
+     * If the document does not exist in the index, or has been deleted, results are not
+     * well-defined: see {@link IndexReader}.
+     * 
+     * @param leadDocID the relative docid of the document to read
+     * @param context an atomic Lucene index reader context (a leaf of the segmented index tree)
+     * @return the document, as a Saxon XdmNode
+     * @throws IOException if there is some sort of low-level problem with the index
+     * @throws LuxException if there is an error building the document that has been retrieved
+     */
+    public XdmNode get(int leafDocID, AtomicReaderContext context) throws IOException {
+       int docID = leafDocID + context.docBase;
+       XdmNode node= cache.get(docID);
+       if (node != null) {
+           ++cacheHits;
+           return node;
+       }
+       DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
+       context.reader().document(leafDocID, fieldSelector);
+       Document document = fieldSelector.getDocument();
+       return getXdmNode(docID, document);
+    }
+    
+    /**
      * Reads the document with the given id. If cached, the cached copy is
      * returned. Otherwise the document is read from the index. If the document
      * does not exist in the index, or has been deleted, results are not
      * well-defined: see {@link IndexReader}.
      * 
-     * @param docID
-     *            the id of the document to read
-     * @param reader
-     *            the Lucene index reader
+     * @param docID the absolute docid of the document to read
+     * @param reader the Lucene index reader
      * @return the document, as a Saxon XdmNode
-     * @throws IOException
-     *             if there is some sort of low-level problem with the index
-     * @throws LuxException
-     *             if there is an error building the document that has been
-     *             retrieved
+     * @throws IOException if there is some sort of low-level problem with the index
+     * @throws LuxException if there is an error building the document that has been retrieved
      */
     public XdmNode get(int docID, IndexReader reader) throws IOException {
-        XdmNode node= cache.get(docID);
+        XdmNode node = cache.get(docID);
         if (node != null) {
             ++cacheHits;
             return node;
@@ -93,7 +113,11 @@ public class CachingDocReader {
         DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
-        
+        return getXdmNode(docID, document);
+    }
+
+    private XdmNode getXdmNode(int docID, Document document) throws IOException {
+        XdmNode node = null;
         String xml = document.get(xmlFieldName);
         String uri = "lux:/" + document.get(uriFieldName);
         DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
@@ -119,19 +143,19 @@ public class CachingDocReader {
             }
         }
         if (node == null) {
-        	StreamSource source = new StreamSource(new StringReader(xml));
-        	source.setSystemId(uri);
-        	try {
-        		node = builder.build(source);
-        	} catch (SaxonApiException e) {
-        		// shouldn't normally happen since the document would generally have
-        		// been parsed when indexed.
-        		throw new LuxException(e);
-        	}
-        	// associate the bytes with the xml stub (for all non-XML content)
-            if (bytes != null) {
-                ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
+            StreamSource source = new StreamSource(new StringReader(xml));
+            source.setSystemId(uri);
+            try {
+                node = builder.build(source);
+            } catch (SaxonApiException e) {
+                // shouldn't normally happen since the document would generally have
+                // been parsed when indexed.
+                throw new LuxException(e);
             }
+        }
+        // associate the bytes with the xml stub (for all non-XML content)
+        if (bytes != null) {
+            ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
         }
         // doesn't seem to do what one might think:
         // ((TinyDocumentImpl) node.getUnderlyingNode()).setBaseURI(uri);
