@@ -17,6 +17,7 @@ import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
+import net.sf.saxon.tree.tiny.TinyTree;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
@@ -31,12 +32,20 @@ import org.slf4j.LoggerFactory;
  * single query only, and is *not thread-safe*. 
  * 
  * TODO: a nice optimization would be to maintain a global cache, shared across threads, 
- * with some tunable resource-based eviction policy.
- * 
+ * with some tunable resource-based eviction policy.  PLAN:
+ * 1) limit cache size by bytes
+ * 2) autoconfigure size based on heap size (later: provide cache size configuration)
+ * 3) two-level cache strategy: global first, then per-query; when query completes, write newly
+ * cached docs to global cache.  Note: the global cache cannot use docID as a key.  It would have to use
+ * URIs
+ * 4) How to maintain memory limit?  Catch OOM when allocating docs? 
  * Not threadsafe.
  */
 public class CachingDocReader {
-	private final LRUCache<Integer, XdmNode> cache = new LRUCache<Integer, XdmNode>(512);
+    // the portion of heap to allocate to each per-request document cache.  This should really rely on the
+    // number of clients
+    private final static int CACHE_RATIO = 100;
+	private final NodeCache cache = new NodeCache(java.lang.Runtime.getRuntime().maxMemory() / CACHE_RATIO);
     private final String xmlFieldName;
     private final String uriFieldName;
     private final HashSet<String> fieldsToRetrieve;
@@ -196,25 +205,71 @@ public class CachingDocReader {
         cache.clear();
     }
     
-    // from org.apache.lucene.queryparser.xml.builders.CachedFilterBuilder.LRUCache
-    // TODO: limit cache by something proportional to *bytes*, rather than number of entries
-    static class LRUCache<K, V> extends java.util.LinkedHashMap<K, V> {
+    static class NodeCache extends java.util.LinkedHashMap<Integer, XdmNode> {
+        
+        private long bytes;
+        private final long maxbytes;
 
-        public LRUCache(int maxsize) {
-          super(maxsize * 4 / 3 + 1, 0.75f, true);
-          this.maxsize = maxsize;
+        public NodeCache (long maxbytes) {
+            super((int) ((maxbytes / 100) * 4 / 3 + 1), 0.75f, true);
+            this.maxbytes = maxbytes;
+            this.bytes = 0;
         }
-
-        protected int maxsize;
-
+        
         @Override
-        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-          return size() > maxsize;
+        public XdmNode put (Integer key, XdmNode value) {
+            bytes += calculateSize (value);
+            return super.put(key, value);
+        }
+        
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Integer, XdmNode> eldest) {
+            while (bytes > maxbytes) {
+                remove(eldest.getKey());
+                bytes -= calculateSize (eldest.getValue());
+                for (Map.Entry<Integer, XdmNode> entry : entrySet()) {
+                    // get the next eldest
+                    eldest = entry;
+                    break;
+                }
+            }
+            return false;
         }
 
-      }
+        /**
+         * @param value a document whose size is to be calculated
+         * @return the size of a TinyBinary representation of the document, which should be pretty close to the actual
+         * heap size used.
+         */
+        private long calculateSize(XdmNode value) {
+            TinyTree tree = ((TinyDocumentImpl)value.getUnderlyingNode()).getTree();
+            int nodeCount = tree.getNumberOfNodes();
+            int attCount = tree.getNumberOfAttributes();
+            int nsCount = tree.getNumberOfNamespaces();
+            byte[] binary = (byte[]) ((TinyDocumentImpl)value.getUnderlyingNode()).getUserData("_binaryDocument");
+            int binSize = binary == null ? 0 : binary.length;
+            // gross estimate of the number of string pointers
+            // Note: we don't count the size of the names in the name pool, on the assumption they will be shared
+            // by a lot of documents.
+            int stringLen = 12 + 2 * nodeCount + 2 * attCount + 2 * nsCount;
+            // actually count the lengths of all the attributes
+            CharSequence[] attValueArray = tree.getAttributeValueArray();
+            for (int i = 0; i < attCount; i++) {
+                stringLen += attValueArray[i].length();
+            }
+            return 36
+                    + binSize
+                    + nodeCount * 19
+                    + attCount * 8
+                    + nsCount * 8
+                    + tree.getCharacterBuffer().length() * 2
+                    + (tree.getCommentBuffer() == null ? 0 : tree.getCommentBuffer().length() * 2) 
+                    + stringLen;
+        }
+    }
 
 }
+
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
