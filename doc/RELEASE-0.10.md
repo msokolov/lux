@@ -5,6 +5,27 @@ group: release
 pos: 5
 ---
 
+# Changes in Lux release 0.10.3
+
+## Tickets Closed
+
+1. LUX-21. Iterate over Lucene readers more efficiently: performance
+improvement for large fragmented indexes.
+
+2. LUX-49. Pool Serializers in the app server, and make the default serialization the natural one (xml for the xquery service, and html for the app server).
+
+3. LUX-50. Fixed an exception that would arise if a core name was not provided as part of an app server request url.  Now the dispatch filter attempts to provide a default core name, and if that fails, returns a 404 rather than a 500 error.
+
+4. LUX-24. Reduced heap usage during indexing.
+
+5. LUX-53. We now optimize certain predicates that were not optimized before; mostly this includes predicates with mixed booleans and comparisons.
+
+6. LUX-55. Use a regular match-all query when no optimizations are
+possible, rather than a SpanTerm query matching document root, which we
+were doing in some cases.  This fixes a bug where binary (non-XML)
+documents would not be found in some cases, and makes for more efficient
+queries generally.
+
 # Changes in Lux release 0.10.2
 
 This is a minor release containing mostly bug fixes.  One new feature
@@ -46,7 +67,7 @@ incorrectly.
 
 ## New Features
 
-1. LUX-37: optimize comparisons with lux:key()
+1. LUX-37: optimize comparisons with lux:field-values (now lux:key())
 2. LUX-44: optimize comparisons with indexed XPath expressions 
 3. Improved app-server startup scripts for Unix and provided a Windows batch file
 
