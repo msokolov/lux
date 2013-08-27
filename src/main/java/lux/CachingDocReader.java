@@ -33,13 +33,12 @@ import org.slf4j.LoggerFactory;
  * 
  * TODO: a nice optimization would be to maintain a global cache, shared across threads, 
  * with some tunable resource-based eviction policy.  PLAN:
- * 1) limit cache size by bytes
+ * 1) Build a cache that is limited by byte size (DONE: see NodeCache below)
  * 2) autoconfigure size based on heap size (later: provide cache size configuration)
  * 3) two-level cache strategy: global first, then per-query; when query completes, write newly
  * cached docs to global cache.  Note: the global cache cannot use docID as a key.  It would have to use
  * URIs
  * 4) How to maintain memory limit?  Catch OOM when allocating docs? 
- * Not threadsafe.
  */
 public class CachingDocReader {
     // the portion of heap to allocate to each per-request document cache.  This should really rely on the

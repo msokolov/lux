@@ -21,6 +21,7 @@ import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
+import lux.search.DocIterator;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.Configuration;
@@ -273,12 +274,12 @@ public class Evaluator {
             }
             path = path.replace('\\', '/');
             try {
-                DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
+                DocIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
                 int docID = disi.nextDoc();
                 if (docID == DocIdSetIterator.NO_MORE_DOCS) {
                     throw new NotFoundException(href);
                 }
-                XdmNode doc = docReader.get(docID, getSearcher().getIndexReader());
+                XdmNode doc = docReader.get(docID, disi.getCurrentReaderContext());
                 return doc.asSource(); 
             } catch (IOException e) {
                 throw new TransformerException(e);
