@@ -228,8 +228,15 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
         rb.setResult (result);
         rsp.add ("response", rb.getResults().docList);
-        logger.debug ("retrieved: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
+        if (xpathResults != null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug ("retrieved: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
                     xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
+            } 
+        } else {
+            logger.warn ("xquery evaluation error: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
+                    "0 results, " + (System.currentTimeMillis() - tstart) + "ms");
+        }
     }
 
     private String formatError(String query, TransformErrorListener errorListener) {
