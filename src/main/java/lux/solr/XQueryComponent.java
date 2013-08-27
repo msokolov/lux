@@ -20,6 +20,7 @@ import lux.QueryStats;
 import lux.TransformErrorListener;
 import lux.XdmResultSet;
 import lux.exception.LuxException;
+import lux.exception.ResourceExhaustedException;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -66,19 +67,20 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     public static final String LUX_XQUERY = "lux.xquery";
     public static final String LUX_PATH_INFO = "lux.pathInfo";
     private static final QName LUX_HTTP = new QName (Evaluator.LUX_NAMESPACE, "http");
+    // TODO: expose via configuration
+    private static final int MAX_RESULT_SIZE = (int) (Runtime.getRuntime().maxMemory() / 32);
+
     protected Set<String> fields = new HashSet<String>();
 
     protected SolrIndexConfig solrIndexConfig;
     
-    private Serializer serializer;
-    
     protected String queryPath;
     
-    public SolrIndexConfig getSolrIndexConfig() {
-        return solrIndexConfig;
-    }
-
+    private Serializer serializer;
+    
     private Logger logger;
+    
+    private int resultByteSize;
     
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
@@ -111,6 +113,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         	// allow subclasses to override...
         	queryPath = rb.req.getParams().get(LUX_XQUERY);
         }
+        resultByteSize = 0;
     }
     
     public String getDefaultSerialization () {
@@ -185,37 +188,41 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     xqueryPath
                     ));
         }
-        XdmResultSet queryResults = null;
-        try {
-            queryResults = evaluator.evaluate(expr, context);
-        } finally {
-            // don't close; this forces a commit()
-            // evaluator.close();
+        Iterator<XdmItem> queryResults = evaluator.iterator(expr, context);
+        String err = null;
+        while (queryResults.hasNext()) {
+            XdmItem xpathResult = queryResults.next();
+            if (++ count < start) {
+                continue;
+            }
+            try {
+                addResult (xpathResults, xpathResult);
+            } catch (SaxonApiException e) {
+                err = e.getMessage();
+                xpathResults = null;
+                break;
+            } catch (ResourceExhaustedException e) {
+                err = e.getMessage();
+                break;
+            } catch (OutOfMemoryError e) {
+                xpathResults = null;
+                err = e.getMessage();
+                break;
+            }
+            if ((len > 0 && xpathResults.size() >= len) || 
+                    (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
+                break;
+            }
         }
-        if (queryResults != null) {
-        	String err = null;
-            if (queryResults.getErrors().isEmpty()) {
-                for (Object xpathResult : queryResults) {
-                    if (++ count < start) {
-                        continue;
-                    }
-                    try {
-						addResult (xpathResults, (XdmItem) xpathResult);
-					} catch (SaxonApiException e) {
-						err = e.getMessage();
-					}
-                    if ((len > 0 && xpathResults.size() >= len) || 
-                            (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
-                        break;
-                    }
-                }
+        ArrayList<TransformerException> errors = evaluator.getErrorListener().getErrors();
+        if (! errors.isEmpty()) {
+            err = formatError(query, errors, evaluator.getQueryStats());
+            if (xpathResults.size() == 0) {
+                xpathResults = null; // throw a 400 error; don't return partial results
             }
-            else {
-                err = formatError(query, queryResults.getErrors(), evaluator.getQueryStats());
-            }
-            if (err != null) {
-            	rsp.add ("xpath-error", err);
-            }
+        }
+        if (err != null) {
+            rsp.add ("xpath-error", err);
         }
         rsp.add("xpath-results", xpathResults);
         result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
@@ -273,8 +280,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 Object javaValue;
                 if (value instanceof DecimalValue) {
                     javaValue = ((DecimalValue) value).getDoubleValue();
+                    addResultBytes (8);
                 } else if (value instanceof QNameValue) {
                     javaValue = ((QNameValue) value).getClarkName();
+                    addResultBytes(((String)javaValue).length() * 2); // close enough, modulo surrogates
                 } else if (value instanceof GDateValue) { 
                     if (value instanceof GMonthValue) {
                         javaValue = ((GMonthValue) value).getPrimitiveStringValue().toString();
@@ -289,8 +298,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     } else {
                         javaValue = Value.convertToJava(value);
                     }
+                    addResultBytes (javaValue.toString().length() * 2);
                 } else {
                     javaValue = Value.convertToJava(value);
+                    addResultBytes (javaValue.toString().length() * 2);
                 }
                 // TODO hexBinary and base64Binary
                 xpathResults.add (typeName, javaValue);
@@ -302,10 +313,20 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             XdmNodeKind nodeKind = node.getNodeKind();
             StringWriter buf = new StringWriter ();
             // TODO: xml serialization, indentation control; for now assume text/html
+            // TODO: tinybin serialization!
             serializer.setOutputWriter(buf);
             serializer.serializeNode(node);
-            xpathResults.add(nodeKind.toString().toLowerCase(), buf.toString());
+            String xml = buf.toString();
+            addResultBytes (xml.length() * 2);
+            xpathResults.add(nodeKind.toString().toLowerCase(), xml);
         }
+    }
+    
+    private void addResultBytes (int count) {
+        if (resultByteSize + count > MAX_RESULT_SIZE) {
+            throw new ResourceExhaustedException("Maximum result size exceeded, returned result has been truncated");
+        }
+        resultByteSize += count;
     }
     
     // Hand-coded serialization may be a bit fragile, but the only alternative 
@@ -341,6 +362,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         // TODO: headers, path, etc?
         buf.append ("</http>");
         return buf.toString();
+    }
+
+    public SolrIndexConfig getSolrIndexConfig() {
+        return solrIndexConfig;
     }
 
     private String xmlEscape(String value) {

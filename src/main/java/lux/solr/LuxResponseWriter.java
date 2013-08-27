@@ -32,7 +32,8 @@ public class LuxResponseWriter implements QueryResponseWriter {
         @SuppressWarnings("unchecked")
         List<String> errors = response.getValues().getAll("xpath-error");
         String contentType= request.getParams().get("lux.contentType");
-        if (!errors.isEmpty()) {
+        NamedList<?> values = (NamedList<?>) response.getValues().get("xpath-results");
+        if (values == null && !errors.isEmpty()) {
             StringBuilder buf = new StringBuilder();
             for (String e : errors) {
                 buf.append(e).append("\n");
@@ -47,14 +48,13 @@ public class LuxResponseWriter implements QueryResponseWriter {
             writeError (writer, error);
         }
         else {
-            NamedList<?> values = (NamedList<?>) response.getValues().get("xpath-results");
             if (values != null) {
                 if (xsl != null) {
                     writer.write("<?xml-stylesheet type='text/xsl' href='" + xsl + "' ?>\n");
                     // css?
                 }
                 boolean wrapResults = "text/xml".equals(contentType) && 
-                        (values.size() == 0 || values.size() > 1 || 
+                        (values.size() == 0 || values.size() > 1 || ! errors.isEmpty() || 
                         (! (values.getName(0).equals("document") || values.getName(0).equals("element"))));
                 if (wrapResults) {
                     writer.write("<results>");
@@ -62,6 +62,15 @@ public class LuxResponseWriter implements QueryResponseWriter {
                 for (int i = 0; i < values.size(); i++) {
                     Object val = values.getVal(i);
                     writer.write(val.toString());
+                }
+                if (!errors.isEmpty()) {
+                    writer.write("<errors>");
+                    for (String error : errors) {
+                        writer.write("<error>");
+                        writer.write(error.replace("&", "&amp;"). replace("<", "&lt;"));
+                        writer.write("</error>");
+                    }
+                    writer.write("</errors>");
                 }
                 if (wrapResults) {
                     writer.write("</results>");

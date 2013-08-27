@@ -29,7 +29,7 @@ public class SolrIT {
 
     private final String APP_SERVER_PATH = "http://localhost:8080/testapp";
     private final String XQUERY_PATH = "http://localhost:8080/xquery";
-    private final String LUX_PATH = "http://localhost:8080/lux/foo.xqy";
+    private final String LUX_PATH = "http://localhost:8080/lux/";
     private static WebClient httpclient;
 
     @BeforeClass
@@ -80,6 +80,20 @@ public class SolrIT {
         		"<parm name=\"p2\"><value>B</value><value>C</value></parm>" +
                 "<parm name=\"p1\"><value>A</value></parm>" +
         		"</params></http>", response.replaceAll("\n\\s*",""));
+    }
+    
+    @Test
+    public void testExhaustResultSetMemory () throws Exception {
+        String path = (APP_SERVER_PATH + "?lux.xquery=lux/solr/huge-result.xqy");
+        WebResponse httpResponse = httpclient.getResponse(path);
+        httpResponse.getElementsWithName("error");
+        // caught a ResourceExhaustedException
+        assertTrue ("did not find expected error", httpResponse.getText().contains("Maximum result size exceeded, returned result has been truncated"));
+        // some results were returned nonetheless
+        assertTrue ("did not find result", httpResponse.getText().contains("abracadabra"));
+        // abuse this code which means something vaguely similar
+        // not right, but we can't easily influence this in Solr land
+        assertEquals (httpResponse.getText(), 200, httpResponse.getResponseCode());
     }
     
     @Test
