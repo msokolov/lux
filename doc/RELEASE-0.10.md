@@ -5,7 +5,18 @@ group: release
 pos: 5
 ---
 
+# New Features
+
+One major improvement in this release is optimization of comparisons
+between indexed expressions and suitable constants. For example, if an
+int-valued XPath index on `//@counter` is defined, an expression such as
+`//section[@counter > 10]` will be optimized using the index, and rewritten
+as something like: `lux:search('counter:{10 TO *}')//section[@counter >
+10]`.
+
 # Changes in Lux release 0.10.3
+
+This is a minor release containing mostly bug fixes.
 
 ## Tickets Closed
 
@@ -25,6 +36,9 @@ possible, rather than a SpanTerm query matching document root, which we
 were doing in some cases.  This fixes a bug where binary (non-XML)
 documents would not be found in some cases, and makes for more efficient
 queries generally.
+
+7. Lux now plays nicely with Solr's transaction log, so that recovery after
+a crash works as expected.
 
 # Changes in Lux release 0.10.2
 
