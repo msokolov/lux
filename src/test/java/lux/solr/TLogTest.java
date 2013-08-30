@@ -3,6 +3,8 @@ package lux.solr;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +15,7 @@ import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -78,14 +81,25 @@ public class TLogTest {
         List<?> xml = (List<?>) response.getResults().get(0).get("lux_xml");
         schemaXml = new TinyBinary ((byte[]) xml.get(0), UTF8);
         
+        // copy contents of solr data folder to temporary area to simulate hard shutdown
+        copyDirectory ("solr/collection1/data", "solr/collection1/data2");
+        
         // shut down
         solr.shutdown();
         coreContainer.shutdown();
         
-        // start up again
-        coreContainer = initializer.initialize();
-        solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
+        // restore contents of data directory to before we shutdown
+        removeDirectory ("solr/collection1/data");
+        copyDirectory ("solr/collection1/data2", "solr/collection1/data");
+        removeDirectory ("solr/collection1/data2");
         
+        // start up again
+        initializer = new CoreContainer.Initializer();
+        coreContainer = initializer.initialize();
+        // we need to allow the recovery to proceed?
+        Thread.sleep (1000);
+        solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
+
         // retrieve the documents (from the transaction log):
         validateContent (solr);
         
@@ -95,6 +109,14 @@ public class TLogTest {
         
     }
     
+    private void removeDirectory(String directory) throws IOException {
+        FileUtils.deleteDirectory(new File(directory));
+    }
+
+    private void copyDirectory(String srcDir, String destDir) throws IOException {
+        FileUtils.copyDirectory(new File(srcDir), new File(destDir));
+    }
+
     private void validateContent (SolrServer solr) throws SolrServerException {
         QueryResponse response = search ("*:*", solr);
         assertEquals (2, response.getResults().getNumFound());

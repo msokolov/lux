@@ -53,6 +53,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
     private Compiler compiler;
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
     private ArrayBlockingQueue<Serializer> serializerPool;
+    private IndexSchema schema;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
@@ -184,7 +185,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
 
     public void inform(SolrCore core) {
         
-        IndexSchema schema = core.getSchema();
+        schema = core.getSchema();
         // XML_STORE is not listed explicitly by the indexer
         informField (indexConfig.getField(FieldName.XML_STORE), schema);
         for (FieldDefinition xmlField : indexConfig.getFields()) {
@@ -279,6 +280,10 @@ public class SolrIndexConfig implements SolrInfoMBean {
             return new PathField ();
         }
         throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + fieldName + "; unknown analyzer type: " + analyzer);
+    }
+    
+    public IndexSchema getSchema () {
+        return schema;
     }
     
     // subclasses of built-in Solr field types exist purely so we can name them.
