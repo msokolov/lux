@@ -81,7 +81,7 @@ public class CachingDocReader {
      * If the document does not exist in the index, or has been deleted, results are not
      * well-defined: see {@link IndexReader}.
      * 
-     * @param leadDocID the relative docid of the document to read
+     * @param leafDocID the relative docid of the document to read
      * @param context an atomic Lucene index reader context (a leaf of the segmented index tree)
      * @return the document, as a Saxon XdmNode
      * @throws IOException if there is some sort of low-level problem with the index

@@ -252,7 +252,7 @@ public class XPathQuery {
      * the constituent queries must be span queries as well.
      * @param precursor the other query
      * @param occur the boolean operator used to combine
-     * @param orient 
+     * @param isPredicate whether the enclosing expression is a predicate (or a path expression)
      * @param type the return type of the combined query
      * @param distance the distance between the queries
      * @param config the index configuration
