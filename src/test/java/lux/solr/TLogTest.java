@@ -57,6 +57,9 @@ public class TLogTest {
      */
     @Test 
     public void testTransactionLog () throws Exception {
+        try {
+            cleanDirectory ("solr/collection1/data/tlog");
+        } catch (IOException e) {}
         String defaultCoreName = coreContainer.getDefaultCoreName();
         SolrServer solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
         solr.deleteByQuery("*:*");
@@ -89,15 +92,13 @@ public class TLogTest {
         coreContainer.shutdown();
         
         // restore contents of data directory to before we shutdown
-        removeDirectory ("solr/collection1/data");
-        copyDirectory ("solr/collection1/data2", "solr/collection1/data");
+        removeDirectory ("solr/collection1/data/tlog");
+        copyDirectory ("solr/collection1/data2/tlog", "solr/collection1/data/tlog");
         removeDirectory ("solr/collection1/data2");
         
         // start up again
         initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
-        // we need to allow the recovery to proceed?
-        Thread.sleep (1000);
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
 
         // retrieve the documents (from the transaction log):
@@ -111,6 +112,10 @@ public class TLogTest {
     
     private void removeDirectory(String directory) throws IOException {
         FileUtils.deleteDirectory(new File(directory));
+    }
+
+    private void cleanDirectory(String directory) throws IOException {
+        FileUtils.cleanDirectory(new File(directory));
     }
 
     private void copyDirectory(String srcDir, String destDir) throws IOException {

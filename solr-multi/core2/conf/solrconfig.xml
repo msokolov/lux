@@ -1611,6 +1611,7 @@
           <str name="uriFieldName">uri</str>
         </lst>
         <str name="strip-namespaces">no</str>
+       <processor class="solr.DistributedUpdateProcessorFactory" />
        <processor class="lux.solr.LuxUpdateProcessorFactory" />
        <processor class="solr.LogUpdateProcessorFactory" />
        <processor class="solr.RunUpdateProcessorFactory" />
