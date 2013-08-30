@@ -3,7 +3,6 @@ package lux.search;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;

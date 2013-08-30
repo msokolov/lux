@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.xml.transform.Result;
@@ -21,6 +22,7 @@ import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
+import lux.search.DocIterator;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.Configuration;
@@ -32,6 +34,7 @@ import net.sf.saxon.lib.OutputURIResolver;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.SaxonApiUncheckedException;
 import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XdmDestination;
@@ -175,27 +178,16 @@ public class Evaluator {
      * Evaluate the already-compiled query, with the given context (external variable bindings, context item) defined.
      * @param xquery a compiled XQuery expression
      * @param context the query context holds external variable bindings and the context item
-     * @param listener an error listener that will capture errors and also act as a conduit that passes
-     * the Evaluator to function calls that require it.
+     * @param listener an error listener that will capture errors and also (cough, hack, spew)
+     * act as a conduit that passes the Evaluator to function calls that require it.
      * @return the results of the evaluation; any errors are encapsulated in the result set.
      */
     private XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context, TransformErrorListener listener) { 
         if (context == null) {
             context = new QueryContext();
         }
-        XQueryEvaluator xqueryEvaluator = xquery.load();
+        XQueryEvaluator xqueryEvaluator = prepareEvaluation(context, listener, xquery);
         try {
-            listener.setUserData(this);
-            xqueryEvaluator.setErrorListener(listener);
-            if (context != null) {
-                xqueryEvaluator.setContextItem((XdmItem) context.getContextItem());
-                if (context.getVariableBindings() != null) {
-                    for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
-                        net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
-                        xqueryEvaluator.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
-                    }
-                }
-            }
             XdmValue value = xqueryEvaluator.evaluate();
             return new XdmResultSet (value);
         } catch (SaxonApiException e) {
@@ -204,9 +196,46 @@ public class Evaluator {
             if (docReader != null) {
                 docReader.clear();
             }
-            // TODO: get a new reader form the docWriter (for Lucene direct writer only) to enable
+            // TODO: get a new reader from the docWriter (for Lucene direct writer only) to enable
             // auto-commit via NRT
         }
+    }
+    
+    /**
+     * Evaluate the already-compiled query, with no context defined.
+     * @param xquery a compiled XQuery expression
+     * @return an iterator over the results of the evaluation.
+     */
+    public Iterator<XdmItem> iterator(XQueryExecutable xquery, QueryContext context) {
+        return iterator (xquery, context, errorListener);
+    }
+    
+    private Iterator<XdmItem> iterator(XQueryExecutable xquery, QueryContext context, TransformErrorListener listener) { 
+        if (context == null) {
+            context = new QueryContext();
+        }
+        XQueryEvaluator xqueryEvaluator = prepareEvaluation(context, listener, xquery);
+        try {
+            return xqueryEvaluator.iterator();
+        } catch (SaxonApiUncheckedException e) {
+            return new XdmResultSet(((TransformErrorListener)xqueryEvaluator.getErrorListener()).getErrors()).iterator();
+        }
+    }
+
+    private XQueryEvaluator prepareEvaluation(QueryContext context, TransformErrorListener listener, XQueryExecutable xquery) {
+        listener.setUserData(this);
+        XQueryEvaluator xqueryEvaluator = xquery.load();
+        xqueryEvaluator.setErrorListener(listener);
+        if (context != null) {
+            xqueryEvaluator.setContextItem((XdmItem) context.getContextItem());
+            if (context.getVariableBindings() != null) {
+                for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
+                    net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
+                    xqueryEvaluator.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
+                }
+            }
+        }
+        return xqueryEvaluator;
     }
     
     /**
@@ -273,12 +302,12 @@ public class Evaluator {
             }
             path = path.replace('\\', '/');
             try {
-                DocIdSetIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
+                DocIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
                 int docID = disi.nextDoc();
                 if (docID == DocIdSetIterator.NO_MORE_DOCS) {
                     throw new NotFoundException(href);
                 }
-                XdmNode doc = docReader.get(docID, getSearcher().getIndexReader());
+                XdmNode doc = docReader.get(docID, disi.getCurrentReaderContext());
                 return doc.asSource(); 
             } catch (IOException e) {
                 throw new TransformerException(e);

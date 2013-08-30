@@ -72,14 +72,14 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testFirstPage () throws Exception {
         // returns only the page including the first 10 results
-        assertXPathSearchCount (10, 100, "document", "doc", "(/)[doc]");
+        assertXPathSearchCount (10, 10, "document", "doc", "(/)[doc]");
         
-        assertXPathSearchCount (10, 100, "element", "doc", "(//doc)[position() > 10]");
+        assertXPathSearchCount (10, 20, "element", "doc", "(//doc)[position() > 10]");
     }
     
     @Test public void testPaging () throws Exception {
         // make the searcher page past the first 10 documents to find 10 xpath matches
-        assertXPathSearchCount (10, 100, "element", "doc", "//doc[title[number(.) < 95]]");
+        assertXPathSearchCount (10, 16, "element", "doc", "//doc[title[number(.) < 95]]");
     }
     
     /**
