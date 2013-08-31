@@ -1,32 +1,11 @@
-* demo
-** jump to highlight not working on Mac?
-* coverage 
-SaxonTranslator: 85,87,90
-** namespace lookup failure during document ordering analysis
-check w/XQTS
-** operators:
-negate
-** getTypeDescription 
-with ?
-** types
-xs:hexBinary, xs:base64Binary, comment(), empty()
-** variable binding to constant??
-try w/XQTS
-** override fn, local and xs namespace prefixes
-** funky flwor expression with leading where clause?
-see exprFor(FLWORExpression)
-try w/XQTS
-* bugs
-* enhancements
-** move optimizeComparison from visit(Predicate) to visit(BinaryOperation)
-Otherwise how can we properly handle foo[bar = 1 or baz = 1]?  And we could
-improve SlopCounter in this situation as well: currently it takes the max
-of the child slops and generates foo NEAR/{maxslop} (bar OR baz), but it
-could do (foo NEAR bar) OR (foo NEAR baz) with the appropriate slop for
-each.
+* features
+** directory (uri component) index
+also link to collection()?
+** fragmentation 
+use Lucene's block join indexing
 ** binary documents
 I think this is working now - let's measure and document the improvement.
-*** execute app from index
+** execute app from index
 * optimization
 cache translated AbstractExpressions for indexed XPaths somewhere.
 IndexConfiguration seems like the right place, but it doesn't have any
@@ -37,7 +16,7 @@ XmlIndexer, Compiler, and (for the translator) PathOptimizer.
 count(collection()[not(.//pubdate)])
   optimize as:
 count(collection()) - count(collection()[.//pubdate])
-*** generalize
+*** optimize not(empty(X)) -> exists(X), and not(exists(X)) -> empty(X)
 ** handle variables in comparisons
 at least if they're atomic?
 ** replace query stack
@@ -48,153 +27,6 @@ that every expression pushes a single query and pops as many queries as it
 has sub-expressions.  I spent a whole day tracking down a bug in the way we
 were handling queries for FLWOR clauses, because they don't really fit the
 stack model very well.
-* pf integration
-** need to upgrade the SolrConnection
-so it handles errors more gracefully see SolrSearchQuery.getResults();
-* app-server
-** documentation review
-** integration test
-Enhance the integration test so it checks that the demo runs
-** http header control
-redirect, 404, error, etc
-** passing current uri
-We currently send Solr the translated path - so it can read the resource,
-but it doesn't have the original url, which it would be nice to have so we
-can give it to the application
-* performance evaluation
-** tests
-StressTest - compare w/ML, Solr, exist
-** indexing perf improvement
-pool XmlIndexer in Solr
-* absolute path in function context
-Saxon treats this as a compile-time error, so there's really not much we
-can do about it short of introducing a different parser.
-* compatibility w/vanilla Saxon
-We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
-Configuration, you lose out on some nice performance optimizations for some
-queries that search large numbers of documents.
-** purchase Saxon-PE
-** Don't extend Configuration
-We currently do this so we can use a custom FunctionLibrary
-to ensure that search results are regarded as properly in document order.
-We could avoid the need for this if we implement a CollectionURIResolver
-that handles a few special schemes (like lux:) since results from
-collection() are considered to be in document order.
-*** DocumentSorter
-We also prevent additional sorting of the entire result set in some cases
-we can determine it to be unnecessary by providing a custom Optimizer that overrides
-Optimizer.makeConditionalDocumentSorter.  This happens, eg when evaluating
-a path like exists(//foo//bar).  There is no way around this in Saxon HE,
-and it is a significant performance whack for many queries.  We need to test if Saxon PE
-and/or EE do a better job of optimization here.
-* HTML/HTML5
-try reading files using James Clark's fixup parser?  Tag Soup, more likely
-- is this built in to Saxon?
-* Solr/Lucene 4.0
-* ifpress integration
-Make sure it's easy to configure.  Check compatibility with pub factory usage
-** download jar and dependencies
-from luxproject.net?  I guess we need a web site or something...  We need
-to create an install bundle that includes woodstox/stax2, saxon-he,
-lucene-queryparser, lucene-xml-query-parser.
-** place jar in solr/lib folder
-make this a standard part of ifactory's installations
-** configure solr plugins
-add lux config block to solrconfig.xml; we should provide a little sample
-config file.
-** configure fields
-Configure lux update processor to use "uri" and "xml_text" as its uri and
-xml fields.  Test by adding to ifpress-solr/solr, config and run
-ifpress-solr tests.  And then perform some searches!
-** enable query stats logging
-log4j config recommendation
-*** field sharing
-We are sharing XML storage - great!  We could share full text index as
-well, and ultimately we should only need to store one of these fields.  For
-the moment we store both because: (1) when highlighting for snippets we
-don't want XML tags, and (2) we only want the body in fulltext_t.  Once we
-adopt lux, we can search the body in an easier way, fix the highlighting
-problem, and do away with fulltext_t I think.
-** test usage in ifpress context
-* optimizations
-count (//pageNum[.="835"]/root()) retrieves a bunch of docs?? - not
-count-optimized?
-* improve compilation speed
-XQTS tests run substantially slower with Lux "optimization" since
-compilation speed is at least 2x for every expression, and this seems to
-dominate the test speed.
-** Use Saxon CodeInjector to manipulate the expression tree
-Unfortunately this isn't quite feasible because CodeInjector doesn't get
-called at enough entry points.  It seemed close?
-* word index followthrough
-** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
-Apply custom analysis chain to each text node, and then wrap in
-QNameFilter.
-** full text search *excluding some descendants*
-excluded some elements from search: for example the default should exclude
-all attributes!!  Currently phrases span attributes!  But wait: "full text"
-ie *no qname prefix* does *not* include attributes.  I don't think we need
-to change anything here?  Deprioritizing...
-** alternate fields
-with different analysis, different element exclusions, different attribute
-inclusion rules.  For example there should be a field that includes only
-attributes.
-* testing for correctness
-** test queries in complex path relations
-** namespace support (in indexes)
-This might be working, but we need to test
-** attribute index support
-This might be working, but we need to test
-** develop an XQTS database query test
-Ignore queries that use the emptydocument as input Run the other queries
-against the entire test set as context: ie against the sequence of
-documents that is collection(xqts) and then run using Lux.  Make sure the
-results are consistent; compare timing.
-
-I've done this, but it's hard to prove that we're getting the same results
-back since the order in which documents are returned from collection()
-seems to be a bit unpredictable in Saxon?
-** standard function library untested
-A bunch of functions are untested.  We don't know if we're doing the right
-thing in terms of query generation based on their args.  See
-PathOptimizer.fnArgParity
-** search test2
-refactor and merge w/search test - check opto facts against actual behavior
-** search test all index types
-include name-index only test
-** solr search handler coverage
-test all atomic result types
-* performance testing
-benchmark against MarkLogic, eXist
-** Compare indexing speed
-** Compare query/eval speed
-show impact of parsing, document retrieval?
-** Test performance on XQTS with Saxon alone, and with Lux/Saxon
-show impact of Lux on compilation speed We did this.  The overall slowdown
-on XQTS is a bit depressing: running the entire test suite with Lux enabled
-takes about 50% longer than without it.  However this seems largely to be
-due to the effect of some tests which, when compiled, lead to expression
-trees that are much larger than the original xquery form.  The rule of
-thumb seems to be that you can expect compilation time to double.  In XQTS,
-compilation time dominates the test (after simply loading test data).
-
-* features
-** directory (uri component) index
-also link to collection()?
-** fragmentation 
-use Lucene's block join indexing
-** support for full set of atomic types
-The main thing missing is marshalling results from Solr
-* api design / cleanup / documentation
-** delete dead code
-*** get rid of lux:search facts argument
-Note: this is still used to convey boolean-falsehood.
-* optimization ideas
-There are a few more things we can optimize using the "basic" indexing setup
-** failure to optimize deep path query properly
-see the expression in SearchTest.testTrailingStringCall - it ends up
-including some booleans instead of all paths
-** optimize not(empty(X)) -> exists(X), and not(exists(X)) -> empty(X)
 ** optimize the Optimizer 
 It currently generates an entire translated expression tree for every
 subtree it attempts to optimize so that we can figure out if that subtree
@@ -202,11 +34,7 @@ is ordered or not.  We could possibly cache a translated tree and walk it
 in parallel?  Or link subexpressions to it with some kind of map?
 *** cache compiled (optimized) expressions
 Where does such a cache belong?
-** Path indexes random idea
-What if instead of collapsing all the paths down so we only store unique
-paths, we retained the document structure in some way by listing *all*
-paths?  What would that buy?  numerical predicates?
-*** index all paths untokenized
+** Path occurrence indexes 
 Suppose that instead of phrases, we indexed all paths, as "keywords", ie
 untokenized; the position would be the depth-first sequence, so like:
 
@@ -264,3 +92,102 @@ somewhat limited in our ability to do this right now since we rely on Saxon
 to make judgements about sorting, and it doesn't always optimize as
 agressively as we would like, at least not in the saxon-HE version.  It
 works in some simple cases, though.
+* app-server
+** documentation review
+** integration test
+Enhance the integration test so it checks that the demo runs
+** http header control
+redirect, 404, error, etc
+** passing current uri
+We currently send Solr the translated path - so it can read the resource,
+but it doesn't have the original url, which it would be nice to have so we
+can give it to the application
+* demo
+* coverage 
+SaxonTranslator: 85,87,90
+** namespace lookup failure during document ordering analysis
+check w/XQTS
+** operators:
+negate
+** getTypeDescription 
+with ?
+** types
+xs:hexBinary, xs:base64Binary, comment(), empty()
+** variable binding to constant??
+try w/XQTS
+** override fn, local and xs namespace prefixes
+** funky flwor expression with leading where clause?
+see exprFor(FLWORExpression)
+try w/XQTS
+* performance evaluation
+** tests
+StressTest - compare w/ML, Solr, exist
+** Compare indexing speed
+** Compare query/eval speed
+show impact of parsing, document retrieval?
+** Test performance on XQTS with Saxon alone, and with Lux/Saxon
+show impact of Lux on compilation speed We did this.  The overall slowdown
+on XQTS is a bit depressing: running the entire test suite with Lux enabled
+takes about 50% longer than without it.  However this seems largely to be
+due to the effect of some tests which, when compiled, lead to expression
+trees that are much larger than the original xquery form.  The rule of
+thumb seems to be that you can expect compilation time to double.  In XQTS,
+compilation time dominates the test (after simply loading test data).
+
+* absolute path in function context
+Saxon treats this as a compile-time error, so there's really not much we
+can do about it short of introducing a different parser.
+* compatibility w/vanilla Saxon
+We'd like to be able to use Saxon PE/EE.  Currently if you use a licensed
+Configuration, you lose out on some nice performance optimizations for some
+queries that search large numbers of documents.
+** purchase Saxon-PE
+** Don't extend Configuration
+We currently do this so we can use a custom FunctionLibrary
+to ensure that search results are regarded as properly in document order.
+We could avoid the need for this if we implement a CollectionURIResolver
+that handles a few special schemes (like lux:) since results from
+collection() are considered to be in document order.
+*** DocumentSorter
+We also prevent additional sorting of the entire result set in some cases
+we can determine it to be unnecessary by providing a custom Optimizer that overrides
+Optimizer.makeConditionalDocumentSorter.  This happens, eg when evaluating
+a path like exists(//foo//bar).  There is no way around this in Saxon HE,
+and it is a significant performance whack for many queries.  We need to test if Saxon PE
+and/or EE do a better job of optimization here.
+* HTML/HTML5
+try reading files using James Clark's fixup parser?  Tag Soup, more likely
+- is this built in to Saxon?
+* improve compilation speed
+XQTS tests run substantially slower with Lux "optimization" since
+compilation speed is at least 2x for every expression, and this seems to
+dominate the test speed.
+** Use Saxon CodeInjector to manipulate the expression tree
+Unfortunately this isn't quite feasible because CodeInjector doesn't get
+called at enough entry points.  It seemed close?
+* word index followthrough
+** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
+Apply custom analysis chain to each text node, and then wrap in
+QNameFilter.
+** alternate fields
+with different analysis, different element exclusions, different attribute
+inclusion rules.  For example there should be a field that includes only
+attributes.
+* testing for correctness
+** develop an XQTS database query test
+Ignore queries that use the emptydocument as input Run the other queries
+against the entire test set as context: ie against the sequence of
+documents that is collection(xqts) and then run using Lux.  Make sure the
+results are consistent; compare timing.
+
+I've done this, but it's hard to prove that we're getting the same results
+back since the order in which documents are returned from collection()
+seems to be a bit unpredictable in Saxon?
+** standard function library untested
+A bunch of functions are untested.  We don't know if we're doing the right
+thing in terms of query generation based on their args.  See
+PathOptimizer.fnArgParity
+** search test2
+refactor and merge w/search test - check opto facts against actual behavior
+** search test all index types
+include name-index only test
