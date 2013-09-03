@@ -160,18 +160,18 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
         try {
-        	URI baseURI = queryPath == null ? null : java.net.URI.create(queryPath);
+            URI baseURI = queryPath == null ? null : java.net.URI.create(queryPath);
             expr = compiler.compile(query, errorListener, baseURI, null);
         } catch (LuxException ex) {
-        	// ex.printStackTrace();
-        	String err = formatError(query, errorListener);
-        	if (StringUtils.isEmpty(err)) {
-        	    err = ex.getMessage();
-        	}
-        	rsp.add("xpath-error", err);
-        	// don't close: this forces a commit()
-        	// evaluator.close();
-        	return;
+            // ex.printStackTrace();
+            String err = formatError(query, errorListener);
+            if (StringUtils.isEmpty(err)) {
+                err = ex.getMessage();
+            }
+            rsp.add("xpath-error", err);
+            // don't close: this forces a commit()
+            // evaluator.close();
+            return;
         }
         //SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         NamedList<Object> xpathResults = new NamedList<Object>();
