@@ -72,6 +72,7 @@ public class Evaluator {
     private LuxQueryParser queryParser;
     private XmlQueryParser xmlQueryParser;
     private QueryStats queryStats;
+    private QueryContext queryContext;  // retains the context for the current query
     private URIResolver defaultURIResolver;
 
     /**
@@ -170,7 +171,7 @@ public class Evaluator {
         return evaluate (xquery, null);
     }
     
-    public XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context) { 
+    public XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context) {
         return evaluate (xquery, context, errorListener);
     }
 
@@ -202,8 +203,9 @@ public class Evaluator {
     }
     
     /**
-     * Evaluate the already-compiled query, with no context defined.
+     * Evaluate the already-compiled query
      * @param xquery a compiled XQuery expression
+     * @param context the dynamic query context
      * @return an iterator over the results of the evaluation.
      */
     public Iterator<XdmItem> iterator(XQueryExecutable xquery, QueryContext context) {
@@ -224,6 +226,7 @@ public class Evaluator {
 
     private XQueryEvaluator prepareEvaluation(QueryContext context, TransformErrorListener listener, XQueryExecutable xquery) {
         listener.setUserData(this);
+        this.queryContext = context;
         XQueryEvaluator xqueryEvaluator = xquery.load();
         xqueryEvaluator.setErrorListener(listener);
         if (context != null) {
@@ -456,6 +459,14 @@ public class Evaluator {
      */
     public TransformErrorListener getErrorListener() {
         return errorListener;
+    }
+
+    /**
+     * @return the context associated with this query; wraps the variable bindings, namespace declarations,
+     * and the Solr XQueryComponent if this is a distributed query running via SolrCloud.
+     */
+    public QueryContext getQueryContext() {
+        return queryContext;
     }
 
 }

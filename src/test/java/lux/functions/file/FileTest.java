@@ -1,6 +1,6 @@
 package lux.functions.file;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import lux.Evaluator;
 import lux.IndexTestSupport;
 import lux.XdmResultSet;

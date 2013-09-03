@@ -125,29 +125,40 @@ public class CachingDocReader {
     }
 
     private XdmNode getXdmNode(int docID, Document document) throws IOException {
-        XdmNode node = null;
         String xml = document.get(xmlFieldName);
-        String uri = "lux:/" + document.get(uriFieldName);
+        String uri = document.get(uriFieldName);
+        BytesRef binaryValue = document.getBinaryValue(xmlFieldName);
+        byte[] bytes;
+        if (binaryValue != null) {
+            bytes = binaryValue.bytes;
+        } else {
+            bytes = null;
+        }
+        XdmNode node = createXdmNode (docID, uri, xml, bytes);
+        cache.put(docID, node);
+        ++cacheMisses;
+        return node;
+    }
+    
+    public XdmNode createXdmNode (int docID, String uri, String xml, byte[] bytes) {
+        uri = "lux:/" + uri;
         DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
         docIdAllocator.setNextDocID(docID);
         long t0 = System.nanoTime();
-        byte[] bytes = null;
+        XdmNode node = null;
         if (xml == null) {
-            BytesRef binaryValue = document.getBinaryValue(xmlFieldName);
-            if (binaryValue == null) {
+            if (bytes == null) {
                 // This is a document without the expected fields, as will happen, eg if we just connect to
                 // some random database.
-                LoggerFactory.getLogger(CachingDocReader.class).warn ("Document {} has no content", docID);
+                LoggerFactory.getLogger(CachingDocReader.class).warn ("Document {} has no XML content", docID);
                 bytes = new byte[0];
-            } else {
-                bytes = binaryValue.bytes;
             }
-        	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N') {
-            	// An XML document stored in tiny binary format
-				TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
-            	node = new XdmNode (tb.getTinyDocument(config));
-        	} else {
-            	xml = "<binary xmlns=\"http://luxdb.net\" />";
+            if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N') {
+                // An XML document stored in tiny binary format
+                TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
+                node = new XdmNode (tb.getTinyDocument(config));
+            } else {
+                xml = "<binary xmlns=\"http://luxdb.net\" />";
             }
         }
         if (node == null) {
@@ -169,8 +180,6 @@ public class CachingDocReader {
         // ((TinyDocumentImpl) node.getUnderlyingNode()).setBaseURI(uri);
         ((TinyDocumentImpl) node.getUnderlyingNode()).setSystemId(uri);
         buildTime += (System.nanoTime() - t0);
-        cache.put(docID, node);
-        ++cacheMisses;
         return node;
     }
 

@@ -14,7 +14,6 @@ import net.sf.saxon.value.SequenceType;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.Query;
-
 import org.slf4j.LoggerFactory;
 
 /**
@@ -47,6 +46,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     }
     
     public static Evaluator getEvaluator (XPathContext context) {
+        // TODO: check thread safety of controller's error listener
         TransformErrorListener listener = (TransformErrorListener) context.getController().getErrorListener();
         return (Evaluator) listener.getUserData();
     }

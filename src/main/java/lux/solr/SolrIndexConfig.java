@@ -17,7 +17,6 @@ import lux.index.analysis.WhitespaceGapAnalyzer;
 import lux.index.field.FieldDefinition;
 import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
-
 import net.sf.saxon.s9api.Serializer;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -99,14 +98,23 @@ public class SolrIndexConfig implements SolrInfoMBean {
     
     public static SolrIndexConfig registerIndexConfiguration (SolrCore core) {
         // Read the init args from the LuxUpdateProcessorFactory's configuration
-        PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
+        NamedList<?> initArgs = null;
+        for (PluginInfo info : core.getSolrConfig().getPluginInfos(UpdateRequestProcessorChain.class.getName())) {
+            // FIXME: if there are multiple processors, we prefer the 'default' one, otherwise
+            // just take the last?  This is a  bit lame, but it provides back-compat.  We should at least
+            // raise a warning if this is ambiguous
+            initArgs = info.initArgs;
+            if ("true".equals(info.attributes.get("default"))) {
+                break;
+            }
+        }
         SolrInfoMBean configBean = core.getInfoRegistry().get(SolrIndexConfig.class.getName());
         SolrIndexConfig indexConfig;
         if (configBean != null) {
             indexConfig = (SolrIndexConfig) configBean;
         } else {
         	int options = (INDEX_PATHS | INDEX_FULLTEXT | STORE_DOCUMENT | SOLR);
-            indexConfig = SolrIndexConfig.makeIndexConfiguration(options, info.initArgs);
+            indexConfig = SolrIndexConfig.makeIndexConfiguration(options, initArgs);
             indexConfig.inform(core);
             core.getInfoRegistry().put(indexConfig.getName(), indexConfig);
         }
@@ -184,15 +192,15 @@ public class SolrIndexConfig implements SolrInfoMBean {
     }
 
     public void inform(SolrCore core) {
-        
+
         schema = core.getSchema();
         // XML_STORE is not listed explicitly by the indexer
-        informField (indexConfig.getField(FieldName.XML_STORE), schema);
+        informField (indexConfig.getField(FieldName.XML_STORE));
         for (FieldDefinition xmlField : indexConfig.getFields()) {
-            informField (xmlField, schema);
+            informField (xmlField);
         }
         if (xpathFieldConfig != null) {
-            addXPathFields(core.getSchema());
+            addXPathFields();
         }
         SchemaField uniqueKeyField = schema.getUniqueKeyField();
         if (uniqueKeyField == null) {
@@ -202,10 +210,10 @@ public class SolrIndexConfig implements SolrInfoMBean {
         }
         // must call this after making changes to the field map:
         schema.refreshAnalyzers();
-        
+
     }
     
-    private void informField (FieldDefinition xmlField, IndexSchema schema) {
+    private void informField (FieldDefinition xmlField) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         Logger logger = LoggerFactory.getLogger(LuxUpdateProcessorFactory.class);
@@ -220,7 +228,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
             return;
         }
         // look up the type of this field using the mapping in this class
-        FieldType fieldType = getFieldType(actualField, schema);
+        FieldType fieldType = getFieldType(actualField);
         if (! fieldTypes.containsKey(fieldType.getTypeName())) {
             // The Solr schema does not define this field type, so add it
             logger.info("Defining fieldType: " + fieldType.getTypeName());
@@ -234,7 +242,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
     }
     
     /** Add the xpathFields to the indexConfig using information about the field drawn from the schema. */
-    private void addXPathFields(IndexSchema schema) {
+    private void addXPathFields() {
         for (Entry<String,String> f : xpathFieldConfig) {
             SchemaField field = schema.getField(f.getKey());
             FieldType fieldType = field.getType();
@@ -248,7 +256,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         }
     }
 
-    private FieldType getFieldType(FieldDefinition xmlField, IndexSchema schema) {
+    private FieldType getFieldType(FieldDefinition xmlField) {
         // TODO - we should store a field type name in XmlField and just look that up instead
         // of trying to infer from the analyzer
         Analyzer analyzer = xmlField.getAnalyzer();
@@ -396,6 +404,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
     public NamedList<?> getStatistics() {
         return null;
     }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

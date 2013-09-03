@@ -99,8 +99,7 @@ public class LuxDispatchFilter implements Filter {
 
                     HashMap<String,String[]> params=null;
                     if (req.getMethod().equals("GET")) {
-                        @SuppressWarnings("unchecked")
-                    	  Map<String, String[]> requestParams = req.getParameterMap();
+                        Map<String, String[]> requestParams = req.getParameterMap();
                         params = new HashMap<String, String[]>(requestParams);
                     }
                     

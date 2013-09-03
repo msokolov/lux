@@ -77,7 +77,7 @@ public class SolrMultiCoreTest extends BaseSolrTest {
     static void addSolrDocAltFields(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
         doc.addField ("uri", uri);
-        doc.addField("xml", text);
+        doc.addField ("xml", text);
         docs.add(doc);
     }
 }
