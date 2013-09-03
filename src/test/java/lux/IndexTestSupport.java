@@ -2,22 +2,14 @@ package lux;
 
 import static lux.index.IndexConfiguration.*;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
 
 import javax.xml.stream.XMLStreamException;
 
 import lux.index.FieldName;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
-import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.SaxonApiException;
-import net.sf.saxon.s9api.Serializer;
-import net.sf.saxon.s9api.XdmNode;
-import net.sf.saxon.s9api.XdmNodeKind;
-import net.sf.saxon.s9api.XdmSequenceIterator;
 
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
@@ -34,7 +26,7 @@ import org.apache.lucene.util.BytesRef;
 /**
  * Test support class that sets up a lucene index and generates and indexes documents from hamlet.xml.
  */
-public class IndexTestSupport {
+public class IndexTestSupport extends IndexTestSupportBase {
 
     Directory dir;
     LuxSearcher searcher;
@@ -42,17 +34,8 @@ public class IndexTestSupport {
 		return searcher;
 	}
 
-	XmlIndexer indexer;
     IndexWriter indexWriter;
-    int totalDocs;
-    Compiler compiler;
-    HashMap<String,Integer> elementCounts = new HashMap<String,Integer>();
-        
-    public final static int QUERY_EXACT = 0x00000001;
-    public final static int QUERY_NO_DOCS = 0x00000002;
-    public final static int QUERY_MINIMAL = 0x00000004;
-    public final static int QUERY_CONSTANT = 0x00000008;
-
+    
     public IndexTestSupport() throws XMLStreamException, IOException, SaxonApiException {
         this ("lux/hamlet.xml");
     }
@@ -84,6 +67,11 @@ public class IndexTestSupport {
         reopen();
         compiler = new Compiler (indexer.getConfiguration());
     }
+
+    public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {
+        DirectDocWriter docWriter = new DirectDocWriter(indexer, indexWriter);
+        return new Evaluator(compiler, searcher, docWriter);
+    }
     
     public void reopen () throws IOException {
         indexWriter.close(true);
@@ -95,56 +83,17 @@ public class IndexTestSupport {
         searcher.close();
         indexWriter.close();
     }
-
-    /**
-     * index and store all elements of an xml document found on the classpath,
-     * remembering the count of each element QName (indexed by ClarkName) in elementCounts
-     * 
-     * @param filename the pathname of the document to index
-     * @throws XMLStreamException
-     * @throws IOException
-     * @throws SaxonApiException 
-     */
-    public void indexAllElements(String filename) throws XMLStreamException, IOException, SaxonApiException {
-    	InputStream in = SearchTest.class.getClassLoader().getResourceAsStream(filename);
-    	if (in == null) {
-    		throw new FileNotFoundException (filename + " not found");
-    	}
-    	indexAllElements(filename, in);
-        // System.out.println ("Indexed " + totalDocs + " documents from " + filename);
+    
+    @Override
+    public void addDocument (String uri, String xml) throws XMLStreamException, IOException {
+        indexer.indexDocument(indexWriter, uri, xml);
     }
     
-    public void indexAllElements(String uri, InputStream in) throws XMLStreamException, IOException, SaxonApiException {
-        indexer.indexDocument(indexWriter, '/' + uri, in);
-        Serializer outputter = new Serializer();
-        // index all descendants
-        totalDocs = 1;
-        elementCounts.clear();
-        XdmSequenceIterator iter = indexer.getXdmNode().axisIterator(Axis.DESCENDANT);
-        iter.next(); // skip the root element, we already indexed it
-        while (iter.hasNext()) {
-            XdmNode e = (XdmNode) iter.next();
-            if (e.getNodeKind() != XdmNodeKind.ELEMENT) {
-                continue;
-            }
-            Integer count = elementCounts.get (e.getNodeName().getClarkName());
-            if (count == null) {
-                elementCounts.put (e.getNodeName().getClarkName(), 1);
-            } else {
-                elementCounts.put (e.getNodeName().getClarkName(), count + 1);
-            }
-            String speech = outputter.serializeNodeToString(e);
-            indexer.indexDocument (indexWriter, '/' + uri + '-' + totalDocs, speech);
-            ++totalDocs;
-        }
+    @Override 
+    public void commit () throws IOException {
         indexWriter.commit();
     }
     
-    public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {
-        DirectDocWriter docWriter = new DirectDocWriter(indexer, indexWriter);
-        return new Evaluator(compiler, searcher, docWriter);
-    }
-
     public IndexWriter getIndexWriter () {
         return indexWriter;
     }

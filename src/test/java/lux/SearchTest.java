@@ -1,6 +1,6 @@
 package lux;
 
-import static lux.IndexTestSupport.*;
+import static lux.IndexTestSupportBase.*;
 import static org.junit.Assert.*;
 
 import java.util.Iterator;
@@ -35,7 +35,7 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testSearchAllDocs() throws Exception {
-        XdmResultSet results = assertSearch("/", IndexTestSupport.QUERY_EXACT);
+        XdmResultSet results = assertSearch("/", IndexTestSupportBase.QUERY_EXACT);
         assertEquals (index.totalDocs, results.size());
     }
     
@@ -338,11 +338,19 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testDocumentIdentity() throws Exception {
-        /* This test confirms that document identity is preserved when creating Saxon documents. 
-         * document count was 1670 using path indexes; reduced to 88 using full text queries
-         * TODO: Why is this not more optimal?
+        /* This test confirms that document identity is preserved when creating Saxon documents 
+         * since the speech containing the two words is only retrieved once, and is the same
+         * node.
+         * 
+         * There are two speeches with the word 'philosophy' - for each /PLAY/ACT/SCENE/SPEECH
+         * 8 occurrences in 7 documents.
+         * 
+         * 5 speeches w/mercy, 3 come after the second (last) philosophy; we end up retrieving all 8 philosophy
+         * SPEECH nodes plus two /SPEECH docs with mercy
          * */
-        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 88, 87);        
+        assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7, 7);        
+        assertSearch ("5", "count(/SPEECH[contains(., 'mercy')])", null, 5, 5);        
+        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'mercy')])", null, 10, 9);        
     }
     
     @Test
