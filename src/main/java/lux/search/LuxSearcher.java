@@ -11,6 +11,9 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.Directory;
 
+/**
+ * Extends standard Lucene IndexSearcher by providing access to a pull-style lazy result iterator, DocIterator.
+ */
 public class LuxSearcher extends IndexSearcher {
 
   // a reader managed by this exclusively
@@ -61,6 +64,7 @@ public class LuxSearcher extends IndexSearcher {
       return new DocIterator (this, query, false);
   }
   
+  @Override
   public TopFieldDocs search (Weight weight, int size, Sort sort, boolean b1, boolean b2) throws IOException {
       return super.search(weight,  size, sort, b1, b2);
   }
