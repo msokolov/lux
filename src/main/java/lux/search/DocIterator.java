@@ -34,7 +34,7 @@ import org.apache.lucene.search.Weight;
        */
       DocIterator (LuxSearcher luxSearcher, Query query, boolean ordered) throws IOException {
           this.luxSearcher = luxSearcher;
-        weight = this.luxSearcher.createNormalizedWeight(query);
+          weight = this.luxSearcher.createNormalizedWeight(query);
           leaves = this.luxSearcher.getIndexReader().leaves();
           this.ordered = ordered;
           nextReader = 0;
