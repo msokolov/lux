@@ -34,9 +34,14 @@ public abstract class IndexTestSupportBase {
 
     XmlIndexer indexer;
     
-    public IndexTestSupportBase () {
+
+    public IndexTestSupportBase (int options) {
+        indexer = new XmlIndexer (options);
         docLimit = Integer.MAX_VALUE;
-        indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT);
+    }
+    
+    public IndexTestSupportBase () {
+        this (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT);
     }
     
     protected abstract void addDocument (String uri, String xml) throws XMLStreamException, IOException;

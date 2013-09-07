@@ -4,6 +4,7 @@ import lux.Evaluator;
 import lux.SearchResultIterator;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
+import lux.solr.CloudSearchIterator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.om.NodeInfo;
@@ -69,6 +70,15 @@ public class Search extends SearchBase {
     public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, String sortCriteria, int start) throws XPathException {        
         try {
             return new SearchResultIterator (eval, query, sortCriteria, start);
+        } catch (Exception e) {
+            throw new XPathException (e);
+        }
+    }
+    
+    @Override
+    public SequenceIterator<NodeInfo> iterate(final String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {        
+        try {
+            return new CloudSearchIterator (eval, query, queryParser, sortCriteria, start);
         } catch (Exception e) {
             throw new XPathException (e);
         }

@@ -14,7 +14,7 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
     
     private long nextInternalID = Integer.MAX_VALUE+1;
     
-    private ThreadLocal<Integer> nextThreadDocId = new ThreadLocal<Integer>();
+    private ThreadLocal<Long> nextThreadDocId = new ThreadLocal<Long>();
   
     /**
      * It is the caller's responsibility to ensure that the same id is not assigned to multiple different documents, 
@@ -22,14 +22,14 @@ public class DocIDNumberAllocator extends DocumentNumberAllocator {
      * In order to ensure thread safety, a separate id is maintained for each calling thread.  
      * @param id the next id to allocate for the calling thread, or null if the next id to allocate should be an internal id.
      */
-    public void setNextDocID (Integer id) {
+    public void setNextDocID (Long id) {
         nextThreadDocId.set (id);
     }
     
     @Override
     public long allocateDocumentNumber() {
         long id;
-        Integer nextDocID = nextThreadDocId.get();
+        Long nextDocID = nextThreadDocId.get();
         if (nextDocID != null) {
             id = nextDocID;
             nextThreadDocId.set(null);

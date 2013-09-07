@@ -22,7 +22,8 @@ import org.apache.lucene.search.Sort;
  * field-value orderings are supported.
  */
 public class SearchResultIterator extends SearchIteratorBase {
-    
+
+    private final Query query;
     private final DocIdSetIterator docIter;
     private final LuxSearcher searcher;
     private CachingDocReader docCache;
@@ -41,7 +42,11 @@ public class SearchResultIterator extends SearchIteratorBase {
      * @throws IOException
      */
     public SearchResultIterator (Evaluator eval, Query query, String sortCriteria, int start) throws IOException {
-        super (eval, query, sortCriteria, start);
+        super (eval, sortCriteria, start);
+        this.query = query;
+        if (stats != null) {
+            stats.query = query.toString();
+        }
         this.searcher = eval.getSearcher();
         this.docCache = eval.getDocReader();
         if (searcher == null) {
@@ -147,7 +152,7 @@ public class SearchResultIterator extends SearchIteratorBase {
     @Override
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
-            return new SearchResultIterator (eval, query, sortCriteria, start);
+            return new SearchResultIterator (eval, query, sortCriteria, start + 1);
         } catch (IOException e) {
             throw new XPathException (e);
         }
