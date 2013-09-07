@@ -18,7 +18,6 @@ import lux.Evaluator;
 import lux.QueryContext;
 import lux.QueryStats;
 import lux.TransformErrorListener;
-import lux.XdmResultSet;
 import lux.exception.LuxException;
 import lux.exception.ResourceExhaustedException;
 import lux.search.LuxSearcher;

@@ -44,8 +44,9 @@ public class TLogTest {
     }
 
     @After
-    public void cleanup () {
+    public void cleanup () throws IOException {
         coreContainer.shutdown();
+        cleanDirectory ("solr/collection1/data/tlog");
     }
 
     /*
