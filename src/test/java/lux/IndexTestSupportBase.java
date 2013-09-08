@@ -71,7 +71,7 @@ public abstract class IndexTestSupportBase {
         elementCounts.clear();
         XdmSequenceIterator iter = doc.axisIterator(Axis.DESCENDANT);
         iter.next(); // skip the root element, we already indexed it
-        while (iter.hasNext() && totalDocs <= docLimit) {
+        while (iter.hasNext() && totalDocs < docLimit) {
             XdmNode e = (XdmNode) iter.next();
             if (e.getNodeKind() != XdmNodeKind.ELEMENT) {
                 continue;
