@@ -15,9 +15,11 @@ import net.sf.saxon.Configuration;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.index.IndexableField;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
+import org.apache.solr.common.params.ShardParams;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
@@ -53,7 +55,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
         SolrInputField xmlField = solrInputDocument.removeField(xmlFieldName);
 
         Document luceneDocument = cmd.getLuceneDocument();
-
+        
         // restore the xml field value
         solrInputDocument.put (xmlFieldName, xmlField);
         XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
@@ -73,6 +75,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                     LoggerFactory.getLogger(LuxUpdateProcessor.class).error ("Failed to parse " + FieldName.XML_STORE, e);
                 }
                 addDocumentFields (xmlIndexer, solrIndexConfig.getSchema(), luceneDocument);
+                addLuxDocId(cmd, luceneDocument, uri);
                 luxCommand = new UpdateDocCommand(req, solrInputDocument, luceneDocument, uri);
             } finally {
                 solrIndexConfig.returnXmlIndexer(xmlIndexer);
@@ -82,8 +85,22 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
             next.processAdd(luxCommand == null ? cmd : luxCommand);
         }
     }
-    
-    public static void addDocumentFields (XmlIndexer indexer, IndexSchema indexSchema, Document doc) {
+
+    private static void addLuxDocId(final AddUpdateCommand cmd, Document luceneDocument, String uri) {
+        // If this is a cloud setup, add a unique identifier to represent XQuery "document order"
+        String shardUrl = cmd.getReq().getParams().get(ShardParams.SHARD_URL);
+        if (shardUrl != null) {
+            // we actually only need about 42 bits to count about to 2070, so use the remaining ones
+            // for some bits from a shard + uri hash to make this globally unique
+            long t = System.currentTimeMillis() << 42;
+            long hashCode = (shardUrl + uri).hashCode();
+            // would the high-order bits be more random?
+            long luxDocId = t | (hashCode & 22);
+            luceneDocument.add(new NumericDocValuesField("lux_docid", luxDocId));
+        }
+    }
+
+    private static void addDocumentFields (XmlIndexer indexer, IndexSchema indexSchema, Document doc) {
         IndexConfiguration indexConfig = indexer.getConfiguration();
         if (indexConfig.isOption(IndexConfiguration.STORE_TINY_BINARY)) {
             // remove the serialized xml field value -- we will store a TinyBinary instead
