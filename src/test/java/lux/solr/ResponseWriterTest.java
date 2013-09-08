@@ -76,19 +76,6 @@ public class ResponseWriterTest extends BaseSolrTest {
         assertEquals ("<?xml-stylesheet type='text/xsl' href='transform.xsl' ?>\n<test>Hello, World</test>\n", result);
     }
     
-    // return a single xml result with multiple root nodes, including
-    // comments, processing instructions, and text
-    @Test
-    public void testMultipleRootNodes() throws Exception {
-        String xml ="<!DOCTYPE test>\n"
-                + "<!-- this is a test -->\n"
-                + "<?test-pi this is a test pi?>\n"
-                + "<test>Hello, World</test>"; 
-        XdmNode doc = buildDocument(xml);
-        String result = writeResponse ("text/xml", "element", doc);
-        assertEquals (xml, result);
-    }
-    
     // return multiple xml results 
     @Test
     public void testMultipleXmlResults() throws Exception {
