@@ -81,6 +81,7 @@ public class IndexTestSupport {
                 indexAllElements (file);
             }
         }
+        reopen();
         compiler = new Compiler (indexer.getConfiguration());
     }
     
