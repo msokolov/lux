@@ -81,7 +81,6 @@ public class IndexTestSupport {
                 indexAllElements (file);
             }
         }
-        reopen();
         compiler = new Compiler (indexer.getConfiguration());
     }
     
@@ -138,6 +137,7 @@ public class IndexTestSupport {
             ++totalDocs;
         }
         indexWriter.commit();
+        reopen();
     }
     
     public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {
