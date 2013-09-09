@@ -81,6 +81,8 @@ public abstract class BaseSolrTest {
         if (result == null) {
             assertEquals (0, actual.size());
         } else {
+            assertNotNull ("no result", actual);
+            assertEquals ("no result", 1, actual.size());
             assertEquals (result, actual.getVal(0));
         }
         if (type != null) {

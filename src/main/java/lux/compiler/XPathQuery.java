@@ -261,7 +261,7 @@ public class XPathQuery {
     public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, boolean isPredicate, ValueType type, int distance, IndexConfiguration config) {
         XPathQuery result = combineIgnorableQueries(occur, precursor);
         if (result != null) {
-            return result;
+            return result.setType(type);
         }
         long resultFacts = combineQueryFacts (this, precursor);
         ParseableQuery combined, pathCombined; 

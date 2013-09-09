@@ -8,13 +8,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import javax.xml.transform.Result;
-import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
 import lux.exception.LuxException;
-import lux.exception.NotFoundException;
 import lux.functions.Search;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
@@ -22,7 +19,6 @@ import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
-import lux.search.DocIterator;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
 import net.sf.saxon.Configuration;
@@ -46,12 +42,9 @@ import net.sf.saxon.trans.XPathException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.slf4j.LoggerFactory;
 
@@ -62,17 +55,16 @@ public class Evaluator {
 
     public static final String LUX_NAMESPACE = "http://luxdb.net";
     
-    private final Compiler compiler;
-    private final CachingDocReader docReader;
+    final Compiler compiler;
+    final CachingDocReader docReader;
     private final DocWriter docWriter;
     private final DocumentBuilder builder;
     private final TransformErrorListener errorListener;
 
-    private LuxSearcher searcher;
+    LuxSearcher searcher;
     private LuxQueryParser queryParser;
     private XmlQueryParser xmlQueryParser;
     private QueryStats queryStats;
-    private URIResolver defaultURIResolver;
 
     /**
      * Creates an evaluator that uses the provided objects to evaluate queries.
@@ -85,12 +77,8 @@ public class Evaluator {
         LoggerFactory.getLogger(getClass()).debug("new evaluator");
         this.compiler = compiler;
         this.searcher = searcher;
-        Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
-        defaultURIResolver = config.getURIResolver();
-        config.setURIResolver(new LuxURIResolver());
-        config.setCollectionURIResolver(new LuxCollectionURIResolver());
-        config.setOutputURIResolver(new LuxOutputURIResolver());
         builder = compiler.getProcessor().newDocumentBuilder();
+        Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
         if (searcher != null) {
             docReader = new CachingDocReader(builder, config, compiler.getIndexConfiguration());
         } else {
@@ -100,6 +88,9 @@ public class Evaluator {
         queryStats = new QueryStats();
         errorListener = new TransformErrorListener();
         errorListener.setUserData(this);
+        config.setCollectionURIResolver(new LuxCollectionURIResolver());
+        config.setOutputURIResolver(new LuxOutputURIResolver());
+        resetURIResolver();
     }
     
     /**
@@ -135,7 +126,7 @@ public class Evaluator {
     public void close() {
         LoggerFactory.getLogger(getClass()).debug("close evaluator");
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
-        config.setURIResolver(defaultURIResolver);
+        config.setURIResolver(null);
         config.setCollectionURIResolver(null);
         try {
             searcher.close();
@@ -204,6 +195,7 @@ public class Evaluator {
     /**
      * Evaluate the already-compiled query, with no context defined.
      * @param xquery a compiled XQuery expression
+     * @param context the dynamic query context
      * @return an iterator over the results of the evaluation.
      */
     public Iterator<XdmItem> iterator(XQueryExecutable xquery, QueryContext context) {
@@ -254,66 +246,6 @@ public class Evaluator {
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
-    }
-    
-    public class LuxURIResolver implements URIResolver {
-        /**
-         * Evaluator provides this method as an implementation of URIResolver so as to resolve uris in service of fn:doc().
-         * file: uri resolution is delegated to the default resolver by returning null.  lux: and other uris are all resolved
-         * using the provided searcher.  The lux: prefix is optional, e.g: the uris "lux:/hello.xml" and "/hello.xml"
-         * are equivalent.  Documents read from the index are numbered according to their Lucene docIDs, and retrieved
-         * using the {@link CachingDocReader}.
-         * @throws IllegalStateException if a search is attempted, but no searcher was provided
-         * @throws TransformerException if the document is not found in the index, or there was an IOException
-         * thrown by Lucene.
-         */
-        @Override
-        public Source resolve(String href, String base) throws TransformerException {
-            boolean isFile;
-            String path = href;
-            if (href.matches("^\\w+:.*$")) {
-                isFile = href.startsWith("file:");
-                if (isFile) {
-                    path = href.substring(5);
-                } else if (href.startsWith("lux:/")) {
-                    path = href.substring(5);
-                }
-            } else {
-                // relative url, look at base
-                if (base != null) {
-                    isFile = base.startsWith("file:");
-                } else {
-                    isFile = false;
-                }
-            }
-            if (isFile) {
-                Source source = null;
-                // let the default resolver do its thing
-                if (defaultURIResolver != null) {
-                    source = defaultURIResolver.resolve(path, base);
-                }
-                if (source == null) {
-                    source = getCompiler().getProcessor().getUnderlyingConfiguration().getSystemURIResolver().resolve (path, base);
-                }
-                return source;
-            }
-            if (searcher == null) {
-                throw new IllegalStateException ("Attempted search, but no searcher was provided");
-            }
-            path = path.replace('\\', '/');
-            try {
-                DocIterator disi = getSearcher().search(new TermQuery(new Term(compiler.getUriFieldName(), path)));
-                int docID = disi.nextDoc();
-                if (docID == DocIdSetIterator.NO_MORE_DOCS) {
-                    throw new NotFoundException(href);
-                }
-                XdmNode doc = docReader.get(docID, disi.getCurrentReaderContext());
-                return doc.asSource(); 
-            } catch (IOException e) {
-                throw new TransformerException(e);
-            }
-        }
-
     }
     
     public class LuxCollectionURIResolver implements CollectionURIResolver {
@@ -396,13 +328,20 @@ public class Evaluator {
     public void reopenSearcher() {
         LoggerFactory.getLogger(getClass()).debug("evaluator reopen searcher");
         try {
-            
             LuxSearcher current = searcher;
-            searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) getSearcher().getIndexReader()));
-            current.close();
+            if (current != null) {
+                searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) current.getIndexReader()));
+                current.close();
+            }
+            resetURIResolver();
         } catch (IOException e) {
             throw new LuxException (e);
         }
+    }
+    
+    private void resetURIResolver () {
+        Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
+        config.setURIResolver(new LuxURIResolver(config.getSystemURIResolver(), searcher, docReader, compiler.getUriFieldName()));
     }
     
     public Compiler getCompiler() {

@@ -138,6 +138,7 @@ public class IndexTestSupport {
             ++totalDocs;
         }
         indexWriter.commit();
+        reopen();
     }
     
     public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {

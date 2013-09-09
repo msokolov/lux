@@ -61,6 +61,7 @@ public class LuxSearcher extends IndexSearcher {
       return new DocIterator (this, query, false);
   }
   
+  @Override
   public TopFieldDocs search (Weight weight, int size, Sort sort, boolean b1, boolean b2) throws IOException {
       return super.search(weight,  size, sort, b1, b2);
   }

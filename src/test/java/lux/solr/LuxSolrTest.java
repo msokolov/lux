@@ -195,6 +195,16 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQuery ("--12-01", "xs:gMonthDay", "xs:gMonthDay('--12-01')");
         
     }
+    
+
+    @Test
+    public void testMultiNodeConstruct () throws Exception {
+        String xml = "document {comment { ' this is a test ' }, \n"
+                + "processing-instruction test-pi { 'this is a test pi' },\n"
+                + "element test { 'Hello, World' } }";
+        String output = "<!-- this is a test --><?test-pi this is a test pi?><test>Hello, World</test>"; 
+        assertQuery (output, "document", xml);
+    }
 
 }
 

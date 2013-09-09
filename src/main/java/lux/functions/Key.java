@@ -116,11 +116,11 @@ public class Key extends ExtensionFunctionDefinition {
             FieldDefinition field = eval.getCompiler().getIndexConfiguration().getField(fieldName);
             if (field == null) {
                 LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-existent field: {}", fieldName);
-                return EmptySequence.asIterator(EmptySequence.getInstance());
+                //return EmptySequence.asIterator(EmptySequence.getInstance());
             }
             else if (field.isStored() == Field.Store.NO) {
                 LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-stored field: {}", fieldName);
-                return EmptySequence.asIterator(EmptySequence.getInstance());
+                //return EmptySequence.asIterator(EmptySequence.getInstance());
             }
             Document doc ;
             try {
@@ -128,11 +128,11 @@ public class Key extends ExtensionFunctionDefinition {
             }  catch (IOException e) {
                 throw new XPathException(e);
             }
-            if (field.getType() == FieldDefinition.Type.STRING) {
-            	String [] values = doc.getValues(fieldName);
+            if (field == null || field.getType() == FieldDefinition.Type.STRING) {
+                Object[] values = doc.getValues(fieldName);
             	StringValue[] valueItems = new StringValue[values.length];
             	for (int i = 0; i < values.length; i++) {
-            		valueItems[i] = new StringValue (values[i]);
+            		valueItems[i] = new StringValue (values[i].toString());
             	}
             	return new ArrayIterator<StringValue>(valueItems);
             }
