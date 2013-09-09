@@ -5,14 +5,12 @@ import lux.solr.MissingStringLastComparatorSource;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 
-import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 
 public abstract class SearchIteratorBase implements SequenceIterator<NodeInfo> {
 
     protected final Evaluator eval;
-    protected final Query query;
     protected final QueryStats stats;
     protected final String sortCriteria;
     protected final int start;
@@ -21,15 +19,11 @@ public abstract class SearchIteratorBase implements SequenceIterator<NodeInfo> {
 
     public static final MissingStringLastComparatorSource MISSING_LAST = new MissingStringLastComparatorSource();
 
-    public SearchIteratorBase (Evaluator eval, Query query, String sortCriteria, int start) {
+    public SearchIteratorBase (Evaluator eval, String sortCriteria, int start1) {
         this.eval = eval;
-        this.query = query;
         this.stats = eval.getQueryStats();
-        if (stats != null) {
-            stats.query = query.toString();
-        }
         this.sortCriteria = sortCriteria;
-        this.start = start;
+        this.start = start1 - 1;
     }
 
     protected Sort makeSortFromCriteria() {

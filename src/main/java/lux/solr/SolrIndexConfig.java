@@ -58,6 +58,11 @@ public class SolrIndexConfig implements SolrInfoMBean {
         this.indexConfig = indexConfig;
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
         serializerPool = new ArrayBlockingQueue<Serializer>(8);
+        // FIXME: possibly we need a pool of compilers as well?  The issue is they hold the Saxon Processor,
+        // and that in turn holds uri resolver, which needs to get transient pointers to per-request objects
+        // like the searcher, so it can read documents from the index.  ATM different requests will overwrite
+        // that pointer in a shared processor.  At the best, this causes some leakage across request (ie transaction)
+        // boundaries
         compiler = new Compiler (indexConfig);
     }
     

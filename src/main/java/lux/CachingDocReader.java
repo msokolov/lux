@@ -28,21 +28,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Reads, parses and caches XML documents from a Lucene index. Assigns Lucene
- * docIDs as Saxon document numbers. This reader is intended to survive for a
- * single query only, and is *not thread-safe*. 
- * 
- * TODO: a nice optimization would be to maintain a global cache, shared across threads, 
- * with some tunable resource-based eviction policy.  PLAN:
- * 1) Build a cache that is limited by byte size (DONE: see NodeCache below)
- * 2) autoconfigure size based on heap size (later: provide cache size configuration)
- * 3) two-level cache strategy: global first, then per-query; when query completes, write newly
- * cached docs to global cache.  Note: the global cache cannot use docID as a key.  It would have to use
- * URIs
- * 4) How to maintain memory limit?  Catch OOM when allocating docs? 
+ * docIDs as Saxon document numbers. This reader and its cache are intended to survive for a
+ * single query only, and is *not thread-safe*.
  */
 public class CachingDocReader {
-    // the portion of heap to allocate to each per-request document cache.  This should really rely on the
-    // number of clients
+    // the (inverse of the) portion of heap to allocate to each per-request document cache.  
+    // This should really rely on the number of clients
     private final static int CACHE_RATIO = 100;
 	private final NodeCache cache = new NodeCache(java.lang.Runtime.getRuntime().maxMemory() / CACHE_RATIO);
     private final String xmlFieldName;
@@ -140,7 +131,19 @@ public class CachingDocReader {
         return node;
     }
     
-    public XdmNode createXdmNode (int docID, String uri, String xml, byte[] bytes) {
+    /**
+     * Either the xml or the bytes parameter carries the document contents.  If the xml is non-null, it is assumed to be a serialized
+     * XML document, and is parsed.  If the bytes is non-null and begins with a tinybin signature, it is interpreted as 
+     * tiny binary.  Otherwise, the bytes are treated as a binary (non-XML) document.  If both xml and bytes are null, a
+     * warning is logged and an empty binary document created.
+     * 
+     * @param docID The Solr/Lucene docid; or a shard/docid combo under Solr Cloud
+     * @param uri The uri of the document to create
+     * @param xml The contents of the document, if an XML document
+     * @param bytes The contents of the document
+     * @return a new document made from the arguments
+     */
+    public XdmNode createXdmNode (long docID, String uri, String xml, byte[] bytes) {
         uri = "lux:/" + uri;
         DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
         docIdAllocator.setNextDocID(docID);

@@ -1,5 +1,7 @@
 package lux.solr;
 
+import static lux.index.IndexConfiguration.*;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -15,6 +17,7 @@ public class CloudIndexSupport extends IndexTestSupportBase {
     List<SolrServer> clients;
     
     CloudIndexSupport (SolrServer control, List<SolrServer> clients) {
+        super (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT|INDEX_EACH_PATH);
         this.clients = clients;
         this.control = control;
     }

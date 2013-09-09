@@ -7,7 +7,8 @@ import org.junit.Ignore;
  * Basic test of Lux operation in a distributed ("cloud") setup.  Inserts some test
  * documents and performs basic queries: ordered (by docid), sorted by field, and 
  * sorted by relevance.  TODO: Test some queries with multiple subqueries.  Test deep
- * pagination (eg retrieve the 1000th doc)
+ * pagination (eg retrieve the 1000th doc). Test both query parsers (user-supplied lux:search(string)).
+ * test count() and exists().
  */
 @Ignore
 public class CloudTest extends BaseDistributedSearchTestCase {
@@ -28,7 +29,7 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         del("*:*");
         
         CloudIndexSupport indexSupport = new CloudIndexSupport(controlClient, clients);
-        indexSupport.setDocLimit(1);
+        indexSupport.setDocLimit(3);
         indexSupport.indexAllElements("lux/hamlet.xml");
         
         // set some fields to ignore when comparing query results
@@ -40,8 +41,8 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         handle.put("distrib", SKIP);  // in control only
         handle.put("maxScore", SKIPVAL); // in cloud only 
 
-        query("q", "*:*", "rows", 20);
-        
+        //query("q", "*:*", "rows", 20);
+        query("qt", "/xquery", "q", "/FM");
         //query ("qt", "/xquery", "q", "count(collection())");
     }
 

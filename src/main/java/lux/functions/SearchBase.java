@@ -1,29 +1,41 @@
 package lux.functions;
 
+import org.apache.lucene.search.Query;
+import org.apache.solr.handler.component.ResponseBuilder;
+
 import lux.Evaluator;
+import lux.QueryContext;
 import lux.TransformErrorListener;
+import lux.solr.SolrQueryContext;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
+import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
-
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.xml.ParserException;
-import org.apache.lucene.search.Query;
-import org.slf4j.LoggerFactory;
 
 /**
  * A base class for functions that execute search queries.
  */
 public abstract class SearchBase extends ExtensionFunctionDefinition {
+    
+    public enum QueryParser {
+        CLASSIC, XML
+    }
 
     public SearchBase() {
         super();
     }
+
+    @SuppressWarnings("rawtypes")
+    protected abstract SequenceIterator<? extends Item> iterate(final Query query, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
+
+    @SuppressWarnings("rawtypes")
+    protected abstract SequenceIterator<? extends Item> iterate(final String query, final QueryParser queryParser, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
 
     @Override
     public int getMinimumNumberOfArguments() {
@@ -51,9 +63,6 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         return (Evaluator) listener.getUserData();
     }
     
-    @SuppressWarnings("rawtypes")
-    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, String sortCriteria, int start) throws XPathException;
-
     public class SearchCall extends NamespaceAwareFunctionCall {
         
         @SuppressWarnings("rawtypes") @Override
@@ -82,16 +91,23 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 }
             }
             Evaluator eval = getEvaluator(context);
-            Query query;
-            try {
-                query = parseQuery(queryArg, eval);
-            } catch (ParseException e) {
-                throw new XPathException (e.getMessage(), e);
-            } catch (ParserException e) {
-                throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
+            QueryContext queryContext = eval.getQueryContext();
+            if (queryContext instanceof SolrQueryContext) {
+                ResponseBuilder rb = ((SolrQueryContext) queryContext).getResponseBuilder() ;
+                if (rb != null && rb.shards != null) {
+                    // For cloud queries, we don't parse; just serialize the query and let the shard parse it
+                    QueryParser qp;
+                    if (queryArg instanceof NodeInfo) {
+                        qp = QueryParser.XML;
+                    } else {
+                        qp = QueryParser.CLASSIC;
+                    }
+                    // cheap-ass serialization
+                    String qstr = new XdmNode((NodeInfo)queryArg).toString();
+                    return iterate (qstr, qp, eval, sortCriteria, start);
+                }
             }
-            LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
-            return iterate (query, eval, sortCriteria, start);
+            return iterate (parseQuery(queryArg, eval), eval, sortCriteria, start);
         }
         
     }

@@ -22,7 +22,8 @@ import org.apache.lucene.search.Sort;
  * field-value orderings are supported.
  */
 public class SearchResultIterator extends SearchIteratorBase {
-    
+
+    private final Query query;
     private final DocIdSetIterator docIter;
     private final LuxSearcher searcher;
     private CachingDocReader docCache;
@@ -37,11 +38,15 @@ public class SearchResultIterator extends SearchIteratorBase {
      * The sort criteria are Lucene field names, or may be the special name "lux:score", which selects 
      * relevance score ranking, which is always sorted in descending order: modifiers on relevance orders are ignored. 
      * If no ordering is provided, results are returned in intrinsic document order (ie ordered by document ID).
-     * @param start 
+     * @param start1 the 1-based starting position of the iteration
      * @throws IOException
      */
-    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria, int start) throws IOException {
-        super (eval, query, sortCriteria, start);
+    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria, int start1) throws IOException {
+        super (eval, sortCriteria, start1);
+        this.query = query;
+        if (stats != null) {
+            stats.query = query.toString();
+        }
         this.searcher = eval.getSearcher();
         this.docCache = eval.getDocReader();
         if (searcher == null) {
@@ -54,7 +59,7 @@ public class SearchResultIterator extends SearchIteratorBase {
             docIter = searcher.searchOrdered(query);
         }
         if (start > 1) {
-            advanceTo (start);
+            advanceTo (start1);
         }
     }
 
@@ -147,7 +152,7 @@ public class SearchResultIterator extends SearchIteratorBase {
     @Override
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         try {
-            return new SearchResultIterator (eval, query, sortCriteria, start);
+            return new SearchResultIterator (eval, query, sortCriteria, start + 1);
         } catch (IOException e) {
             throw new XPathException (e);
         }

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lux.Evaluator;
 import lux.xpath.FunCall;
+import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
@@ -58,6 +59,12 @@ public class Exists extends SearchBase {
             ++ saxon.getQueryStats().docCount;
         }
         return SingletonIterator.makeIterator(BooleanValue.get(exists));
+    }
+
+    @Override
+    protected SequenceIterator<BooleanValue> iterate(String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {
+        // TODO implement sharded existence test
+        return null;
     }
 }
 
