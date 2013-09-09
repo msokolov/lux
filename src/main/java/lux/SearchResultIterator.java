@@ -38,11 +38,11 @@ public class SearchResultIterator extends SearchIteratorBase {
      * The sort criteria are Lucene field names, or may be the special name "lux:score", which selects 
      * relevance score ranking, which is always sorted in descending order: modifiers on relevance orders are ignored. 
      * If no ordering is provided, results are returned in intrinsic document order (ie ordered by document ID).
-     * @param start 
+     * @param start1 the 1-based starting position of the iteration
      * @throws IOException
      */
-    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria, int start) throws IOException {
-        super (eval, sortCriteria, start);
+    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria, int start1) throws IOException {
+        super (eval, sortCriteria, start1);
         this.query = query;
         if (stats != null) {
             stats.query = query.toString();
@@ -59,7 +59,7 @@ public class SearchResultIterator extends SearchIteratorBase {
             docIter = searcher.searchOrdered(query);
         }
         if (start > 1) {
-            advanceTo (start);
+            advanceTo (start1);
         }
     }
 

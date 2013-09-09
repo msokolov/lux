@@ -59,26 +59,12 @@ public class CloudSearchIterator extends SearchIteratorBase {
                 // FIXME: test pagination I think there is a bug here if w/start > 0?
                 if (position < docs.getStart() + docs.size()) {
                     SolrDocument doc = docs.get(position++);
-                    int docID = (Integer) doc.getFirstValue("docID");
                     String uri = (String) doc.getFirstValue("lux_uri");
                     Object oxml = doc.getFirstValue("lux_xml");
                     String xml = (String) ((oxml instanceof String) ? oxml : null);
                     byte [] bytes = (byte[]) ((oxml instanceof byte[]) ? oxml : null);
-                    SolrQueryContext context = (SolrQueryContext) eval.getQueryContext();
-                    String[] shards = context.getResponseBuilder().shards;
-                    // FIXME: is this a thing?  What about docID?
-                    String shard = (String) doc.getFieldValue("shard"); // ????
-                    int ishard=0;
-                    for (int i = 0; i < shards.length; i++) {
-                        // TODO: a map for fast lookup, or perhaps a sorted array
-                        if (shards[i].equals(shard)) {
-                            ishard = i;
-                            break;
-                        }
-                    }
-                    // add one to shard index since "shard" 0 is reserved for internally-generated documents 
-                    long shardDocID = ((ishard + 1) << 32) | docID; 
-                    XdmNode node = eval.getDocReader().createXdmNode(shardDocID, uri, xml, bytes, true);
+                    // FIXME!!!
+                    XdmNode node = eval.getDocReader().createXdmNode(-1, uri, xml, bytes);
                     return node.getUnderlyingNode();
                 } else if (position >= docs.getNumFound()) {
                     return null;
@@ -117,10 +103,12 @@ public class CloudSearchIterator extends SearchIteratorBase {
     }
     
     private SortSpec makeSortSpec () {
-        if (sortCriteria == null) {
-            return new SortSpec (new Sort (SortField.FIELD_SCORE), start, limit);
+        Sort sort;
+        if (sortCriteria != null) {
+            sort = makeSortFromCriteria();
+        } else {
+            sort = new Sort (SortField.FIELD_SCORE);
         }
-        Sort sort = makeSortFromCriteria();
         return new SortSpec (sort, start, limit);
     }
     

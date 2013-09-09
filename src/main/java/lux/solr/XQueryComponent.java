@@ -166,14 +166,13 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         int start = params.getInt(CommonParams.START, 1);
         int len = params.getInt(CommonParams.ROWS, -1);
-        // TODO: implement distributed index with multiple shards
         try {
             evaluateQuery(rb, start, len);
         } finally {
             solrIndexConfig.returnSerializer(serializer);
         }
     }
-
+    
     /**
      * Process for a distributed search. This method is called at various stages
      * during the processing of a request:
@@ -194,9 +193,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         if (rb.stage == ResponseBuilder.STAGE_PARSE_QUERY) {
             if (rb.req instanceof CloudQueryRequest) {
                 CloudQueryRequest cloudReq = (CloudQueryRequest) rb.req;
-                // in this case, the query and sort spec have already been
-                // generated
-                rb.setQuery(cloudReq.getQuery());
+                // the sort spec has already been generated
                 rb.setSortSpec(cloudReq.getSortSpec());
                 return ResponseBuilder.STAGE_EXECUTE_QUERY;
             } else {
@@ -250,9 +247,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         int count = 0;
         SolrQueryContext context = new SolrQueryContext(this);
         if (rb.shards != null) {
-            // distributed request; pass in the ResponseBuilder so it will be
-            // available
-            // to a subquery
+            // This is a distributed request; pass in the ResponseBuilder so it will be
+            // available to a subquery.
             context.setResponseBuilder(rb);
         }
         String xqueryPath = rb.req.getParams().get(LUX_XQUERY);

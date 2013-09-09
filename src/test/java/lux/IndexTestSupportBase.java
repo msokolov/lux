@@ -34,10 +34,9 @@ public abstract class IndexTestSupportBase {
 
     XmlIndexer indexer;
     
-
     public IndexTestSupportBase (int options) {
-        indexer = new XmlIndexer (options);
         docLimit = Integer.MAX_VALUE;
+        indexer = new XmlIndexer (options);
     }
     
     public IndexTestSupportBase () {

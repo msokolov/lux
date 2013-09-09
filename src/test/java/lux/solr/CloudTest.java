@@ -10,6 +10,7 @@ import org.junit.Ignore;
  * pagination (eg retrieve the 1000th doc). Test both query parsers (user-supplied lux:search(string)).
  * test count() and exists().
  */
+@Ignore
 public class CloudTest extends BaseDistributedSearchTestCase {
     
     public CloudTest () {
