@@ -195,6 +195,7 @@ public class Evaluator {
     /**
      * Evaluate the already-compiled query, with no context defined.
      * @param xquery a compiled XQuery expression
+     * @param context the dynamic query context
      * @return an iterator over the results of the evaluation.
      */
     public Iterator<XdmItem> iterator(XQueryExecutable xquery, QueryContext context) {
@@ -328,8 +329,10 @@ public class Evaluator {
         LoggerFactory.getLogger(getClass()).debug("evaluator reopen searcher");
         try {
             LuxSearcher current = searcher;
-            searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) getSearcher().getIndexReader()));
-            current.close();
+            if (current != null) {
+                searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) current.getIndexReader()));
+                current.close();
+            }
             resetURIResolver();
         } catch (IOException e) {
             throw new LuxException (e);
