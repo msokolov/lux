@@ -92,6 +92,7 @@ public class IndexTestSupport extends IndexTestSupportBase {
     @Override 
     public void commit () throws IOException {
         indexWriter.commit();
+        reopen();
     }
     
     public IndexWriter getIndexWriter () {
