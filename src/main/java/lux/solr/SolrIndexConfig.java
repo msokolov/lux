@@ -201,8 +201,8 @@ public class SolrIndexConfig implements SolrInfoMBean {
         schema = core.getSchema();
         // XML_STORE is not listed explicitly by the indexer
         informField (indexConfig.getField(FieldName.XML_STORE));
-        for (FieldDefinition xmlField : indexConfig.getFields()) {
-            informField (xmlField);
+        for (FieldDefinition fld : indexConfig.getFields()) {
+            informField (fld);
         }
         if (xpathFieldConfig != null) {
             addXPathFields();
@@ -218,11 +218,11 @@ public class SolrIndexConfig implements SolrInfoMBean {
 
     }
     
-    private void informField (FieldDefinition xmlField) {
+    private void informField (FieldDefinition fld) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         Logger logger = LoggerFactory.getLogger(LuxUpdateProcessorFactory.class);
-        String fieldName = indexConfig.getFieldName(xmlField); // has this field been renamed?
+        String fieldName = indexConfig.getFieldName(fld); // has this field been renamed?
         FieldDefinition actualField = indexConfig.getField(fieldName); // has this field been redefined?
         if (fields.containsKey(fieldName)) {
             // The Solr schema defines this field

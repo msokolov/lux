@@ -1,7 +1,7 @@
 package lux.solr;
 
+import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.BaseDistributedSearchTestCase;
-import org.junit.Ignore;
 
 /**
  * Basic test of Lux operation in a distributed ("cloud") setup.  Inserts some test
@@ -10,7 +10,7 @@ import org.junit.Ignore;
  * pagination (eg retrieve the 1000th doc). Test both query parsers (user-supplied lux:search(string)).
  * test count() and exists().
  */
-@Ignore
+@SuppressCodecs(value="Lucene3x") // we use DocValues for lux_docid
 public class CloudTest extends BaseDistributedSearchTestCase {
     
     public CloudTest () {

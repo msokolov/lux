@@ -10,21 +10,21 @@ import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
+import lux.index.field.IDField;
 import lux.xml.tinybin.TinyBinary;
 import net.sf.saxon.Configuration;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.LongField;
 import org.apache.lucene.index.IndexableField;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
-import org.apache.solr.common.params.ShardParams;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.update.AddUpdateCommand;
-import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.processor.UpdateRequestProcessor;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +50,11 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     public void processAdd (final AddUpdateCommand cmd) throws IOException {
         SolrInputDocument solrInputDocument = cmd.getSolrInputDocument();
         String xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
-
-        // remove and stash the xml field value
+        String idFieldName = indexConfig.getFieldName(IDField.getInstance());
+        
+        // remove and stash the lux_xml and lux_docid field values
         SolrInputField xmlField = solrInputDocument.removeField(xmlFieldName);
+        SolrInputField luxIdField = solrInputDocument.removeField(idFieldName);
 
         Document luceneDocument = cmd.getLuceneDocument();
         
@@ -75,33 +77,21 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                     LoggerFactory.getLogger(LuxUpdateProcessor.class).error ("Failed to parse " + FieldName.XML_STORE, e);
                 }
                 addDocumentFields (xmlIndexer, solrIndexConfig.getSchema(), luceneDocument);
-                addLuxDocId(cmd, luceneDocument, uri);
+                if (luxIdField != null) {
+                    luceneDocument.add (new LongField(idFieldName, (Long) luxIdField.getValue(), Store.YES));
+                }
                 luxCommand = new UpdateDocCommand(req, solrInputDocument, luceneDocument, uri);
             } finally {
                 solrIndexConfig.returnXmlIndexer(xmlIndexer);
             }
         }
         if (next != null) {
+            // add back the xml and id fields?
             next.processAdd(luxCommand == null ? cmd : luxCommand);
         }
     }
 
-    private static void addLuxDocId(final AddUpdateCommand cmd, Document luceneDocument, String uri) {
-        // If this is a cloud setup, add a unique identifier to represent XQuery "document order"
-        String shardUrl = cmd.getReq().getParams().get(ShardParams.SHARD_URL);
-        if (shardUrl != null) {
-            // we actually only need about 42 bits to count about to 2070, so use the remaining ones
-            // for some bits from a shard + uri hash to make this globally unique
-            long t = System.currentTimeMillis() << 42;
-            long hashCode = (shardUrl + uri).hashCode();
-            // would the high-order bits be more random?
-            long luxDocId = t | (hashCode & 22);
-            luceneDocument.add(new NumericDocValuesField("lux_docid", luxDocId));
-        }
-    }
-
-    private static void addDocumentFields (XmlIndexer indexer, IndexSchema indexSchema, Document doc) {
-        IndexConfiguration indexConfig = indexer.getConfiguration();
+    private void addDocumentFields (XmlIndexer indexer, IndexSchema indexSchema, Document doc) {
         if (indexConfig.isOption(IndexConfiguration.STORE_TINY_BINARY)) {
             // remove the serialized xml field value -- we will store a TinyBinary instead
             doc.removeField(indexConfig.getFieldName(FieldName.XML_STORE));
@@ -136,13 +126,6 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
           if (f != null) doc.add((Field) f); // null fields are not added
         }
       }
-
-    @Override
-    public void processDelete (DeleteUpdateCommand cmd) throws IOException {
-        if (next != null) {
-            next.processDelete(cmd);
-        }
-    }
 
 }
 

@@ -93,9 +93,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
 
     @Override
-    public void inform(SolrCore core) {
-        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(core);
-        this.core = core;
+    public void inform(SolrCore solrCore) {
+        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(solrCore);
+        this.core = solrCore;
     }
     
     private void findSearchHandler () {
