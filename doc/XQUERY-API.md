@@ -50,7 +50,7 @@ order, starting with the first term that is >= the starting value.
 If the $field-name argument is empty, the terms are drawn from the default
 field defined by the IndexConfiguration, generally the XmlTextField.
 
-### `function lux:field-values($field-name as xs:string, $node as node()) as xs:anyAtomicItem*` ###
+### `function lux:key($field-name as xs:string, $node as node()) as xs:anyAtomicItem*` ###
 
 accepts the name of a lucene field and optionally, a node, and returns any
 stored value(s) of the field for the document containing the node, or the
@@ -59,17 +59,22 @@ context item if no node is specified.
 If the node (or context item) is not a node drawn from the index, lux:field
 will return the empty sequence.
 
-Order by expressions containing lux:field-values calls are subject to
+#### Optimized Sorting 
+
+XQuery "order by" expressions containing lux:key calls are subject to
 special optimization and are often able to be implemented by
-index-optimized sorting in Lucene (only for string-valued fields).  An
-error results if an attempt is made to sort by a field that has multiple
+index-optimized sorting in Lucene.  Without this optimization, sorting can
+be very inefficient due to the need to load the full contents of every
+document into memory and evaluate the sort expression for each document.
+
+An error results if an attempt is made to sort by a field that has multiple
 values for any of the documents in the sequence.
 
-### `lux:highlight($node as node()?, $query as item())` ###
+### `lux:highlight($node as node()?, $query as item(), $tag as item()?)` ###
 
-returns the given node with text matching the query surrounded by B tags.
-The query may be a string or an element/document of the same types
-supported by lux:search.
+returns the given node with text matching the query surrounded by the named
+tag (or a B tag if no name is supplied).  The query may be a string or an
+xml node of the same types supported by lux:search.
 
 ### `function lux:insert-document($uri as xs:string, $node as node()) as empty-sequence()` ###
 

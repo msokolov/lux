@@ -6,18 +6,17 @@ pos:   5
 ---
 # Plans
 
-This page lists a number of potential areas for improvement. There is no
-schedule for any of this work, not any commitment that all (or any) of it
-will be completed. However, we do continue to make improvements, and this
-list does reflect our priorities. We hope it may be useful for users
+This document gives an overview of some initiatives we have planned.  There
+is a complete list of open issues that includes everything here in the
+project Jira at issues.luxdb.org.
+
+There is no schedule for any of this work, not any commitment that all (or
+any) of it will be completed. However, we do continue to make improvements,
+and this list does reflect our priorities. We hope it may be useful for you
 insofar as it gives a general idea of the direction in which we want to
 take Lux development in the future.  And of course, we welcome
-contributions.
-
-## Improve the documentation
-
-The documentation is not really complete; we need sections that explain
-what indexes are available, and how to best make use of them in queries.
+contributions, so if you see something here you want to work on, or have
+ideas of your own, please get in touch.
 
 ## Performance enhancements
 
@@ -25,16 +24,11 @@ We have numerous ideas for improving performance, including:
 
 ### More indexing options, and query optimizations that use them
 
-#### Optimize range queries
-
-We currently optimize comparisons of indexed values with atomics;  e.g. `//foo[@id='x123']`.  We could also use the indexes to optimize predicates involving other comparison operators, like `collection()[.//modification-date > xs:date('2009-12-32')]`.
-
 #### Automatically optimize indexed order by expressions
 
 Currently, in order to sort expressions efficiently, the query writer must
-explicitly invoke the lux:field-values() function as a marker for the
-optimizer.  We could enhance the optimizer to detect indexed expressions
-itself.
+reference the lux:key() function explicitly as a marker for the optimizer.
+We could enhance the optimizer to detect indexed expressions itself.
 
 #### Optimize deep paging with sorted queries
 
@@ -46,9 +40,10 @@ filter on a subsequent pass.
 
 ### Cache compiled and optimized queries
 
-This will save time spent reading, parsing and optimizing queries that are repeated.
+This will save time spent reading, parsing and optimizing queries that are
+repeated.
 
-### Handle distributed indexes (SolrCloud)
+### Handle distributed indexes (SolrCloud) ... Coming Soon
 
 To scale up to huge databases (on the order of 1TB and up), we would need
 to support running queries against a distributed index. Solr already does
@@ -57,12 +52,6 @@ simpler implementation based on lower-level Lucene search functions which
 operate only on a local index.  The work here involves providing a new
 implementation of the low-level search iterators that re-uses Solr's
 sharding components.
-
-### Iterate over leaf DocReaders internally
-
-Currently we rely on some generic functionality in Lucene that exposes a
-simpler "single-index" API.  We could save some cycles by handling the
-iteration over index segments in our code.
 
 ## XQuery 3.0
 
