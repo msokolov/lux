@@ -12,6 +12,7 @@ import lux.index.field.DocumentField;
 import lux.index.field.ElementQNameField;
 import lux.index.field.ElementTextField;
 import lux.index.field.FieldDefinition;
+import lux.index.field.IDField;
 import lux.index.field.PathField;
 import lux.index.field.PathOccurrenceField;
 import lux.index.field.PathValueField;
@@ -206,6 +207,7 @@ public class IndexConfiguration {
             	addField(XML_STORE);
             }
         }
+        addField (IDField.getInstance());
     }
     
     /** adds a new field 
