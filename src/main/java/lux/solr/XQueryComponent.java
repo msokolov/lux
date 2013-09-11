@@ -93,9 +93,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
 
     @Override
-    public void inform(SolrCore core) {
-        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(core);
-        this.core = core;
+    public void inform(SolrCore solrCore) {
+        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(solrCore);
+        this.core = solrCore;
     }
     
     private void findSearchHandler () {
@@ -219,7 +219,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             return;
         }
         XQueryExecutable expr;
-        SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         SolrIndexSearcher searcher = rb.req.getSearcher();
         DocWriter docWriter = new SolrDocWriter(this, rb.req.getCore());
         lux.Compiler compiler = solrIndexConfig.getCompiler();
@@ -293,11 +292,16 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         if (err != null) {
             rsp.add("xpath-error", err);
         }
-        rsp.add("xpath-results", xpathResults);
-        result.setDocList(new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
-        rb.setResult(result);
-        rsp.add("response", rb.getResults().docList);
+        if (rb.getResults() == null) {
+            // create a dummy doc list if previous query processing didn't retrieve any docs
+            // In distributed operation, there will be doc results, otherwise none.
+            SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
+            result.setDocList(new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
+            rb.setResult(result);
+            rsp.add("response", rb.getResults().docList);
+        }
         if (xpathResults != null) {
+            rsp.add("xpath-results", xpathResults);
             if (logger.isDebugEnabled()) {
                 logger.debug("retrieved: " + ((Evaluator) evaluator).getDocReader().getCacheMisses() + " docs, "
                         + xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");

@@ -65,6 +65,7 @@ public class Evaluator {
     private LuxQueryParser queryParser;
     private XmlQueryParser xmlQueryParser;
     private QueryStats queryStats;
+    private QueryContext queryContext;
 
     /**
      * Creates an evaluator that uses the provided objects to evaluate queries.

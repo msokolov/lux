@@ -2,8 +2,11 @@ package lux.solr;
 
 import lux.Evaluator;
 import lux.SearchIteratorBase;
+import lux.exception.LuxException;
 import lux.functions.SearchBase.QueryParser;
 import lux.index.FieldName;
+import lux.index.IndexConfiguration;
+import lux.index.field.IDField;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmNode;
@@ -27,6 +30,9 @@ public class CloudSearchIterator extends SearchIteratorBase {
     private SolrQueryResponse response;
     private final String query;
     private final QueryParser queryParser;
+    private final String xmlFieldName;
+    private final String uriFieldName;
+    private final String idFieldName;
     
     /**
      * Initialize the iterator
@@ -41,6 +47,10 @@ public class CloudSearchIterator extends SearchIteratorBase {
         this.limit = 20;
         this.queryParser = queryParser;
         this.query = query;
+        IndexConfiguration indexConfig = eval.getCompiler().getIndexConfiguration();
+        this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
+        this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
+        this.idFieldName = indexConfig.getFieldName(IDField.getInstance());
     }
 
     @Override
@@ -59,12 +69,16 @@ public class CloudSearchIterator extends SearchIteratorBase {
                 // FIXME: test pagination I think there is a bug here if w/start > 0?
                 if (position < docs.getStart() + docs.size()) {
                     SolrDocument doc = docs.get(position++);
-                    String uri = (String) doc.getFirstValue("lux_uri");
-                    Object oxml = doc.getFirstValue("lux_xml");
+                    String uri = (String) doc.getFirstValue(uriFieldName);
+                    Object oxml = doc.getFirstValue(xmlFieldName);
+                    Long id = (Long) doc.getFirstValue(idFieldName);
+                    if (id == null) {
+                        // try to support migrating an old index?
+                        throw new LuxException("This index has no lux docids: it cannot support Lux on Solr Cloud");
+                    }
                     String xml = (String) ((oxml instanceof String) ? oxml : null);
                     byte [] bytes = (byte[]) ((oxml instanceof byte[]) ? oxml : null);
-                    // FIXME!!!
-                    XdmNode node = eval.getDocReader().createXdmNode(-1, uri, xml, bytes);
+                    XdmNode node = eval.getDocReader().createXdmNode(id, uri, xml, bytes);
                     return node.getUnderlyingNode();
                 } else if (position >= docs.getNumFound()) {
                     return null;
@@ -86,8 +100,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
         }
         params.add(CommonParams.START, Integer.toString(position));
         params.add(CommonParams.ROWS, Integer.toString(limit));
-        params.add(CommonParams.FL, eval.getCompiler().getIndexConfiguration().getFieldName(FieldName.URI) + ',' + 
-                eval.getCompiler().getIndexConfiguration().getFieldName(FieldName.XML_STORE));
+        params.add(CommonParams.FL, uriFieldName, xmlFieldName, idFieldName);
 
         SolrParams origParams = origRB.req.getParams();
         String debug = origParams.get(CommonParams.DEBUG);
@@ -98,8 +111,13 @@ public class CloudSearchIterator extends SearchIteratorBase {
         params.add("shards", origParams.get("shards"));
         SolrQueryRequest req = new CloudQueryRequest(origRB.req.getCore(), params, makeSortSpec());
         XQueryComponent xqueryComponent = ((SolrQueryContext)eval.getQueryContext()).getQueryComponent();
-        xqueryComponent.getSearchHandler().handleRequest(req, origRB.rsp);
-        response = origRB.rsp;
+        response = new SolrQueryResponse();
+        xqueryComponent.getSearchHandler().handleRequest(req, response);
+        // defensive...
+        SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
+        if (docs != null) {
+            eval.getQueryStats().docCount += docs.getNumFound();
+        }
     }
     
     private SortSpec makeSortSpec () {

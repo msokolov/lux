@@ -93,6 +93,9 @@ public abstract class FieldDefinition {
         this.isStored = isStored;
         this.type = type;
         this.renameable = renameable;
+        if (analyzer != null && ! (type == Type.STRING || type == Type.TEXT || type == Type.TOKENS)) {
+            throw new LuxException ("Unexpected combination of analyzer and field " + name + " of type: " + type);
+        }
     }
     
     /**

@@ -58,7 +58,7 @@ public class SearchResultIterator extends SearchIteratorBase {
         } else {
             docIter = searcher.searchOrdered(query);
         }
-        if (start > 1) {
+        if (start > 0) {
             advanceTo (start1);
         }
     }
