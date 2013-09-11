@@ -111,8 +111,13 @@ public class CloudSearchIterator extends SearchIteratorBase {
         params.add("shards", origParams.get("shards"));
         SolrQueryRequest req = new CloudQueryRequest(origRB.req.getCore(), params, makeSortSpec());
         XQueryComponent xqueryComponent = ((SolrQueryContext)eval.getQueryContext()).getQueryComponent();
-        xqueryComponent.getSearchHandler().handleRequest(req, origRB.rsp);
-        response = origRB.rsp;
+        response = new SolrQueryResponse();
+        xqueryComponent.getSearchHandler().handleRequest(req, response);
+        // defensive...
+        SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
+        if (docs != null) {
+            eval.getQueryStats().docCount += docs.getNumFound();
+        }
     }
     
     private SortSpec makeSortSpec () {
