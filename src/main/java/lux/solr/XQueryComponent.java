@@ -178,15 +178,13 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         int count = 0;
         QueryContext context = null;
         String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
-        if (xqueryPath != null) {
-            context = new QueryContext();
-            context.bindVariable(LUX_HTTP, buildHttpParams(
-                    evaluator,
-                    rb.req.getParams(),
-                    rb.req.getContext(),
-                    xqueryPath
-                    ));
-        }
+        context = new QueryContext();
+        context.bindVariable(LUX_HTTP, buildHttpParams(
+                evaluator,
+                rb.req.getParams(),
+                rb.req.getContext(),
+                xqueryPath != null ? xqueryPath : "/xquery"
+                ));
         Iterator<XdmItem> queryResults = evaluator.iterator(expr, context);
         String err = null;
         while (queryResults.hasNext()) {
