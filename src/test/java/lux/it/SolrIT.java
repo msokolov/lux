@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import com.meterware.httpunit.HttpUnitOptions;
+import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebClient;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
@@ -27,7 +28,8 @@ import com.meterware.httpunit.WebResponse;
  */
 public class SolrIT {
 
-    private final String APP_SERVER_PATH = "http://localhost:8080/testapp";
+    private final String TEST_SERVER_PATH = "http://localhost:8080/testapp";
+    private final String APP_SERVER_PATH = "http://localhost:8080/collection1/testapp";
     private final String XQUERY_PATH = "http://localhost:8080/xquery";
     private final String LUX_PATH = "http://localhost:8080/lux/";
     private static WebClient httpclient;
@@ -41,21 +43,32 @@ public class SolrIT {
     
     @Test
     public void testAppServer () throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=lux/compiler/minus-1.xqy");
+        String path = (TEST_SERVER_PATH + "?lux.xquery=lux/compiler/minus-1.xqy");
         String response = httpclient.getResponse(path).getText();
+        assertEquals ("1", response);
+
+        path = (APP_SERVER_PATH + "/lux/compiler/minus-1.xqy");
+        response = httpclient.getResponse(path).getText();
         assertEquals ("1", response);
     }
 
     @Test
     public void testNoDirectoryListing() throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=lux/");
+        String path = (TEST_SERVER_PATH + "?lux.xquery=lux/");
         WebResponse response = httpclient.getResponse(path);
         assertEquals (403, response.getResponseCode());
+
+        // FIXME? directory path not mapped to AppServerComponent which only filters *.xq*
+        /*
+        path = APP_SERVER_PATH + "/lux/";
+        response = httpclient.getResponse(path);
+        assertEquals (403, response.getResponseCode());
+        */
     }
     
     @Test
     public void testSyntaxError () throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=lux/functions/transform-error.xqy");
+        String path = (TEST_SERVER_PATH + "?lux.xquery=lux/functions/transform-error.xqy");
         WebResponse httpResponse = httpclient.getResponse(path);
         assertEquals (400, httpResponse.getResponseCode());
         assertEquals ("Bad Request", httpResponse.getResponseMessage());
@@ -72,19 +85,24 @@ public class SolrIT {
     
     @Test
     public void testParameterMap () throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=lux/solr/test-params.xqy&p1=A&p2=B&p2=C");
+        String path = (TEST_SERVER_PATH + "?lux.xquery=lux/solr/test-params.xqy&p1=A&p2=B&p2=C");
         String response = httpclient.getResponse(path).getText();
         // This test depends on the order in which keys are retrieved from a java.util.HashMap
-        assertEquals ("<http method=\"\"><params>" +
+        String expected = "<http method=\"\"><params>" +
                 "<parm name=\"wt\"><value>lux</value></parm>" +
         		"<parm name=\"p2\"><value>B</value><value>C</value></parm>" +
                 "<parm name=\"p1\"><value>A</value></parm>" +
-        		"</params></http>", response.replaceAll("\n\\s*",""));
+        		"</params></http>";
+        assertEquals (expected, response.replaceAll("\n\\s*",""));
+    
+        path = APP_SERVER_PATH + "/lux/solr/test-params.xqy?p1=A&p2=B&p2=C";
+        response = httpclient.getResponse(path).getText();
+        assertEquals (expected, response.replaceAll("\n\\s*",""));
     }
     
     @Test
     public void testExhaustResultSetMemory () throws Exception {
-        String path = (APP_SERVER_PATH + "?lux.xquery=lux/solr/huge-result.xqy");
+        String path = (TEST_SERVER_PATH + "?lux.xquery=lux/solr/huge-result.xqy");
         WebResponse httpResponse = httpclient.getResponse(path);
         httpResponse.getElementsWithName("error");
         // caught a ResourceExhaustedException
@@ -101,7 +119,12 @@ public class SolrIT {
     	verifyMultiThreadedWrites(); // load test documents
         String path = (XQUERY_PATH + "?q=subsequence(for $x in collection() order by xs:int($x//@id) return $x,1,2)&lux.contentType=text/xml&wt=lux");
         WebResponse httpResponse = httpclient.getResponse(path);
-    	assertEquals ("<results><doc><title id=\"1\">100</title><test>cat</test></doc><doc><title id=\"2\">99</title><test>cat</test></doc></results>", httpResponse.getText());
+    	String expected = "<results><doc><title id=\"1\">100</title><test>cat</test></doc><doc><title id=\"2\">99</title><test>cat</test></doc></results>";
+        assertEquals (expected, httpResponse.getText());
+        
+        path = APP_SERVER_PATH + "/lux/it/atomic-sequence.xqy?lux.contentType=text/xml";
+        httpResponse = httpclient.getResponse(path);
+        assertEquals (expected, httpResponse.getText());
     }
     
     @Test
@@ -119,16 +142,16 @@ public class SolrIT {
      * Ensure that we can write multiple documents in parallel.
      */
     private void verifyMultiThreadedWrites () throws Exception {
-        eval ("concat(lux:delete('lux:/'), lux:commit(), 'OK')");
+        get ("concat(lux:delete('lux:/'), lux:commit(), 'OK')");
         ExecutorService taskExecutor = Executors.newFixedThreadPool(1);
         for (int i = 1; i <= 30; i++) {
             taskExecutor.execute(new TestDocInsert (i));
         }
         taskExecutor.shutdown();
         taskExecutor.awaitTermination(1, TimeUnit.SECONDS);
-        eval ("lux:commit()");
+        get ("lux:commit()");
         for (int i = 1; i <= 30; i++) {
-            WebResponse response = eval ("doc('/test/" + i + "')");
+            WebResponse response = get ("doc('/test/" + i + "')");
             assertEquals (createTestDocument(i).replaceAll("\\s+", ""), response.getText().replaceAll("\\s+", ""));
         }
     }
@@ -142,7 +165,7 @@ public class SolrIT {
         @Override public void run () {
             String insert = "let $i := lux:insert('/test/" + id + "'," + createTestDocument(id) + ") return concat('OK', $i)";
             try {
-                WebResponse response = eval (insert);
+                WebResponse response = get (insert);
                 assertEquals ("OK", response.getText());
             } catch (MalformedURLException e) {
                 fail (e.getMessage());
@@ -158,7 +181,7 @@ public class SolrIT {
      * is thread-safe.
      */
     @Test public void testMTOutputURIResolver () throws Exception {
-        eval ("concat(lux:delete('lux:/'), lux:commit(), 'OK')");
+        get ("concat(lux:delete('lux:/'), lux:commit(), 'OK')");
         long start = System.currentTimeMillis();
         ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
         for (int i = 1; i <= 30; i++) {
@@ -168,13 +191,13 @@ public class SolrIT {
         taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
         long elapsed = System.currentTimeMillis() - start;
         System.out.println ("elapsed=" + elapsed);
-        eval ("lux:commit()");
+        get ("lux:commit()");
         for (int i = 1; i <= 30; i++) {
-            WebResponse response = eval ("doc('/doc/" + i + "')");
+            WebResponse response = get ("doc('/doc/" + i + "')");
             assertEquals (createTestDocument(i).replaceAll("\\s+", ""), response.getText().replaceAll("\\s+", ""));
-            eval ("doc('/doc/" + i + "/0/0')");
-            eval ("doc('/doc/" + i + "/1/0')");
-            eval ("doc('/doc/" + i + "/1/1')");
+            get ("doc('/doc/" + i + "/0/0')");
+            get ("doc('/doc/" + i + "/1/0')");
+            get ("doc('/doc/" + i + "/1/1')");
         }
     }
     
@@ -196,7 +219,7 @@ public class SolrIT {
                     " let $i := lux:insert('/doc/" + id + "',$doc) " +
                     " return concat('OK', $i, $trans)";
             try {
-                WebResponse response = eval (insert);
+                WebResponse response = get (insert);
                 assertTrue (response.getText().startsWith("OK"));
             } catch (MalformedURLException e) {
                 fail (e.getMessage());
@@ -207,9 +230,26 @@ public class SolrIT {
             }
         }
     }
+    
+    @Test
+    public void testHttpPost () throws Exception {
+        WebResponse resp = post ("/lux/it/echo-params.xqy", "test", "value");
+        assertEquals ("value", resp.getText());
+    }
 
-    private WebResponse eval (String xquery) throws MalformedURLException, IOException, SAXException {
+    private WebResponse get (String xquery) throws MalformedURLException, IOException, SAXException {
         WebResponse response = httpclient.getResponse(XQUERY_PATH + "?wt=lux&q=" + xquery);
+        assertEquals (200, response.getResponseCode());
+        return response;
+    }
+    
+    private WebResponse post (String xquery, String ... params) throws MalformedURLException, IOException, SAXException {
+        PostMethodWebRequest req = new PostMethodWebRequest(APP_SERVER_PATH + xquery);
+        for (int i = 0; i < params.length; i+= 2) {
+            req.setParameter(params[i], params[i+1]);
+        }
+        assertEquals ("", req.getQueryString());
+        WebResponse response = httpclient.sendRequest(req);
         assertEquals (200, response.getResponseCode());
         return response;
     }
