@@ -109,17 +109,32 @@ public class CloudSearchIterator extends SearchIteratorBase {
         }
         params.add("distrib", "true");
         params.add("shards", origParams.get("shards"));
-        SolrQueryRequest req = new CloudQueryRequest(origRB.req.getCore(), params, makeSortSpec());
+        SortSpec sortSpec = makeSortSpec();
+        if (sortCriteria != null) {
+            addSortParam (params, sortSpec);
+        }
+        SolrQueryRequest req = new CloudQueryRequest(origRB.req.getCore(), params, sortSpec);
         XQueryComponent xqueryComponent = ((SolrQueryContext)eval.getQueryContext()).getQueryComponent();
         response = new SolrQueryResponse();
         xqueryComponent.getSearchHandler().handleRequest(req, response);
-        // defensive...
         SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
         if (docs != null) {
             eval.getQueryStats().docCount += docs.getNumFound();
         }
     }
     
+    private void addSortParam(ModifiableSolrParams params, SortSpec sortSpec) {
+        for (SortField sortField : sortSpec.getSort().getSort()) {
+            String dir = sortField.getReverse() ? "desc" : "asc"; 
+            params.add("sort", sortField.getField() + ' ' + dir);
+            // FIXME Solr controls sorting missing first/last with a *schema* setting,
+            // but we insist on runtime control.  We should raise an error here
+            // if the schema is not in line with the runtime setting, since otherwise
+            // an incorrect ordering will be the result.  And provide some kind of 
+            // "recover from the error" setting? Where?
+        }
+    }
+
     private SortSpec makeSortSpec () {
         Sort sort;
         if (sortCriteria != null) {
