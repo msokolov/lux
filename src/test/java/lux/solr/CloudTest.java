@@ -44,32 +44,33 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         handle.put("response", SKIP); // in cloud only 
         
         // OK
-        // query("qt", "/xquery", "q", "/FM");
-        // query("qt", "/xquery", "q", "(//SPEECH)[250]");
+        query("qt", "/xquery", "q", "/FM");
+        query("qt", "/xquery", "q", "(//SPEECH)[250]");
         
+        // order by lux:key()
+        query ("qt", "/xquery", "q", "(for $sp in //SPEECH order by $sp/lux:key('title') return $sp)[30]");
+
+        // order by value
+        query ("qt", "/xquery", "q", "(for $act in /ACT order by $act/@act descending return $act/TITLE)[1]");
+
+        // join two queries 
+        query ("qt", "/xquery", "q", "count(for $act in /ACT, $actdesc in //ACT return $act is $actdesc)");
+        
+        // runtime error (no context item)
+        query ("qt", "/xquery", "q", "(for $sp in //SPEECH return .)[30]");
+
+        //  runtime error #2 (no context item), but we get the sortkey problem first
+        query ("qt", "/xquery", "q", "(for $sp in //SPEECH order by $sp/lux:key('title') return .)[30]");
+
         // FIXME: lux:count()
         // query ("qt", "/xquery", "q", "count(collection())");
 
         // FIXME: lux:exists()
         // query ("qt", "/xquery", "q", "exists(/ACT)");
         
-        // FIXME: order by lux:key()
-        query ("qt", "/xquery", "q", "(for $sp in //SPEECH order by $sp/lux:key('title') return $sp)[30]");
-
-        // order by value - OK
-        // query ("qt", "/xquery", "q", "(for $act in /ACT order by $act/@act descending return $act/TITLE)[1]");
-
-        // join two queries - OK 
-        // query ("qt", "/xquery", "q", "count(for $act in /ACT, $actdesc in //ACT return $act is $actdesc)");
-        
         // FIXME: StackOverflow in net.sf.saxon.expr.ForExpression.optimize()!!!
         // query ("qt", "/xquery", "q", "count(for $act in /ACT, $actdesc in //ACT return $act intersect $actdesc)");
 
-        // runtime error (no context item) - OK
-        // query ("qt", "/xquery", "q", "(for $sp in //SPEECH return .)[30]");
-
-        // FIXME: runtime error #2 (no context item), but we get the sortkey problem first
-        // query ("qt", "/xquery", "q", "(for $sp in //SPEECH order by $sp/lux:key('title') return .)[30]");
     }
 
 }
