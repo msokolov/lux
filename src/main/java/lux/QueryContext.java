@@ -20,6 +20,15 @@ public class QueryContext {
     private HashMap<QName, Object> variables;
     
     private Object contextItem;
+
+    /** A query context with no context item */
+    public QueryContext() {
+    }
+    
+    /** A query context with no context item */
+    public QueryContext(Object contextItem) {
+        this.contextItem = contextItem; 
+    }
     
     /**
      * bind an external variable so that it will be available in the scope of queries evaluated using this context
