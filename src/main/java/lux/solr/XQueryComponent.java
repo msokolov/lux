@@ -5,14 +5,19 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
 
+import lux.Compiler;
 import lux.DocWriter;
 import lux.Evaluator;
 import lux.QueryContext;
@@ -21,7 +26,13 @@ import lux.TransformErrorListener;
 import lux.exception.LuxException;
 import lux.exception.ResourceExhaustedException;
 import lux.search.LuxSearcher;
+import lux.solr.LuxDispatchFilter.Request;
 import lux.xml.QName;
+import net.sf.saxon.om.FingerprintedQName;
+import net.sf.saxon.om.NamespaceBinding;
+import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.query.GlobalVariableDefinition;
+import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XQueryExecutable;
@@ -29,7 +40,12 @@ import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
+import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.tree.linked.LinkedTreeBuilder;
+import net.sf.saxon.tree.tiny.TinyElementImpl;
+import net.sf.saxon.type.AnyType;
+import net.sf.saxon.type.BuiltInAtomicType;
 import net.sf.saxon.type.TypeHierarchy;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.DecimalValue;
@@ -154,7 +170,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
         SolrIndexSearcher searcher = rb.req.getSearcher();
         DocWriter docWriter = new SolrDocWriter (this, rb.req.getCore());
-        lux.Compiler compiler = solrIndexConfig.getCompiler();
+        Compiler compiler = solrIndexConfig.getCompiler();
 
         Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
         TransformErrorListener errorListener = evaluator.getErrorListener();
@@ -177,14 +193,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         long tstart = System.currentTimeMillis();
         int count = 0;
         QueryContext context = null;
-        String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
         context = new QueryContext();
-        context.bindVariable(LUX_HTTP, buildHttpParams(
-                evaluator,
-                rb.req.getParams(),
-                rb.req.getContext(),
-                xqueryPath != null ? xqueryPath : "/xquery"
-                ));
+        bindRequestVariables(rb, req, expr, compiler, evaluator, context);
         Iterator<XdmItem> queryResults = evaluator.iterator(expr, context);
         String err = null;
         while (queryResults.hasNext()) {
@@ -192,18 +202,20 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             if (++ count < start) {
                 continue;
             }
-            try {
-                addResult (xpathResults, xpathResult);
-            } catch (SaxonApiException e) {
-                err = e.getMessage();
-                xpathResults = null;
-                break;
-            } catch (ResourceExhaustedException e) {
-                err = e.getMessage();
-                break;
-            } catch (OutOfMemoryError e) {
-                xpathResults = null;
-                err = e.getMessage();
+            if (count == 1 && !xpathResult.isAtomicValue()) {
+                net.sf.saxon.s9api.QName name = ((XdmNode)xpathResult).getNodeName();
+                if (name != null && name.getNamespaceURI().equals(EXPATH_HTTP_NS) &&
+                    name.getLocalName().equals("response")) {
+                    err = handleEXPathResponse(req, rsp, xpathResults, xpathResult);
+                    if (queryResults.hasNext()) {
+                        logger.warn ("Ignoring results following http:response, which should be the sole item in its result");
+                    }
+                    break;
+                }
+            }
+            err = safeAddResult(xpathResults, xpathResult);
+            if (err != null) {
+                xpathResult = null;
                 break;
             }
             if ((len > 0 && xpathResults.size() >= len) || 
@@ -233,6 +245,122 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         } else {
             logger.warn ("xquery evaluation error: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
                     "0 results, " + (System.currentTimeMillis() - tstart) + "ms");
+        }
+    }
+
+    private String handleEXPathResponse(SolrQueryRequest req, SolrQueryResponse rsp, NamedList<Object> xpathResults, XdmItem xpathResult) {
+        XdmNode expathResponse;
+        expathResponse = (XdmNode) xpathResult;
+        HttpServletRequest httpReq = (HttpServletRequest) req.getContext().get("httpServletRequest");
+        HttpServletResponse httpResp = (HttpServletResponse) httpReq.getAttribute("httpServletResponse");
+        TinyElementImpl responseNode = (TinyElementImpl) expathResponse.getUnderlyingNode();
+        // Get the status code and message
+        String status = responseNode.getAttributeValue("", "status");
+        String message = responseNode.getAttributeValue("", "message");
+        if (status != null) {
+            int istatus;
+            try {
+                istatus = Integer.parseInt(status);
+            } catch (NumberFormatException e) {
+                throw new LuxException ("Non-numeric response status code: " + status);
+            }
+            if (istatus >= 300) {
+                try {
+                    if (message != null) {
+                        httpResp.sendError(istatus, message);
+                    } else {
+                        httpResp.sendError(istatus);
+                    }                            
+                } catch (IOException e) {
+                    logger.error("sendError failed: " + e.getMessage());
+                }
+            }
+            // if an error is generated by the query, call sendError?
+            httpResp.setStatus(istatus);
+        }
+        // Get the body, its charset and content-type and return the body to be used as the result
+        XdmSequenceIterator children = expathResponse.axisIterator(Axis.CHILD);
+        while (children.hasNext()) {
+            XdmNode child = (XdmNode) children.next();
+            net.sf.saxon.s9api.QName childName = child.getNodeName();
+            if (! childName.getNamespaceURI().equals(EXPATH_HTTP_NS)) {
+                logger.warn("ignoring unknown response child element: " + childName.getClarkName());
+                continue;
+            }
+            if (childName.getLocalName().equals("body")) {
+                // got the body
+                String src = child.getAttributeValue(qnameFor("src"));
+                if (src != null) {
+                    throw new LuxException ("The body/@src attribute is not supported");
+                }
+                String characterSet = child.getAttributeValue(qnameFor("charset"));
+                if (characterSet == null) {
+                    characterSet = "utf-8";
+                }
+                String contentType = child.getAttributeValue(qnameFor("content-type"));
+                if (contentType != null) {
+                    contentType += "; charset=" + characterSet;
+                }
+                if (contentType == null) {
+                    contentType = req.getParams().get("lux.contentType", contentType);
+                    if (contentType != null) {
+                        contentType = contentType.replaceFirst ("(?<=; charset=).*", characterSet);
+                    }
+                }
+                if (contentType != null) {
+                    req.getContext().put("lux.contentType", contentType);
+                }
+                XdmSequenceIterator bodyKids = child.axisIterator(Axis.CHILD);
+                while (bodyKids.hasNext()) {
+                    XdmNode result = (XdmNode) bodyKids.next();
+                    String err = safeAddResult(xpathResults, result);
+                    if (err != null) {
+                        return err;
+                    }
+                }
+            }
+            else if (childName.getLocalName().equals("header")) {
+                // TODO: get the headers
+                throw new LuxException ("HTTP headers not implemented");
+            }
+            else if (childName.getLocalName().equals("multipart")) {
+                throw new LuxException ("Multipart HTTP responses not implemented");
+            }
+        }
+        if (expathResponse != null) {
+            // TODO: pass the expathResponse to the LuxResponseWriter -- why?
+            req.getContext().put("expath:response", expathResponse);
+        }
+        return null;
+    }
+
+    private void bindRequestVariables(ResponseBuilder rb, SolrQueryRequest req,
+            XQueryExecutable expr, Compiler compiler, Evaluator evaluator,
+            QueryContext context) {
+
+        @SuppressWarnings("unchecked")
+        Iterator<GlobalVariableDefinition> decls = expr.getUnderlyingCompiledQuery().getStaticContext().getModuleVariables();
+        boolean hasLuxHttp = false, hasEXpathRequest = false;
+        while (decls.hasNext()) {
+            GlobalVariableDefinition decl = decls.next();
+            StructuredQName varName = decl.getVariableQName();
+            if (varName.equals(new StructuredQName("", EXPATH_HTTP_NS, "input"))) {
+                hasEXpathRequest = true;
+            } else if (varName.equals(new StructuredQName("",  LUX_HTTP.getNamespaceURI(), LUX_HTTP.getLocalPart()))) {
+                hasLuxHttp = true;
+            }
+        }
+        if (hasLuxHttp) {
+            context.bindVariable(LUX_HTTP, buildHttpParams (evaluator, req,
+                queryPath != null ? queryPath : "/xquery"
+                ));
+        }
+        if (hasEXpathRequest) {
+            try {
+                context.bindVariable(new QName(EXPATH_HTTP_NS, "input", ""), buildEXPathRequest(compiler, req));
+            } catch (XPathException e) {
+                throw new LuxException (e);
+            } 
         }
     }
 
@@ -269,8 +397,21 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         return buf.toString();
     }
 
-    private XdmNode buildHttpParams(Evaluator evaluator, SolrParams params, Map<Object, Object> context, String path) {
-        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(params, context)), path);
+    private XdmNode buildHttpParams(Evaluator evaluator, SolrQueryRequest req, String path) {
+        return (XdmNode) evaluator.build(new StringReader(buildHttpInfo(req)), path);
+    }
+
+    protected String safeAddResult (NamedList<Object> xpathResults, XdmItem item) {
+        try {
+            addResult (xpathResults, item);
+            return null;
+        } catch (SaxonApiException e) {
+            return e.getMessage();
+        } catch (ResourceExhaustedException e) {
+            return e.getMessage();
+        } catch (OutOfMemoryError e) {
+            return e.getMessage();
+        }
     }
 
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) throws SaxonApiException {
@@ -316,7 +457,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             XdmNode node = (XdmNode) item;
             XdmNodeKind nodeKind = node.getNodeKind();
             StringWriter buf = new StringWriter ();
-            // TODO: xml serialization, indentation control; for now assume text/html
             // TODO: tinybin serialization!
             serializer.setOutputWriter(buf);
             serializer.serializeNode(node);
@@ -335,11 +475,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     // Hand-coded serialization may be a bit fragile, but the only alternative 
     // using Saxon is too inconvenient
-    private String buildHttpInfo(SolrParams params, Map<Object, Object> context) {
+    private String buildHttpInfo(SolrQueryRequest req) {
         StringBuilder buf = new StringBuilder();
         // TODO: http method
         buf.append (String.format("<http>"));
         buf.append ("<params>");
+        SolrParams params = req.getParams();
         Iterator<String> paramNames = params.getParameterNamesIterator();
         while (paramNames.hasNext()) {
             String param = paramNames.next();
@@ -358,6 +499,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         if (pathInfo != null) {
             buf.append("<path-info>").append(xmlEscape(pathInfo)).append("</path-info>");
         }
+        Map<Object, Object> context = req.getContext();
         String webapp = (String) context.get("webapp");
         if (webapp == null) {
             webapp = "";
@@ -368,8 +510,118 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         return buf.toString();
     }
 
+    private static final String EXPATH_HTTP_NS = "http://expath.org/ns/webapp";
+    
+    private XdmNode buildEXPathRequest (Compiler compiler, SolrQueryRequest req) throws XPathException {
+        LinkedTreeBuilder builder = new LinkedTreeBuilder (compiler.getProcessor().getUnderlyingConfiguration().makePipelineConfiguration());
+        builder.startDocument(0);
+        // FIXME is there something wrong with the namespace declaration here?
+        builder.startElement(new FingerprintedQName("http", EXPATH_HTTP_NS, "request"), AnyType.getInstance(), 0, 0);
+        builder.namespace(new NamespaceBinding("http", EXPATH_HTTP_NS), 0);
+        Request requestWrapper = (Request) req.getContext().get("httpServletRequest");
+        addAttribute(builder, "method", requestWrapper.getMethod());
+        addAttribute(builder, "servlet", requestWrapper.getServletPath());
+        HttpServletRequest httpReq = (HttpServletRequest)requestWrapper.getRequest();
+        addAttribute(builder, "path", httpReq.getServletPath());
+        String pathInfo = requestWrapper.getPathInfo();
+        if (pathInfo != null) {
+            addAttribute(builder, "path-info", pathInfo);
+        }
+        builder.startContent();
+        
+        // child elements
+        
+        StringBuilder buf = new StringBuilder();
+
+        // authority
+        buf.append (requestWrapper.getScheme()).
+            append("://").
+            append(requestWrapper.getServerName()).
+            append(':').
+            append (requestWrapper.getServerPort());
+        String authority = buf.toString();
+        addSimpleElement(builder, "authority", authority);
+        
+        // url
+        buf.append (httpReq.getServletPath());
+        if (httpReq.getQueryString() != null) {
+            buf.append ('?').append(httpReq.getQueryString());
+        }
+        String url = buf.toString();
+        addSimpleElement(builder, "url", url);
+        
+        // context-root
+        addSimpleElement(builder, "context-root", httpReq.getContextPath());
+        
+        // path - just one part: we don't do any parsing of the path
+        builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "path"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
+        builder.startContent();
+        addSimpleElement(builder, "part", httpReq.getServletPath());
+        builder.endElement();
+        
+        // params
+        for (Object o: httpReq.getParameterMap().entrySet()) {
+            @SuppressWarnings("unchecked")
+            Map.Entry<String, String[]> param = (Entry<String, String[]>) o;
+            for (String value : param.getValue()) {
+                builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "param"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
+                addAttribute (builder, "name", param.getKey());
+                addAttribute (builder, "value", value);
+                builder.startContent();
+                builder.endElement();
+            }
+        }
+        
+        // headers
+        @SuppressWarnings("unchecked")
+        Enumeration<String> headerNames = httpReq.getHeaderNames(); 
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            @SuppressWarnings("unchecked")
+            Enumeration<String> headerValues = httpReq.getHeaders(headerName);
+            while (headerValues.hasMoreElements()) {
+                String value = headerValues.nextElement();
+                builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "header"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
+                addAttribute (builder, "name", headerName);
+                addAttribute (builder, "value", value);
+                builder.startContent();
+                builder.endElement();
+            }
+        }
+        
+        builder.endElement();           // end request
+        builder.endDocument();
+        return new XdmNode (builder.getCurrentRoot());
+    }
+
+    private void addSimpleElement(LinkedTreeBuilder builder, String name, String text)
+            throws XPathException {
+        builder.startElement (fQNameFor("http", EXPATH_HTTP_NS, name), BuiltInAtomicType.STRING, 0, 0);
+        builder.startContent();
+        builder.characters(text, 0, 0);
+        builder.endElement();
+    }
+
+    private void addAttribute(LinkedTreeBuilder builder, String name, String value)
+            throws XPathException {
+        builder.attribute(fQNameFor("", "", name), BuiltInAtomicType.UNTYPED_ATOMIC, value, 0, 0);
+    }
+    
     public SolrIndexConfig getSolrIndexConfig() {
         return solrIndexConfig;
+    }
+    
+    // TODO cache these
+    protected FingerprintedQName fQNameFor (String prefix, String namespace, String name) {
+        return new FingerprintedQName(prefix, namespace, name);
+    }
+    
+    protected net.sf.saxon.s9api.QName qnameFor (String namespace, String localName) {
+        return new net.sf.saxon.s9api.QName (namespace, localName);
+    }
+
+    protected net.sf.saxon.s9api.QName qnameFor (String localName) {
+        return new net.sf.saxon.s9api.QName (localName);
     }
 
     private String xmlEscape(String value) {

@@ -16,6 +16,9 @@ import com.meterware.httpunit.WebClient;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
 
+/**
+ * Tests inserting documents via HTTP using Solr's /update handler
+ */
 public class SolrRestIT {
     
     private final String SOLR_SERVER_PATH = "http://localhost:8080";

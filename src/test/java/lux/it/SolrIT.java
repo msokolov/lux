@@ -3,11 +3,18 @@ package lux.it;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import lux.Evaluator;
+import lux.QueryContext;
+
+import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.trans.XPathException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -235,6 +242,78 @@ public class SolrIT {
     public void testHttpPost () throws Exception {
         WebResponse resp = post ("/lux/it/echo-params.xqy", "test", "value");
         assertEquals ("value", resp.getText());
+    }
+    
+    /*
+     * Test cases for EXPath:
+     * 
+     * single valued parameter
+     * multi-valued parameter
+     * single-valued header
+     * multi-valued header
+     * url
+     * 
+     * html body
+     * binary body
+     * xml body
+     * ill-formed xml body
+     * 
+     * multipart
+     */
+    @Test
+    public void testEXPathRequest () throws Exception {
+        String path = "/lux/it/echo-request.xqy";
+        String qs = "a=b&a=c&c=d";
+        String url = APP_SERVER_PATH + path + '?' + qs;
+        WebResponse response = httpclient.getResponse(url);
+        assertEquals (200, response.getResponseCode());
+        assertEquals ("OK", response.getResponseMessage());
+        assertEquals ("application/xml+test", response.getContentType());
+        assertEquals ("utf-8", response.getCharacterSet());
+        // TODO: test response headers
+        String body = response.getText();
+        assertTrue ("empty body", body.length() > 0);
+        Evaluator eval = new Evaluator();
+        eval.getCompiler().bindNamespacePrefix ("", "http://expath.org/ns/webapp");
+        XdmNode rspDoc = eval.build(new StringReader(body), "/test.xml");
+        QueryContext context = new QueryContext(rspDoc);
+        assertEquals ("GET", evalString("/request/@method", context, eval));
+        assertEquals ("/collection1/testapp", evalString("/request/@servlet", context, eval));
+        assertEquals ("/collection1/testapp" + path, evalString("/request/@path", context, eval));
+        assertEquals (url, evalString("/request/url", context, eval));
+        assertEquals ("http://localhost:8080", evalString("/request/authority", context, eval));
+        assertEquals ("", evalString ("/request/context-root", context, eval));
+        assertEquals ("/collection1/testapp" + path, evalString ("/request/path", context, eval));
+        assertEquals ("/collection1/testapp" + path, evalString ("/request/path/part", context, eval));
+        // depends on the order of hashmap keys; should be stable since String.hashCode is well-defined?
+        assertEquals ("a", evalString ("/request/param[3]/@name", context, eval));
+        assertEquals ("c", evalString ("/request/param[3]/@value", context, eval));
+        assertEquals ("a", evalString ("/request/param[2]/@name", context, eval));
+        assertEquals ("b", evalString ("/request/param[2]/@value", context, eval));
+        assertEquals ("c", evalString ("/request/param[1]/@name", context, eval));
+        assertEquals ("d", evalString ("/request/param[1]/@value", context, eval));
+        // TODO: params
+        assertEquals ("httpunit/1.5", evalString ("/request/header[@name='User-Agent']/@value", context, eval));
+        assertEquals ("", evalString ("/request/body", context, eval));
+    }
+
+    private String evalString (String query, QueryContext context, Evaluator eval) throws XPathException {
+        return eval.evaluate (query, context).getXdmValue().getUnderlyingValue().getStringValue();
+    }
+    /**
+     * test cases:
+     * 
+     * redirect (302)
+     * not found (404)
+     * normal (200)
+     * 
+     * control mime-type (html, text) binary?
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testEXPathResponse () throws Exception {
+        
     }
 
     private WebResponse get (String xquery) throws MalformedURLException, IOException, SAXException {
