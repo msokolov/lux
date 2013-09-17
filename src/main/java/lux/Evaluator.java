@@ -148,7 +148,17 @@ public class Evaluator {
     
     public XdmResultSet evaluate(String query, QueryContext context) {
         errorListener.clear();
-        XQueryExecutable compiledQuery = compiler.compile(query, errorListener, queryStats);
+        XQueryExecutable compiledQuery;
+        if (searcher == null) {
+            // don't optimize the query for use w/indexes when we have none
+            try {
+                compiledQuery = compiler.getXQueryCompiler().compile(query);
+            } catch (SaxonApiException e) {
+                throw new LuxException (e);
+            }
+        } else {
+            compiledQuery = compiler.compile(query, errorListener, queryStats);
+        }
         return evaluate (compiledQuery, context);
     }
     
