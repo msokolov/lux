@@ -1,42 +1,8 @@
 * features
-** distributed search (and indexing)
-*** search
-This is complicated b/c Saxon wants to pull results, and Solr, to push
-them.  We had a similar issue in the single-node search with Lucene, but
-managed to overcome by implementing our own pull-style Lucene searcher.
-It's not truly pull-style when the results are sorted (by relevance score
-or by value).  In that case we buffer the first N results (docids only),
-and if more get pulled, we fetch the next batch.
-
-In Solr Cloud, the RequestHandler orchestrates communication with a number
-of shards, and with a list of SearchComponents.  It calls each component
-once (distributedProcess()) in each phase.  Communication between these
-components is mediated by the ResponseBuilder, which holds information
-about the current state of the request.
-
-Ultimately what we need to do is evaluate the xquery (control passes to
-Saxon), and then when a search function is called, initiate the entire
-distributed search process, following a similar procedure as we currently
-do for sorted results in LuxSearcher: fetch the top N from each shard, and
-repeat if needed.
-
-This suggests tinkering with the RequestHandler.  XQueryComponent
-can *call* RequestHandler.handleRequestBody and then return STAGE_DONE.
-Now typically SearchComponents do not maintain a pointer to the handler
-that owns them.  We maintain a (per-core) singleton, SolrIndexConfig, which
-is available to the XQueryComponent via the core's plugin registry.
-Probably we can grab onto the RequestHandler from there?  There can be
-multiple request handlers though, and we want to make sure to use the same
-one: so we can iterate over all the request handlers in the core, and
-iterate over all the components in each handler until we find the one we're
-attached to.  Alternatively we could subclass the RequestHandler and inform
-the component (if it's an XQueryComponent)
-
-*** test distributed search
-
-*** test distributed indexing
-
-I believe this should just work
+** distributed search
+*** count()
+*** exists()
+*** more testing 
 ** directory (uri component) index
 also link to collection()?
 ** fragmentation 
@@ -44,6 +10,26 @@ use Lucene's block join indexing
 ** binary documents
 I think this is working now - let's measure and document the improvement.
 ** execute app from index
+** app-server
+*** documentation review
+*** integration test
+Enhance the integration test so it checks that the demo runs
+*** request body, parameters, headers, other servlet calls
+req:headers(), 
+req:header($name), 
+req:parts(), -- as string *or* as binary
+req:parts-bin(), -- as string *or* as binary
+req:params(), -- is this orig-params, or solr's modified params?  The latter I think
+req:param($name)
+req:url(), path-extra, etc
+*** response
+redirect, 404, error, etc
+*** lux:parse($bin), lux:parse($string)
+returns a document -- also provide laxity? uparse? tagsoup?
+*** passing current uri
+We currently send Solr the translated path - so it can read the resource,
+but it doesn't have the original url, which it would be nice to have so we
+can give it to the application
 * optimization
 cache translated AbstractExpressions for indexed XPaths somewhere.
 IndexConfiguration seems like the right place, but it doesn't have any
@@ -130,16 +116,6 @@ somewhat limited in our ability to do this right now since we rely on Saxon
 to make judgements about sorting, and it doesn't always optimize as
 agressively as we would like, at least not in the saxon-HE version.  It
 works in some simple cases, though.
-* app-server
-** documentation review
-** integration test
-Enhance the integration test so it checks that the demo runs
-** http header control
-redirect, 404, error, etc
-** passing current uri
-We currently send Solr the translated path - so it can read the resource,
-but it doesn't have the original url, which it would be nice to have so we
-can give it to the application
 * demo
 * coverage 
 SaxonTranslator: 85,87,90
