@@ -381,6 +381,10 @@ public class Evaluator {
         return docReader;
     }
     
+    public DocumentBuilder getDocBuilder () {
+        return builder;
+    }
+    
     public DocWriter getDocWriter() {
         return docWriter;
     }

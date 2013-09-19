@@ -17,6 +17,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.sax.SAXSource;
 
 import lux.Compiler;
 import lux.DocWriter;
@@ -76,8 +77,10 @@ import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.util.plugin.SolrCoreAware;
+import org.ccil.cowan.tagsoup.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
 
 /** This component executes searches expressed as XPath or XQuery.
  *  Its queries will match documents that have been indexed using XmlIndexer
@@ -625,28 +628,46 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             } catch (IOException e) {
                 throw new LuxException (e);
             }
-            try {
-                XdmNode part = evaluator.build(new ByteArrayInputStream(partBytes), "#part" + i);
-                result.add(part);
-            } catch (LuxException e) {
-                // failed to parse
-                String charset = ContentStreamBase.getCharsetFromContentType(contentType);
-                if (isText(contentType)) {
-                    XdmItem value;
-                    try {
-                        logger.warn("Caught an exception while parsing XML: " + e.getMessage() + ", treating it as text");
-                        contentType = "text/plain; charset=utf-8";
-                        String text = charset == null ? new String (partBytes, "utf-8") :
-                            new String (partBytes, charset);
-                        value = new XdmNode (new TextFragmentValue(text, "#part" + i));
-                        result.add (value);
-                    } catch (UnsupportedEncodingException e1) {
-                        throw new LuxException (e1);
-                    }
-                } else {
-                    throw new LuxException ("binary values not supported");
+            String charset = ContentStreamBase.getCharsetFromContentType(contentType);
+            if (charset == null) {
+                charset = "utf-8";
+            }
+            if (!isText(contentType)) {
+                throw new LuxException ("binary values not supported");
+            }
+            XdmItem part = null;
+            if (isXML(contentType)) {
+                try {
+                    part = evaluator.build(new ByteArrayInputStream(partBytes), "#part" + i);
+                } catch (LuxException e) {
+                    // failed to parse
+                    logger.warn("Caught an exception while parsing XML: " + e.getMessage() + ", treating it as plain text");
+                    contentType = "text/plain; charset=" + charset;
                 }
             }
+            if (part == null) {
+                String text;
+                try {
+                    text = new String (partBytes, charset);
+                } catch (UnsupportedEncodingException e1) {
+                    throw new LuxException (e1);
+                }
+                if (isHTML(contentType)) {
+                    Parser parser = new Parser();
+                    SAXSource source = new SAXSource (parser, new InputSource (new StringReader (text)));
+                    // evaluator.getCompiler().getProcessor().newDocumentBuilder().build(source)
+                    try {
+                        part = evaluator.getDocBuilder().build(source);
+                    } catch (SaxonApiException e) {
+                        e.printStackTrace();
+                        logger.warn ("failed to parse HTML; treating as plain text: " + e.getMessage());
+                    }
+                }
+                if (part == null) {
+                    part = new XdmNode (new TextFragmentValue(text, "#part" + i));
+                }
+            }
+            result.add (part);
             builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "body"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
             addAttribute(builder, "position", "1");
             addAttribute(builder, "content-type", contentType);
@@ -656,9 +677,16 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
     
     private boolean isText (String contentType) {
-        return contentType.startsWith("text/") ||
-                contentType.matches("/xml($| )") ||
-                contentType.matches("+xml($ | )");
+        return contentType.startsWith("text/") || isHTML(contentType) || isXML(contentType);
+    }
+
+    private boolean isHTML (String contentType) {
+        return contentType.matches(".*/html($| )");
+    }
+
+    private boolean isXML (String contentType) {
+        return  contentType.matches(".*/xml($| )") ||
+                contentType.matches(".*\\+xml($| )");
     }
 
     private void addSimpleElement(LinkedTreeBuilder builder, String name, String text)

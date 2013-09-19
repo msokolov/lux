@@ -264,12 +264,7 @@ public class SolrIT {
     /*
      * Test cases for EXPath:
      * 
-     * TODO: post bodies:
-     * 
      * html body
-     * binary body
-     * xml body
-     * ill-formed xml body
      * 
      * multipart
      */
@@ -332,6 +327,17 @@ public class SolrIT {
         assertEquals ("POST", evalString("/result-sequence/request/@method", context, eval));
         assertEquals ("<test>this is a test", evalString("/result-sequence/part", context, eval));
         assertEquals ("text/plain; charset=utf-8", evalString("/result-sequence/part/@content-type", context, eval));
+    }
+
+    @Test
+    public void testPostHTML() throws Exception {
+        String html = "<!DOCTYPE html>\n<html>this is a <br>test</html>";
+        WebResponse resp = postMime ("/lux/it/echo-multipart.xqy", html, "text/html");
+        XdmNode rspDoc = parseResponseBody(resp);
+        QueryContext context = new QueryContext (rspDoc);
+        assertEquals ("POST", evalString("/result-sequence/request/@method", context, eval));
+        assertEquals ("this is a test", evalString("/result-sequence/part", context, eval));
+        assertEquals ("text/html", evalString("/result-sequence/part/@content-type", context, eval));
     }
 
     private String evalString (String query, QueryContext context, Evaluator eval) throws XPathException {
