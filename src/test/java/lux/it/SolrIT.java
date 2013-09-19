@@ -324,6 +324,16 @@ public class SolrIT {
         assertEquals ("this is a test", evalString("/result-sequence/part", context, eval));
     }
 
+    @Test
+    public void testPostIllFormedXML () throws Exception {
+        WebResponse resp = postMime ("/lux/it/echo-multipart.xqy", "<test>this is a test", "text/xml");
+        XdmNode rspDoc = parseResponseBody(resp);
+        QueryContext context = new QueryContext (rspDoc);
+        assertEquals ("POST", evalString("/result-sequence/request/@method", context, eval));
+        assertEquals ("<test>this is a test", evalString("/result-sequence/part", context, eval));
+        assertEquals ("text/plain; charset=utf-8", evalString("/result-sequence/part/@content-type", context, eval));
+    }
+
     private String evalString (String query, QueryContext context, Evaluator eval) throws XPathException {
         return eval.evaluate (query, context).getXdmValue().getUnderlyingValue().getStringValue();
     }

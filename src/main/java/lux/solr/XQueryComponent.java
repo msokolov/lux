@@ -58,6 +58,7 @@ import net.sf.saxon.value.GMonthValue;
 import net.sf.saxon.value.GYearMonthValue;
 import net.sf.saxon.value.GYearValue;
 import net.sf.saxon.value.QNameValue;
+import net.sf.saxon.value.TextFragmentValue;
 import net.sf.saxon.value.Value;
 
 import org.apache.commons.io.IOUtils;
@@ -618,11 +619,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         for (ContentStream stream : req.getContentStreams()) {
             String contentType = stream.getContentType();
             //String name = stream.getName();
-            builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "body"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
-            addAttribute(builder, "position", "1");
-            addAttribute(builder, "content-type", contentType);
-            builder.startContent();
-            builder.endElement();
             byte[] partBytes = null;
             try {
                 partBytes = IOUtils.toByteArray(stream.getStream(), stream.getSize()); 
@@ -636,9 +632,13 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 // failed to parse
                 String charset = ContentStreamBase.getCharsetFromContentType(contentType);
                 if (isText(contentType)) {
-                    XdmAtomicValue value;
+                    XdmItem value;
                     try {
-                        value = new XdmAtomicValue (new String (partBytes, charset));
+                        logger.warn("Caught an exception while parsing XML: " + e.getMessage() + ", treating it as text");
+                        contentType = "text/plain; charset=utf-8";
+                        String text = charset == null ? new String (partBytes, "utf-8") :
+                            new String (partBytes, charset);
+                        value = new XdmNode (new TextFragmentValue(text, "#part" + i));
                         result.add (value);
                     } catch (UnsupportedEncodingException e1) {
                         throw new LuxException (e1);
@@ -647,9 +647,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     throw new LuxException ("binary values not supported");
                 }
             }
+            builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "body"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
+            addAttribute(builder, "position", "1");
+            addAttribute(builder, "content-type", contentType);
+            builder.startContent();
+            builder.endElement();
         }
-        
-
     }
     
     private boolean isText (String contentType) {
