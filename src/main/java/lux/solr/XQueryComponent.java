@@ -61,6 +61,7 @@ import net.sf.saxon.value.GYearValue;
 import net.sf.saxon.value.QNameValue;
 import net.sf.saxon.value.TextFragmentValue;
 import net.sf.saxon.value.Value;
+import nu.validator.htmlparser.sax.HtmlParser;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -77,7 +78,6 @@ import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.util.plugin.SolrCoreAware;
-import org.ccil.cowan.tagsoup.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
@@ -653,9 +653,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     throw new LuxException (e1);
                 }
                 if (isHTML(contentType)) {
-                    Parser parser = new Parser();
+                    HtmlParser parser = new HtmlParser();
+                    //Parser parser = new Parser();
                     SAXSource source = new SAXSource (parser, new InputSource (new StringReader (text)));
-                    // evaluator.getCompiler().getProcessor().newDocumentBuilder().build(source)
                     try {
                         part = evaluator.getDocBuilder().build(source);
                     } catch (SaxonApiException e) {

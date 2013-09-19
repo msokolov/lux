@@ -10,13 +10,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.transform.sax.SAXSource;
+
 import lux.Evaluator;
 import lux.QueryContext;
+import net.sf.saxon.s9api.DocumentBuilder;
+import net.sf.saxon.s9api.Processor;
+import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
+import nu.validator.htmlparser.sax.HtmlParser;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.meterware.httpunit.HttpUnitOptions;
@@ -259,6 +266,17 @@ public class SolrIT {
         eval.getCompiler().bindNamespacePrefix ("", "http://expath.org/ns/webapp");
         XdmNode rspDoc = eval.build(new StringReader(body), "/test.xml");
         return rspDoc;
+    }
+    
+    @Test
+    public void testValidatorNu() throws SaxonApiException {
+        HtmlParser parser = new HtmlParser();
+        Processor processor = new Processor (false);
+        DocumentBuilder builder = processor.newDocumentBuilder();
+        SAXSource source = new SAXSource (parser, new InputSource(new StringReader ("<!DOCTYPE html><br>")));
+        builder.build(source);
+        source = new SAXSource (parser, new InputSource(new StringReader ("<html>")));
+        builder.build(source);
     }
     
     /*
