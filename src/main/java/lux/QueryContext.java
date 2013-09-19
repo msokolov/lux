@@ -4,11 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.sf.saxon.s9api.XdmAtomicValue;
-import net.sf.saxon.s9api.XdmValue;
-
 import lux.exception.LuxException;
 import lux.xml.QName;
+import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmValue;
 
 /**
  * Holds external query context: variable bindings and the context item.
@@ -25,7 +24,8 @@ public class QueryContext {
     public QueryContext() {
     }
     
-    /** A query context with no context item */
+    /** A query context with the context item defined 
+     * @param contextItem defining the context item of a query */
     public QueryContext(Object contextItem) {
         this.contextItem = contextItem; 
     }
