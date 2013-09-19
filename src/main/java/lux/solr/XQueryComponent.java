@@ -1,8 +1,10 @@
 package lux.solr;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -10,7 +12,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,6 +42,7 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
+import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.linked.LinkedTreeBuilder;
 import net.sf.saxon.tree.tiny.TinyElementImpl;
@@ -58,9 +60,12 @@ import net.sf.saxon.value.GYearValue;
 import net.sf.saxon.value.QNameValue;
 import net.sf.saxon.value.Value;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.common.util.ContentStream;
+import org.apache.solr.common.util.ContentStreamBase;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.QueryComponent;
@@ -145,7 +150,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         int start = params.getInt( CommonParams.START, 1 );
         int len = params.getInt( CommonParams.ROWS, -1 );
-        // TODO: implement distributed index with multiple shards
         try {
             evaluateQuery(rb, start, len);
         } finally {
@@ -257,14 +261,14 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         // Get the status code and message
         String status = responseNode.getAttributeValue("", "status");
         String message = responseNode.getAttributeValue("", "message");
+        int istatus = 200;
         if (status != null) {
-            int istatus;
             try {
                 istatus = Integer.parseInt(status);
             } catch (NumberFormatException e) {
                 throw new LuxException ("Non-numeric response status code: " + status);
             }
-            if (istatus >= 300) {
+            if (istatus >= 400) {
                 try {
                     if (message != null) {
                         httpResp.sendError(istatus, message);
@@ -320,13 +324,19 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 }
             }
             else if (childName.getLocalName().equals("header")) {
-                // TODO: get the headers
-                throw new LuxException ("HTTP headers not implemented");
+                String header = child.getAttributeValue(qnameFor("name"));
+                String value = child.getAttributeValue(qnameFor("value"));
+                httpResp.addHeader(header, value);
             }
             else if (childName.getLocalName().equals("multipart")) {
                 throw new LuxException ("Multipart HTTP responses not implemented");
             }
         }
+        /*
+        if (istatus >= 300 && istatus < 400) {
+            httpResp.sendRedirect(location);
+        }
+        */
         if (expathResponse != null) {
             // TODO: pass the expathResponse to the LuxResponseWriter -- why?
             req.getContext().put("expath:response", expathResponse);
@@ -357,7 +367,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         if (hasEXpathRequest) {
             try {
-                context.bindVariable(new QName(EXPATH_HTTP_NS, "input", ""), buildEXPathRequest(compiler, req));
+                context.bindVariable(new QName(EXPATH_HTTP_NS, "input", ""), buildEXPathRequest(compiler, evaluator, req));
             } catch (XPathException e) {
                 throw new LuxException (e);
             } 
@@ -477,7 +487,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     // using Saxon is too inconvenient
     private String buildHttpInfo(SolrQueryRequest req) {
         StringBuilder buf = new StringBuilder();
-        // TODO: http method
         buf.append (String.format("<http>"));
         buf.append ("<params>");
         SolrParams params = req.getParams();
@@ -512,11 +521,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     private static final String EXPATH_HTTP_NS = "http://expath.org/ns/webapp";
     
-    private XdmNode buildEXPathRequest (Compiler compiler, SolrQueryRequest req) throws XPathException {
+    private XdmValue buildEXPathRequest (Compiler compiler, Evaluator evaluator, SolrQueryRequest req) throws XPathException {
         LinkedTreeBuilder builder = new LinkedTreeBuilder (compiler.getProcessor().getUnderlyingConfiguration().makePipelineConfiguration());
         builder.startDocument(0);
-        // FIXME is there something wrong with the namespace declaration here?
-        builder.startElement(new FingerprintedQName("http", EXPATH_HTTP_NS, "request"), AnyType.getInstance(), 0, 0);
+        builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "request"), AnyType.getInstance(), 0, 0);
         builder.namespace(new NamespaceBinding("http", EXPATH_HTTP_NS), 0);
         Request requestWrapper = (Request) req.getContext().get("httpServletRequest");
         addAttribute(builder, "method", requestWrapper.getMethod());
@@ -560,12 +568,13 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         builder.endElement();
         
         // params
-        for (Object o: httpReq.getParameterMap().entrySet()) {
-            @SuppressWarnings("unchecked")
-            Map.Entry<String, String[]> param = (Entry<String, String[]>) o;
-            for (String value : param.getValue()) {
+        Iterator<String> paramNames = req.getParams().getParameterNamesIterator();
+        while (paramNames.hasNext()) {
+            String param = paramNames.next();
+            String[] values = req.getParams().getParams(param);
+            for (String value : values) {
                 builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "param"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
-                addAttribute (builder, "name", param.getKey());
+                addAttribute (builder, "name", param);
                 addAttribute (builder, "value", value);
                 builder.startContent();
                 builder.endElement();
@@ -588,10 +597,65 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 builder.endElement();
             }
         }
-        
+        ArrayList<XdmItem> resultSequence = null;
+        if (req.getContentStreams() != null) {
+            resultSequence = new ArrayList<XdmItem>();
+            handleContentStreams (builder, req, resultSequence, evaluator);
+        }
         builder.endElement();           // end request
         builder.endDocument();
-        return new XdmNode (builder.getCurrentRoot());
+        XdmNode expathReq = new XdmNode (builder.getCurrentRoot());
+        if (resultSequence == null) {
+            return expathReq;
+        }
+        resultSequence.add(0, expathReq);
+        return new XdmValue (resultSequence);
+    }
+    
+    private void handleContentStreams (LinkedTreeBuilder builder, SolrQueryRequest req, ArrayList<XdmItem> result, Evaluator evaluator) throws XPathException {
+        // parts
+        int i = 0;
+        for (ContentStream stream : req.getContentStreams()) {
+            String contentType = stream.getContentType();
+            //String name = stream.getName();
+            builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "body"), BuiltInAtomicType.UNTYPED_ATOMIC, 0, 0);
+            addAttribute(builder, "position", "1");
+            addAttribute(builder, "content-type", contentType);
+            builder.startContent();
+            builder.endElement();
+            byte[] partBytes = null;
+            try {
+                partBytes = IOUtils.toByteArray(stream.getStream(), stream.getSize()); 
+            } catch (IOException e) {
+                throw new LuxException (e);
+            }
+            try {
+                XdmNode part = evaluator.build(new ByteArrayInputStream(partBytes), "#part" + i);
+                result.add(part);
+            } catch (LuxException e) {
+                // failed to parse
+                String charset = ContentStreamBase.getCharsetFromContentType(contentType);
+                if (isText(contentType)) {
+                    XdmAtomicValue value;
+                    try {
+                        value = new XdmAtomicValue (new String (partBytes, charset));
+                        result.add (value);
+                    } catch (UnsupportedEncodingException e1) {
+                        throw new LuxException (e1);
+                    }
+                } else {
+                    throw new LuxException ("binary values not supported");
+                }
+            }
+        }
+        
+
+    }
+    
+    private boolean isText (String contentType) {
+        return contentType.startsWith("text/") ||
+                contentType.matches("/xml($| )") ||
+                contentType.matches("+xml($ | )");
     }
 
     private void addSimpleElement(LinkedTreeBuilder builder, String name, String text)

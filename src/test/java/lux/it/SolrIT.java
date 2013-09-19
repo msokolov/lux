@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 import lux.Evaluator;
 import lux.QueryContext;
-
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
 
@@ -25,6 +24,7 @@ import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebClient;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 
 /**
  * basic test to make sure the app server is functioning - the app server can be passed a query by 
@@ -40,11 +40,13 @@ public class SolrIT {
     private final String XQUERY_PATH = "http://localhost:8080/xquery";
     private final String LUX_PATH = "http://localhost:8080/lux/";
     private static WebClient httpclient;
-
+    private static Evaluator eval;
+    
     @BeforeClass
     public static void setup () {
         httpclient = new WebConversation();
         httpclient.setExceptionsThrownOnErrorStatus(false);
+        eval = new Evaluator();
         HttpUnitOptions.setScriptingEnabled(false);
     }
     
@@ -242,16 +244,27 @@ public class SolrIT {
     public void testHttpPost () throws Exception {
         WebResponse resp = post ("/lux/it/echo-params.xqy", "test", "value");
         assertEquals ("value", resp.getText());
+        
+        resp = post ("/lux/it/echo-request.xqy", "test", "value");
+        
+        XdmNode rspDoc = parseResponseBody(resp);
+        QueryContext context = new QueryContext (rspDoc);
+        assertEquals ("POST", evalString("/request/@method", context, eval));
+        assertEquals ("value", evalString("/request/param[@name='test']/@value", context, eval));
+    }
+    
+    private XdmNode parseResponseBody (WebResponse resp) throws IOException {
+        String body = resp.getText();
+        assertTrue ("empty body", body.length() > 0);
+        eval.getCompiler().bindNamespacePrefix ("", "http://expath.org/ns/webapp");
+        XdmNode rspDoc = eval.build(new StringReader(body), "/test.xml");
+        return rspDoc;
     }
     
     /*
      * Test cases for EXPath:
      * 
-     * single valued parameter
-     * multi-valued parameter
-     * single-valued header
-     * multi-valued header
-     * url
+     * TODO: post bodies:
      * 
      * html body
      * binary body
@@ -266,40 +279,55 @@ public class SolrIT {
         String qs = "a=b&a=c&c=d";
         String url = APP_SERVER_PATH + path + '?' + qs;
         WebResponse response = httpclient.getResponse(url);
+        // response envelope
         assertEquals (200, response.getResponseCode());
         assertEquals ("OK", response.getResponseMessage());
         assertEquals ("application/xml+test", response.getContentType());
         assertEquals ("utf-8", response.getCharacterSet());
-        // TODO: test response headers
-        String body = response.getText();
-        assertTrue ("empty body", body.length() > 0);
-        Evaluator eval = new Evaluator();
-        eval.getCompiler().bindNamespacePrefix ("", "http://expath.org/ns/webapp");
-        XdmNode rspDoc = eval.build(new StringReader(body), "/test.xml");
+        XdmNode rspDoc = parseResponseBody(response);
         QueryContext context = new QueryContext(rspDoc);
+        // method
         assertEquals ("GET", evalString("/request/@method", context, eval));
+        // servlet
         assertEquals ("/collection1/testapp", evalString("/request/@servlet", context, eval));
+        // path (attribute)
         assertEquals ("/collection1/testapp" + path, evalString("/request/@path", context, eval));
+        // url
         assertEquals (url, evalString("/request/url", context, eval));
+        // authority
         assertEquals ("http://localhost:8080", evalString("/request/authority", context, eval));
+        // context
         assertEquals ("", evalString ("/request/context-root", context, eval));
+        // path
         assertEquals ("/collection1/testapp" + path, evalString ("/request/path", context, eval));
         assertEquals ("/collection1/testapp" + path, evalString ("/request/path/part", context, eval));
+        // params
         // depends on the order of hashmap keys; should be stable since String.hashCode is well-defined?
-        assertEquals ("a", evalString ("/request/param[3]/@name", context, eval));
-        assertEquals ("c", evalString ("/request/param[3]/@value", context, eval));
-        assertEquals ("a", evalString ("/request/param[2]/@name", context, eval));
-        assertEquals ("b", evalString ("/request/param[2]/@value", context, eval));
-        assertEquals ("c", evalString ("/request/param[1]/@name", context, eval));
-        assertEquals ("d", evalString ("/request/param[1]/@value", context, eval));
-        // TODO: params
+        assertEquals ("a", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[1]", context, eval));
+        assertEquals ("b", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[1]", context, eval));
+        assertEquals ("a", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[2]", context, eval));
+        assertEquals ("c", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[2]", context, eval));
+        assertEquals ("c", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[3]", context, eval));
+        assertEquals ("d", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[3]", context, eval));
+        // header
         assertEquals ("httpunit/1.5", evalString ("/request/header[@name='User-Agent']/@value", context, eval));
         assertEquals ("", evalString ("/request/body", context, eval));
+    }
+    
+    
+    @Test
+    public void testPostBody () throws Exception {
+        WebResponse resp = postMime ("/lux/it/echo-multipart.xqy", "<test>this is a test</test>", "text/xml");
+        XdmNode rspDoc = parseResponseBody(resp);
+        QueryContext context = new QueryContext (rspDoc);
+        assertEquals ("POST", evalString("/result-sequence/request/@method", context, eval));
+        assertEquals ("this is a test", evalString("/result-sequence/part", context, eval));
     }
 
     private String evalString (String query, QueryContext context, Evaluator eval) throws XPathException {
         return eval.evaluate (query, context).getXdmValue().getUnderlyingValue().getStringValue();
     }
+    
     /**
      * test cases:
      * 
@@ -313,7 +341,24 @@ public class SolrIT {
      */
     @Test
     public void testEXPathResponse () throws Exception {
-        
+    
+    }
+    
+    @Test public void testRedirect () throws Exception {
+        WebResponse rsp = httpclient.getResponse(APP_SERVER_PATH + "/lux/it/302.xqy");
+        // http client follows the redirection:
+        assertEquals (200, rsp.getResponseCode());
+        XdmNode rspDoc = parseResponseBody(rsp);
+        QueryContext context = new QueryContext (rspDoc);
+        assertEquals ("/collection1/testapp/lux/it/echo-request.xqy" , evalString("/request/@path", context, eval));
+    }
+    
+    @Test public void test404 () throws Exception {
+        WebResponse rsp = httpclient.getResponse(APP_SERVER_PATH + "/lux/it/404.xqy");
+        assertEquals (404, rsp.getResponseCode());
+        assertEquals ("text/html", rsp.getContentType());
+        // can't create a custom 404 page *in xquery*.
+        //assertEquals ("Sorry, not here, not now.", rsp.getText());
     }
 
     private WebResponse get (String xquery) throws MalformedURLException, IOException, SAXException {
@@ -327,6 +372,18 @@ public class SolrIT {
         for (int i = 0; i < params.length; i+= 2) {
             req.setParameter(params[i], params[i+1]);
         }
+        assertEquals ("", req.getQueryString());
+        WebResponse response = httpclient.sendRequest(req);
+        assertEquals (200, response.getResponseCode());
+        return response;
+    }
+    
+    private WebResponse postMime (String xquery, String body, String contentType) throws MalformedURLException, IOException, SAXException {
+        return postMime (xquery, body.getBytes("utf-8"), contentType);
+    }
+    
+    private WebResponse postMime (String xquery, byte[] body, String contentType) throws MalformedURLException, IOException, SAXException {
+        PostMethodWebRequest req = new PostMethodWebRequest(APP_SERVER_PATH + xquery, new ByteInputStream(body, body.length), contentType);
         assertEquals ("", req.getQueryString());
         WebResponse response = httpclient.sendRequest(req);
         assertEquals (200, response.getResponseCode());

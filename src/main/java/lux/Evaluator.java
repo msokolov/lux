@@ -1,6 +1,7 @@
 package lux;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -249,6 +250,24 @@ public class Evaluator {
      * @throws LuxException if any error occurs (such as an XML parse error).
      */
     public XdmNode build (Reader xml, String uri) {
+        StreamSource source = new StreamSource(xml);
+        source.setSystemId(uri);
+        try {
+            return builder.build(source);
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
+    }
+    
+    /**
+     * Build a document as a Saxon {@link XdmNode}.  The document will be given a generated id outside
+     * the space of ids reserved for indexed documents.
+     * @param xml the document content
+     * @param uri the document uri
+     * @return the constructed document
+     * @throws LuxException if any error occurs (such as an XML parse error).
+     */
+    public XdmNode build (InputStream xml, String uri) {
         StreamSource source = new StreamSource(xml);
         source.setSystemId(uri);
         try {
