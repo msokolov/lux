@@ -135,7 +135,7 @@ the directory in a system-dependent order. The directory itself and its
 parent are not included in the list.  If $path is not a directory, or does
 not exist, or an I/O error occurs, an empty list is returned.
 
-## EXPath support ##
+## EXPath package support ##
 
 If the system property org.expath.pkg.saxon.repo is defined, Compiler
 attempts to initialize the EXPath package manager support for Saxon, using
