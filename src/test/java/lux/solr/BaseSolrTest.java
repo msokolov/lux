@@ -2,6 +2,7 @@ package lux.solr;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,6 +40,10 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
+        File lock = new File (solrHome + "/collection1/data/index/write.lock");
+        if (lock.exists()) {
+            lock.delete();
+        }
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
         String defaultCoreName = coreContainer.getDefaultCoreName();
