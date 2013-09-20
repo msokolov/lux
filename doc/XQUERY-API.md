@@ -160,7 +160,7 @@ those changes here.  Also, there are currently a few variations from the
 specification in Lux's implementation:
 
 1. The HTTP request is made available as the value of the global variable $http:input (see example below), as in the specification, but is not also provided as the evaluation context for the query.  The evaluation context for queries in Lux remains the entire collection of documents.
-2. Multipart requests are supported, providing access to the parsed request body (or bodies), but binary request parts are not supported, and multipart *responses) are not yet supported.
+2. Multipart requests are supported, providing access to the parsed request body (or bodies), but binary request parts are not supported, and multipart *responses* are not yet supported.
 3. The EXPath specification requires that applications provide an http:response element.  Lux relaxes this requirement: if a query results in a single http:response element, then it is treated as an EXPath response: the attributes and content of this element control the content type, status code, HTTP headers, etc.  Otherwise, the current Lux behavior persists, and serialization is based on the lux.contentType parameter.
 
 Note that this protocol subsumes the functions provided by the $lux:http
