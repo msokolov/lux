@@ -156,7 +156,10 @@
     </test-case>
     <test-case name="multi-element-path-0">
       <query>//ACT/TITLE | //SCENE/TITLE| //SPEECH/TITLE</query>
-      <expect><query id="ACT_SCENE_SPEECH" /></expect>
+      <expect>
+        <query id="multi-element-path-0.1" />
+        <query id="multi-element-path-0.2" />
+      </expect>
     </test-case>
     <test-case name="multi-element-path-1">
       <!--
