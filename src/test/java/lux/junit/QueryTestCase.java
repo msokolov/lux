@@ -24,7 +24,6 @@ import net.sf.saxon.functions.DeepEqual;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.SingletonIterator;
 
 import org.apache.commons.lang.StringUtils;
 import org.junit.Ignore;

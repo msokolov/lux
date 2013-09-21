@@ -6,9 +6,6 @@ package lux.xpath;
 
 import lux.xquery.VariableContext;
 
-
-import lux.xquery.VariableContext;
-
 /**
  * A path expression represents two expressions joined with a "/"
  * @author sokolov

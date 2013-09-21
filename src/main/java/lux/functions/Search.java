@@ -7,7 +7,6 @@ import lux.query.parser.XmlQueryParser;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.NodeKindTest;

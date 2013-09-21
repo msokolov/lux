@@ -53,12 +53,10 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         return (Evaluator) listener.getUserData();
     }
     
-    @SuppressWarnings("rawtypes")
     protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, String sortCriteria, int start) throws XPathException;
 
     public class SearchCall extends NamespaceAwareFunctionCall {
         
-        @SuppressWarnings("rawtypes") @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
             if (arguments.length == 0 || arguments.length > 3) {

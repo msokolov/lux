@@ -16,6 +16,8 @@ import javax.xml.transform.stream.StreamSource;
 
 import lux.XdmResultSet;
 import lux.xqts.TestCase.VariableBinding.Type;
+import net.sf.saxon.Configuration;
+import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.expr.sort.CodepointCollator;
 import net.sf.saxon.expr.sort.GenericAtomicComparer;
 import net.sf.saxon.functions.DeepEqual;
@@ -29,7 +31,6 @@ import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.SingletonIterator;
 
 import org.apache.commons.io.IOUtils;
 
@@ -321,12 +322,14 @@ public class TestCase {
                 node1 = (XdmNode) node1.axisIterator(Axis.CHILD).next();
             }
         }
+        Configuration config = catalog.getProcessor().getUnderlyingConfiguration();
+        XPathContext conversionContext = config.getConversionContext();
         return DeepEqual.deepEquals(
-                SingletonIterator.makeIterator(node1.getUnderlyingNode()),
-                SingletonIterator.makeIterator(node2.getUnderlyingNode()),
+                node1.getUnderlyingNode().iterate(),
+                node2.getUnderlyingNode().iterate(),
                 new GenericAtomicComparer(CodepointCollator.getInstance(),
-                        catalog.getProcessor().getUnderlyingConfiguration().getConversionContext()),
-                catalog.getProcessor().getUnderlyingConfiguration(),
+                        conversionContext),
+                conversionContext,
                 DeepEqual.INCLUDE_PREFIXES |
                 DeepEqual.EXCLUDE_WHITESPACE_TEXT_NODES |
                     DeepEqual.INCLUDE_COMMENTS |

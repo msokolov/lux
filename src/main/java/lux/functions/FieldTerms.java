@@ -74,7 +74,6 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
     class FieldTermsCall extends ExtensionFunctionCall {
 
-        @SuppressWarnings("rawtypes")
         @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             String fieldName = null, start = "";

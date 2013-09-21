@@ -13,10 +13,8 @@ import net.sf.saxon.om.AtomicArray;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.Sequence;
-import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.ArrayIterator;
 import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
@@ -95,7 +93,6 @@ public class Key extends ExtensionFunctionDefinition {
     
     class KeyCall extends ExtensionFunctionCall {
 
-        @SuppressWarnings({ "rawtypes" })
         @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             String fieldName = arguments[0].head().getStringValue();

@@ -31,9 +31,9 @@ import lux.search.LuxSearcher;
 import lux.solr.LuxDispatchFilter.Request;
 import lux.xml.QName;
 import net.sf.saxon.expr.instruct.GlobalVariable;
-import net.sf.saxon.om.SequenceTool;
 import net.sf.saxon.om.FingerprintedQName;
 import net.sf.saxon.om.NamespaceBinding;
+import net.sf.saxon.om.SequenceTool;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -50,7 +50,6 @@ import net.sf.saxon.tree.linked.LinkedTreeBuilder;
 import net.sf.saxon.tree.tiny.TinyElementImpl;
 import net.sf.saxon.type.AnyType;
 import net.sf.saxon.type.BuiltInAtomicType;
-import net.sf.saxon.type.TypeHierarchy;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.DecimalValue;
 import net.sf.saxon.value.GDateValue;
@@ -352,7 +351,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             XQueryExecutable expr, Compiler compiler, Evaluator evaluator,
             QueryContext context) {
 
-        @SuppressWarnings("unchecked")
         Iterator<GlobalVariable> decls = expr.getUnderlyingCompiledQuery().getStaticContext().getModuleVariables();
         boolean hasLuxHttp = false, hasEXpathRequest = false;
         while (decls.hasNext()) {
@@ -433,7 +431,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             // We need to get Java primitive values that Solr knows how to marshal
             XdmAtomicValue xdmValue = (XdmAtomicValue) item;
             AtomicValue value = (AtomicValue) xdmValue.getUnderlyingValue();
-            TypeHierarchy typeHierarchy = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
             try {
                 String typeName = value.getItemType().toString();
                 Object javaValue;

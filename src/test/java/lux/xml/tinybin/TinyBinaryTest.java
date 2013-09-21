@@ -20,7 +20,6 @@ import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.SingletonIterator;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.commons.io.IOUtils;

@@ -2,9 +2,6 @@ package lux.xpath;
 
 import lux.xquery.VariableContext;
 
-
-import lux.xquery.VariableContext;
-
 /**
  * An abstract XPath or XQuery expression.
  * 

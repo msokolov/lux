@@ -50,7 +50,7 @@ public class Log extends ExtensionFunctionDefinition {
 	    	Sequence tokens = arguments[0];
 	    	StringBuilder message = new StringBuilder();
 	    	Item item;
-            SequenceIterator tokenIter = tokens.iterate();
+            SequenceIterator<? extends Item> tokenIter = tokens.iterate();
 	    	while ((item = tokenIter.next()) != null) {
 	    		message.append(item.getStringValue());
 	    	}

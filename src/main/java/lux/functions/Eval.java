@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import javax.xml.transform.TransformerException;
 
 import lux.Evaluator;
-import lux.TransformErrorListener;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.*;
+import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
+import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryEvaluator;
