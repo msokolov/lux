@@ -17,7 +17,8 @@
 9) deploy to maven central:
    mvn -Pmaven-deploy deploy
 # go to https://oss.sonatype.org/index.html#stagingRepositories
-# Staging Upload / Artifact Bundle (password is in .m2/settings-security.xml)
+# (password is in .m2/settings.xml)
+# select the new repo; Close it; wait; Release it.
 
 9a) increment the version in pom.xml to the next -SNAPSHOT
 

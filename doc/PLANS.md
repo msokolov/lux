@@ -6,10 +6,13 @@ pos:   5
 ---
 # Plans
 
-This page lists a number of potential areas for improvement. There is no
-schedule for any of this work, not any commitment that all (or any) of it
-will be completed. However, we do continue to make improvements, and this
-list does reflect our priorities. We hope it may be useful for users
+This document gives an overview of some initiatives we have planned.  There
+is a complete list of open issues that includes everything here in the
+project Jira at issues.luxdb.org.
+
+There is no schedule for any of this work, not any commitment that all (or
+any) of it will be completed. However, we do continue to make improvements,
+and this list does reflect our priorities. We hope it may be useful for you
 insofar as it gives a general idea of the direction in which we want to
 take Lux development in the future.  And of course, we welcome
 contributions.
@@ -37,9 +40,10 @@ filter on a subsequent pass.
 
 ### Cache compiled and optimized queries
 
-This will save time spent reading, parsing and optimizing queries that are repeated.
+This will save time spent reading, parsing and optimizing queries that are
+repeated.
 
-### Handle distributed indexes (SolrCloud)
+### Handle distributed indexes (SolrCloud) ... Coming Soon
 
 To scale up to huge databases (on the order of 1TB and up), we would need
 to support running queries against a distributed index. Solr already does

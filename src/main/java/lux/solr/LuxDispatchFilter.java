@@ -144,6 +144,7 @@ public class LuxDispatchFilter extends SolrDispatchFilter {
         super.doFilter(request, response, chain);
     }
     
+    @Override
     protected void execute( HttpServletRequest req, SolrRequestHandler handler, SolrQueryRequest sreq, SolrQueryResponse rsp) {
         // Make the raw request available to the XQueryComponent and LuxResponseWriter
         sreq.getContext().put( "httpServletRequest", req);

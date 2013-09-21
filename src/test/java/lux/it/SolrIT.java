@@ -2,6 +2,7 @@ package lux.it;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
@@ -31,7 +32,6 @@ import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebClient;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 
 /**
  * basic test to make sure the app server is functioning - the app server can be passed a query by 
@@ -256,8 +256,8 @@ public class SolrIT {
         
         XdmNode rspDoc = parseResponseBody(resp);
         QueryContext context = new QueryContext (rspDoc);
-        assertEquals ("POST", evalString("/request/@method", context, eval));
-        assertEquals ("value", evalString("/request/param[@name='test']/@value", context, eval));
+        assertEquals ("POST", evalString("/request/@method", context));
+        assertEquals ("value", evalString("/request/param[@name='test']/@value", context));
     }
     
     private XdmNode parseResponseBody (WebResponse resp) throws IOException {
@@ -300,31 +300,31 @@ public class SolrIT {
         XdmNode rspDoc = parseResponseBody(response);
         QueryContext context = new QueryContext(rspDoc);
         // method
-        assertEquals ("GET", evalString("/request/@method", context, eval));
+        assertEquals ("GET", evalString("/request/@method", context));
         // servlet
-        assertEquals ("/collection1/testapp", evalString("/request/@servlet", context, eval));
+        assertEquals ("/collection1/testapp", evalString("/request/@servlet", context));
         // path (attribute)
-        assertEquals ("/collection1/testapp" + path, evalString("/request/@path", context, eval));
+        assertEquals ("/collection1/testapp" + path, evalString("/request/@path", context));
         // url
-        assertEquals (url, evalString("/request/url", context, eval));
+        assertEquals (url, evalString("/request/url", context));
         // authority
-        assertEquals ("http://localhost:8080", evalString("/request/authority", context, eval));
+        assertEquals ("http://localhost:8080", evalString("/request/authority", context));
         // context
-        assertEquals ("", evalString ("/request/context-root", context, eval));
+        assertEquals ("", evalString ("/request/context-root", context));
         // path
-        assertEquals ("/collection1/testapp" + path, evalString ("/request/path", context, eval));
-        assertEquals ("/collection1/testapp" + path, evalString ("/request/path/part", context, eval));
+        assertEquals ("/collection1/testapp" + path, evalString ("/request/path", context));
+        assertEquals ("/collection1/testapp" + path, evalString ("/request/path/part", context));
         // params
         // depends on the order of hashmap keys; should be stable since String.hashCode is well-defined?
-        assertEquals ("a", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[1]", context, eval));
-        assertEquals ("b", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[1]", context, eval));
-        assertEquals ("a", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[2]", context, eval));
-        assertEquals ("c", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[2]", context, eval));
-        assertEquals ("c", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[3]", context, eval));
-        assertEquals ("d", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[3]", context, eval));
+        assertEquals ("a", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[1]", context));
+        assertEquals ("b", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[1]", context));
+        assertEquals ("a", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[2]", context));
+        assertEquals ("c", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[2]", context));
+        assertEquals ("c", evalString ("(for $p in /request/param order by $p/@name return $p/@name)[3]", context));
+        assertEquals ("d", evalString ("(for $p in /request/param order by $p/@name return $p/@value)[3]", context));
         // header
-        assertEquals ("httpunit/1.5", evalString ("/request/header[@name='User-Agent']/@value", context, eval));
-        assertEquals ("", evalString ("/request/body", context, eval));
+        assertEquals ("httpunit/1.5", evalString ("/request/header[@name='User-Agent']/@value", context));
+        assertEquals ("", evalString ("/request/body", context));
     }
     
     
@@ -333,8 +333,8 @@ public class SolrIT {
         WebResponse resp = postMime ("/lux/it/echo-multipart.xqy", "<test>this is a test</test>", "text/xml");
         XdmNode rspDoc = parseResponseBody(resp);
         QueryContext context = new QueryContext (rspDoc);
-        assertEquals ("POST", evalString("/result-sequence/request/@method", context, eval));
-        assertEquals ("this is a test", evalString("/result-sequence/part", context, eval));
+        assertEquals ("POST", evalString("/result-sequence/request/@method", context));
+        assertEquals ("this is a test", evalString("/result-sequence/part", context));
     }
 
     @Test
@@ -342,9 +342,9 @@ public class SolrIT {
         WebResponse resp = postMime ("/lux/it/echo-multipart.xqy", "<test>this is a test", "text/xml");
         XdmNode rspDoc = parseResponseBody(resp);
         QueryContext context = new QueryContext (rspDoc);
-        assertEquals ("POST", evalString("/result-sequence/request/@method", context, eval));
-        assertEquals ("<test>this is a test", evalString("/result-sequence/part", context, eval));
-        assertEquals ("text/plain; charset=utf-8", evalString("/result-sequence/part/@content-type", context, eval));
+        assertEquals ("POST", evalString("/result-sequence/request/@method", context));
+        assertEquals ("<test>this is a test", evalString("/result-sequence/part", context));
+        assertEquals ("text/plain; charset=utf-8", evalString("/result-sequence/part/@content-type", context));
     }
 
     @Test
@@ -353,12 +353,12 @@ public class SolrIT {
         WebResponse resp = postMime ("/lux/it/echo-multipart.xqy", html, "text/html");
         XdmNode rspDoc = parseResponseBody(resp);
         QueryContext context = new QueryContext (rspDoc);
-        assertEquals ("POST", evalString("/result-sequence/request/@method", context, eval));
-        assertEquals ("this is a test", evalString("/result-sequence/part", context, eval));
-        assertEquals ("text/html", evalString("/result-sequence/part/@content-type", context, eval));
+        assertEquals ("POST", evalString("/result-sequence/request/@method", context));
+        assertEquals ("this is a test", evalString("/result-sequence/part", context));
+        assertEquals ("text/html", evalString("/result-sequence/part/@content-type", context));
     }
 
-    private String evalString (String query, QueryContext context, Evaluator eval) throws XPathException {
+    private String evalString (String query, QueryContext context) throws XPathException {
         return eval.evaluate (query, context).getXdmValue().getUnderlyingValue().getStringValue();
     }
     
@@ -384,7 +384,7 @@ public class SolrIT {
         assertEquals (200, rsp.getResponseCode());
         XdmNode rspDoc = parseResponseBody(rsp);
         QueryContext context = new QueryContext (rspDoc);
-        assertEquals ("/collection1/testapp/lux/it/echo-request.xqy" , evalString("/request/@path", context, eval));
+        assertEquals ("/collection1/testapp/lux/it/echo-request.xqy" , evalString("/request/@path", context));
     }
     
     @Test public void test404 () throws Exception {
@@ -417,7 +417,7 @@ public class SolrIT {
     }
     
     private WebResponse postMime (String xquery, byte[] body, String contentType) throws MalformedURLException, IOException, SAXException {
-        PostMethodWebRequest req = new PostMethodWebRequest(APP_SERVER_PATH + xquery, new ByteInputStream(body, body.length), contentType);
+        PostMethodWebRequest req = new PostMethodWebRequest(APP_SERVER_PATH + xquery, new ByteArrayInputStream(body), contentType);
         assertEquals ("", req.getQueryString());
         WebResponse response = httpclient.sendRequest(req);
         assertEquals (200, response.getResponseCode());

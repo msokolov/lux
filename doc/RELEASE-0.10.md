@@ -7,7 +7,10 @@ pos: 5
 
 # New Features
 
-One major improvement in this release is optimization of comparisons
+This release introduces full-featured support for HTTP request/response
+handling within XQuery by implementing the [EXPath webapp specification](http://expath.org/spec/webapp/20130401)'s request/response protocol with a few exceptions.  See the [XQuery API documentation](API.md) for details.
+
+Another major improvement in this release is optimization of comparisons
 between indexed expressions and suitable constants. For example, if an
 int-valued XPath index on `//@counter` is defined, an expression such as
 `//section[@counter > 10]` will be optimized using the index, and rewritten
@@ -16,34 +19,18 @@ as something like: `lux:search('counter:{10 TO *}')//section[@counter >
 
 # Changes in Lux release 0.10.5
 
-This release introduces full-featured support for HTTP request/response
-handling within XQuery by implementing the [EXPath webapp specification](http://expath.org/spec/webapp/20130401)'s request/response protocol with a few exceptions.
+1. LUX-66. Provide improved HTTP request/response support: access to POST bodies, request headers, redirect responses, etc.
 
-1. The HTTP request is made available as the value of the global variable $http:input (see example below), as in the specification, but is not also provided as the evaluation context for the query.  The evaluation context for queries in Lux remains the entire collection of documents.
-2. Multipart requests are supported, providing access to the parsed request body (or bodies), but binary request parts are not supported, and multipart *responses) are not yet supported.
-3. The EXPath specification requires that applications provide an http:response element.  Lux relaxes this requirement: if a query results in a single http:response element, then it is treated as an EXPath response: the attributes and content of this element control the content type, status code, HTTP headers, etc.  Otherwise, the current Lux behavior persists, and serialization is based on the lux.contentType parameter.
+2. LUX-61. lux:field() now returns values for all Lucene fields, not just those created by lux.
 
-Note that this protocol subsumes the functions provided by the $lux:http
-variable, which should now be considered as deprecated, and will eventually
-be phased out in a future release.
-
-The specification has a number of examples and a thorough explanation of
-how this protocol functions, but here is a simple example that echoes back its
-input:
-
-        declare namespace http="http://expath.org/ns/webapp";
-        declare variable $http:input external;
-        <http:response status="200" message="OK">
-          <http:body content-type="application/xml">{
-              $http:input/http:request
-          }</http:body>
-        </http:response>
 
 # Changes in Lux release 0.10.4
 
-A memory leak was fixed in this release which could cause OutOfMemory
-exceptions under heavy querying even though only a small amount of memory
-was actually required.
+Fixed a memory leak relating to the LuxURIResolver that could lead to
+OutOfMemoryExceptions during periods of intensive use.
+
+1. LUX-51 Bound the amount of memory used by any single request so as to
+prevent OutOfMemory Exceptions.
 
 # Changes in Lux release 0.10.3
 
