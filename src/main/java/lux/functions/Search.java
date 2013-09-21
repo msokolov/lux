@@ -60,7 +60,7 @@ public class Search extends SearchBase {
     /**
      * Iterate over the search results
      *
-     * @param query the query to execute
+     * @param query the Lucene query to execute
      * @param eval 
      * @return an iterator with the results of executing the query and applying the
      * expression to its result.
@@ -75,8 +75,16 @@ public class Search extends SearchBase {
         }
     }
     
+    /**
+     * Execute distributed search, returning an iterator that retrieves all the search results lazily.
+     *
+     * @param query the query to execute, as a String 
+     * @param eval 
+     * @return an iterator with the results of executing the query and applying the expression to its result.
+     * @throws XPathException
+     */
     @Override
-    public SequenceIterator<NodeInfo> iterate(final String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {        
+    public SequenceIterator<NodeInfo> iterateDistributed(final String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {        
         try {
             return new CloudSearchIterator (eval, query, queryParser, sortCriteria, start);
         } catch (Exception e) {

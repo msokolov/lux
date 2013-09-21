@@ -57,6 +57,18 @@ public class CloudSearchIterator extends SearchIteratorBase {
     public SequenceIterator<NodeInfo> getAnother() throws XPathException {
         return new CloudSearchIterator(eval, query, queryParser, sortCriteria, start + 1);
     }
+    
+    public long count() {
+        if (response == null) {
+            this.limit = 0;
+            doCloudSearch();
+        }
+        SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
+        if (docs == null) {
+            return 0;
+        }
+        return docs.getNumFound();
+    }
 
     @Override
     public NodeInfo next() throws XPathException {
@@ -143,6 +155,20 @@ public class CloudSearchIterator extends SearchIteratorBase {
             sort = new Sort (SortField.FIELD_SCORE);
         }
         return new SortSpec (sort, start, limit);
+    }
+    
+    /**
+     * @param limit the maximum number of results to retrieve per batch
+     */
+    public void setLimit (int limit) {
+        this.limit = limit;
+    }
+    
+    /**
+     * @return the maximum number of results to retrieve per batch
+     */
+    public int getLimit () {
+        return limit;
     }
     
 }

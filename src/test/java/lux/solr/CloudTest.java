@@ -62,14 +62,20 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         //  runtime error #2 (no context item), but we get the sortkey problem first
         query ("qt", "/xquery", "q", "(for $sp in //SPEECH order by $sp/lux:key('title') return .)[30]");
 
-        // FIXME: lux:count()
-        // query ("qt", "/xquery", "q", "count(collection())");
+        // lux:count()
+        query ("qt", "/xquery", "q", "count(collection())");
+        query ("qt", "/xquery", "q", "count(/SPEECH)");
 
-        // FIXME: lux:exists()
-        // query ("qt", "/xquery", "q", "exists(/ACT)");
+        // lux:exists()
+        query ("qt", "/xquery", "q", "exists(/ACT)");
         
-        // FIXME: StackOverflow in net.sf.saxon.expr.ForExpression.optimize()!!!
+        // test an expression dependent on document ordering
+        // FIXME: StackOverflow in net.sf.saxon.expr.ForExpression.optimize()!!!  This is filed as Saxon bug #1910; see saxonica.plan.io
         // query ("qt", "/xquery", "q", "count(for $act in /ACT, $actdesc in //ACT return $act intersect $actdesc)");
+        
+        // some tests that rely on document identity and ordering:
+        query("qt", "/xquery", "q", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'mercy')])");        
+        query("qt", "/xquery", "q", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))");
 
     }
 

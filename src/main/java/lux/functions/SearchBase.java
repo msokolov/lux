@@ -35,7 +35,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     protected abstract SequenceIterator<? extends Item> iterate(final Query query, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
 
     @SuppressWarnings("rawtypes")
-    protected abstract SequenceIterator<? extends Item> iterate(final String query, final QueryParser queryParser, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
+    protected abstract SequenceIterator<? extends Item> iterateDistributed(final String query, final QueryParser queryParser, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
 
     @Override
     public int getMinimumNumberOfArguments() {
@@ -97,14 +97,16 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 if (rb != null && rb.shards != null) {
                     // For cloud queries, we don't parse; just serialize the query and let the shard parse it
                     QueryParser qp;
+                    String qstr;
                     if (queryArg instanceof NodeInfo) {
                         qp = QueryParser.XML;
+                        // cheap-ass serialization
+                        qstr = new XdmNode((NodeInfo)queryArg).toString();
                     } else {
                         qp = QueryParser.CLASSIC;
+                        qstr = queryArg.getStringValue();
                     }
-                    // cheap-ass serialization
-                    String qstr = new XdmNode((NodeInfo)queryArg).toString();
-                    return iterate (qstr, qp, eval, sortCriteria, start);
+                    return iterateDistributed (qstr, qp, eval, sortCriteria, start);
                 }
             }
             return iterate (parseQuery(queryArg, eval), eval, sortCriteria, start);

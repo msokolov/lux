@@ -3,8 +3,8 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
+import lux.solr.CloudSearchIterator;
 import lux.xpath.FunCall;
-import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
@@ -62,9 +62,13 @@ public class Count extends SearchBase {
     }
 
     @Override
-    protected SequenceIterator<Int64Value> iterate(String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {
-        // TODO implement sharded counting
-        return null;
+    protected UnfailingIterator<Int64Value> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {
+        try {
+            long count = new CloudSearchIterator (eval, query, queryParser, sortCriteria, start).count();
+            return SingletonIterator.makeIterator(new Int64Value(count));
+        } catch (Exception e) {
+            throw new XPathException (e);
+        }
     }
 
 }

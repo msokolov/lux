@@ -3,8 +3,8 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
+import lux.solr.CloudSearchIterator;
 import lux.xpath.FunCall;
-import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
@@ -62,10 +62,15 @@ public class Exists extends SearchBase {
     }
 
     @Override
-    protected SequenceIterator<BooleanValue> iterate(String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {
-        // TODO implement sharded existence test
-        return null;
+    protected UnfailingIterator<BooleanValue> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {
+        try {
+            long count = new CloudSearchIterator (eval, query, queryParser, sortCriteria, start).count();
+            return SingletonIterator.makeIterator(BooleanValue.get(count > 0));
+        } catch (Exception e) {
+            throw new XPathException (e);
+        }
     }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
