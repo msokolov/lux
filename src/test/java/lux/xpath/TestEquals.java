@@ -22,8 +22,10 @@ public class TestEquals {
 
     @Test
     public void testEquivalent () throws Exception {
-        assertEquivalent ("a", "a");
-        assertNotEquivalent ("c", "a");
+        // It's no longer possible to create a PathStep this way; as of saxon 9.5 this compiles
+        // to a path: ./a
+        // assertEquivalent ("a", "a");
+        // assertNotEquivalent ("c", "a");
         assertEquivalent ("/a/b/c", "/a/b/c");
         assertEquivalent ("/a/b/c", "/x");
         assertEquivalent ("xs:double(1)", "xs:double(1.0)");
