@@ -90,18 +90,25 @@
         </Clause>
       </BooleanQuery>
     </query>
-    <query id="ACT_SCENE_SPEECH">
-      <BooleanQuery>
-        <Clause occurs="should">
-          <RegexpQuery fieldName="lux_path">TITLE/ACT(/.*)?</RegexpQuery>
-        </Clause>
-        <Clause occurs="should">
-          <RegexpQuery fieldName="lux_path">TITLE/SCENE(/.*)?</RegexpQuery>
-        </Clause>
-        <Clause occurs="should">
-          <RegexpQuery fieldName="lux_path">TITLE/SPEECH(/.*)?</RegexpQuery>
-        </Clause>
-      </BooleanQuery>
+    <query id="multi-element-path-0.1">
+    <BooleanQuery>
+      <Clause occurs="must">
+        <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+      </Clause>
+      <Clause occurs="must">
+        <BooleanQuery>
+          <Clause occurs="should">
+            <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
+          </Clause>
+          <Clause occurs="should">
+            <RegexpQuery fieldName="lux_path">SCENE(/.*)?</RegexpQuery>
+          </Clause>
+        </BooleanQuery>
+      </Clause>
+    </BooleanQuery>
+    </query>
+    <query id="multi-element-path-0.2">
+      <RegexpQuery fieldName="lux_path">TITLE/SPEECH(/.*)?</RegexpQuery>
     </query>
     <query id="LINE">
       <RegexpQuery fieldName="lux_path">LINE</RegexpQuery>

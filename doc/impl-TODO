@@ -35,6 +35,10 @@ cache translated AbstractExpressions for indexed XPaths somewhere.
 IndexConfiguration seems like the right place, but it doesn't have any
 access to an XPathCompiler (nor a SaxonTranslator).  These are available to
 XmlIndexer, Compiler, and (for the translator) PathOptimizer.
+** parent axis
+We lost an opto (see test case multi-element-path-0) when we switched to
+saxon 9.5 because an expression that previous had a child axis path step
+now has a parent::axis path step instead.
 ** not() optimization:
 *** invert the query:
 count(collection()[not(.//pubdate)])
