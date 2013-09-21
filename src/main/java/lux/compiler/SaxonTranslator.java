@@ -86,6 +86,7 @@ import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.type.AtomicType;
 import net.sf.saxon.type.BuiltInAtomicType;
+import net.sf.saxon.type.ErrorType;
 import net.sf.saxon.type.ItemType;
 import net.sf.saxon.type.Type;
 import net.sf.saxon.value.AtomicValue;
@@ -214,7 +215,6 @@ public class SaxonTranslator {
     
     private VariableDefinition[] getVariableDefinitions(QueryModule module) {
         ArrayList<VariableDefinition> defs = new ArrayList<VariableDefinition>();
-        @SuppressWarnings("unchecked")
         Iterator<GlobalVariable> decls = module.getModuleVariables();
         while (decls.hasNext()) {
             GlobalVariable decl = decls.next();
@@ -764,6 +764,9 @@ public class SaxonTranslator {
             case Type.COMMENT: return ValueType.COMMENT;
             case Type.EMPTY: return ValueType.EMPTY;
             }
+        }
+        if (itemType == ErrorType.getInstance()) {
+            return ValueType.EMPTY;
         }
         // could be a function type? or namespace()?
         return ValueType.VALUE;
