@@ -9,13 +9,9 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.Sequence;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
-import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.index.Fields;
@@ -94,7 +90,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                 if (fieldName == null) {
                     fieldName = eval.getCompiler().getIndexConfiguration().getDefaultFieldName();
                 }
-                return new SequenceExtent(new TermsIterator(eval, new Term(fieldName, start)));
+                return new LazySequence(new TermsIterator(eval, new Term(fieldName, start)));
             } catch (IOException e) {
                 throw new XPathException("failed getting terms from field " + fieldName, e);
             }

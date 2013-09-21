@@ -107,8 +107,8 @@ public class TranslatorTest {
     }
     
     @Test public void testDocumentNodeTest () {
-        roundtrip ("document-node()");
-        roundtrip ("foo | document-node(element(bar))");
+        roundtrip ("self::document-node()");
+        roundtrip ("foo | self::document-node(element(bar))");
     }
     
     @Test public void testNodeTest () {
@@ -159,7 +159,7 @@ public class TranslatorTest {
         roundtrip ("../../x");
     }
     
-    @Test public void testPositionalPredicates () {
+    @Test @Ignore public void testPositionalPredicates () {
         roundtrip ("preceding::*[1]");
         roundtrip ("(preceding::*)[1]");
         roundtrip ("*[1]");

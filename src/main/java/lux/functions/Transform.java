@@ -19,7 +19,7 @@ import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
-import net.sf.saxon.value.SequenceExtent;
+import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
 /**
@@ -94,7 +94,10 @@ public class Transform extends ExtensionFunctionDefinition {
                     throw new XPathException(runtimeErrors.get(0).getMessage(), runtimeErrors.get(0).getLocator(), runtimeErrors.get(0));
                 }
                 XdmNode result = dest.getXdmNode();
-                return new SequenceExtent(SingletonIterator.makeIterator(result == null ? null : result.getUnderlyingNode()));
+                if (result == null) {
+                    return EmptySequence.getInstance();
+                }
+                return result.getUnderlyingNode();
             } catch (SaxonApiException e) {
                 throw new XPathException (e);
             }

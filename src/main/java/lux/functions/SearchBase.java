@@ -6,11 +6,11 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.LazySequence;
 import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
-import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -103,7 +103,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
-            return new SequenceExtent(iterate (query, eval, facts, sortCriteria, start));
+            return new LazySequence(iterate (query, eval, facts, sortCriteria, start));
         }
 
     }

@@ -557,6 +557,9 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 	sortContext = args[1];
                 } else {
                 	sortContext = funcall.getSuper();
+                    if (sortContext == null) {
+                        return funcall;
+                    }
                 }
                 VariableContext binding = sortContext.getBindingContext();
                 if (binding == null || ! (binding instanceof ForClause)) {

@@ -166,6 +166,7 @@ public class BasicQueryTest {
         //assertQuery ("subsequence (//ACT, 10, 10)", 0, Q.ACT);
     }
 
+    // broken by Saxon 9.5, which made its optimizations in this area more conservative
     @Test public void testMultiElementPaths () throws Exception {
         int facts = hasPathIndexes() ? MINIMAL : 0;        
         assertQuery ("//ACT/TITLE | //SCENE/TITLE| //SPEECH/TITLE",
