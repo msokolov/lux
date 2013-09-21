@@ -6,8 +6,15 @@ pos: 4
 ---
 # FAQ #
 
-This page lists some nonobvious quirks and idiosyncracies, with solutions
-or workarounds where available.
+#### Where can I find general information about what Lux is for and whether it's for me?
+
+The [README](Readme.md) page provides a general overview and description of Lux.  You might also be looking
+for the [Balisage 2013 paper](http://www.balisage.net/Proceedings/vol10/html/Sokolov01/BalisageVol10-Sokolov01.html).
+
+#### How do I get started with Lux?
+
+Try reading and following the easy instructions on the [Setup](Setup.md) page.  They will get you as far as running a 
+demo application that comes with Lux.  Once that's in place it's a short hop to setting up your own.
 
 #### Where is the mailing list / discussion group?
 
@@ -106,6 +113,10 @@ You will find that you get better performance if you break your large files into
 There is an [open issue](http://issues.luxdb.org/browse/LUX-3) calling for internal fragmentation that aims to make it easier to work with very large documents, but at the moment it is up to you to fragment documents when you load them.  You can do this using XSLT, for example, either within Lux or otherwise.
 
 In any case when working with large XML files, you need to take care to allocate sufficient heap space for an entire document to be loaded into memory.
+
+#### Does Lux support XForms? ####
+
+Not directly, but we do have reports of folks successfully building XForms applications using XSLTForms with Lux.
 
 #### What is the Lux security model? ####
 
