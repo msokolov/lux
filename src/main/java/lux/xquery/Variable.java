@@ -75,17 +75,18 @@ public class Variable extends AbstractExpression {
         return getValue().getLastContextStep();
     }
 
-	public void setBindingContext(VariableContext context) {
-		this.context = context;
-	}
-
     /**
-     * This method is used to determine whether a given expression was bound as a for-variable, to decide
-     * whether to use it in a sorting optimization.
-     * @return the binding expression for this variable
+     * @return the binding context (for or let clause, or global
+     * definition) of this variable.  Will be null if the variable
+     * represents a function argument.
      */
+    @Override
     public VariableContext getBindingContext() {
         return context;
+    }
+
+    public void setBindingContext(VariableContext context) {
+        this.context = context;
     }
 
 }

@@ -1,3 +1,12 @@
+---
+layout: page
+title: Release 0.6
+group: release
+pos: 10
+---
+
+# Changes in Release 0.6
+
 Documentation updated; now includes documentation for the XQuery function
 library, for the Java API and for the Solr-based REST API.
 

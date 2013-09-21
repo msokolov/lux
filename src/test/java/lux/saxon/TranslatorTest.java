@@ -183,7 +183,7 @@ public class TranslatorTest {
             throw new LuxException(e);
         }
         SaxonTranslator translator = new SaxonTranslator(compiler.getProcessor().getUnderlyingConfiguration());
-        PathOptimizer optimizer = new PathOptimizer(compiler.getIndexConfiguration());
+        PathOptimizer optimizer = new PathOptimizer(compiler);
         XQuery originalQuery = translator.queryFor(query);
         XQuery optimizedQuery = optimizer.optimize(originalQuery);
         XQuery retranslated;

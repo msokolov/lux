@@ -3,6 +3,7 @@ package lux;
 import java.io.IOException;
 
 import lux.exception.LuxException;
+import lux.search.DocIterator;
 import lux.search.LuxSearcher;
 import lux.solr.MissingStringLastComparatorSource;
 import net.sf.saxon.om.NodeInfo;
@@ -168,9 +169,17 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 current = null;
             } else {
                 long t1 = System.nanoTime();
-                // FIXME: use relative docID and leaf reader here  so we can avoid a binary search to find the 
-                // correct reader
-                XdmItem doc = docCache.get(docID, searcher.getIndexReader());
+                XdmItem doc;
+                if (sortCriteria == null) {
+                    // in this case, we are iterating over the readers in order, so we can make the retrieval a bit
+                    // faster by going directly to the appropriate leaf reader
+                    doc = docCache.get(docID, ((DocIterator) docIter).getCurrentReaderContext());
+                } else {
+                    //  FIXME: use relative docID and leaf reader here  so we can avoid a binary search to find the 
+                //  correct reader.  In fact the LuxSearcher *already* has the correct leaf reader - we just need
+                // to make it available here - probably via the docIter
+                    doc = docCache.get(docID, searcher.getIndexReader());
+                }
                 NodeInfo item = (NodeInfo) doc.getUnderlyingValue();
                 // assert documents in order : Note this is no longer accurate now that we have implemented "order by"
                 // assert (current == null || ((TinyDocumentImpl)item).getDocumentNumber() > ((TinyDocumentImpl)current).getDocumentNumber());

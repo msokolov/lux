@@ -3,7 +3,6 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
-import lux.compiler.XPathQuery;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
@@ -17,7 +16,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
 /**
- * <code>function lux:exists($query as item(), $hints as xs:int?) as xs:integer</code>
+ * <code>function lux:exists($query as item()) as xs:integer</code>
  *<p>
  * This function tests whether a search has any results.  It is faster and uses less memory 
  * than calling fn:exists() on the search results themselves because it does not need to load
@@ -45,7 +44,7 @@ public class Exists extends SearchBase {
     }
     
     @Override 
-    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, long facts, String sortCriteria, int start) throws XPathException {
+    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, String sortCriteria, int start) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {
@@ -57,9 +56,6 @@ public class Exists extends SearchBase {
         saxon.getQueryStats().totalTime = System.currentTimeMillis() - t;
         if (exists) {
             ++ saxon.getQueryStats().docCount;
-        }
-        if ((facts & XPathQuery.BOOLEAN_FALSE) != 0) {
-            exists = !exists;
         }
         return SingletonIterator.makeIterator(BooleanValue.get(exists));
     }

@@ -2,6 +2,7 @@ package lux.index.field;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import lux.index.XmlIndexer;
 
@@ -15,6 +16,7 @@ import org.apache.lucene.document.Field.Store;
 public class PathOccurrenceField extends FieldDefinition {
     
     private static final PathOccurrenceField instance = new PathOccurrenceField();
+    private final Pattern spacePattern = Pattern.compile(" ");
     
     public static PathOccurrenceField getInstance() {
         return instance;
@@ -30,8 +32,8 @@ public class PathOccurrenceField extends FieldDefinition {
     }
     
     class PathOccurrenceIterator implements Iterable<String>, Iterator<String> {
-        private Iterator<Entry<String, Integer>> pathCounts;
-        private Entry<String, Integer> pathCount;
+        private Iterator<Entry<CharSequence, Integer>> pathCounts;
+        private Entry<CharSequence, Integer> pathCount;
         private int iPathCount;
         
         public PathOccurrenceIterator(XmlIndexer indexer) {
@@ -56,8 +58,8 @@ public class PathOccurrenceField extends FieldDefinition {
         @Override
         public String next() {
             StringBuilder buf = new StringBuilder();
-            String path = pathCount.getKey(); 
-            String [] names = path.split(" ");
+            CharSequence path = pathCount.getKey();
+            String [] names = spacePattern.split(path);
             if (names.length > 1) {
                 buf.append (names[names.length-1]);
                 // stop at 1 so we trim off leading "{}", reverse the names and splice with "/"

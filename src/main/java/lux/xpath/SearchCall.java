@@ -16,6 +16,7 @@ import org.apache.lucene.search.SortField;
  * A special search function call; this holds a query that is used to accumulate constraints
  * while optimizing.  The function arguments are inferred from the supplied XPathQuery so as to
  * result in the same query when evaluated at run time.
+ * TODO: rename either this or the runtime class (lux.functions.SearchBase$SearchCall) of the same name!
  */
 public class SearchCall extends FunCall {
 
@@ -31,7 +32,7 @@ public class SearchCall extends FunCall {
      * @param config used to determine the default field name
      */
     public SearchCall(XPathQuery query, IndexConfiguration config) {
-        this (query.getParseableQuery().toXmlNode(config.getDefaultFieldName(), config), query.getFacts(), query.getResultType(), query.getSortFields(), true);
+        this (query.getFullQuery().toXmlNode(config.getDefaultFieldName(), config), query.getFacts(), query.getResultType(), query.getSortFields(), true);
     }
 
     /** used to convert a generic lux:search FunCall into a SearchCall 
@@ -46,13 +47,13 @@ public class SearchCall extends FunCall {
         super(FunCall.LUX_SEARCH, resultType);
         this.queryArg = queryArg;
         fnCollection = false;
-        query = XPathQuery.getQuery(null, facts, resultType, null, sortFields);
+        query = XPathQuery.getQuery(null, null, facts, resultType, null, sortFields);
         this.generated = isGenerated;
         generateArguments();
     }
    
     public void combineQuery(XPathQuery additionalQuery, IndexConfiguration config) {
-        ElementConstructor additional = additionalQuery.getParseableQuery().toXmlNode(config.getDefaultFieldName(), config);
+        ElementConstructor additional = additionalQuery.getFullQuery().toXmlNode(config.getDefaultFieldName(), config);
         if (! additional.getName().getLocalPart().equals("MatchAllDocsQuery")) {
             if (queryArg.getType() == Type.ELEMENT) {
                 ElementConstructor addClause = new ElementConstructor(BooleanPQuery.CLAUSE_QNAME, additional, BooleanPQuery.MUST_OCCUR_ATT);
@@ -69,7 +70,6 @@ public class SearchCall extends FunCall {
     private void generateArguments () {
         ArrayList<AbstractExpression> args = new ArrayList<AbstractExpression>();
         args.add (queryArg);
-        args.add (new LiteralExpression(query.getFacts()));
         SortField[] sortFields = query.getSortFields();
         if (sortFields != null) {
             args.add(new LiteralExpression (createSortString(sortFields)));
@@ -81,8 +81,7 @@ public class SearchCall extends FunCall {
     }
 
     /**
-     * create an string describing sort options to be passed as an argument search
-     * @return
+     * @return a string describing sort options to be passed as an argument to search
      */
     private String createSortString (SortField[] sort) {
         StringBuilder buf = new StringBuilder();

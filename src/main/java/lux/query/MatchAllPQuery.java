@@ -22,5 +22,20 @@ public final class MatchAllPQuery extends ParseableQuery {
     public String toQueryString(String field, IndexConfiguration config) {
         return "*:*";
     }
+    
+    @Override
+    public boolean isSpanCompatible () {
+        return true;
+    }
+    
+    @Override
+    public boolean isMatchAll () {
+        return true;
+    }
+
+    @Override
+    public boolean equals(ParseableQuery other) {
+        return other == this;
+    }
 
 }

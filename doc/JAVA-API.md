@@ -1,8 +1,15 @@
+---
+layout: page
+title: Lux Java API
+group: api
+pos: 3
+---
 # Lux Java API overview #
 
 This is a high level, brief introduction to the main entry points to the
 Java API, not an exhaustive walk through all the classes provided as part
-of Lux: the javadocs in the source code provide more detail.
+of Lux: the [complete javadocs](apidocs/) drawn from the source code
+provide more detail.
 
 These methods will be useful for those intending to embed Lux in a Java
 application that uses Lucene directly and not Solr.  It's not necessary to

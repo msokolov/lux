@@ -94,6 +94,17 @@ public class NodeTextQuery extends ParseableQuery {
         return buf.toString();
     }
 
+    @Override
+    public boolean equals(ParseableQuery other) {
+        if (other instanceof NodeTextQuery) {
+            NodeTextQuery oq = (NodeTextQuery) other;
+            return oq.boost == boost &&
+                    oq.qName.equals(qName) &&
+                    oq.term.equals(term);
+        }
+        return false;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -1,0 +1,31 @@
+<div class="well sidebar-nav">
+  <ul class="nav nav-list">
+    <li class="nav-header">APIs</li>
+    
+    {% for node in site.pages %}
+    {% if node.group == "api" %}
+    {% if page.url == node.url %}
+    <li class="active"><a href="{{site.root-url}}{{node.url}}" class="active">{{node.title}}</a></li>
+    {% else %}
+    <li><a href="{{site.root-url}}{{node.url}}">{{node.title}}</a></li>
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    <li><a href="{{site.root-url}}/apidocs">javadoc</a></li>
+
+    <li class="nav-header">Release Notes</li>
+    {% for pos in (1..10) %}
+    {%   for node in site.pages %}
+    {%     if node.pos == pos %}
+    {%       if node.group == "release" %}
+    {%         if page.url == node.url %}
+    <li class="active"><a href="{{site.root-url}}{{node.url}}" class="active">{{node.title}}</a></li>
+    {%         else %}
+    <li><a href="{{site.root-url}}{{node.url}}">{{node.title}}</a></li>
+    {%         endif %}
+    {%       endif %}
+    {%     endif %}
+    {%   endfor %}
+    {% endfor %}
+  </ul>
+</div><!--/.well -->

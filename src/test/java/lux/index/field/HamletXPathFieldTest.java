@@ -38,10 +38,9 @@ public class HamletXPathFieldTest {
     @BeforeClass
     public static void setup () throws Exception {
         XmlIndexer indexer = new XmlIndexer ();
-        indexer.getConfiguration().addField(new XPathField<String>("doctype", "name(/*)", null, Store.NO, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField<String>("doctype-stored", "name(/*)", null, Store.YES, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField<String>("title", "/*/TITLE", null, Store.YES, Type.STRING));
-        // TODO: test integer fields
+        indexer.getConfiguration().addField(new XPathField("doctype", "name(/*)", null, Store.NO, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("doctype-stored", "name(/*)", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("title", "/*/TITLE", null, Store.YES, Type.STRING));
         dir = new RAMDirectory();
         indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
     }
@@ -60,16 +59,16 @@ public class HamletXPathFieldTest {
     @Test
     public void testFieldValues () throws Exception {
       // node argument
-      assertEval ("PLAY", "lux:field-values('doctype-stored', /PLAY)");
+      assertEval ("PLAY", "lux:key('doctype-stored', /PLAY)");
 
       // node from context item
-      assertEval ("PLAY", "/PLAY/lux:field-values('doctype-stored')");
+      assertEval ("PLAY", "/PLAY/lux:key('doctype-stored')");
 
       // no value for empty context item
-      assertEval ("", "lux:field-values('doctype-stored')");
+      assertEval ("", "lux:key('doctype-stored')");
 
       // values of field that's not stored can't be retrieved 
-      assertEval ("", "/PLAY/lux:field-values('doctype')");
+      assertEval ("", "/PLAY/lux:key('doctype')");
     }
     
     private void assertEval (String expectedResult, String xquery) {
@@ -97,7 +96,7 @@ public class HamletXPathFieldTest {
         assertResultSequence (xquery, "LINE", "SPEECH", "SCENE", "ACT", "PLAY");
 
         xquery = "for $doc in lux:search('" + PITHY_QUOTE + "')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name()";
+            " order by lux:key('doctype', $doc) return $doc/*/name()";
         // should be ordered by the names of the root elements:
         // ACT, LINE, PLAY, SCENE, SPEECH
         assertResultSequence (xquery,  "ACT", "LINE", "PLAY", "SCENE", "SPEECH");
@@ -107,25 +106,25 @@ public class HamletXPathFieldTest {
     public void testOrderByEmpty () throws Exception {
         // get the titles of the first three docs in order by title, using the default "empty least":
         // these are blank
-        String xquery = "subsequence(for $doc in collection() order by $doc/lux:field-values('title') " +
+        String xquery = "subsequence(for $doc in collection() order by $doc/lux:key('title') " +
             "return string($doc/*/TITLE), 1, 3)";
         assertResultSequence (xquery, "", "", "");
 
         // get the first three non-empty titles in order by title, using the default "empty least":
         // this requires iterating over all the blank titles first, and discarding
-        xquery = "subsequence(for $doc in collection() order by $doc/lux:field-values('title') " +
-        		"return $doc/lux:field-values('title'), 1, 3)";
+        xquery = "subsequence(for $doc in collection() order by $doc/lux:key('title') " +
+        		"return $doc/lux:key('title'), 1, 3)";
         assertResultSequence (xquery, "ACT I", "ACT II", "ACT III");
 
         // get the first three non-empty titles in order by title, using "empty greatest":
         // this requires Saxon to perform the sorting since we don't implement empty greatest using Lucene
-        xquery = "subsequence(for $doc in collection() order by $doc/lux:field-values('title') empty greatest " +
+        xquery = "subsequence(for $doc in collection() order by $doc/lux:key('title') empty greatest " +
                 "return string($doc/*/TITLE), 1, 3)";
         assertResultSequence (xquery, "ACT I", "ACT II", "ACT III");
         
         // Get the first three non-empty titles in reverse order by title, using the default "empty least":
-        xquery = "subsequence(for $doc in collection() order by $doc/lux:field-values('title') descending " +
-        		"return $doc/lux:field-values('title'), 1, 2)";
+        xquery = "subsequence(for $doc in collection() order by $doc/lux:key('title') descending " +
+        		"return $doc/lux:key('title'), 1, 2)";
         assertResultSequence (xquery, "The Tragedy of Hamlet, Prince of Denmark", 
                 "SCENE VII.  Another room in the castle.");
     }
@@ -133,13 +132,13 @@ public class HamletXPathFieldTest {
     @Test
     public void testFieldValuesNoContext () throws Exception {
         try {
-            assertResultSequence ("lux:field-values('title')", "");
+            assertResultSequence ("lux:key('title')", "");
             assertFalse ("expected exception not thrown", true);
         } catch (Exception e) {
             assertTrue (e.getMessage().contains("there is no context defined"));
         }
         try {
-            assertResultSequence  ("for $doc in collection() order by lux:field-values('title') return $doc");
+            assertResultSequence  ("for $doc in collection() order by lux:key('title') return $doc");
             assertFalse ("expected exception not thrown", true);
         } catch (Exception e) {
             e.printStackTrace();
@@ -150,6 +149,9 @@ public class HamletXPathFieldTest {
     @Test
     public void testFieldValuesNoField () throws Exception {
         // no error, just return empty sequence
+        assertResultSequence ("collection()[1]/lux:key('bogus')");
+        // also test that we still have backwards-compatibility support for the old name
+        // of this method
         assertResultSequence ("collection()[1]/lux:field-values('bogus')");
     }
     

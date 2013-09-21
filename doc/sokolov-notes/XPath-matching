@@ -1,0 +1,280 @@
+Path matching (for XPath range indexes); for every sub-expression, attempt
+to match against another (index) expression by computing a sub-expression
+that is the trunk (path from root to current node), simplifying
+(generalizing) the path by removing result-preserving expressions such as
+casts, exists(), [], and, intersect, AtomizingSequence, flwor , etc.  Also
+simplify the index expression.
+
+Q: explicitly convert the sequence, or just ignore while traversing?
+
+Q: really compare *every* subexpression?  No, only optimize comparisons.  Maybe there would be others as well?
+
+So- in a comparison with a literal, examine the non-literal expr for index-path equivalence
+
+For example if we have:
+
+query //a[@i="1"][@t="x"] it would match index //a[@i="1"]/@t, or //a/@t,
+*but not* //a[@z]/@t
+
+Basically given query Q and index expr R, we want to prove that R >= Q, ie
+the set of all exprs matching R contains the set of all exprs matching Q.
+We start with R==Q, and we want to generalize to the inequality.
+
+Suppose we decompose both Q and R into expression trees with nodes labeled
+Q1, Q1.1, Q1.2, Q1.1.1, etc.  Given partial trees Qm and Rn s.t. Rn >= Qm,
+let f be the class of expression-composition operators that in general
+preserve that relation, ie f(Rn) >= f(Qm).  Isn't this just any operation?
+What about not()?
+
+Taking the example above, with Q=//a[@i=1][@t="x"] and R=//a/@t, imagine traversing left to right:
+
+ //a == //a
+ //a[@i=1] <= //a
+ //a[@i=1][@t="x"] <= //a[@i=i][@t]
+ 
+ /b[not(.//a/@t=3)] can totally work with a not(R) type query
+ 
+ Basically we want an efficient way to find one tree in another.
+ 
+ See:
+ http://www.cs.purdue.edu/homes/cmh/distribution/papers/PatternMatching/PatternMatchingInTrees.pdf
+
+This paper sets out to solve a more general tree-matching problem in which
+tree-patterns containing wildcards are allowed.  We don't really need
+general-purpose wildcards, but we do have some particular needs:
+
+In many cases (such as boolean operators, multiple predicates) order of
+child nodes is not significant.  This actually reduces the complexity since
+we only need to consider combinations, rather than permutations, of the
+child nodes.  But order does matter in many other cases: Functions with
+multiple arguments, sequences, Predicates, PathExpressions.
+
+We have some matching constraints that don't really fir this model all that
+well: we want to allow the addition of any *restrictive* expression at any
+point.  Rather than restricting the placement of wildcard substitutions, we
+are interested in restricting the class of "wild" expressions, but allow
+their insertion anywhere.
+
+Also, we allow wildcard symbols *everywhere* -- any number of additional
+child nodes are often allowed: essentially we are just matching subtrees
+rather than requiring a terminal symbol -- ours are not *rooted* patterns.
+
+This, again, reduces complexity: we don't need to model the wildcard nodes explicitly or encode them in patterns,
+unlike in the paper where the number of child nodes of a given symbol is fixed, and every node must be accounted for.
+
+ Check the math here: Subject((a or b) or c) <==> Pattern(a or b) ? yes certainly  what about
+ /a[(a or b) or c] <=> /a[a or b]  NO
+ /a[a or (b or c)] <=> /a[a or b]  NO
+     */
+
+--------------------
+
+Hmm - so is there anything to pull from this paper?  The idea of
+preprocessing for bottom-up matching is attractive.  The basic concept is
+to precompute every possible matching subtree for each given symbol; then to store these tables for rapid lookup.
+
+---------------------
+
+current thinking is:
+
+Let leafmap :=  multimap(leaf->root) for each xpath index leaf node
+
+When looking at a comparison (x=C) in the query (as we do now), with C=constant:
+
+  for iexpr in leafmap(x):
+    if (match-up(iexpr, x)):
+      push (key(iquery, C))
+
+def key(expr, value):
+  return a lucene query matching documents where
+  the (indexed) expression expr matches the value
+
+def match-up(pat, tree):
+  ppat = pat.parent
+  if not ppat:
+    return True
+  
+  ptree = tree.parent
+  if not ptree:
+    return False
+
+  if not equals-shallow(ptree, ppat)
+    return False
+
+  if ptree.kids.size < ppat.kids.size:
+    return False
+
+  if ptree.isExpansive and ptree.kids.size > ppat.kids.size
+    return False
+
+  # otherwise its enough to check that every child of ppat is matched
+  # by some (not necessarily distinct) child of ptree
+
+  for patsib in ppat.kids:
+    if patsib is pat:
+      continue
+    ok = false
+    for tsib in ptree.kids:
+      if tsib is tree:
+        continue
+      if match-down (patsib, tsib):
+        ok = true
+        break
+    if not ok:
+      return false
+  return true
+
+def match-down(pat, tree):
+    # deep-equals, possibly with some skipping of "uninteresting" nodes
+
+def parent(expr):
+    # traverse the parent relation, skipping "uninteresting" nodes
+
+TODO: 
+
+1) define "uninteresting"
+   typecasts, predicates, atomizers, ??
+2) define "expansive"
+   or, union, sequence: (,), ??
+3) write test cases
+
+   basic keys: 
+
+      //a, //a/@id, //a[@type="x"], /a/title, /a/b[2], //a[@type="x"]/title
+
+   keys with booleans:
+
+      //a[@id=("x","y")] //a[@id="x" or @id="y] //*[a and b] //a[b][c]
+
+   pathologically weird keys - run a test with a large number of paths
+   defined as indexes (use SearchTest?), and check that all results are
+   correct
+
+4) implement
+
+---------------------
+
+1. Define query-equivalence among expressions: 
+
+       a, b are qeq if for all contexts c, empty(a|c) iff empty(b|c)
+
+where e|c means e evaluated with context c
+
+2. Define query-equivalence between (Lucene) queries and expressions:
+
+       q, e are qeq if empty(e|doc) iff  doc ! in results(q)
+
+
+3. Define a partial ordering among expressions:
+
+       a >= b iff for all contexts c, empty(a|c) -> empty(b|c)
+
+
+Given an expression A containing a comparison (a op C), C constant, and
+another expression B with leaf node b, if b qeq a 
+
+-- under what conditions can we say that B >= A?
+
+
+4. Notation
+
+We write expressions in the form a(b,c) where b, c are sub-expressions of
+a.  For example a/b would be written path(a, b), a=b would be equals(a,b),
+etc.  We consider the subset of XPath that can be expressed in this form,
+with two-argument functions.  That's all the interesting parts anyway.
+Although the sequence expression may have variable numbers of args, it can
+be composed ((a,b),c).  One-child expressions functions may be defined as
+having a null second arg.
+
+5. Right-balancing
+
+Since ((a,b),c) == (a,(b,c)) and (a/b)/c == a/(b/c) we can always choose to
+balance sequences and paths as we like; assume trees are always
+right-balanced.  Thus /a/b/c would be written path(a,path(b,c)).  a[b]/c[d]
+becomes path(pred(b,a),pred(d,c))
+
+6. Query-equivalence under composition 
+
+Define Q as the set of expressions that preserve qeq, i.e.,
+
+e is in Q if
+
+e(a) qeq e(b) for all a,b s.t. (a qeq b)
+
+or
+
+e(a1,a2) qeq e(b1,b2)  for all a1,a2,b1,b2 s.t. (a1 qeq b1 and a2 qeq b2)
+
+In this class are:
+
+fn:data()
+fn:exists()
+fn:root()
+fn:subsequence() (considered as a function of its first argument)
+path-expression (i.e /)
+path-step (axis + node test)
+predicate ( [] )
+intersect
+
+We would also like to include the boolean "and" operator, since intuitively
+it is a restrictive operator, but it is not qeq-preserving by our
+definition: it always returns a boolean value, never empty.  However
+expressions such as [a and b] are clearly qeq-preserving.  We'll just note
+that [a and b] can be rewritten as [a][b], and assume this has been done.
+
+[ TODO: check whether Saxon actually does that rewrite ] 
+
+Any expression composed only of members of Q is also in Q; this follows
+directly from the definitions:
+
+Let e,f in Q; and a1,a2,b1,b2 qeq as above; then 
+f(a1,b1) qeq f(a2,b2)
+e(f(a1,b1)) qeq e(f(a2,b2))
+therefore the composition e*f of e and f is in Q
+
+7. Inequality
+
+Now if a >= b and e is in Q, then e(a) >= e(b) since given c,
+
+exists(e(b|c)) => exists(b|c) => exists(a|c) => exists(e(a|c)), therefore
+
+empty(e(a|c)) => empty(e(b|c)), which we can rewrite as
+empty(e(a)|c) => empty(e(b)|c), which is just the definition of e(a) >= e(b).
+
+8. An index e provides us with a quick way of retrieving all documents x
+s.t. e|x op C for some constant C, and an atomic comparison operator op
+(some indexes might only compute eq and neq, but we consider the general
+case for now).
+
+For some expression q, and an index e, we seek an algorithm for determining
+whether there exists a constant C s.t. 
+
+e|x op C => exists(q|x)
+
+If that is the case, we assume that it is worth applying the index as a
+constraint.  That may not always be the case (for example if e op C is true
+for every document, or for most documents), but we rely on the user to
+define useful indexes and simply assume that filtering using the index is
+always worthwhile.
+
+Our procedure starts by finding comparison operators in q that compare
+against constant values: x op C.  Then we check if rightmost-step(e) qeq
+rightmost-step (x).  [ TODO: check Predicate.lastPathStep - shouldn't it
+return base? ].
+
+If so, we proceed as follows:
+
+def match-up (x, e)
+ if empty (e/..) return true
+ if empty (
+
+Then 
+
+TODO: write up difference between path, predicate, and "standard" tree
+matching.  Does the "standard" approach make any sense?
+
+
+
+
+-------------------------
+

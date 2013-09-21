@@ -1,16 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.xpath;
-
 
 /**
  * represents numeric literal predicates like [1]; last-predicates like
  * [last()] and calls to the subsequence(expr,integer,integer) function.
  * 
- * @author sokolov
- *
  */
 public class Subsequence extends AbstractExpression {
 
@@ -62,7 +55,7 @@ public class Subsequence extends AbstractExpression {
     public AbstractExpression getRoot () {
         return getSequence().getRoot();
     }
-
+    
     /**
      * @return the precedence of comma (,) or predicate ([]), depending
      * on the child expressions.
@@ -103,6 +96,12 @@ public class Subsequence extends AbstractExpression {
             getLengthExpr().toString(buf);
             buf.append (')');
         }
+    }
+
+    @Override
+    public boolean isRestrictive () {
+        // true for the first, sequence, argument. TODO: special case this in the optimizer
+        return false;
     }
 
 }

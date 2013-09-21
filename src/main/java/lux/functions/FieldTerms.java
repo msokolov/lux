@@ -12,11 +12,13 @@ import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.*;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
+import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.util.BytesRef;
 
@@ -72,6 +74,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
     class FieldTermsCall extends ExtensionFunctionCall {
 
+        @SuppressWarnings("rawtypes")
         @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             String fieldName = null, start = "";
@@ -89,6 +92,9 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             try {
                 if (fieldName == null) {
                     fieldName = eval.getCompiler().getIndexConfiguration().getDefaultFieldName();
+                    if (fieldName == null) {
+                        return EmptySequence.getInstance();
+                    }
                 }
                 return new LazySequence(new TermsIterator(eval, new Term(fieldName, start)));
             } catch (IOException e) {
@@ -126,11 +132,14 @@ public class FieldTerms extends ExtensionFunctionDefinition {
             */
             Fields fields = MultiFields.getFields(eval.getSearcher().getIndexReader());
             if (fields != null) {
-                terms = fields.terms(fieldName).iterator(null);
-                if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) == TermsEnum.SeekStatus.END) {
-                    pos = -1;
-                } else {
-                    current = terms.term().utf8ToString();
+                Terms fieldTerms = fields.terms(fieldName);
+                if (fieldTerms != null) {
+                    terms = fieldTerms.iterator(null);
+                    if (t != null) {
+                        if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) != TermsEnum.SeekStatus.END) {
+                            current = terms.term().utf8ToString();
+                        }
+                    }
                 }
             }
         }

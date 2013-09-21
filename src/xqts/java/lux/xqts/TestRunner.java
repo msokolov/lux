@@ -167,7 +167,7 @@ public class TestRunner extends RunnerBase {
         long t2 = System.nanoTime();
         translateTime += (t2 - t1);
         if (eval.getCompiler().getSearchStrategy() != SearchStrategy.NONE) {
-            PathOptimizer optimizer = new PathOptimizer(eval.getCompiler().getIndexConfiguration());
+            PathOptimizer optimizer = new PathOptimizer(eval.getCompiler());
             XQuery optimizedQuery = optimizer.optimize(abstractQuery);
             luxQuery = optimizedQuery.toString();
         } else {

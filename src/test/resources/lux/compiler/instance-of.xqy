@@ -11,7 +11,7 @@ declare function local:castable-strings ($args as item()*)
 {
     for $arg in $args
       where $arg castable as xs:string
-      return $arg
+      return xs:string($arg)
 };
 
 concat (

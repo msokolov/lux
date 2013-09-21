@@ -2,6 +2,7 @@ package lux;
 
 import static lux.index.IndexConfiguration.*;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -37,7 +38,11 @@ public class IndexTestSupport {
 
     Directory dir;
     LuxSearcher searcher;
-    XmlIndexer indexer;
+    public LuxSearcher getSearcher() {
+		return searcher;
+	}
+
+	XmlIndexer indexer;
     IndexWriter indexWriter;
     int totalDocs;
     Compiler compiler;
@@ -101,7 +106,11 @@ public class IndexTestSupport {
      * @throws SaxonApiException 
      */
     public void indexAllElements(String filename) throws XMLStreamException, IOException, SaxonApiException {
-        indexAllElements(filename, SearchTest.class.getClassLoader().getResourceAsStream(filename));
+    	InputStream in = SearchTest.class.getClassLoader().getResourceAsStream(filename);
+    	if (in == null) {
+    		throw new FileNotFoundException (filename + " not found");
+    	}
+    	indexAllElements(filename, in);
         // System.out.println ("Indexed " + totalDocs + " documents from " + filename);
     }
     
@@ -129,6 +138,7 @@ public class IndexTestSupport {
             ++totalDocs;
         }
         indexWriter.commit();
+        reopen();
     }
     
     public Evaluator makeEvaluator() throws CorruptIndexException, LockObtainFailedException, IOException {
@@ -141,6 +151,10 @@ public class IndexTestSupport {
     }
     
     public void printAllTerms() throws IOException {
+        printAllTerms (dir, indexer);
+    }
+    
+    public static void printAllTerms(Directory dir, XmlIndexer indexer) throws IOException {
         DirectoryReader reader = DirectoryReader.open(dir);
         Fields fields = MultiFields.getFields(reader); 
         System.out.println ("Printing all terms (except uri)");

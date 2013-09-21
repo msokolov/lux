@@ -4,7 +4,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.Evaluator;
 import lux.index.IndexConfiguration;
-import lux.search.highlight.HtmlBoldFormatter;
+import lux.search.highlight.TagFormatter;
 import lux.search.highlight.XmlHighlighter;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
@@ -18,17 +18,21 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
+import net.sf.saxon.value.StringValue;
+import net.sf.saxon.value.QNameValue;
 
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.Query;
 
 /**
- * <code>lux:highlight($query as item(), $node as node())</code> <p>returns
- * the given node with text matching the query surrounded by HTML B tags.
- * The query may be a string or an element/document of the same types
- * supported by lux:search.</p> <p>TODO: enable control over the highlight
- * tagging. </p>
+ * <code>lux:highlight($node as node()?, $query as item(), $tag as item())</code><br/>
+ * <code>lux:highlight($node as node()?, $query as item())</code>
+ * <p>returns
+ * the given node with text matching the query surrounded by the given $tag (or B if no tag is given).
+ * The query may be a string or an element/document of the same types supported by lux:search.</p>
+ * <p>The tag may be specified as either a QName or a string; if a string, an element 
+ * is created with no namespace.</p>
  * @see Search
  */
 public class Highlight extends ExtensionFunctionDefinition {
@@ -36,8 +40,9 @@ public class Highlight extends ExtensionFunctionDefinition {
     @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] { 
-                SequenceType.SINGLE_ITEM,
                 SequenceType.OPTIONAL_NODE,
+                SequenceType.SINGLE_ITEM,
+                SequenceType.SINGLE_ITEM,
                 };
     }
     @Override
@@ -55,16 +60,26 @@ public class Highlight extends ExtensionFunctionDefinition {
         return new HighlightCall();
     }
     
+    @Override
+    public int getMinimumNumberOfArguments () {
+    	return 2;
+    }
+    
+    @Override
+    public int getMaximumNumberOfArguments () {
+    	return 3;
+    }
+    
     class HighlightCall extends NamespaceAwareFunctionCall {
 
         @Override
         public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            Item queryArg = arguments[0].head();
-            NodeInfo docArg = (NodeInfo) arguments[1].head();
+            NodeInfo docArg = (NodeInfo) arguments[0].head();
             if (docArg == null) {
                 return EmptySequence.getInstance();
             }
+            Item queryArg = arguments[1].head(); 
             Query query;
             Evaluator eval = SearchBase.getEvaluator(context);
             try {
@@ -75,7 +90,21 @@ public class Highlight extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             IndexConfiguration indexConfiguration = eval.getCompiler().getIndexConfiguration();
-            XmlHighlighter xmlHighlighter = new XmlHighlighter(eval.getCompiler().getProcessor(), indexConfiguration, new HtmlBoldFormatter());
+            TagFormatter formatter;
+            if (arguments.length < 3) {
+            	formatter = new TagFormatter("B", null);
+            } else {
+            	Item tagName = arguments[2].head();
+            	if (tagName instanceof QNameValue) {
+            		QNameValue qname = (QNameValue) tagName;
+                formatter = new TagFormatter (qname.getLocalName(), qname.getNamespaceURI());
+            	} else if (tagName instanceof StringValue) {
+                  formatter = new TagFormatter(tagName.getStringValue(), null);
+            	} else {
+                  throw new XPathException ("invalid tag name for lux:highlight: got a " + tagName.getClass().getSimpleName() + " when expecting a QName or string");
+            	}
+            }
+            XmlHighlighter xmlHighlighter = new XmlHighlighter(eval.getCompiler().getProcessor(), indexConfiguration, formatter);
             try {
                 XdmNode highlighted = xmlHighlighter.highlight(query, docArg);
                 return highlighted.getUnderlyingNode();

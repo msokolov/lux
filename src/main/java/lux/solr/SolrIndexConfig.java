@@ -1,14 +1,23 @@
 package lux.solr;
 
+import static lux.index.IndexConfiguration.*;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ArrayBlockingQueue;
 
+import lux.Compiler;
+import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.XmlIndexer;
 import lux.index.analysis.WhitespaceGapAnalyzer;
 import lux.index.field.FieldDefinition;
 import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
+import net.sf.saxon.s9api.Serializer;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -17,42 +26,121 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.core.PluginInfo;
 import org.apache.solr.core.SolrCore;
+import org.apache.solr.core.SolrInfoMBean;
 import org.apache.solr.schema.BinaryField;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.StrField;
 import org.apache.solr.schema.TextField;
+import org.apache.solr.schema.TrieIntField;
+import org.apache.solr.schema.TrieLongField;
+import org.apache.solr.update.processor.UpdateRequestProcessorChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Wraps a {@link IndexConfiguration}, adding field definitions from information in Solr's configuration files:
  * solrconfig.xml and schema.xml
- *
  */
-public class SolrIndexConfig {
+public class SolrIndexConfig implements SolrInfoMBean {
+    private static final String SOURCE_URL = "https://github.com/msokolov/lux";
     private final IndexConfiguration indexConfig;
     private NamedList<String> xpathFieldConfig;
+    private Compiler compiler;
+    private ArrayBlockingQueue<XmlIndexer> indexerPool;
+    private ArrayBlockingQueue<Serializer> serializerPool;
+    private IndexSchema schema;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
+        indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
+        serializerPool = new ArrayBlockingQueue<Serializer>(8);
+        // FIXME: possibly we need a pool of compilers as well?  The issue is they hold the Saxon Processor,
+        // and that in turn holds uri resolver, which needs to get transient pointers to per-request objects
+        // like the searcher, so it can read documents from the index.  ATM different requests will overwrite
+        // that pointer in a shared processor.  At the best, this causes some leakage across request (ie transaction)
+        // boundaries
+        compiler = new Compiler (indexConfig);
+    }
+    
+    public Compiler getCompiler () {
+        return compiler;
+    }
+    
+    public XmlIndexer checkoutXmlIndexer () {
+        // In tests it didn't seem to make any appreciable difference whether this
+        // pool was present or not, but it salves my conscience
+        XmlIndexer indexer = indexerPool.poll();
+        if (indexer == null) {
+            indexer = new XmlIndexer (indexConfig, compiler);
+        }
+        return indexer;
+    }
+    
+    public void returnXmlIndexer (XmlIndexer doneWithIt) {
+        indexerPool.offer(doneWithIt);
+        // if the pool was full, we just drop the indexer as garbage
+    }
+    
+    public Serializer checkoutSerializer() {
+        Serializer serializer = serializerPool.poll();
+        if (serializer == null) {
+            serializer = new Serializer();
+            serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
+            serializer.setOutputProperty(Serializer.Property.BYTE_ORDER_MARK, "no");
+            serializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
+        }
+        return serializer;
+    }
+    
+    public void returnSerializer (Serializer doneWithIt) {
+        serializerPool.offer(doneWithIt);
+        // if the pool was full, we just drop the serializer
+    }
+    
+    public static SolrIndexConfig registerIndexConfiguration (SolrCore core) {
+        // Read the init args from the LuxUpdateProcessorFactory's configuration
+        PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
+        SolrInfoMBean configBean = core.getInfoRegistry().get(SolrIndexConfig.class.getName());
+        SolrIndexConfig indexConfig;
+        if (configBean != null) {
+            indexConfig = (SolrIndexConfig) configBean;
+        } else {
+        	int options = (INDEX_PATHS | INDEX_FULLTEXT | STORE_DOCUMENT | SOLR);
+            indexConfig = SolrIndexConfig.makeIndexConfiguration(options, info.initArgs);
+            indexConfig.inform(core);
+            core.getInfoRegistry().put(indexConfig.getName(), indexConfig);
+        }
+        return indexConfig;
     }
 
     @SuppressWarnings("unchecked")
     public static SolrIndexConfig makeIndexConfiguration (int options, final NamedList<?> args) {
         if (args != null) {
             if ("yes".equals(args.get("strip-namespaces"))) {
-                options |= IndexConfiguration.STRIP_NAMESPACES;
+                options |= STRIP_NAMESPACES;
             }
             if ("yes".equals(args.get("namespace-aware"))) {
-                options |= IndexConfiguration.NAMESPACE_AWARE;
+                options |= NAMESPACE_AWARE;
+            }
+            Object format = args.get("xml-format");
+            if (format != null) {
+            	if ("tiny".equals(format)) {
+            		options |= STORE_TINY_BINARY;
+            	} else if (! "xml".equals(format)) {
+            		throw new LuxException("invalid xml-format: " + format + ", must be one of: (xml,tiny)");
+            	}
             }
         }
-        SolrIndexConfig config = new SolrIndexConfig(IndexConfiguration.makeIndexConfiguration (options));
+        IndexConfiguration indexConfig = IndexConfiguration.makeIndexConfiguration (options);
         if (args != null) {
-            config.renameFields (args);
+            renameFields (indexConfig, args);
+        }
+        SolrIndexConfig config = new SolrIndexConfig(indexConfig);
+        if (args != null) {
             NamedList<String> fields = (NamedList<String>) args.get("fields");
             if (fields != null) {
                 config.applyFieldConfiguration(fields);
@@ -76,7 +164,7 @@ public class SolrIndexConfig {
         }
     }
     
-    private void renameFields (@SuppressWarnings("rawtypes") final NamedList args) {
+    private static void renameFields (IndexConfiguration indexConfig, @SuppressWarnings("rawtypes") final NamedList args) {
         NamedList<?> aliases = (NamedList<?>) args.get ("fieldAliases");
         if (aliases == null) {
             return;
@@ -86,14 +174,14 @@ public class SolrIndexConfig {
             Object value = aliases.getVal(i);
             if ("xmlFieldName".equals(name)) {
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_STORE), value.toString());
-                LoggerFactory.getLogger(getClass()).info("XML storage field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("XML storage field name: {}", value.toString());
             }
             else if ("uriFieldName".equals(name)) {
-                LoggerFactory.getLogger(getClass()).info("URI field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("URI field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.URI), value.toString());
             }
             else if ("textFieldName".equals(name)) {
-                LoggerFactory.getLogger(getClass()).info("XML text field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("XML text field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_TEXT), value.toString());
             }
         }
@@ -101,14 +189,14 @@ public class SolrIndexConfig {
 
     public void inform(SolrCore core) {
         
-        IndexSchema schema = core.getSchema();
-        // XML_STORE is not included in the indexer's field list; we just use what came in on the request
-        informField (indexConfig.getField(FieldName.XML_STORE), schema);
+        schema = core.getSchema();
+        // XML_STORE is not listed explicitly by the indexer
+        informField (indexConfig.getField(FieldName.XML_STORE));
         for (FieldDefinition xmlField : indexConfig.getFields()) {
-            informField (xmlField, schema);
+            informField (xmlField);
         }
         if (xpathFieldConfig != null) {
-            addXPathFields(core.getSchema());
+            addXPathFields();
         }
         SchemaField uniqueKeyField = schema.getUniqueKeyField();
         if (uniqueKeyField == null) {
@@ -121,11 +209,12 @@ public class SolrIndexConfig {
         
     }
     
-    private void informField (FieldDefinition xmlField, IndexSchema schema) {
+    private void informField (FieldDefinition xmlField) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         Logger logger = LoggerFactory.getLogger(LuxUpdateProcessorFactory.class);
-        String fieldName = indexConfig.getFieldName(xmlField);
+        String fieldName = indexConfig.getFieldName(xmlField); // has this field been renamed?
+        FieldDefinition actualField = indexConfig.getField(fieldName); // has this field been redefined?
         if (fields.containsKey(fieldName)) {
             // The Solr schema defines this field
             logger.info("Field already defined: " + fieldName);
@@ -135,7 +224,7 @@ public class SolrIndexConfig {
             return;
         }
         // look up the type of this field using the mapping in this class
-        FieldType fieldType = getFieldType(xmlField, schema);
+        FieldType fieldType = getFieldType(actualField);
         if (! fieldTypes.containsKey(fieldType.getTypeName())) {
             // The Solr schema does not define this field type, so add it
             logger.info("Defining fieldType: " + fieldType.getTypeName());
@@ -145,26 +234,26 @@ public class SolrIndexConfig {
         }
         // Add the field to the schema
         logger.info("Defining field: " + fieldName + " of type " + fieldType.getTypeName());
-        fields.put(fieldName, new SchemaField (fieldName, fieldType, xmlField.getSolrFieldProperties(), ""));
+        fields.put(fieldName, new SchemaField (fieldName, fieldType, actualField.getSolrFieldProperties(), ""));
     }
     
     /** Add the xpathFields to the indexConfig using information about the field drawn from the schema. */
-    private void addXPathFields(IndexSchema schema) {
+    private void addXPathFields() {
         for (Entry<String,String> f : xpathFieldConfig) {
             SchemaField field = schema.getField(f.getKey());
             FieldType fieldType = field.getType();
             if (fieldType == null) {
                 throw new SolrException(ErrorCode.SERVER_ERROR, "Field " + f.getKey() + " declared in lux config, but not defined in schema");
             }
-            XPathField<String> xpathField = new XPathField<String>(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO, 
+            XPathField xpathField = new XPathField(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO,
                     Type.TEXT);
             
             indexConfig.addField(xpathField);
         }
     }
 
-    private FieldType getFieldType(FieldDefinition xmlField, IndexSchema schema) {
-        // FIXME - we should store a field type name in XmlField and just look that up instead
+    private FieldType getFieldType(FieldDefinition xmlField) {
+        // TODO - we should store a field type name in XmlField and just look that up instead
         // of trying to infer from the analyzer
         Analyzer analyzer = xmlField.getAnalyzer();
         String fieldName = indexConfig.getFieldName(xmlField);
@@ -172,7 +261,18 @@ public class SolrIndexConfig {
             if (! (xmlField.isStored() == Store.YES)) {
                 throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + fieldName + "; no analyzer and not stored");
             }
-            return new StoredStringField ();
+            switch (xmlField.getType()) {
+            case STRING:
+                return new StoredStringField ();
+            case INT:
+                return new NamedIntField();
+            case LONG:
+                return new NamedLongField();
+            case BYTES:
+                return new NamedBinaryField();
+            default:
+                throw new SolrException (ErrorCode.BAD_REQUEST, "invalid stored field: " + fieldName + " with type: " + xmlField.getType());
+            }
         }
         if (xmlField.getType() == Type.TOKENS) {
             return new FieldableField();
@@ -186,9 +286,34 @@ public class SolrIndexConfig {
         throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + fieldName + "; unknown analyzer type: " + analyzer);
     }
     
+    public IndexSchema getSchema () {
+        return schema;
+    }
+    
+    // subclasses of built-in Solr field types exist purely so we can name them.
+    // Is that actually necessary?
+    
     class StoredStringField extends StrField {
         StoredStringField () {
             typeName = "lux_stored_string";
+        }
+    }
+    
+    class NamedIntField extends TrieIntField {
+        public NamedIntField() {
+            typeName = "int";
+        }
+    }
+    
+    class NamedLongField extends TrieLongField {
+        public NamedLongField() {
+            typeName = "long";
+        }
+    }
+    
+    class NamedBinaryField extends BinaryField {
+        public NamedBinaryField() {
+            typeName = "binary";
         }
     }
     
@@ -232,6 +357,48 @@ public class SolrIndexConfig {
 
     public IndexConfiguration getIndexConfig() {
         return indexConfig;
+    }
+
+    @Override
+    public String getName() {
+        return "lux.solr.SolrIndexConfig";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Lux index configuration";
+    }
+
+    @Override
+    public Category getCategory() {
+        return Category.OTHER;
+    }
+
+    @Override
+    public String getSource() {
+        return SOURCE_URL;
+    }
+
+    private static URL[] docs;
+    
+    @Override
+    public URL[] getDocs() {
+        if (docs == null) {
+            try {
+                docs = new URL [] { new URL(SOURCE_URL) };
+            } catch (MalformedURLException e) { }
+        }
+        return docs;
+    }
+
+    @Override
+    public NamedList<?> getStatistics() {
+        return null;
     }
 }
 

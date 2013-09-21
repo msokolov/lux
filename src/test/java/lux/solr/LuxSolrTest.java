@@ -72,14 +72,14 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testFirstPage () throws Exception {
         // returns only the page including the first 10 results
-        assertXPathSearchCount (10, 100, "document", "doc", "(/)[doc]");
+        assertXPathSearchCount (10, 10, "document", "doc", "(/)[doc]");
         
-        assertXPathSearchCount (10, 100, "element", "doc", "(//doc)[position() > 10]");
+        assertXPathSearchCount (10, 20, "element", "doc", "(//doc)[position() > 10]");
     }
     
     @Test public void testPaging () throws Exception {
         // make the searcher page past the first 10 documents to find 10 xpath matches
-        assertXPathSearchCount (10, 100, "element", "doc", "//doc[title[number(.) < 95]]");
+        assertXPathSearchCount (10, 16, "element", "doc", "//doc[title[number(.) < 95]]");
     }
     
     /**
@@ -91,12 +91,12 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test public void testSorting () throws Exception {
         // should be 1, 10, 100, 11, 12, ..., 2, 21, 22, ...
         // which is docs 101, 92, 2, (since there are 2 docs with no title that are loaded first)
-        assertXPathSearchCount(1, 5, "xs:string", "1,10,100,11,12", "string-join(subsequence((for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string()),1,5),',')");
-        assertXPathSearchCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[1]");
-        assertXPathSearchCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:field-values('title') descending return $doc/title/string())[1]");
-        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[2]");
+        assertXPathSearchCount(1, 5, "xs:string", "1,10,100,11,12", "string-join(subsequence((for $doc in //doc order by $doc/lux:key('title') return $doc/title/string()),1,5),',')");
+        assertXPathSearchCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[1]");
+        assertXPathSearchCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:key('title') descending return $doc/title/string())[1]");
+        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[2]");
         // test providing the sort criteria directly to lux:search()
-        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in lux:search('<test:cat', (), 'title') return $doc/doc/title/string())[2]");
+        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in lux:search('<test:cat', 'title') return $doc/doc/title/string())[2]");
         // TODO: implement wildcard element query to test for existence of some element
         // assertXPathSearchCount(1, 2, "xs:string", "10", "lux:search('<doc:*', (), 'title')[2]");
     }
@@ -108,6 +108,7 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testCollectionFunction () throws Exception {
         assertXPathSearchCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
+        assertXPathSearchCount (1, 102, "xs:anyURI", "lux:/test100", "collection()[last()]/base-uri()");
         assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())");
     }
     
@@ -122,8 +123,6 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test
     public void testCreateCore () throws Exception {
-        // TODO: this still doesn't reproduce the problem we saw when running solr embedded in the lux app server
-        // where we tried to create a new core interactively using the admin screen, and then the app server stopped responding
         SolrQuery q = new SolrQuery();
         q.setRequestHandler(coreContainer.getAdminPath());
         q.setParam ("action", "CREATE");
@@ -143,21 +142,21 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test
     public void testAppServer () throws Exception {
         SolrQuery q = new SolrQuery();
-        q.setRequestHandler("/lux");
+        q.setRequestHandler("/testapp");
     	q.setParam("test-param", "test-value");
     	q.setParam("wt", "lux");
-    	q.setParam("lux.content-type", "text/xml");
+    	q.setParam("lux.contentType", "text/xml");
     	QueryResponse resp = solr.query(q);
     	assertEquals ("query was blank", resp.getResponse().get("xpath-error"));
-    	q.setParam("lux.xquery", "file:src/test/resources/lux/solr/echo.xqy");
+    	q.setParam("lux.xquery", "lux/solr/echo.xqy");
     	resp = solr.query(q);
     	NamedList<?> xpathResults = (NamedList<?>) resp.getResponse().get("xpath-results"); 
-    	assertEquals ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+    	assertEquals (
     			"<http><params>" +
     			"<param name=\"wt\"><value>lux</value></param>" +
-    			"<param name=\"qt\"><value>/lux</value></param>" +
+    			"<param name=\"qt\"><value>/testapp</value></param>" +
     			"<param name=\"test-param\"><value>test-value</value></param>" +
-    			"<param name=\"wt\"><value>lux</value></param></params></http>", 
+    			"<param name=\"wt\"><value>lux</value></param></params><context-path/></http>", 
     			xpathResults.get("document").toString());
     	assertTrue(resp.getResults().isEmpty());
     }
@@ -196,6 +195,16 @@ public class LuxSolrTest extends BaseSolrTest {
         
     }
     
+
+    @Test
+    public void testMultiNodeConstruct () throws Exception {
+        String xml = "document {comment { ' this is a test ' }, \n"
+                + "processing-instruction test-pi { 'this is a test pi' },\n"
+                + "element test { 'Hello, World' } }";
+        String output = "<!-- this is a test --><?test-pi this is a test pi?><test>Hello, World</test>"; 
+        assertQuery (output, "document", xml);
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

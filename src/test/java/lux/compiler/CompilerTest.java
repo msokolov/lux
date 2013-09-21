@@ -100,6 +100,11 @@ public class CompilerTest {
     public void testTypedNodes() throws Exception {
         assertQuery ("2", "typed-nodes.xqy");
     }
+
+    @Test
+    public void testTypedNodeFail() throws Exception {
+        assertQueryError ("Required item type of result of function local:maybe-foo() is element('':foo); supplied value has item type element('':bar)", "typed-node-fail.xqy");
+    }
     
     @Test 
     public void testExtVarType() throws Exception {
@@ -244,6 +249,12 @@ public class CompilerTest {
         assertQuery ("falsetruefalsetruefalsetrue", "ReturnExpr018.xqy", context);
     }
     
+    @Test
+    public void testDateSubtraction() throws Exception {
+        //assertQuery ("xs:dayTimeDuration(\"P26997D\")", "day-time.xqy");
+        assertQuery ("P26997D", "day-time.xqy");
+    }
+    
     private void assertQuery (String result, String queryFileName) throws IOException, LuxException, URISyntaxException {
         assertQuery (result, queryFileName, null);
     }
@@ -272,7 +283,7 @@ public class CompilerTest {
         URL url = classLoader.getResource ("lux/compiler/" + queryFileName);
         String query = IOUtils.toString(url.openStream(), "utf-8");
         URI uri = url.toURI();
-        XQueryExecutable cq = compiler.compile(query, null, uri);
+        XQueryExecutable cq = compiler.compile(query, null, uri, null);
         // System.err.println (compiler.getLastOptimized());
         return cq;
     }

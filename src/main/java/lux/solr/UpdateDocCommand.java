@@ -2,6 +2,7 @@ package lux.solr;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.util.BytesRef;
+import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.core.SolrCore;
@@ -17,12 +18,13 @@ public class UpdateDocCommand extends AddUpdateCommand {
         super(makeSolrRequest(core));
         this.doc = doc;
         setIndexedId(new BytesRef(uri));
-        // TODO: create SolrDoc containing unique key value (for hashing)
-        /*
-        overwriteCommitted = true;
-        overwritePending = true;
-        allowDups = false;
-        */
+    }
+    
+    public UpdateDocCommand(SolrQueryRequest req, SolrInputDocument sdoc, Document doc, String uri) {
+        super(req);
+        this.doc = doc;
+        this.solrDoc = sdoc;
+        setIndexedId(new BytesRef(uri));
     }
     
     @Override

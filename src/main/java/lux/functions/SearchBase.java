@@ -35,15 +35,12 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
 
     @Override
     public int getMaximumNumberOfArguments() {
-        return 2;
+        return 1;
     }
 
     @Override
     public SequenceType[] getArgumentTypes() {
-        return new SequenceType[] { 
-                SequenceType.SINGLE_ITEM,
-                SequenceType.OPTIONAL_INTEGER
-                };
+        return new SequenceType[] { SequenceType.SINGLE_ITEM };
     }
 
     @Override
@@ -57,34 +54,27 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     }
     
     @SuppressWarnings("rawtypes")
-    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, long facts, String sortCriteria, int start) throws XPathException;
+    protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, String sortCriteria, int start) throws XPathException;
 
     public class SearchCall extends NamespaceAwareFunctionCall {
         
         @SuppressWarnings("rawtypes") @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
-            if (arguments.length == 0 || arguments.length > 4) {
+            if (arguments.length == 0 || arguments.length > 3) {
                 throw new XPathException ("wrong number of arguments for " + getFunctionQName());
             }
             Item queryArg = arguments[0].head();
-            long facts=0;
-            if (arguments.length >= 2) {
-                IntegerValue num  = (IntegerValue) arguments[1].head();
-                if (num != null) {
-                    facts = num.longValue();
-                }
-            }
             String sortCriteria = null;
-            if (arguments.length >= 3) {
-                Item sortArg = arguments[2].head();
+            if (arguments.length >= 2) {
+                Item sortArg = arguments[1].head();
                 if (sortArg != null) {
                     sortCriteria = sortArg.getStringValue();
                 }
             }
             int start = 1;
-            if (arguments.length >= 4) {
-                Item startArg = arguments[3].head();
+            if (arguments.length >= 3) {
+                Item startArg = arguments[2].head();
                 if (startArg != null) {
                     IntegerValue integerValue = (IntegerValue)startArg;
                     if (integerValue.longValue() > Integer.MAX_VALUE) {
@@ -103,11 +93,9 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
-            return new LazySequence(iterate (query, eval, facts, sortCriteria, start));
+            return new LazySequence(iterate (query, eval, sortCriteria, start));
         }
 
     }
-    
-    
   
 }

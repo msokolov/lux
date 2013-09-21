@@ -15,6 +15,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.xml.DOMUtils;
 import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.queryparser.xml.QueryBuilder;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -39,7 +40,7 @@ public class NodeQueryBuilder implements QueryBuilder {
     public Query getQuery(Element e) throws ParserException {
         String fieldName=DOMUtils.getAttributeWithInheritanceOrFail(e,"fieldName");
         String qName=DOMUtils.getAttributeWithInheritance(e,"qName");
-        String text=DOMUtils.getNonBlankTextOrFail(e);
+        String text=DOMUtils.getText(e);
         float boost = DOMUtils.getAttribute (e, "boost", 1.0f);
         return parseQueryTerm(fieldName, qName, text, boost);
     }
@@ -130,7 +131,10 @@ public class NodeQueryBuilder implements QueryBuilder {
         } else {
             if (term == null) {
                 // if the analyzer threw all the text away, or it was empty to begin with
-                q = new WildcardQuery (new Term(fieldName, termText.toString() + "*"));
+                // q = new WildcardQuery (new Term(fieldName, termText.toString() + "*"));
+            	// q = new TermQuery (new Term(fieldName, termText.toString()));
+            	// TODO: if we have value indexes, we could search explicitly for the empty value
+            	return new MatchAllDocsQuery();
             }
             else if (isWild) {
                 q = new WildcardQuery(term);

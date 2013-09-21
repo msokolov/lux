@@ -1,0 +1,11 @@
+Subject: [ANN] Lux XML search engine
+
+I'm pleased to announce the first public release of Lux (version 0.9.1), an XML search engine embedding Saxon 9 and Lucene/Solr 4.  Lux offers many features found in XML databases: persistent XML storage, index-optimized querying, an interactive query window, and some application support features - it is possible to build applications written exclusively in XQuery and XSLT using Lux. I call it a search engine, though, to indicate this is not a replacement for a full-featured database. I hope existing Solr/Lucene users dealing with XML documents will find Lux adds a unique and compelling query capability.
+
+Lux grew out of the need to provide an XML-aware query capability for documents stored in and indexed by Solr/Lucene; it is currently in use at my workplace, both as an ad hoc query tool for developers and as part of our content ingestion process. We believe that others may find it useful as well, and are providing it under an open source license in the hope that wider exposure will lead to a longer, healthier life.
+
+Lux is built on a production quality code base.  It has been rigorously tested, and all known critical defects have been resolved. However, it is in a fairly early stage of development (it's about a year old).  This means there are features users will miss.  Some of them we already know about (see the Plans page on the web site or the issue tracker), but the relatively narrow distribution so far means there are certainly more to be found.  I encourage you to report these on the mailing list (see below): this is a unique opportunity to influence the direction Lux takes in the future.
+
+Lots more information, including downloads and setup instructions, is available at http://luxdb.org, source code is at http://github.com/msokolov/lux, issues are tracked at http://issues.luxdb.org/, and please let us know what you think using the (brand new) mailing list at luxdb@luxdb.org, archived at https://groups.google.com/forum/?fromgroups#!topic/luxdb. (Please note the mailing list is hosted as a google group, which makes it a bit tricky to sign up with a non-gmail address, but you can.  To do that, just tack your email address on to this link: http://groups.google.com/group/luxdb/boxsubscribe?email=)
+
+-Mike Sokolov

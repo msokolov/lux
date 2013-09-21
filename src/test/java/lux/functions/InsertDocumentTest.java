@@ -15,7 +15,7 @@ public class InsertDocumentTest extends XQueryTest {
     @BeforeClass
     public static void setup() throws Exception {
         RAMDirectory dir = new RAMDirectory();
-        indexTestSupport = new IndexTestSupport(new XmlIndexer(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT), dir);
+        indexTestSupport = new IndexTestSupport(new XmlIndexer(INDEX_PATHS|INDEX_FULLTEXT|STORE_DOCUMENT|STORE_TINY_BINARY), dir);
         evaluator = indexTestSupport.makeEvaluator();
     }
     
@@ -56,3 +56,7 @@ public class InsertDocumentTest extends XQueryTest {
     }
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

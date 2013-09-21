@@ -43,6 +43,9 @@ public class FieldValues implements Iterable<IndexableField> {
         @Override
         public IndexableField next() {
             Object value = iter.next();
+            if (value instanceof IndexableField) {
+                return (IndexableField) value;
+            }
             switch (field.getType()) {
             case BYTES:
                 if (value instanceof byte[]) {

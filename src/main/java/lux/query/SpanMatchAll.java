@@ -35,10 +35,22 @@ public class SpanMatchAll extends ParseableQuery {
 
     @Override
     public String toQueryString(String defaultField, IndexConfiguration config) {
-        if (config.isOption(IndexConfiguration.INDEX_EACH_PATH)) {
-            return "*:*";
-        }
-        return config.getFieldName(IndexConfiguration.PATH) + ":\\{\\}";
+    	return "*:*";
+    }
+    
+    @Override
+    public boolean isSpanCompatible() {
+    	return true;
+    }
+    
+    @Override
+    public boolean isMatchAll() {
+        return true;
+    }
+
+    @Override
+    public boolean equals(ParseableQuery other) {
+        return other == this;
     }
 
 }

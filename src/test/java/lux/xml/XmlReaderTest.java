@@ -8,10 +8,10 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Arrays;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.stream.StreamSource;
 
+import lux.index.MutableString;
 import lux.index.QNameTextMapper;
 import lux.index.XPathValueMapper;
 import lux.index.XmlPathMapper;
@@ -97,15 +97,15 @@ public class XmlReaderTest {
 
     private void assertPathMapperKeys(XmlPathMapper pathMapper) {
         // elements
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("title")));
-        assertEquals (Integer.valueOf(2), pathMapper.getEltQNameCounts().get(new QName("entities")));
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("test")));
+        assertEquals (1, pathMapper.getEltQNameCount("title"));
+        assertEquals (2, pathMapper.getEltQNameCount("entities"));
+        assertEquals (1, pathMapper.getEltQNameCount("test"));
         // attributes
-        assertEquals (Integer.valueOf(2), pathMapper.getAttQNameCounts().get(new QName("id")));
+        assertEquals (2, pathMapper.getAttQNameCount("id"));
         // paths
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test @id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test entities @id"));
-        assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{} test entities"));
+        assertEquals (1, pathMapper.getPathCount("{} test @id"));
+        assertEquals (1, pathMapper.getPathCount("{} test entities @id"));
+        assertEquals (2, pathMapper.getPathCount("{} test entities"));
     }
     
     @Test 
@@ -115,16 +115,16 @@ public class XmlReaderTest {
         handleDocument(pathMapper, "lux/reader-test-ns.xml");
 
         // elements
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("http://lux.net{test}", "title")));
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("http://lux.net/#test", "entities")));
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("#2", "entities")));
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("http://lux.net/#test", "test")));
+        assertEquals (1, pathMapper.getEltQNameCount("title{http://lux.net{test}}"));
+        assertEquals (1, pathMapper.getEltQNameCount("entities{http://lux.net/#test}"));
+        assertEquals (1, pathMapper.getEltQNameCount("entities{#2}"));
+        assertEquals (1, pathMapper.getEltQNameCount("test{http://lux.net/#test}"));
         // attributes
-        assertEquals (Integer.valueOf(2), pathMapper.getAttQNameCounts().get(new QName("id")));
+        assertEquals (2, pathMapper.getAttQNameCount("id"));
         // paths
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http://lux.net/#test} @id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http://lux.net/#test} entities{#2} @id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test{http://lux.net/#test} entities{http://lux.net/#test}"));
+        assertEquals (1, pathMapper.getPathCount("{} test{http://lux.net/#test} @id"));
+        assertEquals (1, pathMapper.getPathCount("{} test{http://lux.net/#test} entities{#2} @id"));
+        assertEquals (1, pathMapper.getPathCount("{} test{http://lux.net/#test} entities{http://lux.net/#test}"));
     }
     
     @Test 
@@ -135,16 +135,16 @@ public class XmlReaderTest {
         handleDocument(pathMapper, "lux/reader-test-ns.xml");
 
         // elements
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("x:title")));
-        assertEquals (Integer.valueOf(2), pathMapper.getEltQNameCounts().get(new QName("entities")));
-        assertEquals (Integer.valueOf(1), pathMapper.getEltQNameCounts().get(new QName("test")));
+        assertEquals (1, pathMapper.getEltQNameCount("x:title"));
+        assertEquals (2, pathMapper.getEltQNameCount("entities"));
+        assertEquals (1, pathMapper.getEltQNameCount("test"));
         // attributes
-        assertEquals (Integer.valueOf(2), pathMapper.getAttQNameCounts().get(new QName("id")));
+        assertEquals (2, pathMapper.getAttQNameCount("id"));
         // paths
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test @id"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test entities @id"));
-        assertEquals (Integer.valueOf(2), pathMapper.getPathCounts().get("{} test entities"));
-        assertEquals (Integer.valueOf(1), pathMapper.getPathCounts().get("{} test x:title"));
+        assertEquals (1, pathMapper.getPathCount("{} test @id"));
+        assertEquals (1, pathMapper.getPathCount("{} test entities @id"));
+        assertEquals (2, pathMapper.getPathCount("{} test entities"));
+        assertEquals (1, pathMapper.getPathCount("{} test x:title"));
     }
     
     @Test
@@ -211,15 +211,15 @@ public class XmlReaderTest {
         assertEquals ("@att", mapper.getNames().get(1));
         // test attribute value normalization
         assertEquals ("< \t .>", mapper.getValues().get(1));
-        assertEquals ("title", mapper.getNames().get(2));
+        assertEquals (new MutableString("title"), mapper.getNames().get(2));
         assertEquals ("TEST", mapper.getValues().get(2));
-        assertEquals ("entities", mapper.getNames().get(3));
+        assertEquals (new MutableString("entities"), mapper.getNames().get(3));
         assertEquals ("&>0", mapper.getValues().get(3));
-        assertEquals ("token", mapper.getNames().get(6));
+        assertEquals (new MutableString("token"), mapper.getNames().get(6));
         assertEquals ("        12345678", mapper.getValues().get(6));
-        assertEquals ("test", mapper.getNames().get(7));
+        assertEquals (new MutableString("test"), mapper.getNames().get(7));
         assertEquals ("This is some markup <that> is escaped The end.", 
-                normalize (mapper.getValues().get(7)));
+                normalize (mapper.getValues().get(7).toString()));
     }
     
     public final String INPUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\r\n" +

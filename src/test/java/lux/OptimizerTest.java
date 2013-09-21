@@ -5,7 +5,8 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 
-import lux.BasicQueryTest.SearchExtractor;
+import lux.support.MockQuery;
+import lux.support.SearchExtractor;
 import lux.xpath.AbstractExpression;
 import lux.xquery.XQuery;
 
@@ -31,15 +32,15 @@ public class OptimizerTest {
     }
 
     private void assertQuery(Query expectedOpt, String query) throws ParserException {
-        // TODO Auto-generated method stub
         Compiler compiler = eval.getCompiler();
-        compiler.compile(query);
-        XQuery optimizedQuery = compiler.getLastOptimized();
+        QueryStats stats = new QueryStats();
+        compiler.compile(query, null, null, stats);
+        XQuery optimizedQuery = stats.optimizedXQuery;
         AbstractExpression optimizedExpression = optimizedQuery.getBody();
         SearchExtractor extractor = new SearchExtractor();
         optimizedExpression.accept(extractor);
-        String xmlQueryString = extractor.queries.get(0).toString();
-        Query opt = eval.getXmlQueryParser().parse(new ByteArrayInputStream(xmlQueryString.getBytes())); 
+        MockQuery q = extractor.getQueries().get(0);
+        Query opt = eval.getXmlQueryParser().parse(new ByteArrayInputStream(q.getQuery().toString().getBytes())); 
         assertEquals (expectedOpt, opt);
     }
 }

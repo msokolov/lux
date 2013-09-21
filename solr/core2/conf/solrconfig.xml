@@ -1611,6 +1611,8 @@
           <str name="uriFieldName">lux_uri</str>
         </lst>
         <str name="strip-namespaces">no</str>
+       <processor class="solr.DistributedUpdateProcessorFactory" />
+       <!-- must come *after* the DistributingUpdateProcessor for transaction log replay to work -->
        <processor class="lux.solr.LuxUpdateProcessorFactory" />
        <processor class="solr.LogUpdateProcessorFactory" />
        <processor class="solr.RunUpdateProcessorFactory" />

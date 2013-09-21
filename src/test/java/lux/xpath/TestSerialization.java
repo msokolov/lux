@@ -1,7 +1,3 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package lux.xpath;
 
 import static org.junit.Assert.assertEquals;
@@ -108,7 +104,7 @@ public class TestSerialization {
     }
     
     @Test public void testDotToString () {
-        assertEquals (".", Dot.getInstance().toString());
+        assertEquals (".", new Dot().toString());
     }
     
     @Test public void testFunctionCallToString() {
@@ -128,13 +124,13 @@ public class TestSerialization {
     }
     
     @Test public void testSubsequenceToString () {
-        Subsequence subseq = new Subsequence(Dot.getInstance(), LiteralExpression.ONE);
+        Subsequence subseq = new Subsequence(new Dot(), LiteralExpression.ONE);
         assertEquals ("subsequence(.,1)", subseq.toString());
-        subseq = new Subsequence(Dot.getInstance(), LiteralExpression.ONE, new LiteralExpression(10));
+        subseq = new Subsequence(new Dot(), LiteralExpression.ONE, new LiteralExpression(10));
         assertEquals ("subsequence(.,1,10)", subseq.toString());
-        subseq = new Subsequence(Dot.getInstance(), FunCall.LastExpression, LiteralExpression.ONE);
+        subseq = new Subsequence(new Dot(), FunCall.LastExpression, LiteralExpression.ONE);
         assertEquals (".[fn:last()]", subseq.toString());
-        subseq = new Subsequence(Dot.getInstance(), LiteralExpression.ONE, LiteralExpression.ONE);
+        subseq = new Subsequence(new Dot(), LiteralExpression.ONE, LiteralExpression.ONE);
         assertEquals (".[1]", subseq.toString());
     }
     
@@ -168,12 +164,12 @@ public class TestSerialization {
     
     @Test public void testElementToString () {
         ElementConstructor e = new ElementConstructor (FOO_QNAME);
-        assertEquals ("<foo />", e.toString());
+        assertEquals ("<foo/>", e.toString());
         e = new ElementConstructor (FOO_QNAME, new Namespace [] {
                 new Namespace ("", "default"),
                 new Namespace ("lux", "lux")
         }, new ElementConstructor (FOO_QNAME));
-        assertEquals ("<foo xmlns=\"default\" xmlns:lux=\"lux\"><foo /></foo>", e.toString());   
+        assertEquals ("<foo xmlns=\"default\" xmlns:lux=\"lux\"><foo/></foo>", e.toString());   
     }
     
     @Test public void testLiteralExpressionToString () {

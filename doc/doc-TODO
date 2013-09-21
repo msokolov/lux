@@ -1,0 +1,17 @@
+* Client APIs
+** REST API 
+This needs work: add an example, show in detail what the protocol is.  How
+do I: insert a document, run a query, get the results out and discuss
+turning them into XML objects.
+*** Add links Python, Ruby bindings
+** Java Client API
+How do I: insert a document, run a query, get the results out and discuss
+turning them into XML objects.
+** Transactional model
+
+* SEO
+Make sure we link to github and back, and to the maven repo if/when we get
+stuff in there.  
+* Balisage paper
+link to Balisage site if they accept it; or publish here
+* test on phone

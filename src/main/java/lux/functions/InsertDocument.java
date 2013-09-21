@@ -58,7 +58,11 @@ public class InsertDocument extends ExtensionFunctionDefinition {
             String uri = arguments[0].head().getStringValue();
             NodeInfo node = (NodeInfo) arguments[1].head();
             Evaluator eval = SearchBase.getEvaluator(context);
-            eval.getDocWriter().write(node, uri);
+            try {
+                eval.getDocWriter().write(node, uri);
+            } catch (Exception e) {
+                throw new XPathException ("An error occurred while inserting a document at uri: " + uri, e);
+            }
             return EmptySequence.getInstance();
         }
         

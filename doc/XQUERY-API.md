@@ -1,4 +1,16 @@
+---
+layout: page
+title: Lux XQuery API
+group: api
+pos: 2
+---
 # Lux XQuery function library #
+
+## XPath function library ##
+
+The W3C standard [XPath function
+library](http://www.w3.org/TR/xpath-functions/) available in Lux, as
+implemented by Saxon, includes a large number of useful functions.
 
 ## Indexing and Search functions ##
 
@@ -10,7 +22,7 @@ http://luxdb.net namespace, which we always reference using the prefix
 
 commits pending updates to the index and blocks until the operation is complete.
 
-### `function lux:count($query as item(), $hints as xs:int?) as xs:integer` ###
+### `function lux:count($query as item()) as xs:integer` ###
 
 counts the number of results of a search.  It is faster and uses less memory 
 than calling fn:count() on the search results themselves because it does not need to load
@@ -22,7 +34,7 @@ $query formats.
 deletes a document from the index at the given uri.  NOTE: if the $uri document
 is empty, *all documents* will be deleted.  This "feature" will be removed in a later release.
 
-### `function lux:exists($query as item(), $hints as xs:int?) as xs:integer` ###
+### `function lux:exists($query as item()) as xs:integer` ###
 
 tests whether a search has any results.  It is faster and uses less memory
 than calling fn:exists() on the search results themselves because it does
@@ -38,7 +50,7 @@ order, starting with the first term that is >= the starting value.
 If the $field-name argument is empty, the terms are drawn from the default
 field defined by the IndexConfiguration, generally the XmlTextField.
 
-### `function lux:field-values($field-name as xs:string, $node as node()) as xs:anyAtomicItem*` ###
+### `function lux:key($field-name as xs:string, $node as node()) as xs:anyAtomicItem*` ###
 
 accepts the name of a lucene field and optionally, a node, and returns any
 stored value(s) of the field for the document containing the node, or the
@@ -47,24 +59,29 @@ context item if no node is specified.
 If the node (or context item) is not a node drawn from the index, lux:field
 will return the empty sequence.
 
-Order by expressions containing lux:field-values calls are subject to
+#### Optimized Sorting 
+
+XQuery "order by" expressions containing lux:key calls are subject to
 special optimization and are often able to be implemented by
-index-optimized sorting in Lucene (only for string-valued fields).  An
-error results if an attempt is made to sort by a field that has multiple
+index-optimized sorting in Lucene.  Without this optimization, sorting can
+be very inefficient due to the need to load the full contents of every
+document into memory and evaluate the sort expression for each document.
+
+An error results if an attempt is made to sort by a field that has multiple
 values for any of the documents in the sequence.
 
-### `lux:highlight($query as item(), $node as node())` ###
+### `lux:highlight($node as node()?, $query as item(), $tag as item()?)` ###
 
-returns the given node with text matching the query surrounded by B tags.
-The query may be a string or an element/document of the same types
-supported by lux:search.
+returns the given node with text matching the query surrounded by the named
+tag (or a B tag if no name is supplied).  The query may be a string or an
+xml node of the same types supported by lux:search.
 
 ### `function lux:insert-document($uri as xs:string, $node as node()) as empty-sequence()` ###
 
 inserts a document to the index at the given uri. lux:commit() must be called for the result
 to become visible.
 
-### `function lux:search($query as item(), $hints as xs:integer, $sort as xs:string?) as document-node()*` ###
+### `function lux:search($query as item(), $sort as xs:string?) as document-node()*` ###
 
 executes a Lucene search query and returns documents.  If the query
 argument is an element or document node, it is parsed using the
@@ -73,7 +90,7 @@ LuxQueryParser.
 
 A Lucene query parser extension that supports query terms of the form:
 
-  [node]<[nodeName]:[term]
+  {%raw%}{node}<{nodeName}:{term}{%endraw%}
 
 In which nodeName is either empty, an unqualified element name, a prefixed
 element name (ie a QName), or a QName prefixed with "@", indicating an
@@ -123,7 +140,7 @@ the directory in a system-dependent order. The directory itself and its
 parent are not included in the list.  If $path is not a directory, or does
 not exist, or an I/O error occurs, an empty list is returned.
 
-## EXPath support ##
+## EXPath package support ##
 
 If the system property org.expath.pkg.saxon.repo is defined, Compiler
 attempts to initialize the EXPath package manager support for Saxon, using
@@ -133,9 +150,31 @@ This provides a mechanism for loading additional function library support,
 such as the HTTP client and Zip file modules, which are provided with the
 Lux app server.
 
-## XPath 2.0 function library ##
+## EXPath Request/Response Protocol
 
-The W3C standard (XPath function
-library)[http://www.w3.org/TR/xpath-functions/] available in Lux, as
-implemented by Saxon, includes a large number of useful functions.
+Lux provides full support for HTTP request/response handling within XQuery
+by implementing the [EXPath webapp specification
+draft](http://expath.org/spec/webapp/20130401)'s request/response protocol.
+Note that the specification is a draft and may change; we intend to track
+those changes here.  Also, there are currently a few variations from the
+specification in Lux's implementation:
 
+1. The HTTP request is made available as the value of the global variable $http:input (see example below), as in the specification, but is not also provided as the evaluation context for the query.  The evaluation context for queries in Lux remains the entire collection of documents.
+2. Multipart requests are supported, providing access to the parsed request body (or bodies), but binary request parts are not supported, and multipart *responses* are not yet supported.
+3. The EXPath specification requires that applications provide an http:response element.  Lux relaxes this requirement: if a query results in a single http:response element, then it is treated as an EXPath response: the attributes and content of this element control the content type, status code, HTTP headers, etc.  Otherwise, the current Lux behavior persists, and serialization is based on the lux.contentType parameter.
+
+Note that this protocol subsumes the functions provided by the $lux:http
+variable, which should now be considered as deprecated, and will eventually
+be phased out in a future release.
+
+The specification has a number of examples and a thorough explanation of
+how this protocol functions, but here is a simple example that echoes back its
+input:
+
+        declare namespace http="http://expath.org/ns/webapp";
+        declare variable $http:input external;
+        <http:response status="200" message="OK">
+          <http:body content-type="application/xml">{
+              $http:input/http:request
+          }</http:body>
+        </http:response>

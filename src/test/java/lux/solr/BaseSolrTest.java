@@ -2,6 +2,7 @@ package lux.solr;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,6 +40,10 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
+        File lock = new File (solrHome + "/collection1/data/index/write.lock");
+        if (lock.exists()) {
+            lock.delete();
+        }
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
         String defaultCoreName = coreContainer.getDefaultCoreName();
@@ -58,6 +63,8 @@ public abstract class BaseSolrTest {
             solr.rollback();
         } catch (SolrException e) {
         }
+        // This is needed to avoid LockObtainedException when running the whole test suite,
+        // but it sometimes causes warnings about too many close() calls ... 
         while (solrCore != null && ! solrCore.isClosed()) {
             solrCore.close();
         }
@@ -79,6 +86,8 @@ public abstract class BaseSolrTest {
         if (result == null) {
             assertEquals (0, actual.size());
         } else {
+            assertNotNull ("no result", actual);
+            assertEquals ("no result", 1, actual.size());
             assertEquals (result, actual.getVal(0));
         }
         if (type != null) {
@@ -130,11 +139,11 @@ public abstract class BaseSolrTest {
         if (type.equals("error")) {
             assertEquals(value, error);
         } else {
-            long docMatches = rsp.getResults().getNumFound();
             assertNull("got unexpected error: " + error, error);
-            assertEquals(docCount, docMatches);
-            assertEquals(count, results.size());
-            assertEquals(type, results.getName(0));
+            long docMatches = rsp.getResults().getNumFound();
+            assertEquals("unexpected number of documents retrieved", docCount, docMatches);
+            assertEquals("unexpected result count", count, results.size());
+            assertEquals("unexpected result type", type, results.getName(0));
             String returnValue = results.getVal(0).toString();
             if (returnValue.startsWith("<")) {
                 // assume the returned value is an element - hack to avoid real

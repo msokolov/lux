@@ -9,7 +9,9 @@ import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
+import lux.xml.tinybin.TinyBinary;
 import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.tree.tiny.TinyNodeImpl;
 
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -19,6 +21,9 @@ import org.apache.solr.update.CommitUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.UpdateHandler;
 
+/**
+ * Used to write documents from within XQuery (lux:insert) and XSLT (xsl:result-document)
+ */
 public class SolrDocWriter implements DocWriter {
 
     private final SolrCore core;
@@ -38,7 +43,7 @@ public class SolrDocWriter implements DocWriter {
     public void write(NodeInfo node, String uri) {
         XmlIndexer indexer = null;
         try {
-            indexer = xqueryComponent.checkoutXmlIndexer();
+            indexer = xqueryComponent.getSolrIndexConfig().checkoutXmlIndexer();
             try {
                 indexer.index (node, uri);
             } catch (XMLStreamException e) {
@@ -47,18 +52,18 @@ public class SolrDocWriter implements DocWriter {
             UpdateDocCommand cmd = new UpdateDocCommand(core, indexer.createLuceneDocument(), uri);
             UpdateHandler updateHandler = core.getUpdateHandler();
             if (updateHandler.getUpdateLog() != null) {
-                // Create a serialized version of the document for saving to the transaction log
-                // FIXME: find a more efficient serialization scheme
-                // at the very least use a Serializer to preserve white space etc
-                // better still use TinyBinary (or PTree)
-                // TODO: test replay from the log - how?
-                String xml = node.toString();
+                // Create a version of the document for saving to the transaction log
                 SolrInputDocument solrDoc = new SolrInputDocument();
                 solrDoc.addField(uriFieldName, uri);
-                solrDoc.addField(xmlFieldName, xml);
+                if (node instanceof TinyNodeImpl) {
+                    TinyBinary tinybin = new TinyBinary(((TinyNodeImpl)node).getTree());
+                    solrDoc.addField(xmlFieldName, tinybin.getByteBuffer());
+                } else {
+                    String xml = node.toString();
+                    solrDoc.addField(xmlFieldName, xml);
+                }
                 cmd.solrDoc = solrDoc;
             }
-            
             try {
                 updateHandler.addDoc(cmd);
             } catch (IOException e) {
@@ -66,7 +71,7 @@ public class SolrDocWriter implements DocWriter {
             }
         } finally {
             if (indexer != null) {
-                xqueryComponent.returnXmlIndexer(indexer);
+                xqueryComponent.getSolrIndexConfig().returnXmlIndexer(indexer);
             }
         }
     }
@@ -101,9 +106,6 @@ public class SolrDocWriter implements DocWriter {
         }
     }
 
-    /**
-     * @return
-     */
     private SolrQueryRequestBase makeSolrQueryRequest() {
         return new SolrQueryRequestBase(core, new ModifiableSolrParams()) {};
     }

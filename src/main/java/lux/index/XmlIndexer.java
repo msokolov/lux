@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import javax.xml.stream.XMLStreamException;
 
+import lux.Compiler;
 import lux.exception.LuxException;
 import lux.index.field.FieldDefinition;
 import lux.xml.OffsetDocBuilder;
@@ -75,6 +76,7 @@ public class XmlIndexer {
     private XmlPathMapper pathMapper;
     private String uri;
     private byte[] documentBytes;
+    private XdmNode xdmNode;
     private HashMap<String,XPathExecutable> xpathCache;
     
     /**
@@ -105,6 +107,20 @@ public class XmlIndexer {
     }
     
     /**
+     * Make a new instance with the given options and Compiler. The runtime uses this to
+     * index documents from its nodes directly, without serializing and parsing.
+     * @param indexConfig the index configuration options to use 
+     * @param compiler the indexer will make XPath that is compatible with this compiler 
+     */
+    public XmlIndexer(IndexConfiguration indexConfig, Compiler compiler) {
+        this.configuration = indexConfig;
+        xpathCache = new HashMap<String, XPathExecutable>();
+    	this.processor = compiler.getProcessor();
+    	this.compiler = null;
+    	init ();
+	}
+
+	/**
      * initialize the indexer; an extension of the constructors.  Creates subsidiary objects
      * required for indexing based on the index options.
      */
@@ -124,8 +140,10 @@ public class XmlIndexer {
             initDocBuilder();
         }
         if (isOption (STORE_DOCUMENT)) {
-            serializer = new Serializer();
-            xmlReader.addHandler(serializer);
+        	if (! isOption(STORE_TINY_BINARY)) {
+        		serializer = new Serializer();
+        		xmlReader.addHandler(serializer);
+        	}
         }
         if (isOption (BUILD_DOCUMENT) && saxonBuilder == null) {
             initDocBuilder();
@@ -211,6 +229,7 @@ public class XmlIndexer {
         reset();
         this.uri = inputUri;
         xmlReader.read (xml);
+        xdmNode = getBuilderNode();
     }
     
     /**
@@ -224,24 +243,30 @@ public class XmlIndexer {
         reset();
         this.uri = inputUri;
         xmlReader.read (xml);
+        xdmNode = getBuilderNode();
     }
 
     /**
      * Index the document read from the String, caching field values to be
      * written to the Lucene index.
-     * @param doc the document, as a String
+     * @param doc the document (or element) as a Saxon NodeInfo
      * @param inputUri the uri to assign to the document
      * @throws XMLStreamException 
      */
     public void index (NodeInfo doc, String inputUri) throws XMLStreamException {
         reset();
         this.uri = inputUri;
-        xmlReader.read(doc);
+        // We'd like to use the input node directly and skip building a copy of it,
+        // however the input may be an element, and not a document, and we need a document.
+        xmlReader.read (doc);
+        xdmNode = getBuilderNode();
     }
 
     /** Clear out internal storage cached by #index when indexing a document */
     public void reset() {
         xmlReader.reset();
+        uri = null;
+        xdmNode = null;
         documentBytes = null;
     }
 
@@ -271,6 +296,10 @@ public class XmlIndexer {
      * This will be null if the indexer options don't require the generation of an XdmNode.
      */
     public XdmNode getXdmNode () {
+    	return xdmNode;
+    }
+    
+    private XdmNode getBuilderNode () {
         if (saxonBuilder == null) {
             return null;
         }
@@ -409,7 +438,7 @@ public class XmlIndexer {
     }
 
     /** Primarily for internal use.
-     * @return the {@link SaxonDocBuilder} used by the indexer to construct XdmNodes.
+     * @return the {@link XmlPathMapper} used by the indexer to gather node paths.
      */
     public XmlPathMapper getPathMapper() {
         return pathMapper;

@@ -344,7 +344,7 @@
         <charFilter class="org.apache.solr.analysis.HTMLStripCharFilterFactory"/>
         <!-- include="{http://www.ifactory.com/press}body" -->
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
+        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>o
         <filter class="solr.KStemFilterFactory" />
       </analyzer>
       <analyzer type="query">
@@ -558,6 +558,7 @@
     <!-- since fields of this type are by default not stored or indexed,
          any data added to them will be ignored outright.  --> 
     <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" /> 
+
     <!-- This point type indexes the coordinates as separate fields (subFields)
       If subFieldType is defined, it references a type, and a dynamic field
       definition is created matching *___<typename>.  Alternately, if 

@@ -21,8 +21,8 @@ public class SearchTestNS extends BaseSearchTest {
     
     @BeforeClass
     public static void setup() throws Exception {
-        setup ("lux/reader-test-ns.xml", "lux/reader-test.xml");
-        // index.printAllTerms();
+        setup ("lux/reader-test-ns.xml", "lux/reader-test.xml", "lux/empty-nodes.xml");
+        index.printAllTerms();
     }
     
     @Test
@@ -70,9 +70,10 @@ public class SearchTestNS extends BaseSearchTest {
     public void testAttributePredicateInPath1() throws Exception {
         // we were generating an incorrect query when an attribute appears in the middle of a path
         // in a predicate: in any case we don't optimize around the variable as we should
+    	// Note: the $id variable is magically bound to 'test' by assertSearch...
         assertSearch ("TEST", "declare variable $id as xs:string external; " +
                 "let $test := collection()/test[@id=$id] " +
-                "return $test/title/string()", null, 1);
+                "return $test/title/string()", null, 2);
     }
     
     @Test
@@ -95,14 +96,14 @@ public class SearchTestNS extends BaseSearchTest {
                 new SpanTermQuery(new Term("lux_path", "title"))
         }, 0, true);
         results = index.searcher.search(q2, 10);
-        assertEquals (1, results.totalHits);
+        assertEquals (2, results.totalHits);
         SpanNearQuery q3 = new SpanNearQuery (new SpanQuery[] {
                 new SpanTermQuery(new Term("lux_path", "{}")),
                 new SpanTermQuery(new Term("lux_path", "test")),
                 new SpanTermQuery(new Term("lux_path", "@id"))
         }, 0, true);
         results = index.searcher.search(q3, 10);
-        assertEquals (1, results.totalHits);
+        assertEquals (2, results.totalHits);
         BooleanQuery bq = new BooleanQuery ();
         BooleanQuery bqinner = new BooleanQuery ();
         bqinner.add(q1, Occur.MUST);
@@ -112,12 +113,19 @@ public class SearchTestNS extends BaseSearchTest {
         results = index.searcher.search(bq, 10);
         assertEquals (1, results.totalHits);
         assertEquals (6, results.scoreDocs[0].doc);
-        assertSearch ("1", "count (/test)", null, 1);
-        assertSearch ("1", "count (/test/@id)", null, 1);
-        assertSearch ("test", "/test/@id/string()", null, 1);
+        assertSearch ("2", "count (/test)", null, 2);
+        assertSearch ("2", "count (/test/@id)", null, 2);
+        assertSearch ("test", "/test/@id/string()", null, 2);
         // The actual test:
         // this was throwing a parsing exception
         assertSearch ("1", "count (/test[@id='test']/title)", null, 1);
+    }    
+
+    @Test
+    public void testSearchEmpty () throws Exception {
+    	// These queries aren't minimal since we don't index empty nodes
+    	assertSearch ("1", "count(//test[@id=''])", null, 2);
+    	assertSearch ("1", "count(/title[.=''])", null, 2);
     }
 
 }

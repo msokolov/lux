@@ -1,0 +1,414 @@
+<test-suite>
+  <meta>
+    <title>Path Occurrence Test Queries</title>
+    <setup>
+      <keys>
+        <!-- define XPath indexes as key elements -->
+        <key>//a</key>
+      </keys>
+    </setup>
+  </meta>
+  <test-cases>
+    <include file="base-cases.xml" />
+  </test-cases>
+  <queries>
+    <query id="ATTR">
+      <RegexpQuery fieldName="lux_path">@attr(/.*)?</RegexpQuery>
+    </query>
+    <query id="SCENE">
+      <RegexpQuery fieldName="lux_path">SCENE(/.*)?</RegexpQuery>
+    </query>
+    <query id="ACT_SCENE">
+      <RegexpQuery fieldName="lux_path">SCENE/ACT(/.*)?</RegexpQuery>
+    </query>
+    <query id="ACT_SCENE1">
+      <RegexpQuery fieldName="lux_path">SCENE/ACT</RegexpQuery>
+    </query>
+    <query id="ACT_SCENE2">
+      <RegexpQuery fieldName="lux_path">SCENE/.*ACT</RegexpQuery>
+    </query>
+    <query id="ACT_SCENE3">
+      <RegexpQuery fieldName="lux_path">SCENE/.*ACT(/.*)?</RegexpQuery>
+    </query>
+    <query id="ACT_AND_SCENE">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_CONTENT">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SCENE/ACT(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_CONTENT1">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_CONTENT1_rev">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_CONTENT1_revb">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="SCENE">content</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_OR_SCENE">
+      <BooleanQuery>
+        <Clause occurs="should">
+          <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
+        </Clause>
+        <Clause occurs="should">
+          <RegexpQuery fieldName="lux_path">SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_SPEECH">
+      <BooleanQuery>
+        <Clause occurs="should">
+          <RegexpQuery fieldName="lux_path">TITLE/ACT(/.*)?</RegexpQuery>
+        </Clause>
+        <Clause occurs="should">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+        <Clause occurs="should">
+          <RegexpQuery fieldName="lux_path">TITLE/SPEECH(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="LINE">
+      <RegexpQuery fieldName="lux_path">LINE</RegexpQuery>
+    </query>
+    <query id="ACT">
+      <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
+    </query>
+    <query id="ACT1">
+      <RegexpQuery fieldName="lux_path">ACT</RegexpQuery>
+    </query>
+    <query id="ACT2">
+      <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
+    </query>
+    <query id="ACT_CONTENT">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="ACT">content</QNameTextQuery>
+          </Clause><Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">ACT(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_CONTENT1">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="ACT">content</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_ID">
+      <RegexpQuery fieldName="lux_path">@id/ACT(/.*)?</RegexpQuery>
+    </query>
+    <query id="ACT_ID_123">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="id">123</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@id/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="ACT_SCENE_ID_123">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="id">123</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@id/SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="PLAY_ACT_OR_PERSONAE_TITLE">
+      <RegexpQuery fieldName="lux_path">TITLE/(ACT|PERSONAE)/PLAY</RegexpQuery>
+    </query>
+    <query id="TITLE">
+      <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+    </query>
+    <query id="MATCH_ALL_Q">
+      <MatchAllDocsQuery/>
+    </query>
+    <query id="PATH_MATCH_ALL_Q">
+      <MatchAllDocsQuery/>
+    </query>
+    <query id="AND">
+      <RegexpQuery fieldName="lux_path">AND(/.*)?</RegexpQuery>
+    </query>
+    <query id="LUX_FOO">
+      <RegexpQuery fieldName="lux_path">foo\{http\:\/\/luxdb.net\}(/.*)?</RegexpQuery>
+    </query>
+    <query id="SCENE_3">
+      <BooleanQuery> 
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SPEECH/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">STAGEDIR/SCENE</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="SCENE_4">
+      <BooleanQuery> 
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SPEECH/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">STAGEDIR/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">MISC/SCENE</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query><query id="SCENE_scene">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>    
+    </query>
+    <query id="SCENE_actnum">
+      <BooleanQuery> 
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@act/SCENE</RegexpQuery>
+        </Clause>
+      </BooleanQuery>    
+    </query>
+    <query id="SCENE_act_scene_SPEECH_SPEAKER"> 
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">5</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@act/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">SPEAKER/SPEECH/SCENE</RegexpQuery>
+        </Clause>
+      </BooleanQuery>    
+    </query>
+    <query id="boolean-predicate-0">
+      <RegexpQuery fieldName="lux_path">(@scene|@act)/SCENE(/.*)?</RegexpQuery>
+    </query>
+    <query id="boolean-predicate-1">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <BooleanQuery>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+            </Clause>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">2</QNameTextQuery>
+            </Clause>
+          </BooleanQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="boolean-predicate-2">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <BooleanQuery>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+            </Clause>
+            <Clause occurs="should">
+              <QNameTextQuery fieldName="lux_att_text" qName="scene">2</QNameTextQuery>
+            </Clause>
+          </BooleanQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="boolean-predicate-3">
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@act/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="string-range-desc">
+      <!-- //SCENE[TITLE="SCENE I.  A churchyard."] -->
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="TITLE">SCENE I.  A churchyard.</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE(/.*)?</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="string-range-path">
+      <!-- /ACT/SCENE[TITLE="SCENE I.  A churchyard."] -->
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="TITLE">SCENE I.  A churchyard.</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="string-range-dot">
+      <!-- /ACT/SCENE/TITLE[.="SCENE I.  A churchyard."] -->
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_elt_text" qName="TITLE">SCENE I.  A churchyard.</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="range-inequality">
+      <!-- //TITLE[. &lt; "B"] -->
+      <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+    </query>
+    <query id="range-type-mismatch">
+      <!-- //TITLE[. &lt; 10] -->
+      <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+    </query>
+    <query id="range-inequality-2">
+      <!-- //TITLE[. >= "SCENE V"] -->
+      <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+    </query>
+    <query id="range-dot-unequal">
+      <!-- //TITLE[. != "SCENE I.  A churchyard."] -->
+      <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+    </query>
+    <query id="range-lt">
+      <!-- //TITLE[. lt "B"] -->
+      <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+    </query>
+    <query id="range-ne">
+      <!-- //TITLE[. ne "SCENE I.  A churchyard."] -->
+      <RegexpQuery fieldName="lux_path">TITLE(/.*)?</RegexpQuery>
+    </query>
+    <query id="range-pred-1">
+      <!-- (/SCENE[@scene=2]/TITLE)[1] -->
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">2</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="range-pred-2">
+      <!-- /SCENE[@act=1][@scene>=1]/TITLE -->
+      <!--
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">1</QNameTextQuery>
+        </Clause>
+        -->
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@act/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">TITLE/SCENE</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+    <query id="range-pred-3">
+      <!-- count(/ACT[@act=1][SCENE/@scene=3]) -->
+      <BooleanQuery>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="act">1</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@act/ACT</RegexpQuery>
+        </Clause>
+        <Clause occurs="must">
+          <QNameTextQuery fieldName="lux_att_text" qName="scene">3</QNameTextQuery>
+        </Clause>
+        <Clause occurs="must">
+          <RegexpQuery fieldName="lux_path">@scene/SCENE/ACT</RegexpQuery>
+        </Clause>
+      </BooleanQuery>
+    </query>
+  </queries>
+</test-suite>
+<!--
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
