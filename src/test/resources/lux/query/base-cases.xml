@@ -359,7 +359,7 @@
     </test-case>
     <test-case name="path-predicate-combine-2">
       <query>//ACT[not(empty(.//SCENE))]</query>
-      <expect><query id="ACT" /></expect>
+      <expect><query id="ACT_SCENE3" /></expect>
     </test-case>
     <test-case name="path-predicate-combine-3">
       <query>/SCENE[@act="5"][@scene="1"]/SPEECH[1]/SPEAKER</query>
