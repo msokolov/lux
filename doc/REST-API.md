@@ -126,7 +126,7 @@ format are loaded into memory much more quickly than XML documents.
 When `str[@name='strip-namespaces']`='yes', all namespace information is
 stripped from documents loaded into the index.
 
-## XQueryComponent ##
+## /xquery - XQueryComponent ##
 
 The XQueryComponent (by default at path: `/xquery`) evaluates XQuery
 expressions.  
@@ -209,7 +209,7 @@ error:
 
         <str name="xpath-error">query was blank</str>
 
-## AppServerComponent ##
+## /lux - AppServerComponent ##
 
 The AppServer component (endpoint: `/lux`) evaluates XQuery read from a
 local file and returns the result (as XML or HTML) as the body of the HTTP

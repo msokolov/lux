@@ -10,48 +10,45 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 
 /**
-   * Used to return results that are sorted in document order, or unordered.
-   */
-  public class DocIterator extends DocIdSetIterator {
+ * Used to return results that are sorted in document order, or unordered.
+ */
+public class DocIterator extends DocIdSetIterator {
       
-      /**
-     * 
-     */
     private final LuxSearcher luxSearcher;
     private final Weight weight;
-      private final boolean ordered;
-      private int nextReader;
-      private int docID;
-      private Scorer scorer;
-      private List<AtomicReaderContext> leaves;
-      private AtomicReaderContext leaf;
+    private final boolean ordered;
+    private int nextReader;
+    private int docID;
+    private Scorer scorer;
+    private List<AtomicReaderContext> leaves;
+    private AtomicReaderContext leaf;
       
-      /**
-       * @param query the lucene query whose results will be iterated
-       * @param ordered whether the docs must be scored in order
+    /**
+     * @param query the lucene query whose results will be iterated
+     * @param ordered whether the docs must be scored in order
      * @param luxSearcher TODO
-       * @throws IOException
-       */
-      DocIterator (LuxSearcher luxSearcher, Query query, boolean ordered) throws IOException {
-          this.luxSearcher = luxSearcher;
-          weight = this.luxSearcher.createNormalizedWeight(query);
-          leaves = this.luxSearcher.getIndexReader().leaves();
-          this.ordered = ordered;
-          nextReader = 0;
-          docID = -1;
-          advanceScorer();
-      }
+     * @throws IOException
+     */
+    DocIterator (LuxSearcher luxSearcher, Query query, boolean ordered) throws IOException {
+        this.luxSearcher = luxSearcher;
+        weight = this.luxSearcher.createNormalizedWeight(query);
+        leaves = this.luxSearcher.getIndexReader().leaves();
+        this.ordered = ordered;
+        nextReader = 0;
+        docID = -1;
+        advanceScorer();
+    }
 
-      private void advanceScorer () throws IOException {
-          while (nextReader < leaves.size()) {
-              leaf = leaves.get(nextReader++);
-              scorer = weight.scorer(leaf, ordered, false, leaf.reader().getLiveDocs()); // NB: arg 3 (topScorer) was 'true' prior to 4.1 upgrade but incorrectly I think??
-              if (scorer != null) {
-                  return;
-              }
-          }
-          scorer = null;
-      }
+    private void advanceScorer () throws IOException {
+        while (nextReader < leaves.size()) {
+            leaf = leaves.get(nextReader++);
+            scorer = weight.scorer(leaf, ordered, false, leaf.reader().getLiveDocs()); // NB: arg 3 (topScorer) was 'true' prior to 4.1 upgrade but incorrectly I think??
+            if (scorer != null) {
+                return;
+            }
+        }
+        scorer = null;
+    }
       
     @Override
     public int docID() {
@@ -89,6 +86,11 @@ import org.apache.lucene.search.Weight;
     
     public AtomicReaderContext getCurrentReaderContext () {
         return leaf;
+    }
+
+    @Override
+    public long cost() {
+        return 0;
     }
  
 }

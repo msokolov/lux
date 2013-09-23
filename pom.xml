@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.luxdb</groupId>
   <artifactId>lux</artifactId>
-  <version>0.10.5-SNAPSHOT</version>
+  <version>0.11.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -39,7 +39,7 @@
     <dependency>
         <groupId>net.sf.saxon</groupId>
         <artifactId>Saxon-HE</artifactId>
-        <version>9.4.0.7</version>
+        <version>9.5.1-2</version>
         <exclusions>
         	<exclusion>
         		<artifactId>xom</artifactId>
@@ -74,13 +74,13 @@
     <dependency>
       <groupId>org.apache.solr</groupId>
       <artifactId>solr-test-framework</artifactId>
-      <version>4.2.1</version>
+      <version>4.4.0</version>
       <scope>test</scope>
     </dependency>
   	<dependency>
   		<groupId>org.apache.solr</groupId>
   		<artifactId>solr-core</artifactId>
-  		<version>4.2.1</version>
+  		<version>4.4.0</version>
   		<exclusions>
   			<exclusion>
   				<artifactId>wstx-asl</artifactId>
@@ -125,6 +125,16 @@
       <artifactId>xercesImpl</artifactId>
       <version>2.9.1</version>
     </dependency>
+    <dependency>
+      <groupId>nu.validator.htmlparser</groupId>
+      <artifactId>htmlparser</artifactId>
+      <version>1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.1</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -156,12 +166,15 @@
           </excludes>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.5.1</version>
-        <configuration>
-          <instrumentation>
+     <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>cobertura-maven-plugin</artifactId>
+      <version>2.5.1</version>
+      <configuration>
+        <check>
+            <lineRate>90</lineRate>
+        </check>
+        <instrumentation>
             <excludes>
               <exclude>lux/xqts/**/*.class</exclude>
               <exclude>lux/xml/EventToStaxBridge*.class</exclude>
@@ -208,7 +221,7 @@
         <artifactId>jetty-maven-plugin</artifactId>
         <version>8.1.8.v20121106</version>
         <configuration>
-          <scanIntervalSeconds>10</scanIntervalSeconds>
+          <!--  <scanIntervalSeconds>10</scanIntervalSeconds> -->
           <stopPort>8000</stopPort>
           <stopKey>STOP</stopKey>
           <!--

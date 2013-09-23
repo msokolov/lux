@@ -9,14 +9,11 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
-import net.sf.saxon.value.Value;
 
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.MultiFields;
@@ -77,18 +74,16 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
     class FieldTermsCall extends ExtensionFunctionCall {
 
-        @SuppressWarnings("rawtypes")
         @Override
-        public SequenceIterator<? extends Item> call(SequenceIterator<? extends Item>[] arguments, XPathContext context)
-                throws XPathException {
+        public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             String fieldName = null, start = "";
             if (arguments.length > 0) {
-                Item<?> arg0 = arguments[0].next();
+                Item arg0 = arguments[0].head();
                 if (arg0 != null) {
                 	fieldName = arg0.getStringValue();
                 }
                 if (arguments.length > 1) {
-                    Item<?> arg1 = arguments[1].next();
+                    Item arg1 = arguments[1].head();
                     start = arg1 == null ? "" : arg1.getStringValue();
                 }
             }
@@ -97,10 +92,10 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                 if (fieldName == null) {
                     fieldName = eval.getCompiler().getIndexConfiguration().getDefaultFieldName();
                     if (fieldName == null) {
-                        return Value.asIterator(EmptySequence.getInstance());
+                        return EmptySequence.getInstance();
                     }
                 }
-                return new TermsIterator(eval, new Term(fieldName, start));
+                return new LazySequence(new TermsIterator(eval, new Term(fieldName, start)));
             } catch (IOException e) {
                 throw new XPathException("failed getting terms from field " + fieldName, e);
             }
@@ -171,7 +166,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
 
         @Override
         public AtomicValue current() {
-            return new net.sf.saxon.value.StringValue(current.toString());
+            return new net.sf.saxon.value.StringValue(current);
         }
 
         @Override

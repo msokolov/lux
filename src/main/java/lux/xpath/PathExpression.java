@@ -6,7 +6,6 @@ package lux.xpath;
 
 import lux.xquery.VariableContext;
 
-
 /**
  * A path expression represents two expressions joined with a "/"
  * @author sokolov
@@ -91,7 +90,6 @@ public class PathExpression extends AbstractExpression {
         }
         return subs[0].getLastContextStep();
     }
-    
 
     /**
      * @return the context in which a variable in the LHS of the path is bound, if any

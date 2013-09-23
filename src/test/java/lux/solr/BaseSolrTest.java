@@ -2,6 +2,7 @@ package lux.solr;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,8 +40,12 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
-        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
-        coreContainer = initializer.initialize();
+        File lock = new File (solrHome + "/collection1/data/index/write.lock");
+        if (lock.exists()) {
+            lock.delete();
+        }
+        coreContainer = new CoreContainer (solrHome);
+        coreContainer.load();
         String defaultCoreName = coreContainer.getDefaultCoreName();
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
         solrCore = coreContainer.getCore(defaultCoreName);
@@ -55,7 +60,9 @@ public abstract class BaseSolrTest {
     @AfterClass
     public static void tearDown() throws Exception {
         try {
-            solr.rollback();
+            if (solr != null) {
+                solr.rollback();
+            }
         } catch (SolrException e) {
         }
         // This is needed to avoid LockObtainedException when running the whole test suite,

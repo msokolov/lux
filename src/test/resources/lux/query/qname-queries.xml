@@ -67,27 +67,22 @@
       <Clause occurs="should"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause>
     </BooleanQuery>
   </query>
-  <query id="ACT_SCENE_SPEECH">
+  <query id="multi-element-path-0.1">
     <BooleanQuery>
-      <Clause occurs="should">
+      <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      <Clause occurs="must">
         <BooleanQuery>
-          <Clause occurs="must"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
-          <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
-        </BooleanQuery>
-      </Clause>
-      <Clause occurs="should">
-        <BooleanQuery>
-          <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause> 
-          <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
-        </BooleanQuery>
-      </Clause>
-      <Clause occurs="should">
-        <BooleanQuery>
-          <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause> 
-          <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+          <Clause occurs="should"><TermQuery fieldName="lux_elt_name">ACT</TermQuery></Clause>
+          <Clause occurs="should"><TermQuery fieldName="lux_elt_name">SCENE</TermQuery></Clause> 
         </BooleanQuery>
       </Clause>
     </BooleanQuery>
+  </query>
+  <query id="multi-element-path-0.2">
+     <BooleanQuery>
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">SPEECH</TermQuery></Clause> 
+        <Clause occurs="must"><TermQuery fieldName="lux_elt_name">TITLE</TermQuery></Clause>
+      </BooleanQuery>
   </query>
   <query id="LINE">
     <TermQuery fieldName="lux_elt_name">LINE</TermQuery>

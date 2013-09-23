@@ -9,7 +9,6 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -17,6 +16,11 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+
+import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.request.SolrRequestHandler;
+import org.apache.solr.response.SolrQueryResponse;
+import org.apache.solr.servlet.SolrDispatchFilter;
 
 /**
  * rewrite URLs of the form:
@@ -28,13 +32,14 @@ import javax.servlet.http.HttpServletRequestWrapper;
  * [/core-name]/[appserver]?query-string&lux.xquery=[/xquery-path]
  * 
  */
-public class LuxDispatchFilter implements Filter {
+public class LuxDispatchFilter extends SolrDispatchFilter {
     
     private String baseURI;
     private String[] baseURIArr;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+        super.init(filterConfig);
         baseURI = filterConfig.getInitParameter("base-uri");
         URI uri;
         if (baseURI == null) {
@@ -129,13 +134,20 @@ public class LuxDispatchFilter implements Filter {
                     // set the modified query string and parameter map on a request wrapper
                     wrapper.setQueryString(qs);
                     wrapper.setParameterMap(params);
-
-                    chain.doFilter(wrapper, response);
+                    wrapper.setAttribute("httpServletResponse", response);
+                    super.doFilter(wrapper, response, chain);
                     return;
                 }
             }
         }
-        chain.doFilter(request, response);
+        super.doFilter(request, response, chain);
+    }
+    
+    @Override
+    protected void execute( HttpServletRequest req, SolrRequestHandler handler, SolrQueryRequest sreq, SolrQueryResponse rsp) {
+        // Make the raw request available to the XQueryComponent and LuxResponseWriter
+        sreq.getContext().put( "httpServletRequest", req);
+        super.execute(req, handler, sreq, rsp);
     }
     
     private String appendToQueryString (String qs, String param, String value) throws UnsupportedEncodingException {
@@ -148,11 +160,6 @@ public class LuxDispatchFilter implements Filter {
     	
     }
 
-    @Override
-    public void destroy() {
-
-    }
-    
     public class Request extends HttpServletRequestWrapper {
         
         private Map<String,String[]> parameterMap;

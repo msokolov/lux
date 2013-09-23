@@ -224,11 +224,11 @@ public class BenchmarkRunner extends RunnerBase {
         public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
             File dir = new File(href);
             String[] listing = dir.list();
-            Item<?> [] uris = new Item[listing.length];
+            Item [] uris = new Item[listing.length];
             for (int i = 0; i < listing.length; i++) {
                 uris[i] = new AnyURIValue(href + '/' + listing[i]);
             }
-            return new ArrayIterator<Item<?>>(uris);
+            return new ArrayIterator<Item>(uris);
         }
         
     }

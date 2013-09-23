@@ -2,6 +2,7 @@ package lux.functions;
 
 import org.apache.lucene.search.Query;
 import org.apache.solr.handler.component.ResponseBuilder;
+import org.slf4j.LoggerFactory;
 
 import lux.Evaluator;
 import lux.QueryContext;
@@ -11,7 +12,9 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.LazySequence;
 import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
@@ -31,10 +34,8 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         super();
     }
 
-    @SuppressWarnings("rawtypes")
     protected abstract SequenceIterator<? extends Item> iterate(final Query query, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
 
-    @SuppressWarnings("rawtypes")
     protected abstract SequenceIterator<? extends Item> iterateDistributed(final String query, final QueryParser queryParser, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
 
     @Override
@@ -65,23 +66,22 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     
     public class SearchCall extends NamespaceAwareFunctionCall {
         
-        @SuppressWarnings("rawtypes") @Override
-        public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
+        public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
             if (arguments.length == 0 || arguments.length > 3) {
                 throw new XPathException ("wrong number of arguments for " + getFunctionQName());
             }
-            Item queryArg = arguments[0].next();
+            Item queryArg = arguments[0].head();
             String sortCriteria = null;
             if (arguments.length >= 2) {
-                Item sortArg = arguments[1].next();
+                Item sortArg = arguments[1].head();
                 if (sortArg != null) {
                     sortCriteria = sortArg.getStringValue();
                 }
             }
             int start = 1;
             if (arguments.length >= 3) {
-                Item startArg = arguments[2].next();
+                Item startArg = arguments[2].head();
                 if (startArg != null) {
                     IntegerValue integerValue = (IntegerValue)startArg;
                     if (integerValue.longValue() > Integer.MAX_VALUE) {
@@ -106,12 +106,14 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                         qp = QueryParser.CLASSIC;
                         qstr = queryArg.getStringValue();
                     }
-                    return iterateDistributed (qstr, qp, eval, sortCriteria, start);
+                    return new LazySequence(iterateDistributed (qstr, qp, eval, sortCriteria, start));
                 }
             }
-            return iterate (parseQuery(queryArg, eval), eval, sortCriteria, start);
+            Query query = parseQuery(queryArg, eval);
+            LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
+            return new LazySequence(iterate (query, eval, sortCriteria, start));
         }
-        
+
     }
   
 }

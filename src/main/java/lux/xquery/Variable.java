@@ -51,10 +51,6 @@ public class Variable extends AbstractExpression {
         return false;
     }
 
-    public void setName(QName name2) {
-        name = name2;
-    }
-
     public void setValue(AbstractExpression value) {
         this.value = value;
     }
@@ -80,17 +76,19 @@ public class Variable extends AbstractExpression {
     }
 
     /**
-     * @return the binding context (for or let clause, or global definition) of this variable.
-     * Will be null if the variable represents a function argument.
+     * @return the binding context (for or let clause, or global
+     * definition) of this variable.  Will be null if the variable
+     * represents a function argument.
      */
-	@Override
+    @Override
     public VariableContext getBindingContext() {
-		return context;
-	}
+        return context;
+    }
 
-	public void setBindingContext(VariableContext context) {
-		this.context = context;
-	}
+    public void setBindingContext(VariableContext context) {
+        this.context = context;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

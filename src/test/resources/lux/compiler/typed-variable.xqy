@@ -26,5 +26,5 @@ declare function local:fibonacci ($n as xs:int)
 };
 
 let $x as xs:int := xs:int(4)
-let $y as xs:int := local:add-ints-unsafe ((xs:int(1), xs:int(1)))
+let $y as xs:int := local:add-ints ((xs:int(1), xs:int(1)))
 return local:fibonacci (xs:int($x + $y))

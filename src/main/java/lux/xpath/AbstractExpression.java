@@ -2,7 +2,6 @@ package lux.xpath;
 
 import lux.xquery.VariableContext;
 
-
 /**
  * An abstract XPath or XQuery expression.
  * 
@@ -71,9 +70,9 @@ public abstract class AbstractExpression implements Visitable {
     }
 
     /** Each subclass must implement the toString(StringBuilder) method by
-     * rendering itself as a syntatically valid XPath/XQuery expression in
+     * appending itself as a syntatically valid XPath/XQuery expression in
      * the given buffer.
-     * @param buf
+     * @param buf the buffer to append to
      */
     public abstract void toString(StringBuilder buf);
 

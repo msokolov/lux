@@ -64,6 +64,11 @@ class TopDocsIterator extends DocIdSetIterator {
         return NO_MORE_DOCS;
     }
 
+    @Override
+    public long cost() {
+        return 0;
+    }
+
 }
 
 /*

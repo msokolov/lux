@@ -1,6 +1,7 @@
 package lux;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -107,8 +108,7 @@ public class Evaluator {
     	DirectDocWriter writer = new DirectDocWriter(indexer, indexWriter);
     	Compiler compiler = new Compiler(indexer.getConfiguration());
     	LuxSearcher searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
-    	Evaluator eval = new Evaluator (compiler, searcher, writer);
-    	return eval;
+    	return new Evaluator (compiler, searcher, writer);
     }
     
     /**
@@ -149,7 +149,17 @@ public class Evaluator {
     
     public XdmResultSet evaluate(String query, QueryContext context) {
         errorListener.clear();
-        XQueryExecutable compiledQuery = compiler.compile(query, errorListener, queryStats);
+        XQueryExecutable compiledQuery;
+        if (searcher == null) {
+            // don't optimize the query for use w/indexes when we have none
+            try {
+                compiledQuery = compiler.getXQueryCompiler().compile(query);
+            } catch (SaxonApiException e) {
+                throw new LuxException (e);
+            }
+        } else {
+            compiledQuery = compiler.compile(query, errorListener, queryStats);
+        }
         return evaluate (compiledQuery, context);
     }
     
@@ -180,6 +190,15 @@ public class Evaluator {
         }
         XQueryEvaluator xqueryEvaluator = prepareEvaluation(context, listener, xquery);
         try {
+            listener.setUserData(this);
+            xqueryEvaluator.setErrorListener(listener);
+            xqueryEvaluator.setContextItem((XdmItem) context.getContextItem());
+            if (context.getVariableBindings() != null) {
+                for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
+                    net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
+                    xqueryEvaluator.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
+                }
+            }
             XdmValue value = xqueryEvaluator.evaluate();
             return new XdmResultSet (value);
         } catch (SaxonApiException e) {
@@ -241,6 +260,24 @@ public class Evaluator {
      * @throws LuxException if any error occurs (such as an XML parse error).
      */
     public XdmNode build (Reader xml, String uri) {
+        StreamSource source = new StreamSource(xml);
+        source.setSystemId(uri);
+        try {
+            return builder.build(source);
+        } catch (SaxonApiException e) {
+            throw new LuxException (e);
+        }
+    }
+    
+    /**
+     * Build a document as a Saxon {@link XdmNode}.  The document will be given a generated id outside
+     * the space of ids reserved for indexed documents.
+     * @param xml the document content
+     * @param uri the document uri
+     * @return the constructed document
+     * @throws LuxException if any error occurs (such as an XML parse error).
+     */
+    public XdmNode build (InputStream xml, String uri) {
         StreamSource source = new StreamSource(xml);
         source.setSystemId(uri);
         try {
@@ -319,6 +356,12 @@ public class Evaluator {
             }
             docWriter.write(receiver.dest.getXdmNode().getUnderlyingNode(), receiver.getSystemId());
         }
+
+        @Override
+        public LuxOutputURIResolver newInstance() {
+            // we have no state, so it's OK to return the same instance
+            return this;
+        }
         
     }
     
@@ -352,6 +395,10 @@ public class Evaluator {
 
     public CachingDocReader getDocReader () {
         return docReader;
+    }
+    
+    public DocumentBuilder getDocBuilder () {
+        return builder;
     }
     
     public DocWriter getDocWriter() {
