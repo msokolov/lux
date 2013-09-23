@@ -87,6 +87,11 @@ public class DocIterator extends DocIdSetIterator {
     public AtomicReaderContext getCurrentReaderContext () {
         return leaf;
     }
+
+    @Override
+    public long cost() {
+        return 0;
+    }
  
 }
 

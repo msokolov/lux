@@ -44,8 +44,8 @@ public abstract class BaseSolrTest {
         if (lock.exists()) {
             lock.delete();
         }
-        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
-        coreContainer = initializer.initialize();
+        coreContainer = new CoreContainer (solrHome);
+        coreContainer.load();
         String defaultCoreName = coreContainer.getDefaultCoreName();
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
         solrCore = coreContainer.getCore(defaultCoreName);
@@ -60,7 +60,9 @@ public abstract class BaseSolrTest {
     @AfterClass
     public static void tearDown() throws Exception {
         try {
-            solr.rollback();
+            if (solr != null) {
+                solr.rollback();
+            }
         } catch (SolrException e) {
         }
         // This is needed to avoid LockObtainedException when running the whole test suite,

@@ -21,7 +21,7 @@ public class QNameValueField extends FieldDefinition {
     }
     
     protected QNameValueField () {
-        super ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_41), Store.NO, Type.TOKENS);
+        super ("lux_path", new WhitespaceAnalyzer(Version.LUCENE_44), Store.NO, Type.TOKENS);
     }
     
     @Override
