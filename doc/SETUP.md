@@ -13,7 +13,7 @@ server, as well as how to integrate Lux into an existing Solr installation.
 Lux is distributed as a compiled library which is ready to be dropped into
 an existing Solr installation, and as a complete application server bundle,
 including Solr and all of its dependencies.  The complete source code is
-also available at [GitHub](https://github.com/msokolov/lux).  
+also available at [GitHub](https://github.com/msokolov/lux).
 
 When the library is installed in the context of a Solr installation it
 provides an XQuery REST service.  This will be most useful for those
