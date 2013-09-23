@@ -7,12 +7,30 @@ pos: 5
 
 # New Features
 
-One major improvement in this release is optimization of comparisons
+This release introduces full-featured support for HTTP request/response
+handling within XQuery by implementing the [EXPath webapp specification](http://expath.org/spec/webapp/20130401)'s request/response protocol with a few exceptions.  See the [XQuery API documentation](API.md) for details.
+
+Another major improvement in this release is optimization of comparisons
 between indexed expressions and suitable constants. For example, if an
 int-valued XPath index on `//@counter` is defined, an expression such as
 `//section[@counter > 10]` will be optimized using the index, and rewritten
 as something like: `lux:search('counter:{10 TO *}')//section[@counter >
 10]`.
+
+# Changes in Lux release 0.10.5
+
+1. LUX-66. Provide improved HTTP request/response support: access to POST bodies, request headers, redirect responses, etc.
+
+2. LUX-61. lux:field() now returns values for all Lucene fields, not just those created by lux.
+
+
+# Changes in Lux release 0.10.4
+
+Fixed a memory leak relating to the LuxURIResolver that could lead to
+OutOfMemoryExceptions during periods of intensive use.
+
+1. LUX-51 Bound the amount of memory used by any single request so as to
+prevent OutOfMemory Exceptions.
 
 # Changes in Lux release 0.10.3
 

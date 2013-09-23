@@ -105,7 +105,7 @@
    <copyField source="fulltext_t" dest="fulltext_t_case" />
    <copyField source="fulltext_t" dest="fulltext_t_unstemmed" />
    
-   <field name="title" type="sortkey" indexed="true" stored="true" multiValued="false" xpath="/*/title" />
+   <field name="title" type="sortkey" indexed="true" stored="true" multiValued="false" />
 
    <field name="payloads" type="payloads" indexed="true" stored="true"/>
 

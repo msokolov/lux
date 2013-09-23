@@ -57,6 +57,7 @@ public class Compiler {
     private final boolean isSaxonLicensed;
     private final HashMap<PropEquiv,ArrayList<AbstractExpression>> fieldLeaves;
     private final HashMap<AbstractExpression, XPathField> fieldExpressions;
+    private final HashMap<String,String> namespaceBindings;
     private final PropEquiv tempEquiv;
 
     public enum SearchStrategy {
@@ -88,7 +89,10 @@ public class Compiler {
         Configuration config = processor.getUnderlyingConfiguration();
         config.setDocumentNumberAllocator(new DocIDNumberAllocator());
         config.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
-
+        
+        namespaceBindings = new HashMap<String, String>();
+        namespaceBindings.put ("lux", Evaluator.LUX_NAMESPACE);
+        
         GentleXmlReader parser = new GentleXmlReader();
         config.getParseOptions().setEntityResolver(parser);
         // tried this, but it seems to lead to concurrent usage of the same parser:
@@ -221,6 +225,9 @@ public class Compiler {
 
     public XQueryCompiler getXQueryCompiler () {
         XQueryCompiler xqueryCompiler = processor.newXQueryCompiler();
+        for (java.util.Map.Entry<String, String> binding : namespaceBindings.entrySet()) {
+            xqueryCompiler.declareNamespace(binding.getKey(), binding.getValue());
+        }
         xqueryCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
         return xqueryCompiler;
     }
@@ -305,6 +312,19 @@ public class Compiler {
 
 	public FieldDefinition getFieldForExpr(AbstractExpression fieldExpr) {
 		return fieldExpressions.get(fieldExpr);
+	}
+	
+	/**
+	 * bind the prefix to the namespace, making the binding available to compiled expressions 
+	 * @param prefix if empty, the default namespace is bound 
+	 * @param namespace if empty or null, any existing binding for the prefix is removed
+	 */
+	public void bindNamespacePrefix (String prefix, String namespace) {
+	    if (StringUtils.isEmpty(namespace)) {
+            namespaceBindings.remove(prefix);
+	    } else {
+            namespaceBindings.put(prefix, namespace);
+	    }
 	}
 	
 	/**

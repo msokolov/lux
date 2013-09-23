@@ -103,7 +103,7 @@ public class CompilerTest {
 
     @Test
     public void testTypedNodeFail() throws Exception {
-        assertQueryError ("Required item type of result of function local:maybe-foo() is element('':foo); supplied value has item type element('':bar)", "typed-node-fail.xqy");
+        assertQueryError ("Required item type of result of function local:maybe-foo() is element(Q{}foo); supplied value has item type element(Q{}bar)", "typed-node-fail.xqy");
     }
     
     @Test 

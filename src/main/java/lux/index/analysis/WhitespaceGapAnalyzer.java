@@ -33,7 +33,7 @@ public final class WhitespaceGapAnalyzer extends Analyzer {
   @Override
   protected TokenStreamComponents createComponents(final String fieldName,
       final Reader reader) {
-    return new TokenStreamComponents(new WhitespaceTokenizer(Version.LUCENE_41, reader));
+    return new TokenStreamComponents(new WhitespaceTokenizer(Version.LUCENE_44, reader));
   }
   
   /**

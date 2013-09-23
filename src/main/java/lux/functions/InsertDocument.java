@@ -5,10 +5,7 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.om.StructuredQName;
+import net.sf.saxon.om.*;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
@@ -56,17 +53,17 @@ public class InsertDocument extends ExtensionFunctionDefinition {
     class InsertDocumentCall extends ExtensionFunctionCall {
 
         @Override
-        public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            String uri = arguments[0].next().getStringValue();
-            NodeInfo node = (NodeInfo) arguments[1].next();
+            String uri = arguments[0].head().getStringValue();
+            NodeInfo node = (NodeInfo) arguments[1].head();
             Evaluator eval = SearchBase.getEvaluator(context);
             try {
                 eval.getDocWriter().write(node, uri);
             } catch (Exception e) {
                 throw new XPathException ("An error occurred while inserting a document at uri: " + uri, e);
             }
-            return EmptySequence.asIterator(EmptySequence.getInstance());
+            return EmptySequence.getInstance();
         }
         
     }

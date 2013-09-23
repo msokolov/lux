@@ -9,12 +9,12 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
+import net.sf.saxon.om.AtomicArray;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.ArrayIterator;
 import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
@@ -88,16 +88,14 @@ public class Key extends ExtensionFunctionDefinition {
 
     @Override
     public ExtensionFunctionCall makeCallExpression() {
-        return new FieldValuesCall();
+        return new KeyCall();
     }
     
-    class FieldValuesCall extends ExtensionFunctionCall {
+    class KeyCall extends ExtensionFunctionCall {
 
-        @SuppressWarnings({ "rawtypes" })
         @Override
-        public SequenceIterator<? extends Item> call(SequenceIterator<? extends Item>[] arguments, XPathContext context)
-                throws XPathException {
-            String fieldName = arguments[0].next().getStringValue();
+        public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
+            String fieldName = arguments[0].head().getStringValue();
             NodeInfo node;
             if (arguments.length == 1) {
                 Item contextItem = context.getContextItem();
@@ -106,21 +104,19 @@ public class Key extends ExtensionFunctionDefinition {
                 }
                 node = (NodeInfo) contextItem;
             } else {
-                node = (NodeInfo) arguments[1].next();
+                node = (NodeInfo) arguments[1].head();
             }
             if (node == null) {
-                return EmptySequence.asIterator(EmptySequence.getInstance());
+                return EmptySequence.getInstance();
             }
             long docID = node.getDocumentNumber();
             Evaluator eval = SearchBase.getEvaluator(context);
             FieldDefinition field = eval.getCompiler().getIndexConfiguration().getField(fieldName);
             if (field == null) {
                 LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-existent field: {}", fieldName);
-                //return EmptySequence.asIterator(EmptySequence.getInstance());
             }
             else if (field.isStored() == Field.Store.NO) {
                 LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-stored field: {}", fieldName);
-                //return EmptySequence.asIterator(EmptySequence.getInstance());
             }
             Document doc ;
             try {
@@ -130,23 +126,23 @@ public class Key extends ExtensionFunctionDefinition {
             }
             if (field == null || field.getType() == FieldDefinition.Type.STRING) {
                 Object[] values = doc.getValues(fieldName);
-            	StringValue[] valueItems = new StringValue[values.length];
-            	for (int i = 0; i < values.length; i++) {
-            		valueItems[i] = new StringValue (values[i].toString());
-            	}
-            	return new ArrayIterator<StringValue>(valueItems);
+                StringValue[] valueItems = new StringValue[values.length];
+                for (int i = 0; i < values.length; i++) {
+                    valueItems[i] = new StringValue (values[i].toString());
+                }
+                return new AtomicArray(valueItems);
             }
             if (field.getType() == FieldDefinition.Type.INT || field.getType() == FieldDefinition.Type.LONG) {
-            	IndexableField [] fieldValues = doc.getFields(fieldName);
-            	Int64Value[] valueItems = new Int64Value[fieldValues.length];
-            	for (int i = 0; i < fieldValues.length; i++) {
-            		valueItems[i] = Int64Value.makeIntegerValue(fieldValues[i].numericValue().longValue());
-            	}
-            	return new ArrayIterator<Int64Value>(valueItems);
+                IndexableField [] fieldValues = doc.getFields(fieldName);
+                Int64Value[] valueItems = new Int64Value[fieldValues.length];
+                for (int i = 0; i < fieldValues.length; i++) {
+                    valueItems[i] = Int64Value.makeIntegerValue(fieldValues[i].numericValue().longValue());
+                }
+                return new AtomicArray(valueItems);
             }
-            return EmptySequence.asIterator(EmptySequence.getInstance());
+            return EmptySequence.getInstance();
         }
-        
+
     }
 
 }

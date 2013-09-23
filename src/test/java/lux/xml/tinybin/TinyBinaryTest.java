@@ -11,6 +11,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import lux.SearchTest;
 import net.sf.saxon.Configuration;
+import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.expr.sort.CodepointCollator;
 import net.sf.saxon.expr.sort.GenericAtomicComparer;
 import net.sf.saxon.functions.DeepEqual;
@@ -19,7 +20,6 @@ import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.SingletonIterator;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.commons.io.IOUtils;
@@ -126,19 +126,18 @@ public class TinyBinaryTest {
         TinyDocumentImpl tinyDoc = copy.getTinyDocument(config);
         // for debugging:
         // processor.newSerializer(System.out).serializeNode(new XdmNode(tinyDoc));
-        assertTrue (docpath + " was not preserved by TinyBinary roundtrip",
-                DeepEqual.deepEquals(
-                SingletonIterator.makeIterator(tinyDoc),
-                SingletonIterator.makeIterator(doc.getUnderlyingNode()),
-                new GenericAtomicComparer(CodepointCollator.getInstance(),
-                        config.getConversionContext()),
-                config,
-                DeepEqual.INCLUDE_PREFIXES |
-                DeepEqual.EXCLUDE_WHITESPACE_TEXT_NODES |
-                    DeepEqual.INCLUDE_COMMENTS |
-                    DeepEqual.COMPARE_STRING_VALUES |
-                    DeepEqual.INCLUDE_PROCESSING_INSTRUCTIONS));
-    	
+        XPathContext context = config.getConversionContext();
+        boolean equals = DeepEqual.deepEquals
+            (tinyDoc.iterate(), 
+             doc.getUnderlyingNode().iterate(),
+             new GenericAtomicComparer (CodepointCollator.getInstance(), context),
+             context,
+             DeepEqual.INCLUDE_PREFIXES |
+             DeepEqual.EXCLUDE_WHITESPACE_TEXT_NODES |
+             DeepEqual.INCLUDE_COMMENTS |
+             DeepEqual.COMPARE_STRING_VALUES |
+             DeepEqual.INCLUDE_PROCESSING_INSTRUCTIONS);
+        assertTrue (docpath + " was not preserved by TinyBinary roundtrip", equals);
     }
     
     private void assertRoundTrip (String docpath, String charsetName)

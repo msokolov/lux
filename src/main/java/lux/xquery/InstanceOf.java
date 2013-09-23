@@ -37,4 +37,5 @@ public class InstanceOf extends AbstractExpression {
     public VariableContext getBindingContext () {
         return subs[0].getBindingContext();
     }
+
 }

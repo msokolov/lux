@@ -1,4 +1,5 @@
 .svn
 target/
 *~
-
+.idea
+lux.iml
