@@ -246,7 +246,7 @@ store, you can use Lux to do that without needing Solr.
 
 In these cases, you would embed Lux in your application by placing the Lux
 jar file (and its dependencies) on your classpath; then you could make use
-of its Java API.
+of its [Java API](JAVA-API.md).
 
 ## EXPath Package Manager
 

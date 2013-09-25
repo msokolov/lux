@@ -1,3 +1,20 @@
+* EXPath app server implementation
+see http://expath.org/spec/webapp/20130401
+
+Implement Request, Response, but not the webapp packaging
+
+Always return the body as an xs:base64Binary, and allow the application to
+convert as needed; provide lux:parse(), lux:string(binary, character-set)
+
+Pass the request as $web:input, as in the spec, but do *not* supply the
+request as the context.
+
+Check the query for a binding of $web:input and/or $lux:http and only
+create as needed.
+
+For Response impl, allow other sequences to be returned, but if a
+web:response is returned, then invoke the processing described in the spec.
+
 * tiny binary
 In order to distinguish "regular" binary documents from XML binary documents, we can:
 *** add a content-type field
