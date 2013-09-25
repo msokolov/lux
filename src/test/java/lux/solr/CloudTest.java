@@ -76,7 +76,26 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         // some tests that rely on document identity and ordering:
         query("qt", "/xquery", "q", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'mercy')])");        
         query("qt", "/xquery", "q", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))");
+        
+        // testing doc():
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-4')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-10')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439)");
+        
+        // lux:key():
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-4')/lux:key('lux_uri')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-10')/lux:key('lux_uri')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-10')/lux:key('title')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439)/lux:key('doctype_s')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439)/lux:key('title')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439)/lux:key('nonexistent')");
 
+        // lux:field-terms()
+        query("qt", "/xquery", "q", "subsequence(lux:field-terms('title'), 1, 20)");
+        query("qt", "/xquery", "q", "subsequence(lux:field-terms('title'), 200, 300)");
+        query("qt", "/xquery", "q", "subsequence(lux:field-terms('title', 'M'), 1, 10)");
+        query("qt", "/xquery", "q", "subsequence(lux:field-terms('title', 'M'), 100, 30)");
+        query("qt", "/xquery", "q", "lux:field-terms('doctype_s')");
     }
 
 }

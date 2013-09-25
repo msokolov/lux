@@ -138,7 +138,7 @@ public class CachingDocReader {
      * warning is logged and an empty binary document created.
      * 
      * @param docID The Solr/Lucene docid; or a shard/docid combo under Solr Cloud
-     * @param uri The uri of the document to create
+     * @param uri The uri path (no scheme) of the document to create
      * @param xml The contents of the document, if an XML document
      * @param bytes The contents of the document
      * @return a new document made from the arguments

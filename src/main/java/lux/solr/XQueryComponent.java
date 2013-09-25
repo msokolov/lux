@@ -111,6 +111,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     private SolrCore core;
 
     private int resultByteSize;
+    
+    // In theory this is per-request state, but changes infrequently, so we just grab it as it flies by?
+    private String[] shards;
 
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
@@ -273,6 +276,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             // This is a distributed request; pass in the ResponseBuilder so it will be
             // available to a subquery.
             context.setResponseBuilder(rb);
+            // also capture the current set of shards 
+            shards = rb.shards;
         }
         String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
         if (xqueryPath != null) {
@@ -800,9 +805,17 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     protected net.sf.saxon.s9api.QName qnameFor (String localName) {
         return new net.sf.saxon.s9api.QName (localName);
     }
+    
+    public SolrCore getCore () {
+        return core;
+    }
 
     public SearchHandler getSearchHandler() {
         return searchHandler;
+    }
+    
+    public String[] getCurrentShards() {
+        return shards;
     }
 
     private String xmlEscape(String value) {

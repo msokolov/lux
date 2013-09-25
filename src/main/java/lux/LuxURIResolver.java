@@ -2,7 +2,6 @@ package lux;
 
 import java.io.IOException;
 
-import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 
@@ -15,9 +14,8 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.TermQuery;
 
-public class LuxURIResolver implements URIResolver {
+public class LuxURIResolver extends BaseURIResolver {
 
-    private final URIResolver systemURIResolver;
     private final LuxSearcher searcher;
     private final CachingDocReader docReader;
     private final String uriFieldName;
@@ -26,7 +24,7 @@ public class LuxURIResolver implements URIResolver {
      * @param evaluator
      */
     LuxURIResolver(URIResolver systemURIResolver, LuxSearcher searcher, CachingDocReader docReader, String uriFieldName) {
-        this.systemURIResolver = systemURIResolver;
+        super (systemURIResolver);
         this.searcher = searcher;
         this.docReader = docReader;
         this.uriFieldName = uriFieldName;
@@ -43,39 +41,17 @@ public class LuxURIResolver implements URIResolver {
      * thrown by Lucene.
      */
     @Override
-    public Source resolve(String href, String base) throws TransformerException {
-        boolean isFile;
-        String path = href;
-        if (href.matches("^\\w+:.*$")) {
-            isFile = href.startsWith("file:");
-            if (isFile) {
-                path = href.substring(5);
-            } else if (href.startsWith("lux:/")) {
-                path = href.substring(5);
-            }
-        } else {
-            // relative url, look at base
-            if (base != null) {
-                isFile = base.startsWith("file:");
-            } else {
-                isFile = false;
-            }
-        }
-        if (isFile) {
-            return systemURIResolver.resolve (path, base);
-        }
+    public XdmNode getDocument (String path) throws TransformerException {
         if (searcher == null) {
             throw new IllegalStateException ("Attempted search, but no searcher was provided");
         }
-        path = path.replace('\\', '/');
         try {
             DocIterator disi = searcher.search(new TermQuery(new Term(uriFieldName, path)));
             int docID = disi.nextDoc();
             if (docID == DocIdSetIterator.NO_MORE_DOCS) {
-                throw new NotFoundException(href);
+                throw new NotFoundException(path);
             }
-            XdmNode doc = docReader.get(docID, disi.getCurrentReaderContext());
-            return doc.asSource(); 
+            return docReader.get(docID, disi.getCurrentReaderContext());
         } catch (IOException e) {
             throw new TransformerException(e);
         }

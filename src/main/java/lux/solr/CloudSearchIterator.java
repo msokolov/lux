@@ -125,8 +125,8 @@ public class CloudSearchIterator extends SearchIteratorBase {
         if (sortCriteria != null) {
             addSortParam (params, sortSpec);
         }
-        SolrQueryRequest req = new CloudQueryRequest(origRB.req.getCore(), params, sortSpec);
         XQueryComponent xqueryComponent = ((SolrQueryContext)eval.getQueryContext()).getQueryComponent();
+        SolrQueryRequest req = new CloudQueryRequest(xqueryComponent.getCore(), params, sortSpec);
         response = new SolrQueryResponse();
         xqueryComponent.getSearchHandler().handleRequest(req, response);
         SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
