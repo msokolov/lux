@@ -13,19 +13,19 @@ The Lux app server bundle is a complete server bundle, including Jetty.  It
 does require a working Java installation.  It will probably work with a
 recent OpenJDK JVM, but has only been tested with Oracle/Sun JVMs.
 
-* [Lux app server 0.10.4, bzip](dist/lux-appserver-0.10.4-bin.tar.bz2)
-* [Lux app server 0.10.4, gzip](dist/lux-appserver-0.10.4-bin.tar.gz)
-* [Lux app server 0.10.4, zip](dist/lux-appserver-0.10.4-bin.zip)
+* [Lux app server 0.10.5, bzip](dist/lux-appserver-0.10.5-bin.tar.bz2)
+* [Lux app server 0.10.5, gzip](dist/lux-appserver-0.10.5-bin.tar.gz)
+* [Lux app server 0.10.5, zip](dist/lux-appserver-0.10.5-bin.zip)
 
 The war-only distribution is useful if you want to run this in an existing
 J2EE web app container.
 
-* [Lux 0.10.4-enabled Solr war (web application) only](dist/lux-appserver-0.10.4.war)
+* [Lux 0.10.5-enabled Solr war (web application) only](dist/lux-appserver-0.10.5.war)
 
 Download the Lux library (jar) if you want to embed Lux in a Java
 application that will manage its own local index using Lucene (not Solr).
 
-* [Lux 0.10.4 library (jar) only](dist/lux-0.10.4.jar)
+* [Lux 0.10.5 library (jar) only](dist/lux-0.10.5.jar)
 
 We also maintain a folder of older artifacts:
 
