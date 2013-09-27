@@ -630,10 +630,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 charset = "utf-8";
             }
             if (!isText(contentType)) {
-                throw new LuxException ("binary values not supported");
+                logger.warn ("Binary values not supported; treating " + contentType + " as xml, or text");
             }
             XdmItem part = null;
-            if (isXML(contentType)) {
+            if (isXML(contentType) || !isText(contentType)) {
                 try {
                     part = evaluator.build(new ByteArrayInputStream(partBytes), "#part" + i);
                 } catch (LuxException e) {

@@ -7,6 +7,7 @@ import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.*;
 import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.type.Type;
 import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
@@ -57,11 +58,19 @@ public class InsertDocument extends ExtensionFunctionDefinition {
                 throws XPathException {
             String uri = arguments[0].head().getStringValue();
             NodeInfo node = (NodeInfo) arguments[1].head();
+            if (node.getNodeKind() == Type.TEXT) {
+                // TODO: wrap this in a document and insert it, sure
+                throw new XPathException ("Attempt to insert text node: not supported");
+            }
+            if (! (node.getNodeKind() == Type.DOCUMENT || node.getNodeKind() == Type.ELEMENT)) {
+                throw new XPathException ("Attempt to insert unsupported node type");
+            }
             Evaluator eval = SearchBase.getEvaluator(context);
             try {
                 eval.getDocWriter().write(node, uri);
             } catch (Exception e) {
-                throw new XPathException ("An error occurred while inserting a document at uri: " + uri, e);
+                throw new XPathException ("An error occurred while inserting a document at uri: " + uri + 
+                        "; " + e.getMessage(), e);
             }
             return EmptySequence.getInstance();
         }
