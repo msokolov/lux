@@ -15,7 +15,7 @@ implemented by Saxon, includes a large number of useful functions.
 In particular we mention the functions collection() and doc() since they
 operate in an implementation-specific manner.
 
-### `function fn:doc($uri as xs:string) as document-node() ###
+### `function fn:doc($uri as xs:string) as document-node()` ###
 
 The doc() function accepts a single URI and resolves it in different ways
 depending on the scheme of the URI.  The Lux URI resolver implements two
@@ -25,7 +25,7 @@ index, while doc("file://home/me/test.xml") retrieves a document from my
 home directory (on UNIX; for Windows this would be something like
 doc("file:///C:/Users/me/test/xml")).
 
-### `function fn:collection($uri as xs:string?) as document-node()* ###
+### `function fn:collection($uri as xs:string?) as document-node()*` ###
 
 If collection() is called with no arguments, the result is a sequence of
 all the documents in the index, in an arbitrary order (that is fixed only
