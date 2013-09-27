@@ -29,6 +29,7 @@ import lux.exception.ResourceExhaustedException;
 import lux.search.LuxSearcher;
 import lux.solr.LuxDispatchFilter.Request;
 import lux.xml.QName;
+import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.instruct.GlobalVariable;
 import net.sf.saxon.om.FingerprintedQName;
 import net.sf.saxon.om.NamespaceBinding;
@@ -104,6 +105,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     protected String queryPath;
 
+    private SolrURIResolver uriResolver; 
+    private ThreadLocal<Evaluator> evaluator;
+    
     private Serializer serializer;
 
     private Logger logger;
@@ -117,12 +121,16 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
+        evaluator = new ThreadLocal<Evaluator>();
     }
 
     @Override
     public void inform(SolrCore solrCore) {
         solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(solrCore);
         this.core = solrCore;
+        Configuration saxonConfig = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration();
+        uriResolver = new SolrURIResolver(this, saxonConfig.getSystemURIResolver());
+        saxonConfig.setURIResolver(uriResolver);
     }
     
     private void findSearchHandler () {
@@ -159,6 +167,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             rb.setQueryString(params.get(CommonParams.Q));
         }
         String contentType = params.get("lux.contentType");
+        // TODO: make this a local variable in or near #addResult, not an instance variable: it's not threadsafe
         serializer = solrIndexConfig.checkoutSerializer();
         if (contentType != null) {
             if (contentType.equals("text/html")) {
@@ -246,12 +255,13 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             return;
         }
         XQueryExecutable expr;
-        SolrIndexSearcher searcher = rb.req.getSearcher();
+        LuxSearcher searcher = new LuxSearcher (rb.req.getSearcher());
         DocWriter docWriter = new SolrDocWriter(this, rb.req.getCore());
         Compiler compiler = solrIndexConfig.getCompiler();
 
-        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
-        TransformErrorListener errorListener = evaluator.getErrorListener();
+        Evaluator eval = new Evaluator(compiler, searcher, docWriter); 
+        evaluator.set (eval);
+        TransformErrorListener errorListener = eval.getErrorListener();
         try {
             URI baseURI = queryPath == null ? null : java.net.URI.create(queryPath);
             expr = compiler.compile(query, errorListener, baseURI, null);
@@ -281,9 +291,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
         if (xqueryPath != null) {
-            bindRequestVariables(rb, req, expr, compiler, evaluator, context);
+            bindRequestVariables(rb, req, expr, compiler, eval, context);
         }
-        Iterator<XdmItem> queryResults = evaluator.iterator(expr, context);
+        Iterator<XdmItem> queryResults = eval.iterator(expr, context);
         String err = null;
         while (queryResults.hasNext()) {
             XdmItem xpathResult = queryResults.next();
@@ -311,9 +321,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 break;
             }
         }
-        ArrayList<TransformerException> errors = evaluator.getErrorListener().getErrors();
+        ArrayList<TransformerException> errors = eval.getErrorListener().getErrors();
         if (!errors.isEmpty()) {
-            err = formatError(query, errors, evaluator.getQueryStats());
+            err = formatError(query, errors, eval.getQueryStats());
             if (xpathResults.size() == 0) {
                 xpathResults = null; // throw a 400 error; don't return partial
                                      // results
@@ -326,18 +336,18 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             // create a dummy doc list if previous query processing didn't retrieve any docs
             // In distributed operation, there will be doc results, otherwise none.
             SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
-            result.setDocList(new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
+            result.setDocList(new DocSlice(0, 0, null, null, eval.getQueryStats().docCount, 0));
             rb.setResult(result);
             rsp.add("response", rb.getResults().docList);
         }
         if (xpathResults != null) {
             rsp.add("xpath-results", xpathResults);
             if (logger.isDebugEnabled()) {
-                logger.debug("retrieved: " + ((Evaluator) evaluator).getDocReader().getCacheMisses() + " docs, "
+                logger.debug("retrieved: " + eval.getDocReader().getCacheMisses() + " docs, "
                         + xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
             }
         } else {
-            logger.warn ("xquery evaluation error: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
+            logger.warn ("xquery evaluation error: " + eval.getDocReader().getCacheMisses() + " docs, " +
                     "0 results, " + (System.currentTimeMillis() - tstart) + "ms");
         }
     }
@@ -808,6 +818,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     public SolrCore getCore () {
         return core;
+    }
+    
+    public Evaluator getEvaluator () {
+        return evaluator.get();
     }
 
     public SearchHandler getSearchHandler() {

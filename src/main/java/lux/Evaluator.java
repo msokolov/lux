@@ -90,9 +90,13 @@ public class Evaluator {
         queryStats = new QueryStats();
         errorListener = new TransformErrorListener();
         errorListener.setUserData(this);
+        // TODO: move these out of here; they should be one-time setup for the Processor 
         config.setCollectionURIResolver(new LuxCollectionURIResolver());
         config.setOutputURIResolver(new LuxOutputURIResolver());
-        resetURIResolver();
+        if (config.getURIResolver() == null || !(config.getURIResolver() instanceof LuxURIResolver)) {
+            config.setURIResolver(new LuxURIResolver(config.getSystemURIResolver(), this, 
+                    compiler.getIndexConfiguration().getFieldName(FieldName.URI)));
+        }
     }
     
     /**
@@ -378,7 +382,7 @@ public class Evaluator {
                 searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) current.getIndexReader()));
                 current.close();
             }
-            resetURIResolver();
+            resetURIResolver ();
         } catch (IOException e) {
             throw new LuxException (e);
         }
@@ -386,7 +390,7 @@ public class Evaluator {
     
     private void resetURIResolver () {
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
-        config.setURIResolver(new LuxURIResolver(config.getSystemURIResolver(), searcher, docReader, compiler.getUriFieldName()));
+        config.setURIResolver(new LuxURIResolver(config.getSystemURIResolver(), this, compiler.getUriFieldName()));
     }
     
     public Compiler getCompiler() {

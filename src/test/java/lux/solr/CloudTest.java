@@ -86,9 +86,9 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-4')/lux:key('lux_uri')");
         query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-10')/lux:key('lux_uri')");
         query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-10')/lux:key('title')");
-        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439)/lux:key('doctype_s')");
-        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439)/lux:key('title')");
-        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439)/lux:key('nonexistent')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439')/lux:key('doctype_s')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439')/lux:key('title')");
+        query("qt", "/xquery", "q", "doc('lux://lux/hamlet.xml-439')/lux:key('nonexistent')");
 
         // lux:field-terms()
         query("qt", "/xquery", "q", "subsequence(lux:field-terms('title'), 1, 20)");
