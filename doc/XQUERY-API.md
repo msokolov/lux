@@ -12,6 +12,34 @@ The W3C standard [XPath function
 library](http://www.w3.org/TR/xpath-functions/) available in Lux, as
 implemented by Saxon, includes a large number of useful functions.
 
+In particular we mention the functions collection() and doc() since they
+operate in an implementation-specific manner.
+
+### `function fn:doc($uri as xs:string) as document-node() ###
+
+The doc() function accepts a single URI and resolves it in different ways
+depending on the scheme of the URI.  The Lux URI resolver implements two
+schemes: file: and lux:.  If no scheme is provided, the lux scheme is
+assumed.  In short, doc("/test.xml") retrieves a document from the Lux
+index, while doc("file://home/me/test.xml") retrieves a document from my
+home directory (on UNIX; for Windows this would be something like
+doc("file:///C:/Users/me/test/xml")).
+
+### `function fn:collection($uri as xs:string?) as document-node()* ###
+
+If collection() is called with no arguments, the result is a sequence of
+all the documents in the index, in an arbitrary order (that is fixed only
+for the duration of the query).
+
+If collection() is called with a URI having the lux: scheme, the remainder
+of the URI is treated as a Lucene query (extended by Lux node field
+syntax).  This provides an alternative mechanism for calling lux:search().
+This behavior may change in future releases however, and it is recommended
+to use lux:search() instead.
+
+Otherwise collection() is resolved by Saxon in its usual way, generally by
+reading the contents of a file system directory.
+
 ## Indexing and Search functions ##
 
 Functions relating to search and indexing are declared in the
