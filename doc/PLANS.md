@@ -15,8 +15,7 @@ any) of it will be completed. However, we do continue to make improvements,
 and this list does reflect our priorities. We hope it may be useful for you
 insofar as it gives a general idea of the direction in which we want to
 take Lux development in the future.  And of course, we welcome
-contributions, so if you see something here you want to work on, or have
-ideas of your own, please get in touch.
+contributions.
 
 ## Performance enhancements
 
@@ -27,8 +26,9 @@ We have numerous ideas for improving performance, including:
 #### Automatically optimize indexed order by expressions
 
 Currently, in order to sort expressions efficiently, the query writer must
-reference the lux:key() function explicitly as a marker for the optimizer.
-We could enhance the optimizer to detect indexed expressions itself.
+explicitly invoke the lux:key() function as a marker for the
+optimizer.  We could enhance the optimizer to detect indexed expressions
+itself.
 
 #### Optimize deep paging with sorted queries
 
@@ -60,12 +60,6 @@ version of Saxon, at least to the extent of ensuring the optimizer doesn't
 break them.  Other than that, we don't have any immediate plans to support
 a full range of XQuery 3.0 features, although we may add some.
 
-## Standard HTTP request handling in the app server
-
-We're looking at implementing the EXQuery request specification in the Lux
-app server, or providing an integration with Servlex, which would do that
-work.
-
 ## Extensible text analysis
 Lucene allows for a wide variety of text
 analysis techniques (lower casing, diacritics, stemming, synonyms, etc).
@@ -91,6 +85,11 @@ to know if an element ever occurs more than once in some context.
 
 ## Provide convenient access to advanced Solr and Lucene features
 
+One basic thing we plan to do is to use the Solr query parser to parse queries in lux:search,
+rather than the Lucene query parser as we do now.  This will add some capabilities like date range
+query parsing.
+
+More broadly,
 Solr provides a number of advanced query capabilities such as spelling
 suggestions, faceting, grouping, function queries, aggregate computations
 and so on.  Within-query features like function queries may be available by

@@ -44,6 +44,6 @@ following in your pom.xml:
                   <dependency>
                      <groupId>org.luxdb</groupId>
                      <artifactId>lux<artifactId>
-                     <version>0.10.3</version>
+                     <version>0.10.5</version>
                   </dependency>
 

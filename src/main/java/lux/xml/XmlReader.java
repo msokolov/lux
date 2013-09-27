@@ -72,7 +72,12 @@ public class XmlReader {
     }
     
     public void read (NodeInfo node) throws XMLStreamException {
-        PipelineConfiguration pipe = node.getConfiguration().makePipelineConfiguration();
+        Configuration configuration = node.getConfiguration();
+        if (configuration == null) {
+            // TODO: index a text fragment
+            throw new XMLStreamException ("Attempt to parse non-XML node");
+        }
+        PipelineConfiguration pipe = configuration.makePipelineConfiguration();
         pipe.setHostLanguage(Configuration.XQUERY);
         XMLStreamReader xmlStreamReader; 
         // copied from net.sf.saxon.xqj.SaxonXQItem

@@ -17,13 +17,13 @@ import lux.xpath.ExpressionVisitorBase;
 import lux.xpath.FunCall;
 import lux.xpath.LiteralExpression;
 import lux.xquery.XQuery;
+import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.expr.sort.CodepointCollator;
 import net.sf.saxon.expr.sort.GenericAtomicComparer;
 import net.sf.saxon.functions.DeepEqual;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.SingletonIterator;
 
 import org.apache.commons.lang.StringUtils;
 import org.junit.Ignore;
@@ -107,13 +107,12 @@ class QueryTestCase {
     }
 
     protected boolean compareNodes (Evaluator eval, XdmNode node1, XdmNode node2) throws XPathException {
+        XPathContext context = eval.getCompiler().getProcessor().getUnderlyingConfiguration().getConversionContext();
         return DeepEqual.deepEquals
-            (SingletonIterator.makeIterator(node1.getUnderlyingNode()),
-             SingletonIterator.makeIterator(node2.getUnderlyingNode()),
-             new GenericAtomicComparer
-             (CodepointCollator.getInstance(),
-              eval.getCompiler().getProcessor().getUnderlyingConfiguration().getConversionContext()),
-             eval.getCompiler().getProcessor().getUnderlyingConfiguration(),
+            (node1.getUnderlyingNode().iterate(), 
+             node2.getUnderlyingNode().iterate(),
+             new GenericAtomicComparer (CodepointCollator.getInstance(), context),
+             context,
              DeepEqual.INCLUDE_PREFIXES |
              DeepEqual.EXCLUDE_WHITESPACE_TEXT_NODES |
              DeepEqual.COMPARE_STRING_VALUES

@@ -47,7 +47,7 @@ public class XPathFieldTest {
     @Test
     public void testSortByInt() throws Exception {
         XdmResultSet result = eval.evaluate("count(collection())");
-        assertEquals ("5", result.getXdmValue().getUnderlyingValue().getStringValue());
+        assertEquals ("5", result.getXdmValue().itemAt(0).getStringValue());
         // sort by XPathField value, as int
         String s1 = getStringResult("for $doc in collection() order by string-length($doc) return name($doc/*)");
         assertEquals("entities entities title token test", s1);

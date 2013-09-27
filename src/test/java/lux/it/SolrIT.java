@@ -19,6 +19,7 @@ import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
 import nu.validator.htmlparser.sax.HtmlParser;
 
@@ -359,7 +360,11 @@ public class SolrIT {
     }
 
     private String evalString (String query, QueryContext context) throws XPathException {
-        return eval.evaluate (query, context).getXdmValue().getUnderlyingValue().getStringValue();
+        StringBuilder buf = new StringBuilder();
+        for (XdmItem item : eval.evaluate (query, context).getXdmValue()) {
+            buf.append (item.getStringValue());
+        }
+        return buf.toString();
     }
     
     /**

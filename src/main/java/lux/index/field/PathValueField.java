@@ -21,7 +21,7 @@ public class PathValueField extends FieldDefinition {
     }
     
     protected PathValueField () {
-        super ("lux_path_value", new WhitespaceAnalyzer(Version.LUCENE_41), Store.NO, Type.TOKENS);
+        super ("lux_path_value", new WhitespaceAnalyzer(Version.LUCENE_44), Store.NO, Type.TOKENS);
     }
     
     @Override

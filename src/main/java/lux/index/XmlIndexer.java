@@ -33,6 +33,7 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.store.Directory;
 
 /**
@@ -427,6 +428,7 @@ public class XmlIndexer {
     }
 
     private void addLuceneDocument(IndexWriter indexWriter) throws CorruptIndexException, IOException {
+        indexWriter.deleteDocuments(new Term(configuration.getFieldName(URI), uri));
         indexWriter.addDocument(createLuceneDocument());
     }
 

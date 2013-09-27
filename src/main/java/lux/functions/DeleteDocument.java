@@ -5,8 +5,7 @@ import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.EmptySequence;
@@ -56,9 +55,9 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
     class DeleteDocumentCall extends ExtensionFunctionCall {
 
         @Override
-        public SequenceIterator<?> call(@SuppressWarnings("rawtypes") SequenceIterator<? extends Item>[] arguments, XPathContext context)
+        public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            String uri = arguments[0].next().getStringValue();
+            String uri = arguments[0].head().getStringValue();
             Evaluator eval = SearchBase.getEvaluator(context);
             if (uri.equals("lux:/")) {
             	// TODO: delete directories
@@ -66,7 +65,7 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
             } else {
                 eval.getDocWriter().delete(uri);
             }
-            return EmptySequence.asIterator(EmptySequence.getInstance());
+            return EmptySequence.getInstance();
         }
         
     }

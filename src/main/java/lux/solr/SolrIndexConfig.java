@@ -189,7 +189,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
 
     public void inform(SolrCore core) {
         
-        schema = core.getSchema();
+        schema = core.getLatestSchema();
         // XML_STORE is not listed explicitly by the indexer
         informField (indexConfig.getField(FieldName.XML_STORE));
         for (FieldDefinition xmlField : indexConfig.getFields()) {

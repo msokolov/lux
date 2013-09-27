@@ -183,10 +183,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
     /**
      * @param expr
      *            the expression to optimize
-     * @param j
+     * @param i
      *            the query stack depth at which expr's query is to be found
-     * @param facts
-     *            additional facts to apply to the query
      */
     private AbstractExpression optimizeExpression(AbstractExpression expr, int i) {
         int j = queryStack.size() - i - 1;
@@ -386,7 +384,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
     private enum ResultOrientation {
         LEFT, RIGHT
-    };
+    }
 
     /**
      * Combine queries from two adjacent subexpressions
@@ -618,12 +616,12 @@ public class PathOptimizer extends ExpressionVisitorBase {
                 AbstractExpression arg = args[0];
                 AbstractExpression sortContext;
                 if (args.length > 1) {
-                	sortContext = args[1];
+                    sortContext = args[1];
                 } else {
-                	sortContext = funcall.getSuper();
-                	if (sortContext == null) {
-                	    return funcall;
-                	}
+                    sortContext = funcall.getSuper();
+                    if (sortContext == null) {
+                        return funcall;
+                    }
                 }
                 VariableContext binding = sortContext.getBindingContext();
                 if (binding == null || ! (binding instanceof ForClause)) {
@@ -841,8 +839,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
 
         case EXCEPT:
             push(combineQueries(lq, Occur.MUST, rq, argType));
-            resultType = argType;
-            required = true;
             return op;
             
         case TO:
@@ -1498,13 +1494,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
                     	}
                     }
                 }
-                String order = ((LiteralExpression) sortKey.getOrder()).getValue().toString();
+                String order = sortKey.getOrder().getValue().toString();
                 SortField sortField = q.getSortFields()[0];
                 if (!sortKey.isEmptyLeast()) {
                     // empty greatest
-                    sortField = new SortField(sortField.getField(), SearchResultIterator.MISSING_LAST, order.toString()
-                            .equals("descending"));
-                } else if (order.toString().equals("descending")) {
+                    sortField = new SortField(sortField.getField(), SearchResultIterator.MISSING_LAST,
+                            order.equals("descending"));
+                } else if (order.equals("descending")) {
                     // reverse sort order
                     sortField = new SortField(sortField.getField(), sortField.getType(), true);
                 }

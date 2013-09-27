@@ -96,7 +96,10 @@
     <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
   </SpanOr>
   </query>
-  <query id="ACT_SCENE_SPEECH"><SpanOr>
+    <!-- 
+    FIXME: we used to have a better query here, but Saxon changed its optimizations.  now in order to 
+    generate this we would need to optimize along the parent axis, plus merge two separate path exprs??
+    <SpanOr>
     <SpanNear inOrder="true" slop="0">
       <SpanTerm fieldName="lux_path">ACT</SpanTerm><SpanTerm fieldName="lux_path">TITLE</SpanTerm>
     </SpanNear>
@@ -107,6 +110,25 @@
       <SpanTerm fieldName="lux_path">SPEECH</SpanTerm><SpanTerm fieldName="lux_path">TITLE</SpanTerm>
     </SpanNear>
   </SpanOr>
+  -->
+  <query id="multi-element-path-0.1">
+    <BooleanQuery>
+      <Clause occurs="must">
+        <SpanTerm fieldName="lux_path">TITLE</SpanTerm>
+      </Clause>
+      <Clause occurs="must">
+        <SpanOr>
+          <SpanTerm fieldName="lux_path">ACT</SpanTerm>
+          <SpanTerm fieldName="lux_path">SCENE</SpanTerm>
+        </SpanOr>
+      </Clause>
+    </BooleanQuery>
+  </query>
+  <query id="multi-element-path-0.2">
+    <SpanNear inOrder="true" slop="0">
+        <SpanTerm fieldName="lux_path">SPEECH</SpanTerm>
+        <SpanTerm fieldName="lux_path">TITLE</SpanTerm>
+    </SpanNear>
   </query>
   <query id="LINE"><SpanNear inOrder="true" slop="0">
     <SpanTerm fieldName="lux_path">&#x7B;&#x7D;</SpanTerm>

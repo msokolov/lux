@@ -40,7 +40,7 @@ public abstract class NamespaceAwareFunctionCall extends ExtensionFunctionCall {
         ((NamespaceAwareFunctionCall) destination).namespaceResolver = namespaceResolver;
     }
     
-   protected Query parseQuery(Item<?> queryArg, Evaluator eval) throws ParseException, ParserException {
+   protected Query parseQuery(Item queryArg, Evaluator eval) throws ParseException, ParserException {
         if (queryArg instanceof NodeInfo) {
             NodeInfo queryNodeInfo = (NodeInfo) queryArg;
             NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 

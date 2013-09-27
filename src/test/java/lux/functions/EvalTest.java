@@ -20,7 +20,7 @@ public class EvalTest {
 	@Test
 	public void testEval () throws Exception {
 		XdmResultSet result = eval.evaluate("lux:eval('1 + 1')");
-		assertEquals ("2", result.getXdmValue().getUnderlyingValue().getStringValue());
+		assertEquals ("2", result.getXdmValue().itemAt(0).getStringValue());
 	}
 
 	@Test
@@ -34,7 +34,7 @@ public class EvalTest {
 		if (! result.getErrors().isEmpty()) {
 			fail (result.getErrors().get(0).toString());
 		}
-		assertEquals ("3", result.getXdmValue().getUnderlyingValue().getStringValue());
+		assertEquals ("3", result.getXdmValue().itemAt(0).getStringValue());
 	}
 	
 	@Test
@@ -43,7 +43,7 @@ public class EvalTest {
 		if (! result.getErrors().isEmpty()) {
 			fail (result.getErrors().get(0).toString());
 		}
-		assertEquals ("3", result.getXdmValue().getUnderlyingValue().getStringValue());
+		assertEquals ("3", result.getXdmValue().itemAt(0).getStringValue());
 	}
 
 	@Test
@@ -68,3 +68,7 @@ public class EvalTest {
 	}
 
 }
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */

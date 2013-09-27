@@ -30,10 +30,11 @@ import lux.exception.ResourceExhaustedException;
 import lux.search.LuxSearcher;
 import lux.solr.LuxDispatchFilter.Request;
 import lux.xml.QName;
+import net.sf.saxon.expr.instruct.GlobalVariable;
 import net.sf.saxon.om.FingerprintedQName;
 import net.sf.saxon.om.NamespaceBinding;
+import net.sf.saxon.om.SequenceTool;
 import net.sf.saxon.om.StructuredQName;
-import net.sf.saxon.query.GlobalVariableDefinition;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
@@ -49,7 +50,6 @@ import net.sf.saxon.tree.linked.LinkedTreeBuilder;
 import net.sf.saxon.tree.tiny.TinyElementImpl;
 import net.sf.saxon.type.AnyType;
 import net.sf.saxon.type.BuiltInAtomicType;
-import net.sf.saxon.type.TypeHierarchy;
 import net.sf.saxon.value.AtomicValue;
 import net.sf.saxon.value.DecimalValue;
 import net.sf.saxon.value.GDateValue;
@@ -60,7 +60,6 @@ import net.sf.saxon.value.GYearMonthValue;
 import net.sf.saxon.value.GYearValue;
 import net.sf.saxon.value.QNameValue;
 import net.sf.saxon.value.TextFragmentValue;
-import net.sf.saxon.value.Value;
 import nu.validator.htmlparser.sax.HtmlParser;
 
 import org.apache.commons.io.IOUtils;
@@ -352,11 +351,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             XQueryExecutable expr, Compiler compiler, Evaluator evaluator,
             QueryContext context) {
 
-        @SuppressWarnings("unchecked")
-        Iterator<GlobalVariableDefinition> decls = expr.getUnderlyingCompiledQuery().getStaticContext().getModuleVariables();
+        Iterator<GlobalVariable> decls = expr.getUnderlyingCompiledQuery().getStaticContext().getModuleVariables();
         boolean hasLuxHttp = false, hasEXpathRequest = false;
         while (decls.hasNext()) {
-            GlobalVariableDefinition decl = decls.next();
+            GlobalVariable decl = decls.next();
             StructuredQName varName = decl.getVariableQName();
             if (varName.equals(new StructuredQName("", EXPATH_HTTP_NS, "input"))) {
                 hasEXpathRequest = true;
@@ -433,9 +431,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             // We need to get Java primitive values that Solr knows how to marshal
             XdmAtomicValue xdmValue = (XdmAtomicValue) item;
             AtomicValue value = (AtomicValue) xdmValue.getUnderlyingValue();
-            TypeHierarchy typeHierarchy = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration().getTypeHierarchy();
             try {
-                String typeName = value.getItemType(typeHierarchy).toString();
+                String typeName = value.getItemType().toString();
                 Object javaValue;
                 if (value instanceof DecimalValue) {
                     javaValue = ((DecimalValue) value).getDoubleValue();
@@ -455,11 +452,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     } else if (value instanceof GYearMonthValue) {
                         javaValue = ((GYearMonthValue) value).getPrimitiveStringValue().toString();
                     } else {
-                        javaValue = Value.convertToJava(value);
+                        javaValue = SequenceTool.convertToJava(value);
                     }
                     addResultBytes (javaValue.toString().length() * 2);
                 } else {
-                    javaValue = Value.convertToJava(value);
+                    javaValue = SequenceTool.convertToJava(value);
                     addResultBytes (javaValue.toString().length() * 2);
                 }
                 // TODO hexBinary and base64Binary
@@ -633,10 +630,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 charset = "utf-8";
             }
             if (!isText(contentType)) {
-                throw new LuxException ("binary values not supported");
+                logger.warn ("Binary values not supported; treating " + contentType + " as xml, or text");
             }
             XdmItem part = null;
-            if (isXML(contentType)) {
+            if (isXML(contentType) || !isText(contentType)) {
                 try {
                     part = evaluator.build(new ByteArrayInputStream(partBytes), "#part" + i);
                 } catch (LuxException e) {

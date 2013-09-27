@@ -32,14 +32,14 @@ public class TLogTest {
     private TinyBinary schemaXml;
     
     private CoreContainer coreContainer;
-    private CoreContainer.Initializer initializer;
     private Processor processor;
     private static final Charset UTF8 = Charset.forName("utf-8");
     
     @Before
     public void setup () {
-        initializer = new CoreContainer.Initializer();
-        coreContainer = initializer.initialize();
+        System.setProperty("solr.solr.home", "solr");
+        coreContainer = new CoreContainer ();
+        coreContainer.load();
         processor = new Processor(false);
     }
 
@@ -98,8 +98,8 @@ public class TLogTest {
         removeDirectory ("solr/collection1/data2");
         
         // start up again
-        initializer = new CoreContainer.Initializer();
-        coreContainer = initializer.initialize();
+        coreContainer = new CoreContainer();
+        coreContainer.load();
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
 
         // retrieve the documents (from the transaction log):

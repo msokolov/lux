@@ -107,8 +107,7 @@ public class Evaluator {
     	DirectDocWriter writer = new DirectDocWriter(indexer, indexWriter);
     	Compiler compiler = new Compiler(indexer.getConfiguration());
     	LuxSearcher searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
-    	Evaluator eval = new Evaluator (compiler, searcher, writer);
-    	return eval;
+    	return new Evaluator (compiler, searcher, writer);
     }
     
     /**
@@ -190,6 +189,15 @@ public class Evaluator {
         }
         XQueryEvaluator xqueryEvaluator = prepareEvaluation(context, listener, xquery);
         try {
+            listener.setUserData(this);
+            xqueryEvaluator.setErrorListener(listener);
+            xqueryEvaluator.setContextItem((XdmItem) context.getContextItem());
+            if (context.getVariableBindings() != null) {
+                for (Map.Entry<QName, Object> binding : context.getVariableBindings().entrySet()) {
+                    net.sf.saxon.s9api.QName saxonQName = new net.sf.saxon.s9api.QName(binding.getKey());
+                    xqueryEvaluator.setExternalVariable(saxonQName, (XdmValue) binding.getValue());
+                }
+            }
             XdmValue value = xqueryEvaluator.evaluate();
             return new XdmResultSet (value);
         } catch (SaxonApiException e) {
@@ -345,6 +353,12 @@ public class Evaluator {
             	throw new TransformerException ("Attempted to write document " + receiver.getSystemId() + " to a read-only Evaluator");
             }
             docWriter.write(receiver.dest.getXdmNode().getUnderlyingNode(), receiver.getSystemId());
+        }
+
+        @Override
+        public LuxOutputURIResolver newInstance() {
+            // we have no state, so it's OK to return the same instance
+            return this;
         }
         
     }

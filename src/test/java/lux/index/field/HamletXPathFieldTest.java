@@ -152,7 +152,7 @@ public class HamletXPathFieldTest {
         assertResultSequence ("collection()[1]/lux:key('bogus')");
         // also test that we still have backwards-compatibility support for the old name
         // of this method
-        assertResultSequence ("collection()[1]/lux:field-values('bogus')");
+        assertResultSequence ("collection()[1]/lux:key('bogus')");
     }
     
     @Test

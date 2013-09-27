@@ -6,6 +6,8 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.LazySequence;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
@@ -51,28 +53,26 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         return (Evaluator) listener.getUserData();
     }
     
-    @SuppressWarnings("rawtypes")
     protected abstract SequenceIterator<? extends Item> iterate(final Query query, Evaluator eval, String sortCriteria, int start) throws XPathException;
 
     public class SearchCall extends NamespaceAwareFunctionCall {
         
-        @SuppressWarnings("rawtypes") @Override
-        public SequenceIterator<? extends Item> call(SequenceIterator[] arguments, XPathContext context) throws XPathException {
+        public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
             if (arguments.length == 0 || arguments.length > 3) {
                 throw new XPathException ("wrong number of arguments for " + getFunctionQName());
             }
-            Item queryArg = arguments[0].next();
+            Item queryArg = arguments[0].head();
             String sortCriteria = null;
             if (arguments.length >= 2) {
-                Item sortArg = arguments[1].next();
+                Item sortArg = arguments[1].head();
                 if (sortArg != null) {
                     sortCriteria = sortArg.getStringValue();
                 }
             }
             int start = 1;
             if (arguments.length >= 3) {
-                Item startArg = arguments[2].next();
+                Item startArg = arguments[2].head();
                 if (startArg != null) {
                     IntegerValue integerValue = (IntegerValue)startArg;
                     if (integerValue.longValue() > Integer.MAX_VALUE) {
@@ -91,9 +91,9 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
             }
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
-            return iterate (query, eval, sortCriteria, start);
+            return new LazySequence(iterate (query, eval, sortCriteria, start));
         }
-        
+
     }
   
 }
