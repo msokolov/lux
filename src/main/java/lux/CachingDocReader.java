@@ -179,7 +179,7 @@ public class CachingDocReader {
             }
         }
         // associate the bytes with the xml stub (for all non-XML content)
-        if (bytes != null) {
+        if (bytes != null && xml == null) {
             ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
         }
         // doesn't seem to do what one might think:
