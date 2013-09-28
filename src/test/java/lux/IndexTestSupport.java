@@ -24,7 +24,8 @@ import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
 
 /**
- * Test support class that sets up a lucene index and generates and indexes documents from hamlet.xml.
+ * Test support class that sets up a lucene index and generates and indexes documents from hamlet.xml or
+ * other xml files.
  */
 public class IndexTestSupport extends IndexTestSupportBase {
 

@@ -32,7 +32,7 @@ public abstract class IndexTestSupportBase {
     public static final int QUERY_MINIMAL = 0x00000004;
     public static final int QUERY_CONSTANT = 0x00000008;
 
-    XmlIndexer indexer;
+    protected XmlIndexer indexer;
     
     public IndexTestSupportBase (int options) {
         docLimit = Integer.MAX_VALUE;
