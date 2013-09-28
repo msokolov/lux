@@ -2,7 +2,6 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashSet;
 import java.util.Map;
 
 import javax.xml.transform.stream.StreamSource;
@@ -38,7 +37,6 @@ public class CachingDocReader {
 	private final NodeCache cache = new NodeCache(java.lang.Runtime.getRuntime().maxMemory() / CACHE_RATIO);
     private final String xmlFieldName;
     private final String uriFieldName;
-    private final HashSet<String> fieldsToRetrieve;
     private final DocumentBuilder builder;
     private final Configuration config;
     private int cacheHits = 0;
@@ -61,9 +59,6 @@ public class CachingDocReader {
         this.config = config;
         this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
         this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
-        fieldsToRetrieve = new HashSet<String>();
-        fieldsToRetrieve.add(xmlFieldName);
-        fieldsToRetrieve.add(uriFieldName);
     }
 
     /**
@@ -79,13 +74,13 @@ public class CachingDocReader {
      * @throws LuxException if there is an error building the document that has been retrieved
      */
     public XdmNode get(int leafDocID, AtomicReaderContext context) throws IOException {
-       int docID = leafDocID + context.docBase;
+       long docID = leafDocID + context.docBase;
        XdmNode node= cache.get(docID);
        if (node != null) {
            ++cacheHits;
            return node;
        }
-       DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
+       DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor();
        context.reader().document(leafDocID, fieldSelector);
        Document document = fieldSelector.getDocument();
        return getXdmNode(docID, document);
@@ -109,13 +104,21 @@ public class CachingDocReader {
             ++cacheHits;
             return node;
         }
-        DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
+        DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor();
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
         return getXdmNode(docID, document);
     }
+    
+    /**
+     * @param docID
+     * @return a document from the cache, or null if no document matching the docID is in the cache
+     */
+    public XdmNode get(long docID) {
+        return cache.get(docID);
+    }
 
-    private XdmNode getXdmNode(int docID, Document document) throws IOException {
+    private XdmNode getXdmNode(long docID, Document document) throws IOException {
         String xml = document.get(xmlFieldName);
         String uri = document.get(uriFieldName);
         BytesRef binaryValue = document.getBinaryValue(xmlFieldName);
@@ -126,11 +129,11 @@ public class CachingDocReader {
             bytes = null;
         }
         XdmNode node = createXdmNode (docID, uri, xml, bytes);
-        cache.put(docID, node);
-        ++cacheMisses;
+        document.removeField(xmlFieldName);
+        node.getUnderlyingNode().getDocumentRoot().setUserData (Document.class.getName(), document);
         return node;
     }
-    
+
     /**
      * Either the xml or the bytes parameter carries the document contents.  If the xml is non-null, it is assumed to be a serialized
      * XML document, and is parsed.  If the bytes is non-null and begins with a tinybin signature, it is interpreted as 
@@ -183,6 +186,8 @@ public class CachingDocReader {
         // ((TinyDocumentImpl) node.getUnderlyingNode()).setBaseURI(uri);
         ((TinyDocumentImpl) node.getUnderlyingNode()).setSystemId(uri);
         buildTime += (System.nanoTime() - t0);
+        cache.put(docID, node);
+        ++cacheMisses;
         return node;
     }
 
@@ -216,7 +221,7 @@ public class CachingDocReader {
         cache.clear();
     }
     
-    static class NodeCache extends java.util.LinkedHashMap<Integer, XdmNode> {
+    static class NodeCache extends java.util.LinkedHashMap<Long, XdmNode> {
         
         private long bytes;
         private final long maxbytes;
@@ -228,17 +233,17 @@ public class CachingDocReader {
         }
         
         @Override
-        public XdmNode put (Integer key, XdmNode value) {
+        public XdmNode put (Long key, XdmNode value) {
             bytes += calculateSize (value);
             return super.put(key, value);
         }
         
         @Override
-        protected boolean removeEldestEntry(Map.Entry<Integer, XdmNode> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<Long, XdmNode> eldest) {
             while (bytes > maxbytes) {
                 remove(eldest.getKey());
                 bytes -= calculateSize (eldest.getValue());
-                for (Map.Entry<Integer, XdmNode> entry : entrySet()) {
+                for (Map.Entry<Long, XdmNode> entry : entrySet()) {
                     // get the next eldest
                     eldest = entry;
                     break;
