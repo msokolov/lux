@@ -7,6 +7,7 @@ import lux.functions.SearchBase.QueryParser;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.IDField;
+import net.sf.saxon.om.DocumentInfo;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmNode;
@@ -102,7 +103,9 @@ public class CloudSearchIterator extends SearchIteratorBase {
                     String xml = (String) ((oxml instanceof String) ? oxml : null);
                     byte [] bytes = (byte[]) ((oxml instanceof byte[]) ? oxml : null);
                     XdmNode node = eval.getDocReader().createXdmNode(id, uri, xml, bytes);
-                    return node.getUnderlyingNode();
+                    DocumentInfo docNode = node.getUnderlyingNode().getDocumentRoot();
+                    docNode.setUserData(SolrDocument.class.getName(), doc);
+                    return docNode;
                 } else if (position >= docs.getNumFound()) {
                     return null;
                 }
@@ -123,8 +126,8 @@ public class CloudSearchIterator extends SearchIteratorBase {
         }
         params.add(CommonParams.START, Integer.toString(position));
         params.add(CommonParams.ROWS, Integer.toString(limit));
-        // FIXME -- retrieve all fields
-        params.add(CommonParams.FL, uriFieldName, xmlFieldName, idFieldName);
+        //params.add(CommonParams.FL, uriFieldName, xmlFieldName, idFieldName);
+        params.add(CommonParams.FL, "*");
 
         SolrParams origParams = origRB.req.getParams();
         String debug = origParams.get(CommonParams.DEBUG);
