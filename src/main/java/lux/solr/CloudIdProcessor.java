@@ -16,6 +16,10 @@ import org.apache.solr.update.processor.UpdateRequestProcessor;
  * Note that this id must be the same on all replicas, so the id must be created *before*
  * the request is dispatched by DistributedUpdateProcessor: ergo, this processor
  * must come before DUP in the update chain configuration in solrconfig.xml.
+ * 
+ * Note: we can't use URI for this purpose since we need to be able to translate our ordering
+ * field into a long value for Saxon to use as its document number, since that it is what *it*
+ * uses for document order.
  */
 public class CloudIdProcessor extends UpdateRequestProcessor {
 
