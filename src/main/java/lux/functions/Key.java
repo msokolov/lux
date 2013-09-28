@@ -130,7 +130,7 @@ public class Key extends ExtensionFunctionDefinition {
         }
         
         private Sequence getFieldValue (Document doc, Evaluator eval, String fieldName, FieldDefinition field) throws XPathException {
-            if (field == null || field.getType() == FieldDefinition.Type.STRING) {
+            if (field == null || field.getType() == FieldDefinition.Type.STRING || field.getType() == FieldDefinition.Type.TEXT) {
                 Object[] values = doc.getValues(fieldName);
                 StringValue[] valueItems = new StringValue[values.length];
                 for (int i = 0; i < values.length; i++) {
@@ -155,7 +155,7 @@ public class Key extends ExtensionFunctionDefinition {
                 return EmptySequence.getInstance();
             }
             Object[] values = valuesCollection.toArray();
-            if (field == null || field.getType() == FieldDefinition.Type.STRING) {
+            if (field == null || field.getType() == FieldDefinition.Type.STRING || field.getType() == FieldDefinition.Type.TEXT) {
                 StringValue[] valueItems = new StringValue[values.length];
                 for (int i = 0; i < values.length; i++) {
                     valueItems[i] = new StringValue (values[i].toString());
