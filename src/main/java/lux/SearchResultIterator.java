@@ -53,7 +53,7 @@ public class SearchResultIterator extends SearchIteratorBase {
             throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
         if (sortCriteria != null) {
-            Sort sort = makeSortFromCriteria();
+            Sort sort = makeSortFromCriteria(sortCriteria);
             docIter = searcher.search(query, sort);
         } else {
             docIter = searcher.searchOrdered(query);

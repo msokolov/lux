@@ -78,6 +78,8 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 if (sortArg != null) {
                     sortCriteria = sortArg.getStringValue();
                 }
+                // FIXME: use lux_score as default sort criteria, and generate calls in optimizer
+                // using document order explicitly
             }
             int start = 1;
             if (arguments.length >= 3) {

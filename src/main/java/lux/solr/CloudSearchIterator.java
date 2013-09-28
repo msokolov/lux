@@ -14,6 +14,7 @@ import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortField.Type;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.CommonParams;
@@ -24,6 +25,16 @@ import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.SortSpec;
 
+/**
+ * 
+ * Perform distributed XQuery searches.  We mimic lazy evaluation by maintaining an iterator
+ * that re-issues requests when its local cache is exhausted.  Note: deep paging may be quite expensive
+ * since *all* results starting with the first must be retrieved for each page!  
+ * 
+ * TODO: We could optimize better if we kept track of per-shard positions.  To do that we'd have to know which shard each result came from.
+ * This info is held in ResponseBuilder.resultIds, which is a map from id to ShardDoc; each ShardDoc has
+ * a shard id.  We can count the # of docs from each shard and calculate a position from that.
+ */
 public class CloudSearchIterator extends SearchIteratorBase {
     
     private int limit; // = solr 'rows'
@@ -80,7 +91,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
                 }
                 // FIXME: test pagination I think there is a bug here if w/start > 0?
                 if (position < docs.getStart() + docs.size()) {
-                    SolrDocument doc = docs.get(position++);
+                    SolrDocument doc = docs.get(position++ - (int) docs.getStart());
                     String uri = (String) doc.getFirstValue(uriFieldName);
                     Object oxml = doc.getFirstValue(xmlFieldName);
                     Long id = (Long) doc.getFirstValue(idFieldName);
@@ -112,6 +123,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
         }
         params.add(CommonParams.START, Integer.toString(position));
         params.add(CommonParams.ROWS, Integer.toString(limit));
+        // FIXME -- retrieve all fields
         params.add(CommonParams.FL, uriFieldName, xmlFieldName, idFieldName);
 
         SolrParams origParams = origRB.req.getParams();
@@ -122,9 +134,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
         params.add("distrib", "true");
         params.add("shards", origParams.get("shards"));
         SortSpec sortSpec = makeSortSpec();
-        if (sortCriteria != null) {
-            addSortParam (params, sortSpec);
-        }
+        addSortParam (params, sortSpec);
         XQueryComponent xqueryComponent = ((SolrQueryContext)eval.getQueryContext()).getQueryComponent();
         SolrQueryRequest req = new CloudQueryRequest(xqueryComponent.getCore(), params, sortSpec);
         response = new SolrQueryResponse();
@@ -138,7 +148,10 @@ public class CloudSearchIterator extends SearchIteratorBase {
     private void addSortParam(ModifiableSolrParams params, SortSpec sortSpec) {
         for (SortField sortField : sortSpec.getSort().getSort()) {
             String dir = sortField.getReverse() ? "desc" : "asc"; 
-            params.add("sort", sortField.getField() + ' ' + dir);
+            String field = sortField.getField();
+            if (field != null) {
+                params.add("sort", sortField.getField() + ' ' + dir);
+            }
             // FIXME Solr controls sorting missing first/last with a *schema* setting,
             // but we insist on runtime control.  We should raise an error here
             // if the schema is not in line with the runtime setting, since otherwise
@@ -146,15 +159,26 @@ public class CloudSearchIterator extends SearchIteratorBase {
             // "recover from the error" setting? Where?
         }
     }
+    
+    private String getEffectiveSortCriteria () {
+        if (sortCriteria != null) {
+            return sortCriteria + ',' + idFieldName;
+        } else {
+            return idFieldName;
+        }
+    }
 
     private SortSpec makeSortSpec () {
         Sort sort;
+        // add the uri field as a fallback sorting criterion to enforce a consistent
+        // document order
         if (sortCriteria != null) {
-            sort = makeSortFromCriteria();
+            sort = makeSortFromCriteria(getEffectiveSortCriteria());
         } else {
-            sort = new Sort (SortField.FIELD_SCORE);
+            //sort = new Sort (SortField.FIELD_SCORE, new SortField(uriFieldName, Type.STRING));
+            sort = new Sort (new SortField(idFieldName, Type.LONG));
         }
-        return new SortSpec (sort, start, limit);
+        return new SortSpec (sort, position, limit);
     }
     
     /**
