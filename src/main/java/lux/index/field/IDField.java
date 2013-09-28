@@ -24,7 +24,7 @@ public class IDField extends FieldDefinition {
     }
     
     protected IDField () {
-        super ("lux_docid", null, Store.YES, Type.LONG, true);
+        super ("lux_docid", null, Store.YES, Type.LONG, false);
     }
     
     /**
