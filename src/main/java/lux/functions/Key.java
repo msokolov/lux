@@ -1,7 +1,6 @@
 package lux.functions;
 
-import java.io.IOException;
-import java.util.Collections;
+import java.util.Collection;
 
 import lux.Evaluator;
 import lux.index.field.FieldDefinition;
@@ -23,6 +22,7 @@ import net.sf.saxon.value.StringValue;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexableField;
+import org.apache.solr.common.SolrDocument;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -109,8 +109,8 @@ public class Key extends ExtensionFunctionDefinition {
             if (node == null) {
                 return EmptySequence.getInstance();
             }
-            long docID = node.getDocumentNumber();
             Evaluator eval = SearchBase.getEvaluator(context);
+            Document doc = (Document) node.getDocumentRoot().getUserData(Document.class.getName());
             FieldDefinition field = eval.getCompiler().getIndexConfiguration().getField(fieldName);
             if (field == null) {
                 LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-existent field: {}", fieldName);
@@ -118,12 +118,18 @@ public class Key extends ExtensionFunctionDefinition {
             else if (field.isStored() == Field.Store.NO) {
                 LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-stored field: {}", fieldName);
             }
-            Document doc ;
-            try {
-                doc = eval.getSearcher().doc((int) docID, Collections.singleton(fieldName));
-            }  catch (IOException e) {
-                throw new XPathException(e);
+            if (doc != null) {
+                return getFieldValue (doc, eval, fieldName, field);
+            } else {
+                SolrDocument solrDoc = (SolrDocument) node.getDocumentRoot().getUserData(SolrDocument.class.getName());
+                if (solrDoc != null) {
+                    return getFieldValue (solrDoc, eval, fieldName, field);
+                }
             }
+            return EmptySequence.getInstance();
+        }
+        
+        private Sequence getFieldValue (Document doc, Evaluator eval, String fieldName, FieldDefinition field) throws XPathException {
             if (field == null || field.getType() == FieldDefinition.Type.STRING) {
                 Object[] values = doc.getValues(fieldName);
                 StringValue[] valueItems = new StringValue[values.length];
@@ -142,9 +148,31 @@ public class Key extends ExtensionFunctionDefinition {
             }
             return EmptySequence.getInstance();
         }
-
+        
+        private Sequence getFieldValue (SolrDocument doc, Evaluator eval, String fieldName, FieldDefinition field) throws XPathException {
+            Collection<?> valuesCollection = doc.getFieldValues(fieldName);
+            if (valuesCollection == null) {
+                return EmptySequence.getInstance();
+            }
+            Object[] values = valuesCollection.toArray();
+            if (field == null || field.getType() == FieldDefinition.Type.STRING) {
+                StringValue[] valueItems = new StringValue[values.length];
+                for (int i = 0; i < values.length; i++) {
+                    valueItems[i] = new StringValue (values[i].toString());
+                }
+                return new AtomicArray(valueItems);
+            }
+            if (field.getType() == FieldDefinition.Type.INT || field.getType() == FieldDefinition.Type.LONG) {
+                Int64Value[] valueItems = new Int64Value[values.length];
+                for (int i = 0; i < values.length; i++) {
+                    valueItems[i] = Int64Value.makeIntegerValue(((Number)values[i]).longValue());
+                }
+                return new AtomicArray(valueItems);
+            }
+            return EmptySequence.getInstance();
+        }
+        
     }
-
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -76,7 +76,6 @@ public class Evaluator {
      * be tied to the same index as the searcher.
      */
     public Evaluator(Compiler compiler, LuxSearcher searcher, DocWriter docWriter) {
-        LoggerFactory.getLogger(getClass()).debug("new evaluator");
         this.compiler = compiler;
         this.searcher = searcher;
         builder = compiler.getProcessor().newDocumentBuilder();

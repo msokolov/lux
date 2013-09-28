@@ -1,10 +1,13 @@
 package lux.solr;
 
+import java.util.ArrayList;
+
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 
-import lux.LuxURIResolver;
 import lux.CachingDocReader;
+import lux.LuxURIResolver;
+import lux.exception.LuxException;
 import lux.exception.NotFoundException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
@@ -17,7 +20,7 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
-import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.SortSpec;
 
@@ -61,15 +64,27 @@ public class SolrURIResolver extends LuxURIResolver {
 
     private XdmNode getDocumentDistrib(String uri) throws NotFoundException {
         ModifiableSolrParams params = new ModifiableSolrParams();
-        params.add((CommonParams.Q), uriFieldName + ':' + uri);
+        params.add((CommonParams.Q), uriFieldName + ":\"" + uri.replaceAll("([\\\\\\\"])", "\\$1") + '"');
         params.add(CommonParams.FL, uriFieldName, xmlFieldName, idFieldName);
+        params.add(CommonParams.WT, "javabin");
+        params.add(CommonParams.VERSION, "2");
         params.add("distrib", "true");
-        params.add("shards", xqueryComponent.getCurrentShards());
-        SolrQueryRequest req = new CloudQueryRequest(xqueryComponent.getCore(), params, new SortSpec(Sort.INDEXORDER, 1));
+        String[] shards = xqueryComponent.getCurrentShards();
+        StringBuilder shardBuffer = new StringBuilder(shards[0]);
+        for (int i = 0; i < shards.length; i++) {
+            shardBuffer.append(',').append(shards[i]);
+        }
+        params.add("shards", shardBuffer.toString());
+        CloudQueryRequest req = new CloudQueryRequest(xqueryComponent.getCore(), params, new SortSpec(Sort.RELEVANCE, 1));
+        // don't need to query for docids?
+        req.setNextStage(ResponseBuilder.STAGE_GET_FIELDS);
         SolrQueryResponse response = new SolrQueryResponse();
         // TODO: we could probably figure out which shard has the document and only query that one
         // instead of broadcasting this request to all of them
         xqueryComponent.getSearchHandler().handleRequest(req, response);
+        if (response.getException() != null) {
+            throw new LuxException ("An error occurred while retrieving " + uri, response.getException());
+        }
         SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
         if (docs.isEmpty()) {
             throw new NotFoundException ("document '" + uri + "' not found");
@@ -80,16 +95,22 @@ public class SolrURIResolver extends LuxURIResolver {
         SolrDocument doc = docs.get(0);
         Long docID = (Long) doc.get(idFieldName);
         Object xml = doc.get(xmlFieldName);
+        if (xml instanceof ArrayList<?>) {
+            // why does this come back as an ArrayList?
+            xml = ((ArrayList<?>)xml).get(0);
+        }
         String xmlString = null;
         byte[] xmlBytes = null;
         if (xml instanceof String) {
             xmlString = (String) xml;
         } else {
             // Must be a tinybin if it's not a String
-            // Is this actually how this works??
             xmlBytes = (byte[]) xml;
         }
-        return getDocReader().createXdmNode(docID, uri, xmlString, xmlBytes);
+        XdmNode node = getDocReader().createXdmNode(docID, uri, xmlString, xmlBytes);
+        doc.removeFields(xmlFieldName);
+        node.getUnderlyingNode().getDocumentRoot().setUserData(SolrDocument.class.getName(), doc);
+        return node;
     }
     
     public LuxSearcher getSearcher() {
