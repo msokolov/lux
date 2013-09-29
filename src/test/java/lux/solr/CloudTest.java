@@ -5,9 +5,7 @@ import org.apache.solr.BaseDistributedSearchTestCase;
 /**
  * Basic test of Lux operation in a distributed ("cloud") setup.  Inserts some test
  * documents and performs basic queries: ordered (by docid), sorted by field, and 
- * sorted by relevance.  TODO: Test some queries with multiple subqueries.  Test deep
- * pagination (eg retrieve the 250th result). Test both query parsers (user-supplied lux:search(string)).
- * test count() and exists().
+ * sorted by relevance.  TODO: Test both query parsers (user-supplied lux:search(string)).
  */
 public class CloudTest extends BaseDistributedSearchTestCase {
     
@@ -83,7 +81,7 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         query ("qt", "/xquery", "q", "exists(/ACT)");
         
         // test an expression dependent on document ordering
-        // FIXME: StackOverflow in net.sf.saxon.expr.ForExpression.optimize()!!!  This is filed as Saxon bug #1910; see saxonica.plan.io
+        // StackOverflow in net.sf.saxon.expr.ForExpression.optimize()!!!  This is filed as Saxon bug #1910; see saxonica.plan.io
         // query ("qt", "/xquery", "q", "count(for $act in /ACT, $actdesc in //ACT return $act intersect $actdesc)");
         
         // some tests that rely on document identity and ordering:
