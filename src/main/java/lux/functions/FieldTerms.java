@@ -24,7 +24,6 @@ import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.StringValue;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
@@ -38,6 +37,7 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.request.SolrRequestHandler;
 import org.apache.solr.response.SolrQueryResponse;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>function lux:field-terms($field-name as xs:string?, $start as xs:string?) as xs:anyAtomicItem*</code>
@@ -176,7 +176,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         private void getMoreTerms() {
             SolrRequestHandler termsHandler = xqueryComponent.getCore().getRequestHandler("/terms");
             if (termsHandler == null) {
-                Logger.getLogger(getClass()).error("No /terms handler configured; lux:field-terms giving up");
+                LoggerFactory.getLogger(getClass()).error("No /terms handler configured; lux:field-terms giving up");
                 return;
             }
             ModifiableSolrParams params = new ModifiableSolrParams();
