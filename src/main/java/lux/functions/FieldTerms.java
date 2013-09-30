@@ -189,11 +189,12 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                 pos = 0;
                 params.add(TermsParams.TERMS_LOWER, term.text());
             }
+            params.add(TermsParams.TERMS_SORT, TermsParams.TERMS_SORT_INDEX);
             params.add(TermsParams.TERMS_LIMIT, Integer.toString(100));
             params.add("distrib", "true");
             xqueryComponent.getCurrentShards();
             params.add(ShardParams.SHARDS, StringUtils.join(xqueryComponent.getCurrentShards(), ","));
-            params.add(ShardParams.SHARDS_QT, "terms"); // this must not be missing, but is not used?
+            params.add(ShardParams.SHARDS_QT, "/terms"); // this gets passed to the shards to tell them what the request is
             SolrQueryRequest req = new CloudQueryRequest(xqueryComponent.getCore(), params, null);
             response = new SolrQueryResponse();
             termsHandler.handleRequest(req, response);
@@ -235,11 +236,12 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         private Term term;
         private int pos;
         private String current;
+        private String next;
 
         TermsIterator(Evaluator eval, Term term) throws IOException {
             this.term = term;
             this.eval = eval;
-            pos = -1;
+            pos = 0;
             createTermsEnum(term);
         }
 
@@ -262,7 +264,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
                     terms = fieldTerms.iterator(null);
                     if (t != null) {
                         if (terms.seekCeil(new BytesRef(t.text().getBytes("utf-8"))) != TermsEnum.SeekStatus.END) {
-                            current = terms.term().utf8ToString();
+                            next = terms.term().utf8ToString();
                         }
                     }
                 }
@@ -272,19 +274,19 @@ public class FieldTerms extends ExtensionFunctionDefinition {
         @Override
         public AtomicValue next() throws XPathException {
             try {
-                if (current == null) {
+                if (next == null) {
+                    pos = -1;
                     return null;
                 }
-                String value = current;
+                ++pos;
+                current = next;
                 BytesRef bytesRef = terms.next();
                 if (bytesRef == null) {
-                    pos = -1;
-                    current = null;
+                    next = null;
                 } else {
-                    ++pos;
-                    current = bytesRef.utf8ToString();
+                    next = bytesRef.utf8ToString();
                 }
-                return new net.sf.saxon.value.StringValue(value);
+                return new net.sf.saxon.value.StringValue(current);
             } catch (IOException e) {
                 throw new XPathException(e);
             }

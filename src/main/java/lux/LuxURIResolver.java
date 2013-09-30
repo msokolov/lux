@@ -9,12 +9,11 @@ import javax.xml.transform.URIResolver;
 import lux.exception.NotFoundException;
 import lux.search.DocIterator;
 import lux.search.LuxSearcher;
+import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.TermQuery;
-
-import net.sf.saxon.s9api.XdmNode;
 
 public class LuxURIResolver implements URIResolver {
 
@@ -23,7 +22,9 @@ public class LuxURIResolver implements URIResolver {
     protected final String uriFieldName;
     
     /**
-     * @param evaluator
+     * @param systemURIResolver resolver to use for file: uris
+     * @param evaluator the evaluator to use to retrieve docs from the index
+     * @param uriFieldName the name of the URI field
      */
     public LuxURIResolver(URIResolver systemURIResolver, Evaluator evaluator, String uriFieldName) {
         this.systemURIResolver = systemURIResolver;
@@ -69,19 +70,21 @@ public class LuxURIResolver implements URIResolver {
      * using the provided searcher.  The lux: prefix is optional, e.g: the uris "lux:/hello.xml" and "/hello.xml"
      * are equivalent.  Documents read from the index are numbered according to their Lucene docIDs, and retrieved
      * using the {@link CachingDocReader}.
-     * @throws IllegalStateException if a search is attempted, but no searcher was provided
-     * @throws TransformerException if the document is not found in the index, or there was an IOException
-     * thrown by Lucene.
+     * @param uri the uri of the document to retrieve
+     * @return the document node
+     * @throws IllegalStateException if the resolver wasn't configured properly (has no searcher) 
+     * @throws TransformerException or there was an IOException thrown by Lucene.
+     * @throws NotFoundException if the document is not found in the index
      */
-    public XdmNode getDocument(String path) throws TransformerException {
+    public XdmNode getDocument(String uri) throws TransformerException {
         if (getSearcher() == null) {
             throw new IllegalStateException ("Attempted search, but no searcher was provided");
         }
         try {
-            DocIterator disi = getSearcher().search(new TermQuery(new Term(uriFieldName, path)));
+            DocIterator disi = getSearcher().search(new TermQuery(new Term(uriFieldName, uri)));
             int docID = disi.nextDoc();
             if (docID == DocIdSetIterator.NO_MORE_DOCS) {
-                throw new NotFoundException(path);
+                throw new NotFoundException(uri);
             }
             return getDocReader().get(docID, disi.getCurrentReaderContext());
         } catch (IOException e) {

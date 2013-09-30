@@ -106,7 +106,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     protected String queryPath;
 
     private SolrURIResolver uriResolver; 
-    private ThreadLocal<Evaluator> evaluator;
+    private ThreadLocal<Evaluator> evalHolder;
     
     private Serializer serializer;
 
@@ -121,7 +121,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
-        evaluator = new ThreadLocal<Evaluator>();
+        evalHolder = new ThreadLocal<Evaluator>();
     }
 
     @Override
@@ -260,7 +260,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         Compiler compiler = solrIndexConfig.getCompiler();
 
         Evaluator eval = new Evaluator(compiler, searcher, docWriter); 
-        evaluator.set (eval);
+        evalHolder.set (eval);
         TransformErrorListener errorListener = eval.getErrorListener();
         try {
             URI baseURI = queryPath == null ? null : java.net.URI.create(queryPath);
@@ -821,7 +821,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     }
     
     public Evaluator getEvaluator () {
-        return evaluator.get();
+        return evalHolder.get();
     }
 
     public SearchHandler getSearchHandler() {

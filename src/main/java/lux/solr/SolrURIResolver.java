@@ -113,10 +113,12 @@ public class SolrURIResolver extends LuxURIResolver {
         return node;
     }
     
+    @Override
     public LuxSearcher getSearcher() {
         return xqueryComponent.getEvaluator().getSearcher();
     }
 
+    @Override
     public CachingDocReader getDocReader() {
         return xqueryComponent.getEvaluator().getDocReader();
     }

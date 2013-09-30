@@ -1,9 +1,5 @@
 package lux.functions;
 
-import org.apache.lucene.search.Query;
-import org.apache.solr.handler.component.ResponseBuilder;
-import org.slf4j.LoggerFactory;
-
 import lux.Evaluator;
 import lux.QueryContext;
 import lux.TransformErrorListener;
@@ -20,6 +16,10 @@ import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
+
+import org.apache.lucene.search.Query;
+import org.apache.solr.handler.component.ResponseBuilder;
+import org.slf4j.LoggerFactory;
 
 /**
  * A base class for functions that execute search queries.
@@ -66,6 +66,7 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
     
     public class SearchCall extends NamespaceAwareFunctionCall {
         
+        @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
             if (arguments.length == 0 || arguments.length > 3) {
