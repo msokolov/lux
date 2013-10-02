@@ -1,8 +1,7 @@
-*features
-** distributed search
-*** doc()
-*** key() (field retrieval)
-*** field-terms() (ie faceting)
+* features
+** cloud
+*** insert()
+*** commit()
 ** directory (uri component) index
 also link to collection()?
 ** fragmentation 

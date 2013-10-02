@@ -53,6 +53,9 @@ We weren't pushing a query on the stack?
 ** mark subsequence (first or last) as SINGULAR
 * enhancements
 ** distributed search (and indexing)
+*** doc()
+*** key() (field retrieval)
+*** field-terms() (ie faceting)
 *** search
 This is complicated b/c Saxon wants to pull results, and Solr, to push
 them.  We had a similar issue in the single-node search with Lucene, but
