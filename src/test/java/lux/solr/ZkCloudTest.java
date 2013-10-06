@@ -8,7 +8,6 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.cloud.AbstractFullDistribZkTestBase;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
-import org.slf4j.LoggerFactory;
 
 /**
  * Basic test of Lux operation in a distributed ("cloud") setup.  Inserts some test
@@ -26,11 +25,11 @@ public class ZkCloudTest extends AbstractFullDistribZkTestBase {
     
     /**
      * Subclasses can override this to change a test's solr home
-     * but it doesn't actually seem to do anything???
+     * TODO: understand why we need this, yet properties seem to come from solr/conf/solrconfig.xml??
      */
     @Override
     public String getSolrHome() {
-      return "test-solr";
+      return "zk-solr";
     }
     
     @Override
@@ -63,22 +62,32 @@ public class ZkCloudTest extends AbstractFullDistribZkTestBase {
         //query("qt", "/update", "commit", "true");
         query("qt", "/xquery", "q", "count(collection())");
         
+        verifyShardCounts(10);
+
+        // delete 
+        query ("qt", "/xquery", "q", "(lux:delete('/doc/1'), lux:commit(), count(collection()))");
+        verifyShardCounts(9);
+        
+        // delete all
+        query ("qt", "/xquery", "q", "(lux:delete('lux:/'), count(collection()))");
+        verifyShardCounts(9);
+        query ("qt", "/xquery", "q", "(lux:commit(), count(collection()))");
+        verifyShardCounts(0);
+        
+    }
+
+    private void verifyShardCounts(int expectedTotal) throws Exception {
         int total = 0;
         for (int i = 0; i < this.sliceCount; i++) {
             // query the leader of each slice (aka shard -- the nomenclature is all confused)
             String count = sliceQuery(i, "qt", "/xquery", "q", "count(collection())");
             int c = Integer.valueOf (count);
-            // the documents were distributed among the shards:
-            //assertTrue ("shard " + i + " has no documents", c > 0);
-            //assertTrue ("shard " + i + " total document count = " + c, c <= 10);
-            System.out.println("shard " + i + " has " + c + " documents");
-            LoggerFactory.getLogger(getClass()).info("shard " + i + " has " + c + " documents");
+            // LoggerFactory.getLogger(getClass()).info("shard " + i + " has " + c + " documents");
             total += c;
         }
         // each "slice" has some of the documents, they are replicated into a total number of 
         // indexes == shardCount.
-        assertEquals (10, total);
-
+        assertEquals (expectedTotal, total);
     }
 
     private void initComparisonRegime() {

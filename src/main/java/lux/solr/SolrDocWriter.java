@@ -33,7 +33,7 @@ import org.apache.solr.update.processor.UpdateRequestProcessorChain;
 import org.slf4j.LoggerFactory;
 
 /**
- * Used to write documents from within XQuery (lux:insert) and XSLT (xsl:result-document)
+ * Used for updates (write, delete and commit) from within XQuery (lux:insert) and XSLT (xsl:result-document)
  * TODO: refactor into two classes: one for cloud, one for local?
  */
 public class SolrDocWriter implements DocWriter {
@@ -58,9 +58,8 @@ public class SolrDocWriter implements DocWriter {
         // Create a version of the document for saving to the transaction log,
         // or for cloud update via HTTP
         SolrInputDocument solrDoc = new SolrInputDocument();
-        boolean isCloud = xqueryComponent.getCurrentShards() != null;
         solrDoc.addField(uriFieldName, uri);
-        if (isCloud) {
+        if (isCloud()) {
             // TODO: write as binary, but we need to enable the binary update request writer for this
             // TinyBinary tinybin = new TinyBinary(((TinyNodeImpl)node).getTree());
             // solrDoc.addField(xmlFieldName, tinybin.getByteBuffer().array());
@@ -85,7 +84,7 @@ public class SolrDocWriter implements DocWriter {
                 solrDoc.addField(xmlFieldName, xml);
             }
         }
-        if (isCloud) {
+        if (isCloud()) {
             writeToCloud (solrDoc, uri);
         } else {
             writeLocal (solrDoc, node, uri);
@@ -141,10 +140,24 @@ public class SolrDocWriter implements DocWriter {
         */
         cmd.id = uri;
         try {
-            core.getUpdateHandler().delete(cmd);
+            if (isCloud()) {
+                deleteCloud(cmd);
+            } else {
+                core.getUpdateHandler().delete(cmd);
+            }
         } catch (IOException e) {
-            throw new LuxException(e);
+            throw new LuxException (e);
         }
+
+    }
+    
+    private void deleteCloud (DeleteUpdateCommand cmd) throws IOException {
+        UpdateRequestProcessorChain updateChain = xqueryComponent.getCore().getUpdateProcessingChain("lux-update-chain");
+            SolrQueryResponse rsp = new SolrQueryResponse();
+            SolrQueryRequest req = UpdateDocCommand.makeSolrRequest(core);
+            UpdateRequestProcessor processor = updateChain.createProcessor(req, rsp);
+            processor.processDelete(cmd);
+            processor.finish();
     }
 
     @Override
@@ -156,7 +169,11 @@ public class SolrDocWriter implements DocWriter {
         */
         cmd.query = "*:*";
         try {
-            core.getUpdateHandler().deleteByQuery(cmd);
+            if (isCloud()) {
+                deleteCloud(cmd);
+            } else {
+                core.getUpdateHandler().deleteByQuery(cmd);
+            }
         } catch (IOException e) {
             throw new LuxException(e);
         }
@@ -176,9 +193,13 @@ public class SolrDocWriter implements DocWriter {
      * commits, but does not close the underlying index
      */
     @Override
-    public void close() {
+    public void close(Evaluator eval) {
     	// do not attempt to close the index; Solr will take care of that
-    	// commit ();
+        commit (eval);
+    }
+    
+    private boolean isCloud () {
+        return xqueryComponent.getCurrentShards() != null;
     }
 
 }

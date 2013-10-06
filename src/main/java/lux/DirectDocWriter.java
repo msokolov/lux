@@ -68,7 +68,7 @@ public class DirectDocWriter implements DocWriter {
     }
 
 	@Override
-	public void close() {
+	public void close(Evaluator eval) {
 		try {
 			indexWriter.close();
 		} catch (IOException e) {

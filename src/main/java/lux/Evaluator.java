@@ -134,7 +134,7 @@ public class Evaluator {
         config.setCollectionURIResolver(null);
         try {
             searcher.close();
-            docWriter.close();
+            docWriter.close(this);
         } catch (IOException e) {
             LoggerFactory.getLogger (getClass()).error ("failed to close searcher", e);
             e.printStackTrace();

@@ -36,7 +36,7 @@ public interface DocWriter {
     /**
      * Perform any cleanup, including a commit.
      */
-    void close();
+    void close(Evaluator eval);
 
 }
 
