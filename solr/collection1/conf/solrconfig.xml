@@ -299,7 +299,7 @@
          have some sort of hard autoCommit to limit the log size.
       -->
      <autoCommit> 
-       <maxTime>15000</maxTime> 
+       <maxTime>150000</maxTime> 
        <openSearcher>false</openSearcher> 
      </autoCommit>
 
@@ -1540,9 +1540,7 @@
        by SearchHandler) or in LocalParams
     -->
     <!-- example of registering a query parser -->
-  <!--
-     <queryParser name="myparser" class="com.mycompany.MyQParserPlugin"/>
-    -->
+     <queryParser name="xml" class="lux.solr.XmlQParserPlugin"/>
   
   <!-- Function Parsers
 
@@ -1609,6 +1607,8 @@
       </lst>
       <str name="strip-namespaces">no</str>
       <str name="xml-format">tiny</str>
+      <!-- must come *before* the DistributingUpdateProcessor for lux_docid generation to work -->
+      <processor class="lux.solr.CloudIdProcessorFactory" />
       <processor class="org.apache.solr.update.processor.DistributedUpdateProcessorFactory" />
       <!-- must come *after* the DistributingUpdateProcessor for transaction log replay to work -->
       <processor class="lux.solr.LuxUpdateProcessorFactory" />

@@ -151,8 +151,8 @@ public class SolrIT {
     	String path = (XQUERY_PATH + "?q=" + xmlDocEnc + "&wt=json&lux.contentType=text/xml");
         WebResponse httpResponse = httpclient.getResponse(path);
         String resp = httpResponse.getText(); 
-    	assertEquals ("},\"xpath-results\":[\"element\",\"<doc title=\\\"title with &lt;tag&gt; &amp; &#34;quotes&#34; in it\\\"/>\"],\"response\":{\"numFound\":0,\"start\":0,\"docs\":[]}}\n",
-    			resp.substring(resp.indexOf("},")));
+    	assertEquals ("xpath-results\":[\"element\",\"<doc title=\\\"title with &lt;tag&gt; &amp; &#34;quotes&#34; in it\\\"/>\"]}\n",
+    			resp.substring(resp.indexOf("xpath-results")));
     }
     
     /*

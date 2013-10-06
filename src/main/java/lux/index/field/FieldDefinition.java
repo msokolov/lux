@@ -93,6 +93,9 @@ public abstract class FieldDefinition {
         this.isStored = isStored;
         this.type = type;
         this.renameable = renameable;
+        if (analyzer != null && ! (type == Type.STRING || type == Type.TEXT || type == Type.TOKENS)) {
+            throw new LuxException ("Unexpected combination of analyzer and field " + name + " of type: " + type);
+        }
     }
     
     /**
@@ -169,8 +172,10 @@ public abstract class FieldDefinition {
      */
     public int getSolrFieldProperties () {
         int options = 0;
-        if (analyzer != null) {
+        if (type != Type.BYTES) {
             options |= 1; // INDEXED
+        }
+        if (analyzer != null) {
             if (analyzer instanceof KeywordAnalyzer) {
                 options |= 0x20;    // OMIT_TF_POSITIONS 
                 //options |= 0x2000;  // OMIT_POSITIONS

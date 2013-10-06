@@ -32,7 +32,7 @@ public class UpdateDocCommand extends AddUpdateCommand {
         return doc;
     }
 
-    private static SolrQueryRequest makeSolrRequest(SolrCore core) {
+    public static SolrQueryRequest makeSolrRequest(SolrCore core) {
         SolrParams params = new ModifiableSolrParams () {};
         return new SolrQueryRequestBase(core, params) {};
     }

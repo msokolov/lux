@@ -66,6 +66,7 @@ public class Evaluator {
     private LuxQueryParser queryParser;
     private XmlQueryParser xmlQueryParser;
     private QueryStats queryStats;
+    private QueryContext queryContext;
 
     /**
      * Creates an evaluator that uses the provided objects to evaluate queries.
@@ -75,7 +76,6 @@ public class Evaluator {
      * be tied to the same index as the searcher.
      */
     public Evaluator(Compiler compiler, LuxSearcher searcher, DocWriter docWriter) {
-        LoggerFactory.getLogger(getClass()).debug("new evaluator");
         this.compiler = compiler;
         this.searcher = searcher;
         builder = compiler.getProcessor().newDocumentBuilder();
@@ -89,9 +89,13 @@ public class Evaluator {
         queryStats = new QueryStats();
         errorListener = new TransformErrorListener();
         errorListener.setUserData(this);
+        // TODO: move these out of here; they should be one-time setup for the Processor 
         config.setCollectionURIResolver(new LuxCollectionURIResolver());
         config.setOutputURIResolver(new LuxOutputURIResolver());
-        resetURIResolver();
+        if (config.getURIResolver() == null || !(config.getURIResolver() instanceof LuxURIResolver)) {
+            config.setURIResolver(new LuxURIResolver(config.getSystemURIResolver(), this, 
+                    compiler.getIndexConfiguration().getFieldName(FieldName.URI)));
+        }
     }
     
     /**
@@ -130,7 +134,7 @@ public class Evaluator {
         config.setCollectionURIResolver(null);
         try {
             searcher.close();
-            docWriter.close();
+            docWriter.close(this);
         } catch (IOException e) {
             LoggerFactory.getLogger (getClass()).error ("failed to close searcher", e);
             e.printStackTrace();
@@ -171,7 +175,7 @@ public class Evaluator {
         return evaluate (xquery, null);
     }
     
-    public XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context) { 
+    public XdmResultSet evaluate(XQueryExecutable xquery, QueryContext context) {
         return evaluate (xquery, context, errorListener);
     }
 
@@ -212,7 +216,7 @@ public class Evaluator {
     }
     
     /**
-     * Evaluate the already-compiled query, with no context defined.
+     * Evaluate the already-compiled query
      * @param xquery a compiled XQuery expression
      * @param context the dynamic query context
      * @return an iterator over the results of the evaluation.
@@ -235,6 +239,7 @@ public class Evaluator {
 
     private XQueryEvaluator prepareEvaluation(QueryContext context, TransformErrorListener listener, XQueryExecutable xquery) {
         listener.setUserData(this);
+        this.queryContext = context;
         XQueryEvaluator xqueryEvaluator = xquery.load();
         xqueryEvaluator.setErrorListener(listener);
         if (context != null) {
@@ -376,7 +381,7 @@ public class Evaluator {
                 searcher = new LuxSearcher (DirectoryReader.openIfChanged((DirectoryReader) current.getIndexReader()));
                 current.close();
             }
-            resetURIResolver();
+            resetURIResolver ();
         } catch (IOException e) {
             throw new LuxException (e);
         }
@@ -384,7 +389,7 @@ public class Evaluator {
     
     private void resetURIResolver () {
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
-        config.setURIResolver(new LuxURIResolver(config.getSystemURIResolver(), searcher, docReader, compiler.getUriFieldName()));
+        config.setURIResolver(new LuxURIResolver(config.getSystemURIResolver(), this, compiler.getUriFieldName()));
     }
     
     public Compiler getCompiler() {
@@ -442,6 +447,14 @@ public class Evaluator {
      */
     public TransformErrorListener getErrorListener() {
         return errorListener;
+    }
+
+    /**
+     * @return the context associated with this query; wraps the variable bindings, namespace declarations,
+     * and the Solr XQueryComponent if this is a distributed query running via SolrCloud.
+     */
+    public QueryContext getQueryContext() {
+        return queryContext;
     }
 
 }

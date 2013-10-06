@@ -12,7 +12,7 @@ import net.sf.saxon.value.EmptySequence;
 import net.sf.saxon.value.SequenceType;
 
 /**
- * <code>function lux:insert-document($uri as xs:string, $node as node()) as empty-sequence()</code>
+ * <code>function lux:insert($uri as xs:string, $node as node()) as empty-sequence()</code>
  * <p>inserts a document to the index at the given uri.  lux:commit() must be called for the result
  * to become visible.</p>
  */

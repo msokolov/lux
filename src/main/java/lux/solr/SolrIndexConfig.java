@@ -53,17 +53,14 @@ public class SolrIndexConfig implements SolrInfoMBean {
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
     private ArrayBlockingQueue<Serializer> serializerPool;
     private IndexSchema schema;
+    private final Logger logger;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
         serializerPool = new ArrayBlockingQueue<Serializer>(8);
-        // FIXME: possibly we need a pool of compilers as well?  The issue is they hold the Saxon Processor,
-        // and that in turn holds uri resolver, which needs to get transient pointers to per-request objects
-        // like the searcher, so it can read documents from the index.  ATM different requests will overwrite
-        // that pointer in a shared processor.  At the best, this causes some leakage across request (ie transaction)
-        // boundaries
         compiler = new Compiler (indexConfig);
+        logger = LoggerFactory.getLogger(getClass());
     }
     
     public Compiler getCompiler () {
@@ -76,6 +73,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         XmlIndexer indexer = indexerPool.poll();
         if (indexer == null) {
             indexer = new XmlIndexer (indexConfig, compiler);
+            logger.debug("created new XmlIndexer");
         }
         return indexer;
     }
@@ -103,14 +101,23 @@ public class SolrIndexConfig implements SolrInfoMBean {
     
     public static SolrIndexConfig registerIndexConfiguration (SolrCore core) {
         // Read the init args from the LuxUpdateProcessorFactory's configuration
-        PluginInfo info = core.getSolrConfig().getPluginInfo(UpdateRequestProcessorChain.class.getName());
+        NamedList<?> initArgs = null;
+        for (PluginInfo info : core.getSolrConfig().getPluginInfos(UpdateRequestProcessorChain.class.getName())) {
+            // FIXME: if there are multiple processors, we prefer the 'default' one, otherwise
+            // just take the last?  This is a  bit lame, but it provides back-compat.  We should at least
+            // raise a warning if this is ambiguous
+            initArgs = info.initArgs;
+            if ("true".equals(info.attributes.get("default"))) {
+                break;
+            }
+        }
         SolrInfoMBean configBean = core.getInfoRegistry().get(SolrIndexConfig.class.getName());
         SolrIndexConfig indexConfig;
         if (configBean != null) {
             indexConfig = (SolrIndexConfig) configBean;
         } else {
         	int options = (INDEX_PATHS | INDEX_FULLTEXT | STORE_DOCUMENT | SOLR);
-            indexConfig = SolrIndexConfig.makeIndexConfiguration(options, info.initArgs);
+            indexConfig = SolrIndexConfig.makeIndexConfiguration(options, initArgs);
             indexConfig.inform(core);
             core.getInfoRegistry().put(indexConfig.getName(), indexConfig);
         }
@@ -188,12 +195,12 @@ public class SolrIndexConfig implements SolrInfoMBean {
     }
 
     public void inform(SolrCore core) {
-        
         schema = core.getLatestSchema();
+
         // XML_STORE is not listed explicitly by the indexer
         informField (indexConfig.getField(FieldName.XML_STORE));
-        for (FieldDefinition xmlField : indexConfig.getFields()) {
-            informField (xmlField);
+        for (FieldDefinition fld : indexConfig.getFields()) {
+            informField (fld);
         }
         if (xpathFieldConfig != null) {
             addXPathFields();
@@ -206,14 +213,14 @@ public class SolrIndexConfig implements SolrInfoMBean {
         }
         // must call this after making changes to the field map:
         schema.refreshAnalyzers();
-        
+
     }
     
-    private void informField (FieldDefinition xmlField) {
+    private void informField (FieldDefinition fld) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         Logger logger = LoggerFactory.getLogger(LuxUpdateProcessorFactory.class);
-        String fieldName = indexConfig.getFieldName(xmlField); // has this field been renamed?
+        String fieldName = indexConfig.getFieldName(fld); // has this field been renamed?
         FieldDefinition actualField = indexConfig.getField(fieldName); // has this field been redefined?
         if (fields.containsKey(fieldName)) {
             // The Solr schema defines this field
@@ -400,6 +407,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
     public NamedList<?> getStatistics() {
         return null;
     }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

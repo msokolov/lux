@@ -13,6 +13,7 @@ import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.trans.XPathException;
 
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.xml.ParserException;
@@ -40,12 +41,16 @@ public abstract class NamespaceAwareFunctionCall extends ExtensionFunctionCall {
         ((NamespaceAwareFunctionCall) destination).namespaceResolver = namespaceResolver;
     }
     
-   protected Query parseQuery(Item queryArg, Evaluator eval) throws ParseException, ParserException {
+   protected Query parseQuery(Item queryArg, Evaluator eval) throws XPathException {
         if (queryArg instanceof NodeInfo) {
             NodeInfo queryNodeInfo = (NodeInfo) queryArg;
             NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
             if (queryDocument instanceof Element) {
-                return eval.getXmlQueryParser().getQuery((Element) queryDocument);
+                try {
+                    return eval.getXmlQueryParser().getQuery((Element) queryDocument);
+                } catch (ParserException e) {
+                    throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
+                }
             }
             // maybe it was a text node?
         }
@@ -60,7 +65,11 @@ public abstract class NamespaceAwareFunctionCall extends ExtensionFunctionCall {
                 luxQueryParser.bindNamespacePrefix(prefix, nsURI);
             }
         }
-        return luxQueryParser.parse(queryArg.getStringValue());
+        try {
+            return luxQueryParser.parse(queryArg.getStringValue());
+        } catch (ParseException e) {
+            throw new XPathException (e.getMessage(), e);
+        }
     }
     
 }

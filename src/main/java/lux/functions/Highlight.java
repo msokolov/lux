@@ -21,8 +21,6 @@ import net.sf.saxon.value.SequenceType;
 import net.sf.saxon.value.StringValue;
 import net.sf.saxon.value.QNameValue;
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.Query;
 
 /**
@@ -80,15 +78,8 @@ public class Highlight extends ExtensionFunctionDefinition {
                 return EmptySequence.getInstance();
             }
             Item queryArg = arguments[1].head(); 
-            Query query;
             Evaluator eval = SearchBase.getEvaluator(context);
-            try {
-                query = parseQuery(queryArg, eval);
-            } catch (ParseException e) {
-                throw new XPathException (e.getMessage(), e);
-            } catch (ParserException e) {
-                throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
-            }
+            Query query = parseQuery(queryArg, eval);
             IndexConfiguration indexConfiguration = eval.getCompiler().getIndexConfiguration();
             TagFormatter formatter;
             if (arguments.length < 3) {

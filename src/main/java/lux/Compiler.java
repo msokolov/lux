@@ -144,7 +144,7 @@ public class Compiler {
      * @param errorListener receives any errors generated while compiling; may be null, in which case
      * any errors generated will be lost
      * @param baseURI the base URI of the compiled query
-     * @param stats if provided (not null), query text and timings are written here
+     * @param stats accumulates statistics about the query execution for debugging and logging (if not null)
      * @return the compiled, executable query object
      * @throws LuxException when a compilation error occurs.  The message is typically unhelpful; meaningful errors
      * are stored in the errorListener

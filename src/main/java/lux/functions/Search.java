@@ -4,6 +4,7 @@ import lux.Evaluator;
 import lux.SearchResultIterator;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
+import lux.solr.CloudSearchIterator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.om.NodeInfo;
@@ -59,7 +60,7 @@ public class Search extends SearchBase {
     /**
      * Iterate over the search results
      *
-     * @param query the query to execute
+     * @param query the Lucene query to execute
      * @param eval 
      * @return an iterator with the results of executing the query and applying the
      * expression to its result.
@@ -69,6 +70,23 @@ public class Search extends SearchBase {
     public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, String sortCriteria, int start) throws XPathException {        
         try {
             return new SearchResultIterator (eval, query, sortCriteria, start);
+        } catch (Exception e) {
+            throw new XPathException (e);
+        }
+    }
+    
+    /**
+     * Execute distributed search, returning an iterator that retrieves all the search results lazily.
+     *
+     * @param query the query to execute, as a String 
+     * @param eval 
+     * @return an iterator with the results of executing the query and applying the expression to its result.
+     * @throws XPathException
+     */
+    @Override
+    public SequenceIterator<NodeInfo> iterateDistributed(final String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {        
+        try {
+            return new CloudSearchIterator (eval, query, queryParser, sortCriteria, start);
         } catch (Exception e) {
             throw new XPathException (e);
         }

@@ -22,7 +22,6 @@ import javax.xml.transform.sax.SAXSource;
 import lux.Compiler;
 import lux.DocWriter;
 import lux.Evaluator;
-import lux.QueryContext;
 import lux.QueryStats;
 import lux.TransformErrorListener;
 import lux.exception.LuxException;
@@ -30,6 +29,7 @@ import lux.exception.ResourceExhaustedException;
 import lux.search.LuxSearcher;
 import lux.solr.LuxDispatchFilter.Request;
 import lux.xml.QName;
+import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.instruct.GlobalVariable;
 import net.sf.saxon.om.FingerprintedQName;
 import net.sf.saxon.om.NamespaceBinding;
@@ -64,99 +64,206 @@ import nu.validator.htmlparser.sax.HtmlParser;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.solr.common.SolrException;
+import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.CommonParams;
+import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.ContentStream;
 import org.apache.solr.common.util.ContentStreamBase;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.common.util.StrUtils;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.QueryComponent;
 import org.apache.solr.handler.component.ResponseBuilder;
+import org.apache.solr.handler.component.SearchComponent;
+import org.apache.solr.handler.component.SearchHandler;
 import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.request.SolrQueryRequestBase;
+import org.apache.solr.request.SolrRequestHandler;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
+import org.apache.solr.update.CommitUpdateCommand;
+import org.apache.solr.update.processor.UpdateRequestProcessorChain;
 import org.apache.solr.util.plugin.SolrCoreAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
-/** This component executes searches expressed as XPath or XQuery.
- *  Its queries will match documents that have been indexed using XmlIndexer
- *  with the INDEX_PATHS option.
+/**
+ * This component executes searches expressed as XPath or XQuery. Its queries
+ * will match documents that have been indexed using XmlIndexer.
  */
 public class XQueryComponent extends QueryComponent implements SolrCoreAware {
-    
+
     public static final String LUX_XQUERY = "lux.xquery";
     public static final String LUX_PATH_INFO = "lux.pathInfo";
-    private static final QName LUX_HTTP = new QName (Evaluator.LUX_NAMESPACE, "http");
+    private static final QName LUX_HTTP = new QName(Evaluator.LUX_NAMESPACE, "http");
     // TODO: expose via configuration
     private static final int MAX_RESULT_SIZE = (int) (Runtime.getRuntime().maxMemory() / 32);
 
     protected Set<String> fields = new HashSet<String>();
 
     protected SolrIndexConfig solrIndexConfig;
-    
+    protected SearchHandler searchHandler;
+
     protected String queryPath;
+
+    private SolrURIResolver uriResolver; 
+    private ThreadLocal<Evaluator> evalHolder;
     
     private Serializer serializer;
-    
+
     private Logger logger;
     
+    private SolrCore core;
+
     private int resultByteSize;
+    
+    // In theory this is per-request state, but changes infrequently, so we just grab it as it flies by?
+    private String[] shards;
+    private String[] slices;
     
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
-    }
-    
-    @Override
-    public void inform(SolrCore core) {
-        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(core);
+        evalHolder = new ThreadLocal<Evaluator>();
     }
 
     @Override
-    public void prepare(ResponseBuilder rb) throws IOException {
-        SolrQueryRequest req = rb.req;
-        SolrParams params = req.getParams();            
-        if (rb.getQueryString() == null) {
-            rb.setQueryString( params.get( CommonParams.Q ) );
+    public void inform(SolrCore solrCore) {
+        solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(solrCore);
+        this.core = solrCore;
+        Configuration saxonConfig = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration();
+        uriResolver = new SolrURIResolver(this, saxonConfig.getSystemURIResolver());
+        saxonConfig.setURIResolver(uriResolver);
+    }
+    
+    private void findSearchHandler () {
+        for (SolrRequestHandler handler : core.getRequestHandlers().values()) {
+            if (handler instanceof SearchHandler) {
+                List<SearchComponent> components = ((SearchHandler) handler).getComponents();
+                if (components != null) {
+                    for (SearchComponent component : components) {
+                        if (component == this) {
+                            searchHandler = (SearchHandler) handler;
+                            break;
+                        }
+                    }
+                }
+            }
         }
-        String contentType= params.get("lux.contentType");
+    }
+    
+    @Override
+    public void prepare(ResponseBuilder rb) throws IOException {
+        if (searchHandler == null) {
+            // bleah -- we need a link to the search handler to pass down in to the bowels of
+            // XQuery evaluation so we can recurse when we come to a search call.  To get that,
+            // we can only traverse the core registry, but due to order of initialization, the
+            // handler won't have been linked to this component until after all the inform() calls 
+            // are done.
+            //  A possible alternative here would be to write our own search handler that extends
+            // the Solr one and adds itself to the ResponseBuilder...
+            findSearchHandler ();
+        }
+        SolrQueryRequest req = rb.req;
+        SolrParams params = req.getParams();
+        if (rb.getQueryString() == null) {
+            rb.setQueryString(params.get(CommonParams.Q));
+        }
+        String contentType = params.get("lux.contentType");
+        // TODO: make this a local variable in or near #addResult, not an instance variable: it's not threadsafe
         serializer = solrIndexConfig.checkoutSerializer();
         if (contentType != null) {
-            if (contentType.equals ("text/html")) {
+            if (contentType.equals("text/html")) {
                 serializer.setOutputProperty(Serializer.Property.METHOD, "html");
-            } else if (contentType.equals ("text/xml")) {
+            } else if (contentType.equals("text/xml")) {
                 serializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             }
         } else {
             serializer.setOutputProperty(Serializer.Property.METHOD, getDefaultSerialization());
         }
         if (queryPath == null) {
-        	// allow subclasses to override...
-        	queryPath = rb.req.getParams().get(LUX_XQUERY);
+            // allow subclasses to override...
+            queryPath = rb.req.getParams().get(LUX_XQUERY);
         }
         resultByteSize = 0;
     }
     
-    public String getDefaultSerialization () {
-        return "xml";
+    
+    public ArrayList<String> getShardURLs (boolean includeSelf) {
+        // String[] urls = new String[shards.length + (includeSelf ? 0 : -1)];
+        ArrayList<String> urls = new ArrayList<String> ();
+        String shardId = core.getCoreDescriptor().getCloudDescriptor().getShardId();
+        for (int i = 0; i < shards.length; i++) {
+            if (!includeSelf) {
+                if (shardId.equals(slices[i])) {
+                    // exclude this shard
+                    continue;
+                }
+            }
+            List<String> replicas = StrUtils.splitSmart(shards[i], "|", true);
+            for (String replica : replicas) {
+                urls .add("http://" + replica);
+            }
+        }
+        return urls;
     }
     
+    public String getDefaultSerialization() {
+        return "xml";
+    }
+
     @Override
     public void process(ResponseBuilder rb) throws IOException {
-
+        if (rb.grouping()) {
+            throw new SolrException(ErrorCode.BAD_REQUEST, "grouping not supported for XQuery");
+        }
         SolrQueryRequest req = rb.req;
         SolrParams params = req.getParams();
         if (!params.getBool(XQUERY_COMPONENT_NAME, true)) {
-          return;
+            // TODO -- what is this for? who would pass xquery=false??
+            return;
         }
-        int start = params.getInt( CommonParams.START, 1 );
-        int len = params.getInt( CommonParams.ROWS, -1 );
+        int start = params.getInt(CommonParams.START, 1);
+        int len = params.getInt(CommonParams.ROWS, -1);
         try {
             evaluateQuery(rb, start, len);
         } finally {
             solrIndexConfig.returnSerializer(serializer);
+        }
+    }
+    
+    /**
+     * Process for a distributed search. This method is called at various stages
+     * during the processing of a request:
+     * 
+     * During ResponseBuilder.STAGE_PARSE_QUERY we parse, optimize, compile and
+     * execute the XQuery query. When a lux:search call is encountered, it will
+     * create a SearchResultIterator, which creates a Lucene Query and calls
+     * back into the SearchHandler; then subsequent phases are handled by the
+     * normal QueryComponent.
+     * 
+     * @return the next stage for this component
+     */
+    @Override
+    public int distributedProcess(ResponseBuilder rb) throws IOException {
+        if (rb.grouping()) {
+            throw new SolrException(ErrorCode.BAD_REQUEST, "Solr grouping not supported for XQuery");
+        }
+        if (rb.stage == ResponseBuilder.STAGE_PARSE_QUERY) {
+            if (rb.req instanceof CloudQueryRequest) {
+                CloudQueryRequest cloudReq = (CloudQueryRequest) rb.req;
+                // the sort spec has already been generated
+                rb.setSortSpec(cloudReq.getSortSpec());
+                return ResponseBuilder.STAGE_EXECUTE_QUERY;
+            } else {
+                process(rb);
+                return ResponseBuilder.STAGE_DONE;
+            }
+        } else {
+            return super.distributedProcess(rb);
         }
     }
 
@@ -169,18 +276,15 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             return;
         }
         SolrParams params = req.getParams();
-        long timeAllowed = (long)params.getInt( CommonParams.TIME_ALLOWED, -1 );
-        if (!params.getBool(XQUERY_COMPONENT_NAME, true)) {
-            return;
-        }
+        long timeAllowed = (long) params.getInt(CommonParams.TIME_ALLOWED, -1);
         XQueryExecutable expr;
-        SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
-        SolrIndexSearcher searcher = rb.req.getSearcher();
-        DocWriter docWriter = new SolrDocWriter (this, rb.req.getCore());
+        LuxSearcher searcher = new LuxSearcher (rb.req.getSearcher());
+        DocWriter docWriter = new SolrDocWriter(this, rb.req.getCore());
         Compiler compiler = solrIndexConfig.getCompiler();
 
-        Evaluator evaluator = new Evaluator(compiler, new LuxSearcher(searcher), docWriter);
-        TransformErrorListener errorListener = evaluator.getErrorListener();
+        Evaluator eval = new Evaluator(compiler, searcher, docWriter); 
+        evalHolder.set (eval);
+        TransformErrorListener errorListener = eval.getErrorListener();
         try {
             URI baseURI = queryPath == null ? null : java.net.URI.create(queryPath);
             expr = compiler.compile(query, errorListener, baseURI, null);
@@ -195,18 +299,29 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             // evaluator.close();
             return;
         }
-        //SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
+        // SolrIndexSearcher.QueryResult result = new
+        // SolrIndexSearcher.QueryResult();
         NamedList<Object> xpathResults = new NamedList<Object>();
         long tstart = System.currentTimeMillis();
         int count = 0;
-        QueryContext context = null;
-        context = new QueryContext();
-        bindRequestVariables(rb, req, expr, compiler, evaluator, context);
-        Iterator<XdmItem> queryResults = evaluator.iterator(expr, context);
+        String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
+        SolrQueryContext context = new SolrQueryContext(this, req);
+        if (rb.shards != null && rb.req.getParams().getBool("distrib", true)) {
+            // This is a distributed request; pass in the ResponseBuilder so it will be
+            // available to a subquery.
+            context.setResponseBuilder(rb);
+            // also capture the current set of shards
+            shards = rb.shards;
+            slices = rb.slices;
+        }
+        if (xqueryPath != null) {
+            bindRequestVariables(rb, req, expr, compiler, eval, context);
+        }
+        Iterator<XdmItem> queryResults = eval.iterator(expr, context);
         String err = null;
         while (queryResults.hasNext()) {
             XdmItem xpathResult = queryResults.next();
-            if (++ count < start) {
+            if (++count < start) {
                 continue;
             }
             if (count == 1 && !xpathResult.isAtomicValue()) {
@@ -225,41 +340,74 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 xpathResult = null;
                 break;
             }
-            if ((len > 0 && xpathResults.size() >= len) || 
-                    (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
+            if ((len > 0 && xpathResults.size() >= len)
+                    || (timeAllowed > 0 && (System.currentTimeMillis() - tstart) > timeAllowed)) {
                 break;
             }
         }
-        ArrayList<TransformerException> errors = evaluator.getErrorListener().getErrors();
-        if (! errors.isEmpty()) {
-            err = formatError(query, errors, evaluator.getQueryStats());
+        ArrayList<TransformerException> errors = eval.getErrorListener().getErrors();
+        if (!errors.isEmpty()) {
+            err = formatError(query, errors, eval.getQueryStats());
             if (xpathResults.size() == 0) {
-                xpathResults = null; // throw a 400 error; don't return partial results
+                xpathResults = null; // throw a 400 error; don't return partial
+                                     // results
             }
         }
         if (err != null) {
-            rsp.add ("xpath-error", err);
+            rsp.add("xpath-error", err);
         }
-        rsp.add("xpath-results", xpathResults);
-        result.setDocList (new DocSlice(0, 0, null, null, evaluator.getQueryStats().docCount, 0));
-        rb.setResult (result);
-        rsp.add ("response", rb.getResults().docList);
+        if (rb.getResults() == null) {
+            // create a dummy doc list if previous query processing didn't retrieve any docs
+            // In distributed operation, there will be doc results, otherwise none.
+            SolrIndexSearcher.QueryResult result = new SolrIndexSearcher.QueryResult();
+            result.setDocList(new DocSlice(0, 0, null, null, eval.getQueryStats().docCount, 0));
+            rb.setResult(result);
+            rsp.add("response", rb.getResults().docList);
+        }
         if (xpathResults != null) {
+            rsp.add("xpath-results", xpathResults);
             if (logger.isDebugEnabled()) {
-                logger.debug ("retrieved: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
-                    xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
-            } 
+                logger.debug("retrieved: " + eval.getDocReader().getCacheMisses() + " docs, "
+                        + xpathResults.size() + " results, " + (System.currentTimeMillis() - tstart) + "ms");
+            }
         } else {
-            logger.warn ("xquery evaluation error: " + ((Evaluator)evaluator).getDocReader().getCacheMisses() + " docs, " +
+            logger.warn ("xquery evaluation error: " + eval.getDocReader().getCacheMisses() + " docs, " +
                     "0 results, " + (System.currentTimeMillis() - tstart) + "ms");
         }
+        if (err == null && context.isCommitPending()) {
+            doCommit();
+        }
     }
-
+    
+    protected void doCommit () {
+        boolean isCloud = shards != null && shards.length > 1;
+        SolrQueryRequest req  = new SolrQueryRequestBase (core, new ModifiableSolrParams()) {};
+        CommitUpdateCommand cmd = new CommitUpdateCommand(req, false);
+        cmd.softCommit = true;
+        // cmd.expungeDeletes = false;
+        // cmd.waitFlush = true;
+        // cmd.waitSearcher = true;
+        LoggerFactory.getLogger(getClass()).debug ("commit {}", shards);
+        try {
+            if (isCloud) {
+                SolrQueryResponse rsp = new SolrQueryResponse();
+                // ((ModifiableSolrParams)req.getParams()).add(ShardParams.SHARDS, getShardURLs(false));
+                UpdateRequestProcessorChain updateChain = core.getUpdateProcessingChain("lux-update-chain");
+                updateChain.createProcessor(req, rsp).processCommit(cmd);
+            } else {
+                // commit locally
+                core.getUpdateHandler().commit(cmd);
+            }
+        } catch (IOException e) {
+            throw new LuxException(e);
+        }
+    }
+    
     private String handleEXPathResponse(SolrQueryRequest req, SolrQueryResponse rsp, NamedList<Object> xpathResults, XdmItem xpathResult) {
         XdmNode expathResponse;
         expathResponse = (XdmNode) xpathResult;
-        HttpServletRequest httpReq = (HttpServletRequest) req.getContext().get("httpServletRequest");
-        HttpServletResponse httpResp = (HttpServletResponse) httpReq.getAttribute("httpServletResponse");
+        HttpServletRequest httpReq = (HttpServletRequest) req.getContext().get(SolrQueryContext.LUX_HTTP_SERVLET_REQUEST);
+        HttpServletResponse httpResp = (HttpServletResponse) httpReq.getAttribute(SolrQueryContext.LUX_HTTP_SERVLET_RESPONSE);
         TinyElementImpl responseNode = (TinyElementImpl) expathResponse.getUnderlyingNode();
         // Get the status code and message
         String status = responseNode.getAttributeValue("", "status");
@@ -349,7 +497,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     private void bindRequestVariables(ResponseBuilder rb, SolrQueryRequest req,
             XQueryExecutable expr, Compiler compiler, Evaluator evaluator,
-            QueryContext context) {
+            SolrQueryContext context) {
 
         Iterator<GlobalVariable> decls = expr.getUnderlyingCompiledQuery().getStaticContext().getModuleVariables();
         boolean hasLuxHttp = false, hasEXpathRequest = false;
@@ -388,20 +536,21 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         for (TransformerException te : errors) {
             if (te instanceof XPathException) {
-                String additionalLocationText = ((XPathException)te).getAdditionalLocationText();
+                String additionalLocationText = ((XPathException) te).getAdditionalLocationText();
                 if (additionalLocationText != null) {
                     buf.append(additionalLocationText);
                 }
             }
-            buf.append (te.getMessageAndLocation());
-            buf.append ("\n");
+            buf.append(te.getMessageAndLocation());
+            buf.append("\n");
             if (te.getLocator() != null) {
                 int lineNumber = te.getLocator().getLineNumber();
                 int column = te.getLocator().getColumnNumber();
                 String[] lines = query.split("\r?\n");
                 if (lineNumber <= lines.length && lineNumber > 0) {
-                    String line = lines[lineNumber-1];
-                    buf.append (line, Math.min(Math.max(0, column - 100), line.length()), Math.min(line.length(), column + 100));
+                    String line = lines[lineNumber - 1];
+                    buf.append(line, Math.min(Math.max(0, column - 100), line.length()),
+                            Math.min(line.length(), column + 100));
                 }
             }
             logger.error("XQuery exception", te);
@@ -428,7 +577,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
 
     protected void addResult(NamedList<Object> xpathResults, XdmItem item) throws SaxonApiException {
         if (item.isAtomicValue()) {
-            // We need to get Java primitive values that Solr knows how to marshal
+            // We need to get Java primitive values that Solr knows how to
+            // marshal
             XdmAtomicValue xdmValue = (XdmAtomicValue) item;
             AtomicValue value = (AtomicValue) xdmValue.getUnderlyingValue();
             try {
@@ -436,11 +586,14 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                 Object javaValue;
                 if (value instanceof DecimalValue) {
                     javaValue = ((DecimalValue) value).getDoubleValue();
-                    addResultBytes (8);
+                    addResultBytes(8);
                 } else if (value instanceof QNameValue) {
                     javaValue = ((QNameValue) value).getClarkName();
-                    addResultBytes(((String)javaValue).length() * 2); // close enough, modulo surrogates
-                } else if (value instanceof GDateValue) { 
+                    addResultBytes(((String) javaValue).length() * 2); // close
+                                                                       // enough,
+                                                                       // modulo
+                                                                       // surrogates
+                } else if (value instanceof GDateValue) {
                     if (value instanceof GMonthValue) {
                         javaValue = ((GMonthValue) value).getPrimitiveStringValue().toString();
                     } else if (value instanceof GYearValue) {
@@ -454,15 +607,15 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     } else {
                         javaValue = SequenceTool.convertToJava(value);
                     }
-                    addResultBytes (javaValue.toString().length() * 2);
+                    addResultBytes(javaValue.toString().length() * 2);
                 } else {
                     javaValue = SequenceTool.convertToJava(value);
                     addResultBytes (javaValue.toString().length() * 2);
                 }
                 // TODO hexBinary and base64Binary
-                xpathResults.add (typeName, javaValue);
+                xpathResults.add(typeName, javaValue);
             } catch (XPathException e) {
-                xpathResults.add (value.getPrimitiveType().getDisplayName(), value.toString());
+                xpathResults.add(value.getPrimitiveType().getDisplayName(), value.toString());
             }
         } else {
             XdmNode node = (XdmNode) item;
@@ -472,24 +625,24 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             serializer.setOutputWriter(buf);
             serializer.serializeNode(node);
             String xml = buf.toString();
-            addResultBytes (xml.length() * 2);
+            addResultBytes(xml.length() * 2);
             xpathResults.add(nodeKind.toString().toLowerCase(), xml);
         }
     }
-    
-    private void addResultBytes (int count) {
+
+    private void addResultBytes(int count) {
         if (resultByteSize + count > MAX_RESULT_SIZE) {
             throw new ResourceExhaustedException("Maximum result size exceeded, returned result has been truncated");
         }
         resultByteSize += count;
     }
-    
-    // Hand-coded serialization may be a bit fragile, but the only alternative 
+
+    // Hand-coded serialization may be a bit fragile, but the only alternative
     // using Saxon is too inconvenient
     private String buildHttpInfo(SolrQueryRequest req) {
         StringBuilder buf = new StringBuilder();
-        buf.append (String.format("<http>"));
-        buf.append ("<params>");
+        buf.append(String.format("<http>"));
+        buf.append("<params>");
         SolrParams params = req.getParams();
         Iterator<String> paramNames = params.getParameterNamesIterator();
         while (paramNames.hasNext()) {
@@ -500,11 +653,11 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             buf.append(String.format("<param name=\"%s\">", param));
             String[] values = params.getParams(param);
             for (String value : values) {
-                buf.append(String.format ("<value>%s</value>", xmlEscape(value)));
+                buf.append(String.format("<value>%s</value>", xmlEscape(value)));
             }
             buf.append("</param>");
         }
-        buf.append ("</params>");
+        buf.append("</params>");
         String pathInfo = params.get(LUX_PATH_INFO);
         if (pathInfo != null) {
             buf.append("<path-info>").append(xmlEscape(pathInfo)).append("</path-info>");
@@ -516,7 +669,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         buf.append("<context-path>").append(webapp).append("</context-path>");
         // TODO: headers, path, etc?
-        buf.append ("</http>");
+        buf.append("</http>");
         return buf.toString();
     }
 
@@ -527,7 +680,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         builder.startDocument(0);
         builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "request"), AnyType.getInstance(), 0, 0);
         builder.namespace(new NamespaceBinding("http", EXPATH_HTTP_NS), 0);
-        Request requestWrapper = (Request) req.getContext().get("httpServletRequest");
+        Request requestWrapper = (Request) req.getContext().get(SolrQueryContext.LUX_HTTP_SERVLET_REQUEST);
         addAttribute(builder, "method", requestWrapper.getMethod());
         addAttribute(builder, "servlet", requestWrapper.getServletPath());
         HttpServletRequest httpReq = (HttpServletRequest)requestWrapper.getRequest();
@@ -583,11 +736,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         
         // headers
-        @SuppressWarnings("unchecked")
         Enumeration<String> headerNames = httpReq.getHeaderNames(); 
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
-            @SuppressWarnings("unchecked")
             Enumeration<String> headerValues = httpReq.getHeaders(headerName);
             while (headerValues.hasMoreElements()) {
                 String value = headerValues.nextElement();
@@ -715,12 +866,32 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     protected net.sf.saxon.s9api.QName qnameFor (String localName) {
         return new net.sf.saxon.s9api.QName (localName);
     }
+    
+    public SolrCore getCore () {
+        return core;
+    }
+    
+    public Evaluator getEvaluator () {
+        return evalHolder.get();
+    }
+
+    public SearchHandler getSearchHandler() {
+        return searchHandler;
+    }
+    
+    public String[] getCurrentShards() {
+        return shards;
+    }
+
+    public String[] getCurrentSlices() {
+        return slices;
+    }
 
     private String xmlEscape(String value) {
         return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll("\"", "&quot;");
     }
-    
-	public static final String XQUERY_COMPONENT_NAME = "xquery";
+
+    public static final String XQUERY_COMPONENT_NAME = "xquery";
 
     @Override
     public String getDescription() {
@@ -736,10 +907,12 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     public String getVersion() {
         return "";
     }
-    
+
 }
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/.
+ */
 

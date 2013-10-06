@@ -1,4 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.luxdb</groupId>
   <artifactId>lux</artifactId>
@@ -71,6 +71,12 @@
       <artifactId>woodstox-core-asl</artifactId>
       <version>4.1.1</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.solr</groupId>
+      <artifactId>solr-test-framework</artifactId>
+      <version>4.4.0</version>
+      <scope>test</scope>
+    </dependency>
   	<dependency>
   		<groupId>org.apache.solr</groupId>
   		<artifactId>solr-core</artifactId>
@@ -87,6 +93,10 @@
   			<exclusion>
   				<artifactId>velocity-tools</artifactId>
   				<groupId>org.apache.velocity</groupId>
+  			</exclusion>
+  			<exclusion>
+  				<artifactId>hadoop-annotations</artifactId>
+  				<groupId>org.apache.hadoop</groupId>
   			</exclusion>
   		</exclusions>
   	</dependency>

@@ -18,29 +18,25 @@ import org.apache.lucene.search.TermQuery;
 public class LuxURIResolver implements URIResolver {
 
     private final URIResolver systemURIResolver;
-    private final LuxSearcher searcher;
-    private final CachingDocReader docReader;
-    private final String uriFieldName;
+    protected final Evaluator evaluator;
+    protected final String uriFieldName;
     
     /**
-     * @param evaluator
+     * @param systemURIResolver resolver to use for file: uris
+     * @param evaluator the evaluator to use to retrieve docs from the index
+     * @param uriFieldName the name of the URI field
      */
-    LuxURIResolver(URIResolver systemURIResolver, LuxSearcher searcher, CachingDocReader docReader, String uriFieldName) {
+    public LuxURIResolver(URIResolver systemURIResolver, Evaluator evaluator, String uriFieldName) {
         this.systemURIResolver = systemURIResolver;
-        this.searcher = searcher;
-        this.docReader = docReader;
+        this.evaluator = evaluator;
         this.uriFieldName = uriFieldName;
     }
-
+    
     /**
-     * Evaluator provides this method as an implementation of URIResolver so as to resolve uris in service of fn:doc().
-     * file: uri resolution is delegated to the default resolver by returning null.  lux: and other uris are all resolved
-     * using the provided searcher.  The lux: prefix is optional, e.g: the uris "lux:/hello.xml" and "/hello.xml"
-     * are equivalent.  Documents read from the index are numbered according to their Lucene docIDs, and retrieved
-     * using the {@link CachingDocReader}.
-     * @throws IllegalStateException if a search is attempted, but no searcher was provided
-     * @throws TransformerException if the document is not found in the index, or there was an IOException
-     * thrown by Lucene.
+     * file: uri resolution is delegated to the system URI resolver.  lux: and other uris are all resolved
+     * by #getDocument(String). The lux: prefix is optional, e.g: the uris "lux:/hello.xml" and "/hello.xml"
+     * are equivalent.
+     * @throws TransformerException if the document is not found
      */
     @Override
     public Source resolve(String href, String base) throws TransformerException {
@@ -64,21 +60,44 @@ public class LuxURIResolver implements URIResolver {
         if (isFile) {
             return systemURIResolver.resolve (path, base);
         }
-        if (searcher == null) {
+        path = path.replace('\\', '/');
+        return getDocument(path).asSource();
+    }
+
+    /**
+     * Evaluator provides this method as an implementation of URIResolver so as to resolve uris in service of fn:doc().
+     * file: uri resolution is delegated to the default resolver by returning null.  lux: and other uris are all resolved
+     * using the provided searcher.  The lux: prefix is optional, e.g: the uris "lux:/hello.xml" and "/hello.xml"
+     * are equivalent.  Documents read from the index are numbered according to their Lucene docIDs, and retrieved
+     * using the {@link CachingDocReader}.
+     * @param uri the uri of the document to retrieve
+     * @return the document node
+     * @throws IllegalStateException if the resolver wasn't configured properly (has no searcher) 
+     * @throws TransformerException or there was an IOException thrown by Lucene.
+     * @throws NotFoundException if the document is not found in the index
+     */
+    public XdmNode getDocument(String uri) throws TransformerException {
+        if (getSearcher() == null) {
             throw new IllegalStateException ("Attempted search, but no searcher was provided");
         }
-        path = path.replace('\\', '/');
         try {
-            DocIterator disi = searcher.search(new TermQuery(new Term(uriFieldName, path)));
+            DocIterator disi = getSearcher().search(new TermQuery(new Term(uriFieldName, uri)));
             int docID = disi.nextDoc();
             if (docID == DocIdSetIterator.NO_MORE_DOCS) {
-                throw new NotFoundException(href);
+                throw new NotFoundException(uri);
             }
-            XdmNode doc = docReader.get(docID, disi.getCurrentReaderContext());
-            return doc.asSource(); 
+            return getDocReader().get(docID, disi.getCurrentReaderContext());
         } catch (IOException e) {
             throw new TransformerException(e);
         }
     }
-
+    
+    public LuxSearcher getSearcher () {
+        return evaluator.getSearcher();
+    }
+    
+    public CachingDocReader getDocReader() {
+        return evaluator.getDocReader();
+    }
+    
 }

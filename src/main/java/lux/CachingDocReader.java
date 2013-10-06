@@ -2,7 +2,6 @@ package lux;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashSet;
 import java.util.Map;
 
 import javax.xml.transform.stream.StreamSource;
@@ -28,26 +27,16 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Reads, parses and caches XML documents from a Lucene index. Assigns Lucene
- * docIDs as Saxon document numbers. This reader is intended to survive for a
- * single query only, and is *not thread-safe*. 
- * 
- * TODO: a nice optimization would be to maintain a global cache, shared across threads, 
- * with some tunable resource-based eviction policy.  PLAN:
- * 1) Build a cache that is limited by byte size (DONE: see NodeCache below)
- * 2) autoconfigure size based on heap size (later: provide cache size configuration)
- * 3) two-level cache strategy: global first, then per-query; when query completes, write newly
- * cached docs to global cache.  Note: the global cache cannot use docID as a key.  It would have to use
- * URIs
- * 4) How to maintain memory limit?  Catch OOM when allocating docs? 
+ * docIDs as Saxon document numbers. This reader and its cache are intended to survive for a
+ * single query only, and is *not thread-safe*.
  */
 public class CachingDocReader {
-    // the portion of heap to allocate to each per-request document cache.  This should really rely on the
-    // number of clients
+    // the (inverse of the) portion of heap to allocate to each per-request document cache.  
+    // This should really rely on the number of clients
     private final static int CACHE_RATIO = 100;
 	private final NodeCache cache = new NodeCache(java.lang.Runtime.getRuntime().maxMemory() / CACHE_RATIO);
     private final String xmlFieldName;
     private final String uriFieldName;
-    private final HashSet<String> fieldsToRetrieve;
     private final DocumentBuilder builder;
     private final Configuration config;
     private int cacheHits = 0;
@@ -70,9 +59,6 @@ public class CachingDocReader {
         this.config = config;
         this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
         this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
-        fieldsToRetrieve = new HashSet<String>();
-        fieldsToRetrieve.add(xmlFieldName);
-        fieldsToRetrieve.add(uriFieldName);
     }
 
     /**
@@ -88,13 +74,13 @@ public class CachingDocReader {
      * @throws LuxException if there is an error building the document that has been retrieved
      */
     public XdmNode get(int leafDocID, AtomicReaderContext context) throws IOException {
-       int docID = leafDocID + context.docBase;
+       long docID = leafDocID + context.docBase;
        XdmNode node= cache.get(docID);
        if (node != null) {
            ++cacheHits;
            return node;
        }
-       DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
+       DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor();
        context.reader().document(leafDocID, fieldSelector);
        Document document = fieldSelector.getDocument();
        return getXdmNode(docID, document);
@@ -118,36 +104,67 @@ public class CachingDocReader {
             ++cacheHits;
             return node;
         }
-        DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
+        DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor();
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
         return getXdmNode(docID, document);
     }
+    
+    /**
+     * @param docID
+     * @return a document from the cache, or null if no document matching the docID is in the cache
+     */
+    public XdmNode get(long docID) {
+        return cache.get(docID);
+    }
 
-    private XdmNode getXdmNode(int docID, Document document) throws IOException {
-        XdmNode node = null;
+    private XdmNode getXdmNode(long docID, Document document) throws IOException {
         String xml = document.get(xmlFieldName);
-        String uri = "lux:/" + document.get(uriFieldName);
+        String uri = document.get(uriFieldName);
+        BytesRef binaryValue = document.getBinaryValue(xmlFieldName);
+        byte[] bytes;
+        if (binaryValue != null) {
+            bytes = binaryValue.bytes;
+        } else {
+            bytes = null;
+        }
+        XdmNode node = createXdmNode (docID, uri, xml, bytes);
+        document.removeField(xmlFieldName);
+        node.getUnderlyingNode().getDocumentRoot().setUserData (Document.class.getName(), document);
+        return node;
+    }
+
+    /**
+     * Either the xml or the bytes parameter carries the document contents.  If the xml is non-null, it is assumed to be a serialized
+     * XML document, and is parsed.  If the bytes is non-null and begins with a tinybin signature, it is interpreted as 
+     * tiny binary.  Otherwise, the bytes are treated as a binary (non-XML) document.  If both xml and bytes are null, a
+     * warning is logged and an empty binary document created.
+     * 
+     * @param docID The Solr/Lucene docid; or a shard/docid combo under Solr Cloud
+     * @param uri The uri path (no scheme) of the document to create
+     * @param xml The contents of the document, if an XML document
+     * @param bytes The contents of the document
+     * @return a new document made from the arguments
+     */
+    public XdmNode createXdmNode (long docID, String uri, String xml, byte[] bytes) {
+        uri = "lux:/" + uri;
         DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
         docIdAllocator.setNextDocID(docID);
         long t0 = System.nanoTime();
-        byte[] bytes = null;
+        XdmNode node = null;
         if (xml == null) {
-            BytesRef binaryValue = document.getBinaryValue(xmlFieldName);
-            if (binaryValue == null) {
+            if (bytes == null) {
                 // This is a document without the expected fields, as will happen, eg if we just connect to
                 // some random database.
-                LoggerFactory.getLogger(CachingDocReader.class).warn ("Document {} has no content", docID);
+                LoggerFactory.getLogger(CachingDocReader.class).warn ("Document {} has no XML content", docID);
                 bytes = new byte[0];
-            } else {
-                bytes = binaryValue.bytes;
             }
-        	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N') {
-            	// An XML document stored in tiny binary format
-				TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
-            	node = new XdmNode (tb.getTinyDocument(config));
-        	} else {
-            	xml = "<binary xmlns=\"http://luxdb.net\" />";
+            if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N') {
+                // An XML document stored in tiny binary format
+                TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
+                node = new XdmNode (tb.getTinyDocument(config));
+            } else {
+                xml = "<binary xmlns=\"http://luxdb.net\" />";
             }
         }
         if (node == null) {
@@ -162,7 +179,7 @@ public class CachingDocReader {
             }
         }
         // associate the bytes with the xml stub (for all non-XML content)
-        if (bytes != null) {
+        if (bytes != null && xml == null) {
             ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
         }
         // doesn't seem to do what one might think:
@@ -204,7 +221,7 @@ public class CachingDocReader {
         cache.clear();
     }
     
-    static class NodeCache extends java.util.LinkedHashMap<Integer, XdmNode> {
+    static class NodeCache extends java.util.LinkedHashMap<Long, XdmNode> {
         
         private long bytes;
         private final long maxbytes;
@@ -216,17 +233,17 @@ public class CachingDocReader {
         }
         
         @Override
-        public XdmNode put (Integer key, XdmNode value) {
+        public XdmNode put (Long key, XdmNode value) {
             bytes += calculateSize (value);
             return super.put(key, value);
         }
         
         @Override
-        protected boolean removeEldestEntry(Map.Entry<Integer, XdmNode> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<Long, XdmNode> eldest) {
             while (bytes > maxbytes) {
                 remove(eldest.getKey());
                 bytes -= calculateSize (eldest.getValue());
-                for (Map.Entry<Integer, XdmNode> entry : entrySet()) {
+                for (Map.Entry<Long, XdmNode> entry : entrySet()) {
                     // get the next eldest
                     eldest = entry;
                     break;

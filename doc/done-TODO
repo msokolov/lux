@@ -54,8 +54,146 @@ We weren't pushing a query on the stack?
 * enhancements
 ** distributed search (and indexing)
 *** doc()
-*** key() (field retrieval)
-*** field-terms() (ie faceting)
+URIResolver refactored into CloudURIResolver and LuxURIResolver.  Really we
+have three different lifecycles here.
+**** Lucene only
+URI resolver contains a LuxSearcher that we recreate when we want to see
+updates (reopenSearcher).  Currently we just create a new resolver then.
+**** Solr (local)
+Currently this works just like Lucene, but we create a separate
+CachingDocReader and URIResolver for each thread (ie each query).  This is
+flawed though: Saxon really only supports a single threadsafe URIResolver.
+Therefore we need to change this so that the resolver can get its docReader
+by way of the threadlocal storage in XQueryComponent.  The searcher is
+per-core and changes when reopened (usually after commit).  As we move to a
+single URIResolver per-core, we need to determine how to update its
+searcher.  Solution: BaseURIResolver has abstract getSearcher(); the Solr
+version calls out to the XQueryComponent and holds its copy as long as it
+needs consistency.
+
+**** Solr Cloud
+An initial request is broadcast and then resolved on each node as for local
+Solr.
+
+*** lux:key()
+*** lux:field-terms()
+*** insert()
+*** commit()
+*** delete()
+*** document identity and ordering
+We have been using docid as an ordering mechanism until now.  Cloud
+complicates this because the same docid may exist on multiple shards.  But
+this problem merely exposed an underlying problem we already had w/Solr:
+
+XQueries involving multiple Solr queries may get documents on either side
+of a commit (maybe a soft commit).  In this case, documents may be added or
+deleted, and existing documents may have their ids changed.  This causes
+problems with joins involving document or node identity.
+
+The only way to guarantee correct XQuery semantics in the face of updates
+for such queries is to provide a stable global ordering for all documents.
+We could do that easily enough using our existing unique key, uri.  However
+we face an additional hurdle in that Saxon requires a numeric document id
+for every document, which is what it uses to enforce document order.  Our
+unique keys (uris) are strings though, and it's not possible to assign them
+unique 64-bit ints; we'd also need to preserve the natural string order
+since our id order must correspond with the order of our unique key.
+
+Let's abandon the idea of using uri for ordering and consider the idea of
+providing our own unique integer key.  This would require us to build an
+atomically-updatable persistent id sequence somewhere and to assign ids on
+insert.
+
+But we're interested in providing a Solr Cloud implementation, which means
+updates can come to multiple nodes simultaneously.  We would need to handle
+coordination of updates to the atomic id sequence across any number of
+nodes, and what this would amount to basically, would be adding a
+transaction mechanism to Solr Cloud, and that seems like a tall order.
+
+Now instead let's consider the consequences of relaxing the XQuery language
+constraint.  We can concoct an integer id that mimics the "unordered" Solr
+Cloud document order by merging a shard id and the (shard-local) document
+id: (shard_id << 32) | docid.
+
+If a commit occurs during the evaluation of a multi-query XQuery, we could
+end up with:
+
+a) an id collision: a different document in query B re-uses the id of a
+document in query A.  This could cause us to retrieve document A from the
+cache.
+
+b) an id change: the same document in queries A and B with different ids:
+these will appear as distinct documents, albeit with the same content.
+
+Essentially, we will get incorrect results from queries of this sort.  And
+preventing this is very difficult.  Our only real option is to provide some
+sort of error detection and recovery.  We can easily detect id changes by
+storing a per-query (ie short-lived) two-way map id <=> uri.  Then if we
+detect either an existing id with a different uri, or an existing uri with
+a different id, we can throw an error and attempt to recover.
+
+Probably the only thing we can really do to recover if the document
+ordering changes mid-query, is to restart the query and try again.  We can
+do this without the user noticing anything other than a slowdown.  If
+enough failures occur in the same query we would eventually throw an error.
+
+So how bad is this?  Querying documents while they're being updated may
+happen during the course of some kind of batch data update, but queries
+that depend on node and document identity in XQuery are fairly unusual.
+Oftentimes they can be rewritten as simpler predicates.  The worst thing
+might be degraded performance that goes unnnoticed due to frequent query
+resets.  We should log these at WARN level so users are aware of their
+existence.
+
+Implementation notes:
+
+As far as maintaining the map goes: we already keep an id->document
+(XdmNode) map, and the document includes both its uri and its id
+(XdmNode.getDocumentNumber()).  We don't have a uri->document map though;
+we would probably have to add that.  But the existing map (nodeCache) is an
+LRUCache that is limited in size, so it wouldn't guarantee correctness once
+a node was expired from the cache.  This is a guard againt blowing out the
+heap, since it includes entire documents. So probably we would need to add
+both a uri->id map and an id->uri map.
+
+OK that's out the window now since we don't actually get docids back from
+Solr, and hacking it to return them looks like a real PITA, aside from
+which it's leaking internal stuff etc.
+
+So looking into generating a unique long key: we could generate a fairly
+unique key using uri.hashval() * time() * random() (or seed random with the
+foregoing), but then we have to look up that id and insert only if it
+doesn't already exist *in solr*.  But this isn't truly an atomic operation:
+in theory someone else can insert our random key.  Unlikely, but this also
+has the drawback of having to run a query across the cluster before every
+update.  Another idea: we can just be optimistic about the uniqueness -
+someone on SO calculated the likelihood of a collision in a 10M document
+collection to be about 1/10M.  So that's quite unlikely, and then it's not
+as if document integrity is compromised if we have a collision - just
+document order in some unusual queries.
+
+In the short term we can just assign ids sequentially for each query and
+not worry about this, I guess.
+
+So SignatureUpdateProcessor creates a (64-bit!) hash based on a document's
+content.  It was designed for dedupe processing.  But if we simply feed it
+the uri, it can serve as a source of a 64 bit integer -- we need to ensure
+that the integer sorts the same way as the signature.  Of course there is a
+potential for hash collisions.  A nice fix would be to mix in a random
+number or timestamp field to the hash: that way if an insert fails due to
+non-identical signatures, we just try again.
+
+uniqueness: lucene deletes the document matching the "updateTerm" which can
+either be an id field (like uri), or the signature field. In our case we
+would use uri, I think.  Then, if idField != signatureField, the
+updatehandler also checks for uniqueness of the signature, but what it does
+is to delete any existing matching documents!  So this is not really helpful...
+
+Perhaps another approach would be to extend SignatureUpdateProcessor to
+query for the existence of a hash match with a different id (uri).  But
+will this work with clouded updates?  Does this processor work at all
+w/shards?  It appears to check for dupes only in a local index.
+
 *** search
 This is complicated b/c Saxon wants to pull results, and Solr, to push
 them.  We had a similar issue in the single-node search with Lucene, but

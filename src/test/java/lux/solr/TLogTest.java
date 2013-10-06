@@ -1,7 +1,7 @@
 package lux.solr;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -102,7 +102,7 @@ public class TLogTest {
         coreContainer.load();
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
 
-        // retrieve the documents (from the transaction log):
+        // retrieve the documents (from the replayed transaction log):
         validateContent (solr);
         
         // commit
@@ -129,6 +129,7 @@ public class TLogTest {
         assertEquals ("src/test/resources/conf/schema.xml", response.getResults().get(0).get("lux_uri"));
         List<?> xml = (List<?>) response.getResults().get(0).get("lux_xml");
         TinyDocumentImpl schema = schemaXml.getTinyDocument(processor.getUnderlyingConfiguration());
+        assertNotNull ("no xml stored for schema.xml", xml);
         TinyBinary retrieved = new TinyBinary ((byte[]) xml.get(0), UTF8);
         TinyDocumentImpl result = retrieved.getTinyDocument(processor.getUnderlyingConfiguration());
         assertEquals (new XdmNode(schema).toString(), new XdmNode(result).toString());

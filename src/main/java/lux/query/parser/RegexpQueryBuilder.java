@@ -10,7 +10,7 @@ public class RegexpQueryBuilder implements QueryBuilder {
 
     @Override
     public RegexpQuery getQuery(Element e) throws ParserException {
-        return new RegexpQuery(new Term(e.getAttribute("fieldName"), e.getTextContent()));
+        return new RegexpQuery(new Term(e.getAttribute("fieldName"), e.getFirstChild().getNodeValue()));
     }
 
 }

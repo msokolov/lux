@@ -59,7 +59,7 @@ public class DirectDocWriter implements DocWriter {
     }
 
     @Override
-    public void commit() {
+    public void commit(Evaluator eval) {
         try {
             indexWriter.commit();
         } catch (IOException e) {
@@ -68,7 +68,7 @@ public class DirectDocWriter implements DocWriter {
     }
 
 	@Override
-	public void close() {
+	public void close(Evaluator eval) {
 		try {
 			indexWriter.close();
 		} catch (IOException e) {

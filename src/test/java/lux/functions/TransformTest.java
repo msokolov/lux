@@ -39,7 +39,7 @@ public class TransformTest extends XQueryTest {
 		// TODO: make this more convenient.  Have an auto-commit at the end of each evaluation
 		// (only when there have been any writes?) and re-open the reader so we can see the results
 		// in subsequent queries
-		writable.getDocWriter().commit();
+		writable.getDocWriter().commit(writable);
 		// re-open so that we see the results here
 		writable.reopenSearcher();
         XdmResultSet result = writable.evaluate("collection()[1]");
