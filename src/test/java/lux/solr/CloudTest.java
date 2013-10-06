@@ -24,14 +24,9 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         indexSupport.setDocLimit(500);
         indexSupport.indexAllElements("lux/hamlet.xml");
         
-        // set some fields to ignore when comparing query results
-        handle.clear();
-        handle.put("QTime", SKIPVAL);
-        handle.put("timestamp", SKIPVAL);
-        handle.put("_version_", SKIPVAL);
-        handle.put("shards", SKIP);   // in cloud response only
-        handle.put("distrib", SKIP);  // in control only
-        handle.put("maxScore", SKIPVAL); // in cloud only 
+        // exclude certain result components from comparisons:
+        initComparisonRegime();
+        
         // In the cloud, we run a full search and then discard unused docs in the retrieved page,
         // so response.numFound == num docs matching the query.
         // In local operation, we only retrieve as many docs as we need, and terminate the search
@@ -109,6 +104,17 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         query("qt", "/xquery", "q", "subsequence(lux:field-terms('title', 'M'), 1, 10)");
         query("qt", "/xquery", "q", "subsequence(lux:field-terms('title', 'M'), 100, 30)");
         query("qt", "/xquery", "q", "lux:field-terms('doctype')");
+    }
+
+    private void initComparisonRegime() {
+        // set some fields to ignore when comparing query results
+        handle.clear();
+        handle.put("QTime", SKIPVAL);
+        handle.put("timestamp", SKIPVAL);
+        handle.put("_version_", SKIPVAL);
+        handle.put("shards", SKIP);   // in cloud response only
+        handle.put("distrib", SKIP);  // in control only
+        handle.put("maxScore", SKIPVAL); // in cloud only 
     }
 
 }

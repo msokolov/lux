@@ -3,8 +3,9 @@ package lux;
 import net.sf.saxon.om.NodeInfo;
 
 /**
- * DocWriter supports the insertion and deletion of documents via xquery.  Writes and deletes are not
- * visible until commit() is called.
+ * DocWriter supports the insertion and deletion of documents via xquery.
+ * Writes and deletes are not visible until commit() is called, and never
+ * within the same query.
  */
 public interface DocWriter {
     
@@ -28,15 +29,14 @@ public interface DocWriter {
     void deleteAll ();
     
     /**
-     * Commits all changes to the index, making them visible to readers.  As this may be a relatively expensive operation,
-     * it is best to delay until truly necessary.
+     * Commits all changes to the index, making them visible to readers.
      */
-    void commit ();
+    void commit (Evaluator eval);
 
     /**
-     * Commits and closes the underlying IndexWriter.
+     * Perform any cleanup, including a commit.
      */
-	void close();
+    void close();
 
 }
 

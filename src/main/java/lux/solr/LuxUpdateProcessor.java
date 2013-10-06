@@ -13,6 +13,7 @@ import lux.index.field.FieldDefinition;
 import lux.index.field.IDField;
 import lux.xml.tinybin.TinyBinary;
 import net.sf.saxon.Configuration;
+import net.sf.saxon.om.NodeInfo;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -26,6 +27,7 @@ import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.update.AddUpdateCommand;
 import org.apache.solr.update.processor.UpdateRequestProcessor;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -37,6 +39,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     private final IndexConfiguration indexConfig;
     private final Configuration saxonConfig;
     private final SolrQueryRequest req;
+    private final Logger logger;
     
     public LuxUpdateProcessor (SolrIndexConfig config, SolrQueryRequest req, UpdateRequestProcessor next) {
         super(next);
@@ -44,6 +47,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
         indexConfig = solrIndexConfig.getIndexConfig();
         saxonConfig = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration();
         this.req = req;
+        logger = LoggerFactory.getLogger(getClass());
     }
 
     @Override
@@ -52,41 +56,54 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
         String xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
         String idFieldName = indexConfig.getFieldName(IDField.getInstance());
         
-        // remove and stash the lux_xml and lux_docid field values
+        // remove and stash the lux_xml and lux_docid field values so that AddUpdateCommand.getLuceneDocument
+        // doesn't add the lux_xml field in the standard way
         SolrInputField xmlField = solrInputDocument.removeField(xmlFieldName);
         SolrInputField luxIdField = solrInputDocument.removeField(idFieldName);
-
+        String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
         Document luceneDocument = cmd.getLuceneDocument();
-        
         // restore the xml field value
-        solrInputDocument.put (xmlFieldName, xmlField);
+        solrInputDocument.addField(xmlFieldName, xmlField);
         XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
         UpdateDocCommand luxCommand = null;
         if (xmlField != null) {
             Object xml = xmlField.getFirstValue();
             try {
-                String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
                 try {
                     if (xml instanceof String) {
                         xmlIndexer.index (new StringReader((String) xml), uri);
                     } else if (xml instanceof byte[]) {
                         TinyBinary xmlbin = new TinyBinary ((byte[]) xml, Charset.forName("utf-8"));
                         xmlIndexer.index(xmlbin.getTinyDocument(saxonConfig), uri);
+                    } else if (xml instanceof NodeInfo) {
+                        xmlIndexer.index((NodeInfo) xml, uri);
                     }
+                    luceneDocument = xmlIndexer.createLuceneDocument();
                 } catch (XMLStreamException e) {
-                    LoggerFactory.getLogger(LuxUpdateProcessor.class).error ("Failed to parse " + FieldName.XML_STORE, e);
+                    Logger logger = LoggerFactory.getLogger(LuxUpdateProcessor.class);
+                    logger.error ("Failed to parse " + uri, e);
+                    logger.debug (xml.toString());
                 }
                 addDocumentFields (xmlIndexer, solrIndexConfig.getSchema(), luceneDocument);
                 if (luxIdField != null) {
-                    luceneDocument.add (new LongField(idFieldName, (Long) luxIdField.getValue(), Store.YES));
+                    Object id = luxIdField.getValue();
+                    if (! (id instanceof Long)) {
+                        // solr cloud distributes these as Strings
+                        id = Long.valueOf(id.toString());
+                    }
+                    luceneDocument.add (new LongField(idFieldName, (Long) id, Store.YES));
                 }
                 luxCommand = new UpdateDocCommand(req, solrInputDocument, luceneDocument, uri);
-            } finally {
+            } catch(Exception e) {
+                logger.error("An error occurred while indexing " + uri, e);
+                throw new IOException(e);
+            }
+            finally {
                 solrIndexConfig.returnXmlIndexer(xmlIndexer);
             }
+            logger.debug ("Indexed XML document " + uri);
         }
         if (next != null) {
-            // add back the xml and id fields?
             next.processAdd(luxCommand == null ? cmd : luxCommand);
         }
     }

@@ -53,12 +53,14 @@ public class SolrIndexConfig implements SolrInfoMBean {
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
     private ArrayBlockingQueue<Serializer> serializerPool;
     private IndexSchema schema;
+    private final Logger logger;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
         serializerPool = new ArrayBlockingQueue<Serializer>(8);
         compiler = new Compiler (indexConfig);
+        logger = LoggerFactory.getLogger(getClass());
     }
     
     public Compiler getCompiler () {
@@ -71,6 +73,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         XmlIndexer indexer = indexerPool.poll();
         if (indexer == null) {
             indexer = new XmlIndexer (indexConfig, compiler);
+            logger.debug("created new XmlIndexer");
         }
         return indexer;
     }

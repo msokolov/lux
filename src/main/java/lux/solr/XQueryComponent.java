@@ -67,20 +67,25 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.CommonParams;
+import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.ContentStream;
 import org.apache.solr.common.util.ContentStreamBase;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.common.util.StrUtils;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.QueryComponent;
 import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.handler.component.SearchComponent;
 import org.apache.solr.handler.component.SearchHandler;
 import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.request.SolrQueryRequestBase;
 import org.apache.solr.request.SolrRequestHandler;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.DocSlice;
 import org.apache.solr.search.SolrIndexSearcher;
+import org.apache.solr.update.CommitUpdateCommand;
+import org.apache.solr.update.processor.UpdateRequestProcessorChain;
 import org.apache.solr.util.plugin.SolrCoreAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,7 +123,8 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     // In theory this is per-request state, but changes infrequently, so we just grab it as it flies by?
     private String[] shards;
-
+    private String[] slices;
+    
     public XQueryComponent() {
         logger = LoggerFactory.getLogger(XQueryComponent.class);
         evalHolder = new ThreadLocal<Evaluator>();
@@ -184,7 +190,27 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         resultByteSize = 0;
     }
-
+    
+    
+    public ArrayList<String> getShardURLs (boolean includeSelf) {
+        // String[] urls = new String[shards.length + (includeSelf ? 0 : -1)];
+        ArrayList<String> urls = new ArrayList<String> ();
+        String shardId = core.getCoreDescriptor().getCloudDescriptor().getShardId();
+        for (int i = 0; i < shards.length; i++) {
+            if (!includeSelf) {
+                if (shardId.equals(slices[i])) {
+                    // exclude this shard
+                    continue;
+                }
+            }
+            List<String> replicas = StrUtils.splitSmart(shards[i], "|", true);
+            for (String replica : replicas) {
+                urls .add("http://" + replica);
+            }
+        }
+        return urls;
+    }
+    
     public String getDefaultSerialization() {
         return "xml";
     }
@@ -251,9 +277,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         }
         SolrParams params = req.getParams();
         long timeAllowed = (long) params.getInt(CommonParams.TIME_ALLOWED, -1);
-        if (!params.getBool(XQUERY_COMPONENT_NAME, true)) {
-            return;
-        }
         XQueryExecutable expr;
         LuxSearcher searcher = new LuxSearcher (rb.req.getSearcher());
         DocWriter docWriter = new SolrDocWriter(this, rb.req.getCore());
@@ -281,15 +304,16 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         NamedList<Object> xpathResults = new NamedList<Object>();
         long tstart = System.currentTimeMillis();
         int count = 0;
-        SolrQueryContext context = new SolrQueryContext(this);
-        if (rb.shards != null) {
+        String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
+        SolrQueryContext context = new SolrQueryContext(this, req);
+        if (rb.shards != null && rb.req.getParams().getBool("distrib", true)) {
             // This is a distributed request; pass in the ResponseBuilder so it will be
             // available to a subquery.
             context.setResponseBuilder(rb);
-            // also capture the current set of shards 
+            // also capture the current set of shards
             shards = rb.shards;
+            slices = rb.slices;
         }
-        String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
         if (xqueryPath != null) {
             bindRequestVariables(rb, req, expr, compiler, eval, context);
         }
@@ -350,13 +374,40 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             logger.warn ("xquery evaluation error: " + eval.getDocReader().getCacheMisses() + " docs, " +
                     "0 results, " + (System.currentTimeMillis() - tstart) + "ms");
         }
+        if (err == null && context.isCommitPending()) {
+            doCommit();
+        }
     }
-
+    
+    protected void doCommit () {
+        boolean isCloud = shards != null && shards.length > 1;
+        SolrQueryRequest req  = new SolrQueryRequestBase (core, new ModifiableSolrParams()) {};
+        CommitUpdateCommand cmd = new CommitUpdateCommand(req, false);
+        cmd.softCommit = true;
+        // cmd.expungeDeletes = false;
+        // cmd.waitFlush = true;
+        // cmd.waitSearcher = true;
+        LoggerFactory.getLogger(getClass()).debug ("commit {}", shards);
+        try {
+            if (isCloud) {
+                SolrQueryResponse rsp = new SolrQueryResponse();
+                // ((ModifiableSolrParams)req.getParams()).add(ShardParams.SHARDS, getShardURLs(false));
+                UpdateRequestProcessorChain updateChain = core.getUpdateProcessingChain("lux-update-chain");
+                updateChain.createProcessor(req, rsp).processCommit(cmd);
+            } else {
+                // commit locally
+                core.getUpdateHandler().commit(cmd);
+            }
+        } catch (IOException e) {
+            throw new LuxException(e);
+        }
+    }
+    
     private String handleEXPathResponse(SolrQueryRequest req, SolrQueryResponse rsp, NamedList<Object> xpathResults, XdmItem xpathResult) {
         XdmNode expathResponse;
         expathResponse = (XdmNode) xpathResult;
-        HttpServletRequest httpReq = (HttpServletRequest) req.getContext().get("httpServletRequest");
-        HttpServletResponse httpResp = (HttpServletResponse) httpReq.getAttribute("httpServletResponse");
+        HttpServletRequest httpReq = (HttpServletRequest) req.getContext().get(SolrQueryContext.LUX_HTTP_SERVLET_REQUEST);
+        HttpServletResponse httpResp = (HttpServletResponse) httpReq.getAttribute(SolrQueryContext.LUX_HTTP_SERVLET_RESPONSE);
         TinyElementImpl responseNode = (TinyElementImpl) expathResponse.getUnderlyingNode();
         // Get the status code and message
         String status = responseNode.getAttributeValue("", "status");
@@ -629,7 +680,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         builder.startDocument(0);
         builder.startElement(fQNameFor("http", EXPATH_HTTP_NS, "request"), AnyType.getInstance(), 0, 0);
         builder.namespace(new NamespaceBinding("http", EXPATH_HTTP_NS), 0);
-        Request requestWrapper = (Request) req.getContext().get("httpServletRequest");
+        Request requestWrapper = (Request) req.getContext().get(SolrQueryContext.LUX_HTTP_SERVLET_REQUEST);
         addAttribute(builder, "method", requestWrapper.getMethod());
         addAttribute(builder, "servlet", requestWrapper.getServletPath());
         HttpServletRequest httpReq = (HttpServletRequest)requestWrapper.getRequest();
@@ -830,6 +881,10 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     public String[] getCurrentShards() {
         return shards;
+    }
+
+    public String[] getCurrentSlices() {
+        return slices;
     }
 
     private String xmlEscape(String value) {

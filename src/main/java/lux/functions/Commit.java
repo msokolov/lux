@@ -53,7 +53,7 @@ public class Commit extends ExtensionFunctionDefinition {
         public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
             Evaluator eval = SearchBase.getEvaluator(context);
-            eval.getDocWriter().commit();
+            eval.getDocWriter().commit(eval);
             return EmptySequence.getInstance();
         }
         

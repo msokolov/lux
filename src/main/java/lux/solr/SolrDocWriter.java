@@ -1,28 +1,40 @@
 package lux.solr;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.xml.stream.XMLStreamException;
 
 import lux.DocWriter;
+import lux.Evaluator;
 import lux.exception.LuxException;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.xml.tinybin.TinyBinary;
 import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.Serializer;
+import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyNodeImpl;
 
+import org.apache.solr.client.solrj.request.UpdateRequestExt;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.common.params.ShardParams;
 import org.apache.solr.core.SolrCore;
+import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequestBase;
-import org.apache.solr.update.CommitUpdateCommand;
+import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.UpdateHandler;
+import org.apache.solr.update.processor.UpdateRequestProcessor;
+import org.apache.solr.update.processor.UpdateRequestProcessorChain;
+import org.slf4j.LoggerFactory;
 
 /**
  * Used to write documents from within XQuery (lux:insert) and XSLT (xsl:result-document)
+ * TODO: refactor into two classes: one for cloud, one for local?
  */
 public class SolrDocWriter implements DocWriter {
 
@@ -41,6 +53,65 @@ public class SolrDocWriter implements DocWriter {
 
     @Override
     public void write(NodeInfo node, String uri) {
+        UpdateHandler updateHandler = core.getUpdateHandler();
+
+        // Create a version of the document for saving to the transaction log,
+        // or for cloud update via HTTP
+        SolrInputDocument solrDoc = new SolrInputDocument();
+        boolean isCloud = xqueryComponent.getCurrentShards() != null;
+        solrDoc.addField(uriFieldName, uri);
+        if (isCloud) {
+            // TODO: write as binary, but we need to enable the binary update request writer for this
+            // TinyBinary tinybin = new TinyBinary(((TinyNodeImpl)node).getTree());
+            // solrDoc.addField(xmlFieldName, tinybin.getByteBuffer().array());
+            Serializer serializer = xqueryComponent.solrIndexConfig.checkoutSerializer();
+            try {
+                String xmlString = serializer.serializeNodeToString(new XdmNode(node));
+                solrDoc.addField(xmlFieldName,  xmlString);
+            } catch (SaxonApiException e) {
+                throw new LuxException (e);
+            } finally {
+                xqueryComponent.solrIndexConfig.returnSerializer(serializer);
+            }
+            // TODO -- if we can determine this doc only gets added locally??
+            // solrDoc.addField(xmlFieldName, node);
+        }
+        else if (updateHandler.getUpdateLog() != null) {
+            if (node instanceof TinyNodeImpl) {
+                TinyBinary tinybin = new TinyBinary(((TinyNodeImpl)node).getTree());
+                solrDoc.addField(xmlFieldName, tinybin.getByteBuffer());
+            } else {
+                String xml = node.toString();
+                solrDoc.addField(xmlFieldName, xml);
+            }
+        }
+        if (isCloud) {
+            writeToCloud (solrDoc, uri);
+        } else {
+            writeLocal (solrDoc, node, uri);
+        }
+    }
+
+    private void writeToCloud (SolrInputDocument solrDoc, String uri) {
+        ArrayList<String> urls = xqueryComponent.getShardURLs(true);
+        LoggerFactory.getLogger(getClass()).debug ("writing " + uri + " to cloud at " + urls); 
+        SolrQueryResponse rsp = new SolrQueryResponse();
+        SolrQueryRequest req = UpdateDocCommand.makeSolrRequest(core);
+        ((ModifiableSolrParams)req.getParams()).add(ShardParams.SHARDS, urls.toArray(new String[urls.size()]));
+        UpdateRequestExt updateReq = new UpdateRequestExt();
+        updateReq.add(solrDoc);
+        UpdateDocCommand cmd = new UpdateDocCommand(req, solrDoc, null, uri);
+        UpdateRequestProcessorChain updateChain = xqueryComponent.getCore().getUpdateProcessingChain("lux-update-chain");
+        try {
+            UpdateRequestProcessor processor = updateChain.createProcessor(req, rsp);
+            processor.processAdd(cmd);
+            processor.finish();
+        } catch (IOException e) {
+            throw new LuxException (e);
+        }
+    }
+    
+    private void writeLocal (SolrInputDocument solrDoc, NodeInfo node, String uri) {
         XmlIndexer indexer = null;
         try {
             indexer = xqueryComponent.getSolrIndexConfig().checkoutXmlIndexer();
@@ -50,25 +121,10 @@ public class SolrDocWriter implements DocWriter {
                 throw new LuxException(e);
             }
             UpdateDocCommand cmd = new UpdateDocCommand(core, indexer.createLuceneDocument(), uri);
-            UpdateHandler updateHandler = core.getUpdateHandler();
-            if (updateHandler.getUpdateLog() != null) {
-                // Create a version of the document for saving to the transaction log
-                SolrInputDocument solrDoc = new SolrInputDocument();
-                solrDoc.addField(uriFieldName, uri);
-                if (node instanceof TinyNodeImpl) {
-                    TinyBinary tinybin = new TinyBinary(((TinyNodeImpl)node).getTree());
-                    solrDoc.addField(xmlFieldName, tinybin.getByteBuffer());
-                } else {
-                    String xml = node.toString();
-                    solrDoc.addField(xmlFieldName, xml);
-                }
-                cmd.solrDoc = solrDoc;
-            }
-            try {
-                updateHandler.addDoc(cmd);
-            } catch (IOException e) {
-                throw new LuxException (e);
-            }
+            cmd.solrDoc = solrDoc;
+            core.getUpdateHandler().addDoc(cmd);
+        } catch (IOException e) {
+            throw new LuxException (e);
         } finally {
             if (indexer != null) {
                 xqueryComponent.getSolrIndexConfig().returnXmlIndexer(indexer);
@@ -111,16 +167,9 @@ public class SolrDocWriter implements DocWriter {
     }
 
     @Override
-    public void commit() {
-        CommitUpdateCommand cmd = new CommitUpdateCommand(makeSolrQueryRequest(), false);
-        cmd.expungeDeletes = false;
-        // cmd.waitFlush = true;
-        cmd.waitSearcher = true;
-        try {
-            core.getUpdateHandler().commit(cmd);
-        } catch (IOException e) {
-            throw new LuxException(e);
-        }
+    public void commit(Evaluator eval) {
+        SolrQueryContext context = (SolrQueryContext) eval.getQueryContext();
+        context.setCommitPending(true);
     }
     
     /**
@@ -129,7 +178,7 @@ public class SolrDocWriter implements DocWriter {
     @Override
     public void close() {
     	// do not attempt to close the index; Solr will take care of that
-    	commit ();
+    	// commit ();
     }
 
 }

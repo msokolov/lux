@@ -93,6 +93,10 @@
    <field name="size_i" type="int" indexed="false" stored="true" />
    <field name="directory_b" type="boolean" indexed="true" stored="true" />
 
+   <!-- used by Solr tests: -->
+   <field name="signatureField" type="string" indexed="true" stored="false"/>
+   <field name="uuid" type="uuid" stored="true" />
+
    <!-- text content that is searched by default; we store it so solr can do highlighting -->
    <field name="fulltext_t" type="text" indexed="true" stored="true" multiValued="true"/>
    
@@ -301,6 +305,8 @@
          change the field name in the request.
      -->
     <fieldType name="random" class="solr.RandomSortField" indexed="true" />
+
+    <fieldType name="uuid" class="solr.UUIDField" />
 
     <!-- solr.TextField allows the specification of custom text analyzers
          specified as a tokenizer and a list of token filters. Different
