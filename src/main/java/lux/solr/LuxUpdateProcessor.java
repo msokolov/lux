@@ -82,7 +82,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                 } catch (XMLStreamException e) {
                     Logger logger = LoggerFactory.getLogger(LuxUpdateProcessor.class);
                     logger.error ("Failed to parse " + uri, e);
-                    logger.debug (xml.toString());
+                    // logger.debug (xml.toString());
                 }
                 addDocumentFields (xmlIndexer, solrIndexConfig.getSchema(), luceneDocument);
                 if (luxIdField != null) {
@@ -101,7 +101,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
             finally {
                 solrIndexConfig.returnXmlIndexer(xmlIndexer);
             }
-            logger.debug ("Indexed XML document " + uri);
+            // logger.debug ("Indexed XML document " + uri);
         }
         if (next != null) {
             next.processAdd(luxCommand == null ? cmd : luxCommand);
