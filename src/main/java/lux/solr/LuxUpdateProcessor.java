@@ -80,7 +80,6 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                     }
                     luceneDocument = xmlIndexer.createLuceneDocument();
                 } catch (XMLStreamException e) {
-                    Logger logger = LoggerFactory.getLogger(LuxUpdateProcessor.class);
                     logger.error ("Failed to parse " + uri, e);
                     // logger.debug (xml.toString());
                 }

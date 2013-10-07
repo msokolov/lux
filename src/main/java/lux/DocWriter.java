@@ -29,12 +29,15 @@ public interface DocWriter {
     void deleteAll ();
     
     /**
-     * Commits all changes to the index, making them visible to readers.
+     * Registers a commit that will be performed after the completion of the query.
+     * Once complete, all pending changes are saved to the index and made visible to readers.
+     * @param eval the evaluator providing an operating context in which the commit is to be performed.
      */
     void commit (Evaluator eval);
 
     /**
      * Perform any cleanup, including a commit.
+     * @param eval the evaluator providing an operating context in which the commit is to be performed.
      */
     void close(Evaluator eval);
 
