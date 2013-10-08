@@ -90,7 +90,6 @@ public class TLogTest {
         
         // shut down
         solr.shutdown();
-        coreContainer.shutdown();
         
         // restore contents of data directory to before we shutdown
         removeDirectory ("solr/collection1/data/tlog");
