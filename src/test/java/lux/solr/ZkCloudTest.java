@@ -18,7 +18,7 @@ import org.junit.Ignore;
  * Test is ignored by default because it's slow, and doesn't seem to work properly on
  * travis-ci.org
  */
-@Ignore
+//@Ignore
 public class ZkCloudTest extends AbstractFullDistribZkTestBase {
     
     public ZkCloudTest () {
