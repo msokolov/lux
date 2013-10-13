@@ -63,13 +63,13 @@ public class FieldValues implements Iterable<IndexableField> {
 
             case LONG:
                 return new LongField(fieldName, ((Long)value).longValue(), field.isStored());
-
+                /*
             case TOKENS:
                 return (IndexableField) value;
                 
             case SOLR_FIELD:
                 return (IndexableField) value;
-
+                 */
             default:
                 throw new IllegalStateException("unimplemented field type: " + field.getType());                    
             }
