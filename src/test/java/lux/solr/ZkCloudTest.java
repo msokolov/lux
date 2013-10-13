@@ -8,7 +8,6 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.cloud.AbstractFullDistribZkTestBase;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
-import org.junit.Ignore;
 
 /**
  * Basic test of Lux operation in a distributed ("cloud") setup.  Inserts some test
@@ -18,7 +17,6 @@ import org.junit.Ignore;
  * Test is ignored by default because it's slow, and doesn't seem to work properly on
  * travis-ci.org
  */
-@Ignore
 public class ZkCloudTest extends AbstractFullDistribZkTestBase {
     
     public ZkCloudTest () {
