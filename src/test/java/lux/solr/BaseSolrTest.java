@@ -41,11 +41,14 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
-        File lock = new File (solrHome + "/collection1/data/index/write.lock");
-        if (lock.exists()) {
-            lock.delete();
+        File f = new File("solr/collection1/data/tlog");
+        if (f.exists()) {
+            FileUtils.cleanDirectory (f);
         }
-        FileUtils.cleanDirectory (new File("solr/collection1/data/tlog"));
+        f = new File("solr/collection1/data/index");
+        if (f.exists ()) {
+            FileUtils.cleanDirectory (new File("solr/collection1/data/index"));
+        }
         coreContainer = new CoreContainer (solrHome);
         coreContainer.load();
         String defaultCoreName = coreContainer.getDefaultCoreName();
