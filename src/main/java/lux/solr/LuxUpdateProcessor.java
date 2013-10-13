@@ -78,7 +78,9 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                     } else if (xml instanceof NodeInfo) {
                         xmlIndexer.index((NodeInfo) xml, uri);
                     }
-                    luceneDocument = xmlIndexer.createLuceneDocument();
+                    // why is this here?  we're getting double values now since we also call 
+                    // addDocumentFIelds below?
+                    //luceneDocument = xmlIndexer.createLuceneDocument();
                 } catch (XMLStreamException e) {
                     logger.error ("Failed to parse " + uri, e);
                     // logger.debug (xml.toString());
