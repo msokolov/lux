@@ -21,11 +21,12 @@ public class CloudIndexSupport extends IndexTestSupportBase {
     
     CloudIndexSupport (SolrServer control, List<SolrServer> clients) {
         super (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT|INDEX_EACH_PATH);
-        indexer.getConfiguration().addField(new XPathField("doctype", "name(/*)", null, Store.YES, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField("title", "/*/TITLE | /SPEECH/LINE[1]", null, Store.YES, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField("title_multi", "//TITLE", null, Store.YES, Type.STRING));
-        indexer.getConfiguration().addField(new XPathField("actnum", "/*/@act", null, Store.YES, Type.INT));
-        indexer.getConfiguration().addField(new XPathField("scnlong", "/*/@scene", null, Store.YES, Type.LONG));
+        
+        //indexer.getConfiguration().addField(new XPathField("doctype", "name(/*)", null, Store.YES, Type.STRING));
+        //indexer.getConfiguration().addField(new XPathField("title", "/*/TITLE | /SPEECH/LINE[1]", null, Store.YES, Type.STRING));
+        //indexer.getConfiguration().addField(new XPathField("title_multi", "//TITLE", null, Store.YES, Type.STRING));
+        //indexer.getConfiguration().addField(new XPathField("actnum", "/*/@act", null, Store.YES, Type.INT));
+        //indexer.getConfiguration().addField(new XPathField("scnlong", "/*/@scene", null, Store.YES, Type.LONG));
 
         this.clients = clients;
         this.control = control;

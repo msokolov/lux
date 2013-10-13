@@ -252,9 +252,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
             if (fieldType == null) {
                 throw new SolrException(ErrorCode.SERVER_ERROR, "Field " + f.getKey() + " declared in lux config, but not defined in schema");
             }
-            XPathField xpathField = new XPathField(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO,
-                    Type.TEXT);
-            
+            XPathField xpathField = new XPathField(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO, field);
             indexConfig.addField(xpathField);
         }
     }
