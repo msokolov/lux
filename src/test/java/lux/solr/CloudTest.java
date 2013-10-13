@@ -51,6 +51,8 @@ public class CloudTest extends BaseDistributedSearchTestCase {
         // query ("qt", "/xquery", "q", "(for $sp in /SPEECH order by $sp/lux:key('title') return $sp)[30]");
 
         // Test order by int-valued key, and make sure that the order is numeric, not string
+        query ("qt", "/xquery", "q", "subsequence(for $doc in collection() order by $doc/lux:key('lux_docid') return $doc/base-uri(), 1, 20)");
+        query ("qt", "/xquery", "q", "subsequence(for $doc in collection() order by $doc/lux:key('lux_uri') return $doc/lux:key('title'), 1, 20)");
         query ("qt", "/xquery", "q", "subsequence(for $doc in collection() order by $doc/lux:key('lux_docid') return $doc/lux:key('title'), 1, 20)");
         query ("qt", "/xquery", "q", "(for $doc in collection() order by $doc/lux:key('lux_docid') return $doc/lux:key('title'))");
         
