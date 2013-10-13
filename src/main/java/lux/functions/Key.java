@@ -162,6 +162,8 @@ public class Key extends ExtensionFunctionDefinition {
             return EmptySequence.getInstance();
         }
         
+        // Get field values from a SolrDocument; used for distributed queries.  In this case the document
+        // will have resulted from a query to a remote Solr instance
         private Sequence getFieldValue (SolrDocument doc, Evaluator eval, String fieldName, FieldDefinition field) throws XPathException {
             Collection<?> valuesCollection = doc.getFieldValues(fieldName);
             if (valuesCollection == null) {
@@ -179,6 +181,13 @@ public class Key extends ExtensionFunctionDefinition {
                 Int64Value[] valueItems = new Int64Value[values.length];
                 for (int i = 0; i < values.length; i++) {
                     valueItems[i] = Int64Value.makeIntegerValue(((Number)values[i]).longValue());
+                }
+                return new AtomicArray(valueItems);
+            }
+            if (field.getType() == FieldDefinition.Type.SOLR_FIELD) {
+                StringValue[] valueItems = new StringValue[values.length];
+                for (int i = 0; i < values.length; i++) {
+                    valueItems[i] = StringValue.makeStringValue(values[i].toString());
                 }
                 return new AtomicArray(valueItems);
             }
