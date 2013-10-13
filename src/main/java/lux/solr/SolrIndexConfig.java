@@ -219,7 +219,6 @@ public class SolrIndexConfig implements SolrInfoMBean {
     private void informField (FieldDefinition fld) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
-        Logger logger = LoggerFactory.getLogger(LuxUpdateProcessorFactory.class);
         String fieldName = indexConfig.getFieldName(fld); // has this field been renamed?
         FieldDefinition actualField = indexConfig.getField(fieldName); // has this field been redefined?
         if (fields.containsKey(fieldName)) {

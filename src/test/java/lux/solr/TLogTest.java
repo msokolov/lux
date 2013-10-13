@@ -36,8 +36,9 @@ public class TLogTest {
     private static final Charset UTF8 = Charset.forName("utf-8");
     
     @Before
-    public void setup () {
+    public void setup () throws IOException {
         System.setProperty("solr.solr.home", "solr");
+        cleanDirectory ("solr/collection1/data/tlog");
         coreContainer = new CoreContainer ();
         coreContainer.load();
         processor = new Processor(false);

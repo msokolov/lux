@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest.METHOD;
@@ -44,6 +45,7 @@ public abstract class BaseSolrTest {
         if (lock.exists()) {
             lock.delete();
         }
+        FileUtils.cleanDirectory (new File("solr/collection1/data/tlog"));
         coreContainer = new CoreContainer (solrHome);
         coreContainer.load();
         String defaultCoreName = coreContainer.getDefaultCoreName();

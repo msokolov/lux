@@ -135,11 +135,11 @@ public class ZkCloudTest extends AbstractFullDistribZkTestBase {
     }
     
     @Override
-    public JettySolrRunner createJetty(File solrHome, String dataDir, String shardList, String solrConfigOverride, String schemaOverride) throws Exception {
+    public JettySolrRunner createJetty(File solrHome, String dir, String shardList, String solrConfigOverride, String schemaOverride) throws Exception {
 
         JettySolrRunner jetty = new LuxJettySolrRunner(solrHome.getAbsolutePath(), context, 0, solrConfigOverride, schemaOverride, false, getExtraServlets());
         jetty.setShards(shardList);
-        jetty.setDataDir(getDataDir(dataDir));
+        jetty.setDataDir(getDataDir(dir));
         jetty.start();
         
         return jetty;
