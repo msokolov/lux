@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import lux.Evaluator;
 import lux.index.field.FieldDefinition;
+import lux.index.field.XPathField;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -23,6 +24,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexableField;
 import org.apache.solr.common.SolrDocument;
+import org.apache.solr.schema.SchemaField;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -130,6 +132,7 @@ public class Key extends ExtensionFunctionDefinition {
         }
         
         private Sequence getFieldValue (Document doc, Evaluator eval, String fieldName, FieldDefinition field) throws XPathException {
+            // TODO refactor the repeated code here
             if (field == null || field.getType() == FieldDefinition.Type.STRING || field.getType() == FieldDefinition.Type.TEXT) {
                 Object[] values = doc.getValues(fieldName);
                 StringValue[] valueItems = new StringValue[values.length];
@@ -143,6 +146,16 @@ public class Key extends ExtensionFunctionDefinition {
                 Int64Value[] valueItems = new Int64Value[fieldValues.length];
                 for (int i = 0; i < fieldValues.length; i++) {
                     valueItems[i] = Int64Value.makeIntegerValue(fieldValues[i].numericValue().longValue());
+                }
+                return new AtomicArray(valueItems);
+            }
+            // TODO: convert Solr dates to xs:dateTime?  but the user can manage that, perhaps, for now
+            if (field.getType() == FieldDefinition.Type.SOLR_FIELD) {
+                SchemaField schemaField = ((XPathField)field).getSchemaField();
+                IndexableField [] fieldValues = doc.getFields(fieldName);
+                StringValue[] valueItems = new StringValue[fieldValues.length];
+                for (int i = 0; i < fieldValues.length; i++) {
+                    valueItems[i] = StringValue.makeStringValue(schemaField.getType().toExternal(fieldValues[i]));
                 }
                 return new AtomicArray(valueItems);
             }

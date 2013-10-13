@@ -90,25 +90,10 @@
    
    <field name="lux_uri" type="string" indexed="true" stored="true" multiValued="false"/>
 
-   <field name="size_i" type="int" indexed="false" stored="true" />
-   <field name="directory_b" type="boolean" indexed="true" stored="true" />
-
    <!-- used by Solr tests: -->
    <field name="signatureField" type="string" indexed="true" stored="false"/>
    <field name="uuid" type="uuid" stored="true" />
 
-   <!-- text content that is searched by default; we store it so solr can do highlighting -->
-   <field name="fulltext_t" type="text" indexed="true" stored="true" multiValued="true"/>
-   
-   <!-- unstemmed text content  -->
-   <field name="fulltext_t_unstemmed" type="text_unstemmed" indexed="true" stored="false" multiValued="true"/>
-   
-   <!-- also index full-text as case-sensitive -->
-   <field name="fulltext_t_case" type="text_case_sensitive" indexed="true" stored="false" multiValued="true"/>
-   
-   <copyField source="fulltext_t" dest="fulltext_t_case" />
-   <copyField source="fulltext_t" dest="fulltext_t_unstemmed" />
-   
    <field name="title" type="sortkey" indexed="true" stored="true" multiValued="false" />
 
    <field name="payloads" type="payloads" indexed="true" stored="true"/>
@@ -119,11 +104,6 @@
         a default value of "NOW" to indicate when each document was indexed.
      -->
    <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
-   
-   <field name="xml_text" type="xml_text_type" indexed="true" stored="true" multiValued="false" />
-   
-   <field name="xml_text_case" type="xml_text_case_type" indexed="true" stored="false" multiValued="false"/>
-   <copyField source="xml_text" dest="xml_text_case" />
    
    <!-- Dynamic field definitions.  If a field name is not found, dynamicFields
         will be used if the name matches any of the patterns.
@@ -192,7 +172,7 @@
  <uniqueKey>lux_uri</uniqueKey>
 
  <!-- field for the QueryParser to use when an explicit fieldname is absent -->
- <defaultSearchField>xml_text</defaultSearchField>
+ <!-- <defaultSearchField>lux_text</defaultSearchField> -->
 
  <!-- SolrQueryParser configuration: defaultOperator="AND|OR" -->
  <!-- <solrQueryParser defaultOperator="OR"/> -->

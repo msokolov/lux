@@ -66,6 +66,9 @@ public class FieldValues implements Iterable<IndexableField> {
 
             case TOKENS:
                 return (IndexableField) value;
+                
+            case SOLR_FIELD:
+                return (IndexableField) value;
 
             default:
                 throw new IllegalStateException("unimplemented field type: " + field.getType());                    

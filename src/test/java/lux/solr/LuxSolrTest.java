@@ -3,9 +3,11 @@ package lux.solr;
 
 import static org.junit.Assert.*;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.TimeZone;
 
 import org.apache.solr.client.solrj.SolrQuery;
@@ -194,7 +196,6 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQuery ("--12-01", "xs:gMonthDay", "xs:gMonthDay('--12-01')");
         
     }
-    
 
     @Test
     public void testMultiNodeConstruct () throws Exception {
@@ -203,6 +204,52 @@ public class LuxSolrTest extends BaseSolrTest {
                 + "element test { 'Hello, World' } }";
         String output = "<!-- this is a test --><?test-pi this is a test pi?><test>Hello, World</test>"; 
         assertQuery (output, "document", xml);
+    }
+    
+    /**
+     * Make sure we can index date-valued fields.  Test inserting via REST and via XQuery, retrieving
+     * field values, and querying.
+     */
+    @Test
+    public void testDateField () throws Exception {
+        assertQuery ("ok", "(lux:insert('/test', <dfdoc modified='2000-01-01T01:02:03Z'>ok</dfdoc>), lux:commit(), 'ok')");
+        assertQuery ("ok", "(lux:insert('/test2', <dfdoc modified='2000-01-01T02:03:04Z'>dokey</dfdoc>), lux:commit(), 'ok')");
+        Date d = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz").parse("2000-01-01T01:02:03GMT+00:00");
+        assertSolrQuery(d, "modified_dt", "lux_uri:\\/test");
+        assertSolrQuery(d, "modified_tdt", "lux_uri:\\/test");
+        
+        assertQuery ("ok", "/dfdoc[@modified='2000-01-01T01:02:03Z']/string()");
+        assertQuery ("ok", "/dfdoc[@modified=xs:dateTime('2000-01-01T01:02:03Z')]/string()");
+        
+        // DateField
+        assertQuery ("2000-01-01T01:02:03Z", "lux:key('modified_dt', doc('/test'))");
+        assertQuery ("dokey", "(for $doc in /dfdoc order by $doc/lux:key('modified_dt') return $doc)[2]/string()");
+        assertQuery ("dokey", "(for $doc in /dfdoc order by $doc/lux:key('modified_dt') descending return $doc)[1]/string()");
+        
+        // TrieDateField
+        assertQuery ("2000-01-01T01:02:03Z", "lux:key('modified_tdt', doc('/test'))");
+        assertQuery ("dokey", "(for $doc in /dfdoc order by $doc/lux:key('modified_tdt') return $doc)[2]/string()");
+        assertQuery ("dokey", "(for $doc in /dfdoc order by $doc/lux:key('modified_tdt') descending return $doc)[1]/string()");
+        
+        // queries
+        assertQuery ("ok", "lux:search('modified_dt:\"2000-01-01T01:02:03Z\"')/string()");
+        // query parser can't handle date ranges
+        // assertQuery ("ok", "lux:search('modified_dt:[\"2000-01-01T01:02:03Z\" TO *]')/string()");
+        // lack of precision makes this return 2?
+        // assertQuery ("ok", "lux:search('modified_tdt:\"2000-01-01T01:02:03Z\"')/string()");
+        // assertQuery ("ok", "lux:search('modified_tdt:[\"2000-01-01T01:02:03Z\" TO *]')/string()");
+
+        assertQuery ("ok", "lux:search('<@modified:\"2000-01-01T01:02:03Z\"')/string()");
+        // assertQuery ("ok", "lux:search('<@modified:[\"2000-01-01T01:02:03Z\" TO *]')/string()");
+        // bad date format
+        try {
+            assertXPathSearchError("ok", "(lux:insert('/test', <doc modified='2000-01-01' />), lux:commit(), 'ok')");
+            assertFalse ("no exception thrown", true);
+        } catch (Exception ex) {
+            assertTrue (ex.getMessage().contains("2000-01-01"));
+        }
+        
+        assertQuery ("ok", "(lux:delete('/test'), lux:delete('/test2'), lux:commit(), 'ok')");
     }
 
 }
