@@ -16,6 +16,7 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
@@ -82,6 +83,21 @@ public abstract class BaseSolrTest {
     
     protected void assertQuery (Object result, String query) throws Exception {
         assertQuery (result, null, query);
+    }
+
+    protected void assertSolrQuery (Object result, String fld, String query) throws Exception {
+        // check the field value of a result returned in the usual Solr way
+        SolrQuery q = new SolrQuery(query);
+        QueryResponse rsp = solr.query(q, METHOD.POST);
+        NamedList<Object> response = rsp.getResponse();
+        SolrDocumentList docs = (SolrDocumentList) response.get("response");
+        if (result == null) {
+            assertEquals (0, docs.size());
+        } else {
+            assertNotNull ("no docs returned", docs);
+            assertEquals ("unexpected result count", 1, docs.size());
+            assertEquals (result, docs.get(0).get(fld));
+        }
     }
 
     protected void assertQuery (Object result, String type, String query) throws Exception {

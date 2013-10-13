@@ -48,9 +48,14 @@ public abstract class FieldDefinition {
      * other types provide each values as a Java object.
      */
     public enum Type {
-        TOKENS(SortField.Type.DOC, RangePQuery.Type.STRING), STRING(SortField.Type.STRING, RangePQuery.Type.STRING), 
-        BYTES(SortField.Type.BYTES, null), INT(SortField.Type.INT, RangePQuery.Type.INT), LONG(SortField.Type.LONG, RangePQuery.Type.LONG), 
-        TEXT(SortField.Type.DOC, RangePQuery.Type.STRING);
+        TOKENS(SortField.Type.DOC, RangePQuery.Type.STRING), 
+        STRING(SortField.Type.STRING, RangePQuery.Type.STRING), 
+        BYTES(SortField.Type.BYTES, null), 
+        INT(SortField.Type.INT, RangePQuery.Type.INT), 
+        LONG(SortField.Type.LONG, RangePQuery.Type.LONG), 
+        TEXT(SortField.Type.DOC, RangePQuery.Type.STRING),
+        SOLR_FIELD(SortField.Type.STRING, RangePQuery.Type.STRING) // TODO: understand the implications here???
+        ;
         
         private SortField.Type sortFieldType;
         private lux.query.RangePQuery.Type rangeTermType;
@@ -93,7 +98,7 @@ public abstract class FieldDefinition {
         this.isStored = isStored;
         this.type = type;
         this.renameable = renameable;
-        if (analyzer != null && ! (type == Type.STRING || type == Type.TEXT || type == Type.TOKENS)) {
+        if (analyzer != null && ! (type == Type.STRING || type == Type.TEXT || type == Type.TOKENS || type == Type.SOLR_FIELD)) {
             throw new LuxException ("Unexpected combination of analyzer and field " + name + " of type: " + type);
         }
     }

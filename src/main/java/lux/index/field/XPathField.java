@@ -11,6 +11,7 @@ import net.sf.saxon.s9api.XdmValue;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field.Store;
+import org.apache.solr.schema.SchemaField;
 
 /**
  * Indexes the values of the XPath expression evaluated with the document as the context item
@@ -18,6 +19,7 @@ import org.apache.lucene.document.Field.Store;
 public class XPathField extends FieldDefinition {
     
     private final String xpath;
+    private final SchemaField schemaField;
     
     /**
      * create a new indexed field whose values are given by evaluating an XPath expression
@@ -32,6 +34,13 @@ public class XPathField extends FieldDefinition {
     public XPathField (String name, String xpath, Analyzer analyzer, Store isStored, Type type) {
         super (name, analyzer, isStored, type);
         this.xpath = xpath;
+        schemaField= null;
+    }
+
+    public XPathField (String name, String xpath, Analyzer analyzer, Store isStored, SchemaField schemaField) {
+        super (name, analyzer, isStored, Type.SOLR_FIELD);
+        this.xpath = xpath;
+        this.schemaField = schemaField;
     }
 
     public String getXPath () {
@@ -49,6 +58,10 @@ public class XPathField extends FieldDefinition {
         return new XPathValueIterator(value.iterator());
     }
 
+    public SchemaField getSchemaField() {
+        return schemaField;
+    }
+
     class XPathValueIterator implements Iterator<Object>, Iterable<Object> {
         private final XdmSequenceIterator sequence;
 
@@ -64,13 +77,19 @@ public class XPathField extends FieldDefinition {
         @Override
         public Object next() {
             XdmItem item = sequence.next();
+            String stringValue = item.getStringValue();
             switch (getType()) {
             case STRING: 
             case TEXT:
-                return item.getStringValue();
-            case INT: return Integer.valueOf (item.getStringValue());
-            case LONG: return Long.valueOf (item.getStringValue());
-            default: throw new IllegalStateException (getType() + " is not a valid type for an XPathField");
+                return stringValue;
+            case INT: 
+                return Integer.valueOf (stringValue);
+            case LONG: 
+                return Long.valueOf (stringValue);
+            case SOLR_FIELD: 
+                return getSchemaField().createField(stringValue, 1.0f);
+            default: 
+                throw new IllegalStateException (getType() + " is not a valid type for an XPathField");
             }
         }
 
