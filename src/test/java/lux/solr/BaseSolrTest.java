@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest.METHOD;
@@ -49,6 +50,7 @@ public abstract class BaseSolrTest {
         String defaultCoreName = coreContainer.getDefaultCoreName();
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
         solrCore = coreContainer.getCore(defaultCoreName);
+        FileUtils.cleanDirectory (new File("solr/collection1/data/tlog"));
         try {
             solr.deleteByQuery("*:*");
             solr.commit();
