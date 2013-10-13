@@ -206,7 +206,7 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQuery (output, "document", xml);
     }
     
-    /**
+    /*
      * Make sure we can index date-valued fields.  Test inserting via REST and via XQuery, retrieving
      * field values, and querying.
      */

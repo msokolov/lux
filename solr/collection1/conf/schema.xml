@@ -104,6 +104,8 @@
         a default value of "NOW" to indicate when each document was indexed.
      -->
    <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
+
+   <field name="text" type="text" indexed="true" stored="true" multiValued="true"/>
    
    <!-- Dynamic field definitions.  If a field name is not found, dynamicFields
         will be used if the name matches any of the patterns.
@@ -171,8 +173,8 @@
    -->
  <uniqueKey>lux_uri</uniqueKey>
 
- <!-- field for the QueryParser to use when an explicit fieldname is absent -->
- <!-- <defaultSearchField>lux_text</defaultSearchField> -->
+ <!-- field for the QueryParser to use when an explicit fieldname is absent. -->
+ <defaultSearchField>text</defaultSearchField>
 
  <!-- SolrQueryParser configuration: defaultOperator="AND|OR" -->
  <!-- <solrQueryParser defaultOperator="OR"/> -->
@@ -445,8 +447,7 @@
         <!-- The TrimFilter removes any leading or trailing whitespace -->
         <filter class="solr.TrimFilterFactory" />
         <!-- <filter class="solr.ICUFoldingFilterFactory" /> -->
-        <filter class="solr.PatternReplaceFilterFactory" pattern="^\W+">
-        </filter>
+         <filter class="solr.PatternReplaceFilterFactory" pattern="^\W+" />
       </analyzer>
     </fieldType>
 
