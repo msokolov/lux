@@ -138,8 +138,12 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     
     // from solr..DocumentBuilder
     private static void addField(Document doc, SchemaField field, Object val, float boost) {
-        for (IndexableField f : field.getType().createFields(field, val, boost)) {
-          if (f != null) doc.add((Field) f); // null fields are not added
+        if (val instanceof IndexableField) {
+            doc.add((IndexableField) val);
+        } else {
+            for (IndexableField f : field.getType().createFields(field, val, boost)) {
+                if (f != null) doc.add((Field) f); // null fields are not added
+            }
         }
       }
 
