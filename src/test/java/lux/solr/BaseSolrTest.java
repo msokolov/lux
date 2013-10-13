@@ -45,12 +45,12 @@ public abstract class BaseSolrTest {
         if (lock.exists()) {
             lock.delete();
         }
+        FileUtils.cleanDirectory (new File("solr/collection1/data/tlog"));
         coreContainer = new CoreContainer (solrHome);
         coreContainer.load();
         String defaultCoreName = coreContainer.getDefaultCoreName();
         solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
         solrCore = coreContainer.getCore(defaultCoreName);
-        FileUtils.cleanDirectory (new File("solr/collection1/data/tlog"));
         try {
             solr.deleteByQuery("*:*");
             solr.commit();
