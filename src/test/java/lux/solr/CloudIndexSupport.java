@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.util.List;
 
 import lux.IndexTestSupportBase;
-import lux.index.field.FieldDefinition.Type;
-import lux.index.field.XPathField;
 
-import org.apache.lucene.document.Field.Store;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
