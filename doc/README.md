@@ -51,20 +51,9 @@ way to do this is to provide features that appeal to developers and make
 their lives easier, to support standards initiatives like EXPath, and to
 integrate with other widely-used technologies.
 
-We need to acknowledge here
-though that Lux is new and is missing many features users will expect from a mature
-database product.  Also, disclaimer: please be aware this is a first public 
-release: even though it benefits from being built on a very solid base, and is
-very thoroughly unit tested, the 
-Lux code itself is fairly new, and we are sure to identify gaps
-that need addressing in order to make it a more useful system.  In spite of these
-limitations, we felt there would be some real value in sharing Lux with
-a broader community that has a need to query XML documents indexed by Solr using 
-XQuery and XSLT.
-
 ## Quality ##
 
-We've used the XQuery Test Suite to help ensure that Lux
+We've used the XQuery Test Suite (1.0 version) to help ensure that Lux
 provides an accurate standards-compliant XQuery service.  Because Lux is
 built using Saxon, and relies on Saxon to compile and evaluate XQuery, it
 achieves essentially similar results on these tests. However, as part of 
@@ -88,8 +77,16 @@ Lux does a decent job of filtering out irrelevant documents in many cases, and p
 access (via debug-level logging statements) to the optimized queries it produces, so it is 
 easy to see where it is applying indexing optimizations, and where it is not.
 
-## Features ##
+### SolrCloud support
 
+To handle huge datasets (on the order of 1TB and up), it's necessary to
+distribute documents among multiple machines. Solr provides a distributed
+update and query mechanism (and other stuff) called SolrCloud that makes
+this possible.  Lux's update and query mechanisms make use of that, so you
+can now store literally zillions of documents in a single multi-node Lux
+installation!  Big Data woohoo!
+
+## Features ##
 
 ### XML indexes ###
 
