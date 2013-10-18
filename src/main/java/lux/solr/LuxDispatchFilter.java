@@ -122,25 +122,25 @@ public class LuxDispatchFilter extends SolrDispatchFilter {
                     String pathInfo = xquery.substring(pathInfoOffset);
                     xquery = xquery.substring(0, pathInfoOffset - 1);
                     if (params != null) {
-                        params.put("lux.pathInfo", new String[] { pathInfo });
+                        params.put(XQueryComponent.LUX_PATH_INFO, new String[] { pathInfo });
                     }
-                    qs = appendToQueryString(qs, "lux.pathInfo", pathInfo);
+                    qs = appendToQueryString(qs, XQueryComponent.LUX_PATH_INFO, pathInfo);
                 }
 
                 // add lux.query and lux.base-uri to the query parameter map
                 if (params != null) {
-                    params.put("lux.xquery", new String[] { xquery });
+                    params.put(XQueryComponent.LUX_XQUERY, new String[] { xquery });
                     params.put("lux.serverBaseUri", baseURIArr);
                 }
-                qs = appendToQueryString(qs, "lux.xquery", xquery);
+                qs = appendToQueryString(qs, XQueryComponent.LUX_XQUERY, xquery);
                 qs = appendToQueryString(qs, "lux.serverBaseUri", baseURI);
 
                 // set the modified query string and parameter map on a request
                 // wrapper
                 wrapper.setQueryString(qs);
                 wrapper.setParameterMap(params);
-                wrapper.setAttribute(SolrQueryContext.LUX_HTTP_SERVLET_RESPONSE, response);
             }
+            wrapper.setAttribute(SolrQueryContext.LUX_HTTP_SERVLET_RESPONSE, response);
             super.doFilter(wrapper, response, chain);
             return;
         }
