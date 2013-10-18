@@ -23,6 +23,7 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.trans.XPathException;
 import nu.validator.htmlparser.sax.HtmlParser;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.InputSource;
@@ -260,7 +261,18 @@ public class SolrIT {
         assertEquals ("POST", evalString("/request/@method", context));
         assertEquals ("value", evalString("/request/param[@name='test']/@value", context));
     }
-    
+
+    @Test
+    public void testPostXQueryServlet () throws Exception {
+        String query = IOUtils.toString(getClass().getResourceAsStream("/lux/it/echo-request.xqy"));
+        WebResponse resp = postToXQuery (query, "test", "value", "wt", "lux");
+        
+        XdmNode rspDoc = parseResponseBody(resp);
+        QueryContext context = new QueryContext (rspDoc);
+        assertEquals ("POST", evalString("/request/@method", context));
+        assertEquals ("value", evalString("/request/param[@name='test']/@value", context));
+    }
+
     private XdmNode parseResponseBody (WebResponse resp) throws IOException {
         String body = resp.getText();
         assertTrue ("empty body", body.length() > 0);
@@ -408,6 +420,18 @@ public class SolrIT {
     
     private WebResponse post (String xquery, String ... params) throws MalformedURLException, IOException, SAXException {
         PostMethodWebRequest req = new PostMethodWebRequest(APP_SERVER_PATH + xquery);
+        for (int i = 0; i < params.length; i+= 2) {
+            req.setParameter(params[i], params[i+1]);
+        }
+        assertEquals ("", req.getQueryString());
+        WebResponse response = httpclient.sendRequest(req);
+        assertEquals (200, response.getResponseCode());
+        return response;
+    }
+    
+    private WebResponse postToXQuery (String xquery, String ... params) throws MalformedURLException, IOException, SAXException {
+        PostMethodWebRequest req = new PostMethodWebRequest(XQUERY_PATH);
+        req.setParameter ("q", xquery);
         for (int i = 0; i < params.length; i+= 2) {
             req.setParameter(params[i], params[i+1]);
         }

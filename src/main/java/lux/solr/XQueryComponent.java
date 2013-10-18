@@ -304,7 +304,6 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         NamedList<Object> xpathResults = new NamedList<Object>();
         long tstart = System.currentTimeMillis();
         int count = 0;
-        String xqueryPath = rb.req.getParams().get(LUX_XQUERY);
         SolrQueryContext context = new SolrQueryContext(this, req);
         if (rb.shards != null && rb.req.getParams().getBool("distrib", true)) {
             // This is a distributed request; pass in the ResponseBuilder so it will be
@@ -314,9 +313,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
             shards = rb.shards;
             slices = rb.slices;
         }
-        if (xqueryPath != null) {
-            bindRequestVariables(rb, req, expr, compiler, eval, context);
-        }
+        bindRequestVariables(rb, req, expr, compiler, eval, context);
         Iterator<XdmItem> queryResults = eval.iterator(expr, context);
         String err = null;
         while (queryResults.hasNext()) {
