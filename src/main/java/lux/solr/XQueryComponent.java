@@ -111,7 +111,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     protected String queryPath;
 
     private SolrURIResolver uriResolver; 
-    private ThreadLocal<Evaluator> evalHolder;
+    private static ThreadLocal<Evaluator> evalHolder;
     
     private Serializer serializer;
 
@@ -282,7 +282,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
         DocWriter docWriter = new SolrDocWriter(this, rb.req.getCore());
         Compiler compiler = solrIndexConfig.getCompiler();
 
-        Evaluator eval = new Evaluator(compiler, searcher, docWriter); 
+        Evaluator eval = new Evaluator(compiler, searcher, docWriter);
         evalHolder.set (eval);
         TransformErrorListener errorListener = eval.getErrorListener();
         try {
