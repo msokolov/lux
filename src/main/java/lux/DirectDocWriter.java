@@ -29,7 +29,6 @@ public class DirectDocWriter implements DocWriter {
     
     @Override
     public void write(NodeInfo node, String uri) {
-        delete (uri); // remove any document with the same uri
         try {
             indexer.indexDocument(indexWriter, uri, node);
         } catch (XMLStreamException e) {
