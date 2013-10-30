@@ -25,16 +25,7 @@ import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.SortSpec;
 
 /**
- * Retrieves documents from distributed Solr (SolrCloud); called from fn:doc()
- * 
- * FIXME: the URIResolver gets set on the Saxon Configuration object, which is shared across
- * multiple threads.  All of XQueryComponent, SolrIndexConfig, and Processor are per-core resources,
- * and can be shared across threads.  There's no need to constantly reallocate and reset the URIResolver.
- * We can just make one and leave it there.
- * 
- * But we do need access to some query-scoped data in the resolver: namely the document builder, since
- * it tracks allocated document numbers.  Well perhaps we can allocate a new builder since the numbers
- * are persistent?
+ * Retrieves documents Solr, both local and distributed (SolrCloud); called from fn:doc()
  */
 public class SolrURIResolver extends LuxURIResolver {
 
