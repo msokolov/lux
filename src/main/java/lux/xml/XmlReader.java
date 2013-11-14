@@ -1,8 +1,11 @@
 package lux.xml;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -63,8 +66,16 @@ public class XmlReader {
      * @param in source of xml StAX events
      * @throws XMLStreamException if the reader does
      */
-    public void read (InputStream in) throws XMLStreamException {  
+    public void read (InputStream in) throws XMLStreamException {
         XMLStreamReader xmlStreamReader = getXMLInputFactory().createXMLStreamReader(in);
+        if (stripNamespaces) {
+            xmlStreamReader = new NamespaceStrippingXMLStreamReader(xmlStreamReader);
+        }
+        read (xmlStreamReader);
+    }
+
+    public void read (InputStream in, String systemID) throws XMLStreamException {
+        XMLStreamReader xmlStreamReader = getXMLInputFactory().createXMLStreamReader(systemID, in);
         if (stripNamespaces) {
             xmlStreamReader = new NamespaceStrippingXMLStreamReader(xmlStreamReader);
         }
@@ -113,7 +124,21 @@ public class XmlReader {
                           String systemID,
                           String baseURI,
                           String namespace) throws XMLStreamException {
-                         return new ByteArrayInputStream (new byte[0]);
+                         if (systemID == null) {
+                             return new ByteArrayInputStream (new byte[0]);
+                         }
+                         try
+                         {
+                             String path = URI.create(baseURI).resolve(systemID).getPath();
+                             return new FileInputStream(path);
+                         }
+                         catch (IOException ex)
+                         {
+                             throw new XMLStreamException(
+                                     String.format("Unable to open stream for resource %s: %s",
+                                                   systemID,
+                                                   ex.getMessage()), ex);
+                         }
                      }
                  });
             // this doesn't seem to do anything?

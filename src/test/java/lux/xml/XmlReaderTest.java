@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.net.URL;
 import java.util.Arrays;
 
 import javax.xml.stream.XMLStreamException;
@@ -41,6 +42,14 @@ public class XmlReaderTest {
     private void assertDocContent(XdmNode doc) {
         assertEquals("test", ((XdmNode) doc.axisIterator(Axis.CHILD).next()).getNodeName().toString());
         assertEquals(CONTENT, normalize(doc.getStringValue()));
+    }
+    
+    @Test
+    public void testUndefinedEntity() throws Exception {
+        SaxonDocBuilder saxonBuilder = new SaxonDocBuilder(new Processor(false));
+        handleDocument(saxonBuilder, "lux/external-entity.xml");
+        XdmNode doc = saxonBuilder.getDocument();
+        assertEquals ("$100", normalize(doc.getStringValue()));
     }
     
     @Test
@@ -273,10 +282,11 @@ public class XmlReaderTest {
     
     private void handleDocument(StAXHandler handler, String path, boolean stripNamespaces) throws XMLStreamException {
         InputStream in = getClass().getClassLoader().getResourceAsStream (path);
+        URL url = getClass().getClassLoader().getResource(path);
         XmlReader xmlReader = new XmlReader ();
         xmlReader.setStripNamespaces(stripNamespaces);
         xmlReader.addHandler(handler);
-        xmlReader.read(in);
+        xmlReader.read(in, url.getPath());
     }
 
     private String normalize (String s) {
