@@ -43,6 +43,7 @@ public class TinyBinaryStoreTest {
 
     @Test
     public void testTinyBinaryURI () {
+    	assertEquals ("lux://lux/reader-test.xml", getStringResult ("/test/root()/base-uri()"));
     	assertEquals ("lux://lux/reader-test.xml", getStringResult ("/test/base-uri()"));
     }
     
