@@ -41,7 +41,7 @@ public class SearchResultIterator extends SearchIteratorBase {
      * @param start1 the 1-based starting position of the iteration
      * @throws IOException
      */
-    public SearchResultIterator (Evaluator eval, Query query, String sortCriteria, int start1) throws IOException {
+    public SearchResultIterator (Evaluator eval, Query query, String[] sortCriteria, int start1) throws IOException {
         super (eval, sortCriteria, start1);
         this.query = query;
         if (stats != null) {
@@ -52,7 +52,7 @@ public class SearchResultIterator extends SearchIteratorBase {
         if (searcher == null) {
             throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
-        if (sortCriteria != null) {
+        if (sortCriteria != null && sortCriteria.length > 0) {
             Sort sort = makeSortFromCriteria(sortCriteria);
             docIter = searcher.search(query, sort);
         } else {

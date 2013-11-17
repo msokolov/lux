@@ -45,7 +45,7 @@ public class Exists extends SearchBase {
     }
     
     @Override 
-    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, String sortCriteria, int start) throws XPathException {
+    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, String[] sortCriteria, int start) throws XPathException {
         long t = System.currentTimeMillis();
         boolean exists = false;
         try {
@@ -62,7 +62,7 @@ public class Exists extends SearchBase {
     }
 
     @Override
-    protected UnfailingIterator<BooleanValue> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {
+    protected UnfailingIterator<BooleanValue> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String[] sortCriteria, int start) throws XPathException {
         try {
             long count = new CloudSearchIterator (eval, query, queryParser, sortCriteria, start).count();
             return SingletonIterator.makeIterator(BooleanValue.get(count > 0));

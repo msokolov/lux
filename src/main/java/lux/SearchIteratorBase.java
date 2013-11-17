@@ -12,47 +12,46 @@ public abstract class SearchIteratorBase implements SequenceIterator<NodeInfo> {
 
     protected final Evaluator eval;
     protected final QueryStats stats;
-    protected final String sortCriteria;
+    protected final String [] sortCriteria;
     protected final int start;
     protected NodeInfo current = null;
     protected int position = 0;
 
     public static final MissingStringLastComparatorSource MISSING_LAST = new MissingStringLastComparatorSource();
 
-    public SearchIteratorBase (Evaluator eval, String sortCriteria, int start1) {
+    public SearchIteratorBase (Evaluator eval, String[] sortCriteria, int start1) {
         this.eval = eval;
         this.stats = eval.getQueryStats();
         this.sortCriteria = sortCriteria;
         this.start = start1 - 1;
     }
 
-    protected Sort makeSortFromCriteria(String criteria) {
-        String[] fields = criteria.split("\\s*,\\s*");
-        SortField[] sortFields = new SortField [fields.length];
-        for (int i = 0; i < fields.length; i++) {
+    protected Sort makeSortFromCriteria(String [] criteria) {
+        SortField[] sortFields = new SortField [criteria.length];
+        for (int i = 0; i < criteria.length; i++) {
             SortField.Type type = SortField.Type.STRING;
-            String [] tokens = fields[i].split("\\s+");
+            String [] tokens = criteria[i].split("\\s+");
             String field = tokens[0];
             Boolean reverse = null;
             Boolean emptyGreatest = null;
             for (int j = 1; j < tokens.length; j++) {
                 if (tokens[j].equals("descending")) {
-                    reverse = setBooleanOnce (reverse, true, criteria);
+                    reverse = setBooleanOnce (reverse, true, criteria[i]);
                 } else if (tokens[j].equals("ascending")) {
-                    reverse = setBooleanOnce (reverse, false, criteria);
+                    reverse = setBooleanOnce (reverse, false, criteria[i]);
                 } else if (tokens[j].equals("empty")) {
                     if (j == tokens.length-1) {
-                        throw new LuxException ("missing keyword after 'empty' in: " + criteria);
+                        throw new LuxException ("missing keyword after 'empty' in: " + criteria[i]);
                     }
                     j = j + 1;
                     if (tokens[j].equals("least")) {
-                        emptyGreatest = setBooleanOnce(emptyGreatest, false, criteria);
+                        emptyGreatest = setBooleanOnce(emptyGreatest, false, criteria[i]);
                     } 
                     else if (tokens[j].equals("greatest")) {
-                        emptyGreatest = setBooleanOnce(emptyGreatest, true, criteria);
+                        emptyGreatest = setBooleanOnce(emptyGreatest, true, criteria[i]);
                     }
                     else {
-                        throw new LuxException ("missing or invalid keyword after 'empty' in: " + criteria);
+                        throw new LuxException ("missing or invalid keyword after 'empty' in: " + criteria[i]);
                     }
                 } else if (tokens[j].equals("int")) {
                     type = SortField.Type.INT;
@@ -61,7 +60,7 @@ public abstract class SearchIteratorBase implements SequenceIterator<NodeInfo> {
                 } else if (tokens[j].equals("string")) {
                     type = SortField.Type.STRING;
                 } else {
-                    throw new LuxException ("invalid keyword '" + tokens[j] + "' in: " + criteria);
+                    throw new LuxException ("invalid keyword '" + tokens[j] + "' in: " + criteria[i]);
                 }
             }
             if (field.equals("lux:score")) {
@@ -95,7 +94,7 @@ public abstract class SearchIteratorBase implements SequenceIterator<NodeInfo> {
 
     final Boolean setBooleanOnce (Boolean current, boolean value, String sortCriteria) {
         if (current != null) {
-            throw new LuxException ("too many ordering keywords in: " + sortCriteria);
+            throw new LuxException ("invalid ordering keyword in: " + sortCriteria);
         }
         return value;
     }

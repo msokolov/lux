@@ -1,5 +1,7 @@
 package lux.functions;
 
+import java.util.ArrayList;
+
 import lux.Evaluator;
 import lux.QueryContext;
 import lux.TransformErrorListener;
@@ -34,9 +36,9 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         super();
     }
 
-    protected abstract SequenceIterator<? extends Item> iterate(final Query query, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
+    protected abstract SequenceIterator<? extends Item> iterate(final Query query, final Evaluator eval, final String[] sortCriteria, final int start) throws XPathException;
 
-    protected abstract SequenceIterator<? extends Item> iterateDistributed(final String query, final QueryParser queryParser, final Evaluator eval, final String sortCriteria, final int start) throws XPathException;
+    protected abstract SequenceIterator<? extends Item> iterateDistributed(final String query, final QueryParser queryParser, final Evaluator eval, final String[] sortCriteria, final int start) throws XPathException;
 
     @Override
     public int getMinimumNumberOfArguments() {
@@ -73,12 +75,17 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                 throw new XPathException ("wrong number of arguments for " + getFunctionQName());
             }
             Item queryArg = arguments[0].head();
-            String sortCriteria = null;
+            String [] sortCriteria = null;
             if (arguments.length >= 2) {
-                Item sortArg = arguments[1].head();
+                ArrayList<String> sortCriteriaColl = new ArrayList<String>();
+                Sequence sortArg = arguments[1];
                 if (sortArg != null) {
-                    sortCriteria = sortArg.getStringValue();
+                    SequenceIterator<? extends Item> sortArgs = sortArg.iterate();
+                    while (sortArgs.next() != null) {
+                        sortCriteriaColl.add (sortArgs.current().getStringValue());
+                    }
                 }
+                sortCriteria = sortCriteriaColl.toArray(new String[sortCriteriaColl.size()]);
                 // FIXME: use lux_score as default sort criteria, and generate calls in optimizer
                 // using document order explicitly
             }

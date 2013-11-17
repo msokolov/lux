@@ -72,7 +72,7 @@ public class SearchCall extends FunCall {
         args.add (queryArg);
         SortField[] sortFields = query.getSortFields();
         if (sortFields != null) {
-            args.add(new LiteralExpression (createSortString(sortFields)));
+            args.add(createSortArgument(sortFields));
         } else if (! generated) {
             // if this is an explicit function call that has no explicit ordering, order by relevance
             args.add(new LiteralExpression ("lux:score descending"));
@@ -83,27 +83,33 @@ public class SearchCall extends FunCall {
     /**
      * @return a string describing sort options to be passed as an argument to search
      */
-    private String createSortString (SortField[] sort) {
+    private AbstractExpression createSortArgument (SortField[] sort) {
+        if (sort == null || sort.length == 0) {
+            return LiteralExpression.EMPTY;
+        }
+        if (sort.length == 1) {
+            return new LiteralExpression (formatSortCriterion(sort[0]));
+        }
+        AbstractExpression [] criteria = new AbstractExpression[sort.length];
+        for (int i = 0; i < sort.length; i++) {
+            criteria[i] = new LiteralExpression (formatSortCriterion(sort[i]));
+        }
+        return new Sequence(criteria);
+    }
+
+    private String formatSortCriterion(SortField sortField) {
         StringBuilder buf = new StringBuilder();
-        if (sort != null) {
-            for (SortField sortField : sort) {
-                buf.append (sortField.getField());
-                if (sortField.getReverse()) {
-                    buf.append (" descending");
-                }
-                if (SearchResultIterator.MISSING_LAST.equals(sortField.getComparatorSource())) {
-                    buf.append (" empty greatest");
-                }
-                switch (sortField.getType()) {
-                case INT: buf.append(" int"); break;
-                case LONG: buf.append(" long"); break;
-                default: // default is string
-                }
-                buf.append (",");
-            }
-            if (buf.length() > 0) {
-                buf.setLength(buf.length() - 1);
-            }
+        buf.append (sortField.getField());
+        if (sortField.getReverse()) {
+            buf.append (" descending");
+        }
+        if (SearchResultIterator.MISSING_LAST.equals(sortField.getComparatorSource())) {
+            buf.append (" empty greatest");
+        }
+        switch (sortField.getType()) {
+        case INT: buf.append(" int"); break;
+        case LONG: buf.append(" long"); break;
+        default: // default is string
         }
         return buf.toString();
     }

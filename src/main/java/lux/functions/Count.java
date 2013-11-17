@@ -45,7 +45,7 @@ public class Count extends SearchBase {
     }
     
     @Override 
-    public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, String sortCriteria, int start) throws XPathException {
+    public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, String[] sortCriteria, int start) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {
@@ -62,7 +62,7 @@ public class Count extends SearchBase {
     }
 
     @Override
-    protected UnfailingIterator<Int64Value> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String sortCriteria, int start) throws XPathException {
+    protected UnfailingIterator<Int64Value> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String[] sortCriteria, int start) throws XPathException {
         try {
             long count = new CloudSearchIterator (eval, query, queryParser, sortCriteria, start).count();
             return SingletonIterator.makeIterator(new Int64Value(count));

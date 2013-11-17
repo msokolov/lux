@@ -72,29 +72,29 @@ public class XPathFieldTest {
     public void testSortMixed() throws Exception {
         String s = getStringResult("for $doc in lux:search('*:*', 'name') return name($doc/*)");
         assertEquals("entities entities test title token", s);
-        String s2 = getStringResult("for $doc in lux:search('*:*', 'name, string-length int') return lux:key('string-length',$doc)");
+        String s2 = getStringResult("for $doc in lux:search('*:*', ('name', 'string-length int')) return lux:key('string-length',$doc)");
         assertEquals("2 3 95 4 16", s2);
-        String s3 = getStringResult("for $doc in lux:search('*:*', 'name, string-length descending') return lux:key('string-length',$doc)");
+        String s3 = getStringResult("for $doc in lux:search('*:*', ('name', 'string-length descending')) return lux:key('string-length',$doc)");
         assertEquals("3 2 95 4 16", s3);
     }
     
     @Test
     public void testSortMissingValues () throws Exception {
         // default is 'empty least'
-        String s = getStringResult("for $doc in lux:search('*:*', 'id int, name ascending') return (name($doc/*), lux:key('id', $doc))");
+        String s = getStringResult("for $doc in lux:search('*:*', ('id int', 'name ascending')) return (name($doc/*), lux:key('id', $doc))");
         assertEquals("entities title token entities 2 test 95", s);
         // explicit 'empty least'
-        s = getStringResult("for $doc in lux:search('*:*', 'id int, name ascending empty least') return (name($doc/*), lux:key('id', $doc))");
+        s = getStringResult("for $doc in lux:search('*:*', ('id int', 'name ascending empty least')) return (name($doc/*), lux:key('id', $doc))");
         assertEquals("entities title token entities 2 test 95", s);
     }
     
     @Test
     public void testSortEmptyGreatest () throws Exception {
         // 'empty greatest'
-        String s1 = getStringResult("for $doc in lux:search('*:*', 'id int empty greatest, name ascending') return (name($doc/*), lux:key('id', $doc))");
+        String s1 = getStringResult("for $doc in lux:search('*:*', ('id int empty greatest', 'name ascending')) return (name($doc/*), lux:key('id', $doc))");
         assertEquals("entities 2 test 95 entities title token", s1);
         // 'empty greatest' long
-        s1 = getStringResult("for $doc in lux:search('*:*', 'string-length-long long empty greatest, name ascending') return (name($doc/*), lux:key('string-length-long', $doc))");
+        s1 = getStringResult("for $doc in lux:search('*:*', ('string-length-long long empty greatest', 'name ascending')) return (name($doc/*), lux:key('string-length-long', $doc))");
         assertEquals("entities 2 entities 3 title 4 token 16 test 95", s1);
     }
     
@@ -148,7 +148,7 @@ public class XPathFieldTest {
         // conflicting ordering keywords "ascending descending"
         result = eval.evaluate("for $doc in lux:search('*:*', 'string-length-string ascending descending') return lux:key('string-length', $doc)");
         assertEquals (1, result.getErrors().size());
-        assertEquals ("lux.exception.LuxException: too many ordering keywords in: string-length-string ascending descending", result.getErrors().get(0).getMessage());
+        assertEquals ("lux.exception.LuxException: invalid ordering keyword in: string-length-string ascending descending", result.getErrors().get(0).getMessage());
 
         // missing keyword after empty
         result = eval.evaluate("for $doc in lux:search('*:*', 'string-length-string empty') return lux:key('string-length', $doc)");

@@ -45,6 +45,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
     private final String xmlFieldName;
     private final String uriFieldName;
     private final String idFieldName;
+    private String[] effectiveCriteria;
     
     /**
      * Initialize the iterator
@@ -54,7 +55,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
      * @param sortCriteria the sort order for the results
      * @param start1 the 1-based start position at which to begin the iteration
      */
-    public CloudSearchIterator (Evaluator eval, String query, QueryParser queryParser, String sortCriteria, int start1) {
+    public CloudSearchIterator (Evaluator eval, String query, QueryParser queryParser, String[] sortCriteria, int start1) {
         super (eval, sortCriteria, start1);
         this.limit = 20;
         this.queryParser = queryParser;
@@ -163,12 +164,14 @@ public class CloudSearchIterator extends SearchIteratorBase {
         }
     }
     
-    private String getEffectiveSortCriteria () {
-        if (sortCriteria != null) {
-            return sortCriteria + ',' + idFieldName;
-        } else {
-            return idFieldName;
+    private String [] getEffectiveSortCriteria () {
+        if (effectiveCriteria == null) {
+            assert sortCriteria != null;
+            effectiveCriteria = new String [sortCriteria.length + 1];
+            System.arraycopy(sortCriteria, 0, effectiveCriteria, 0, sortCriteria.length);
+            effectiveCriteria [effectiveCriteria.length-1] = idFieldName;
         }
+        return effectiveCriteria; 
     }
 
     private SortSpec makeSortSpec () {
