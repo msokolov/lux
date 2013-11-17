@@ -94,7 +94,7 @@ public class Compiler {
         namespaceBindings.put ("lux", Evaluator.LUX_NAMESPACE);
         
         GentleXmlReader parser = new GentleXmlReader();
-        config.getParseOptions().setEntityResolver(parser);
+        config.getParseOptions().setEntityResolver(parser.getEntityResolver());
         // tried this, but it seems to lead to concurrent usage of the same parser:
         //config.getParseOptions().setXMLReader(parser);
         // the question is: does Saxon re-use a single instance of this parser??

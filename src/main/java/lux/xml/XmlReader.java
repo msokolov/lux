@@ -1,18 +1,13 @@
 package lux.xml;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLResolver;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -115,32 +110,7 @@ public class XmlReader {
             inputFactory.setProperty (XMLInputFactory.IS_COALESCING, false);
             inputFactory.setProperty (XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, true);
             inputFactory.setProperty (XMLInputFactory2.P_REPORT_PROLOG_WHITESPACE, false);
-            inputFactory.setProperty 
-                (XMLInputFactory2.RESOLVER, 
-                 new XMLResolver() {
-                     @Override
-                    public Object resolveEntity
-                         (String publicID,
-                          String systemID,
-                          String baseURI,
-                          String namespace) throws XMLStreamException {
-                         if (systemID == null) {
-                             return new ByteArrayInputStream (new byte[0]);
-                         }
-                         try
-                         {
-                             String path = URI.create(baseURI).resolve(systemID).getPath();
-                             return new FileInputStream(path);
-                         }
-                         catch (IOException ex)
-                         {
-                             throw new XMLStreamException(
-                                     String.format("Unable to open stream for resource %s: %s",
-                                                   systemID,
-                                                   ex.getMessage()), ex);
-                         }
-                     }
-                 });
+            inputFactory.setProperty (XMLInputFactory2.RESOLVER, new GentleXmlResolver());
             // this doesn't seem to do anything?
             // inputFactory.setProperty (WstxInputProperties.P_NORMALIZE_LFS, false);
             inputFactory.setProperty (WstxInputProperties.P_TREAT_CHAR_REFS_AS_ENTS, true);
