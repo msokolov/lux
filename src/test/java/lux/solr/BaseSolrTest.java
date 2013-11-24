@@ -177,7 +177,7 @@ public abstract class BaseSolrTest {
             }
         }
     }
-    
+
     static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
         doc.addField (URI, path);

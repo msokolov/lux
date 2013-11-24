@@ -66,5 +66,5 @@ public class TinyBinaryStoreTest {
         }
         return buf.toString();
     }
-
+    
 }
