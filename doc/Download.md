@@ -7,11 +7,19 @@ pos: 2
 
 # Download Lux #
 
-## Binary releases ##
-
 The Lux app server bundle is a complete server bundle, including Jetty.  It
 does require a working Java installation.  It will probably work with a
 recent OpenJDK JVM, but has only been tested with Oracle/Sun JVMs.
+
+## Latest unstable binary release ##
+
+* [Lux app server 0.11.3-SNAPSHOT, bzip](dist/lux-appserver-0.11.3-SNAPSHOT-bin.tar.bz2)
+* [Lux app server 0.11.3-SNAPSHOT, gzip](dist/lux-appserver-0.11.3-SNAPSHOT-bin.tar.gz)
+* [Lux app server 0.11.3-SNAPSHOT, zip](dist/lux-appserver-0.11.3-SNAPSHOT-bin.zip)
+
+* [Lux 0.11.3-SNAPSHOT Solr war (web application) only](dist/lux-appserver-0.11.3-SNAPSHOT.war)
+
+## Latest stable binary release ##
 
 * [Lux app server 0.11.2, bzip](dist/lux-appserver-0.11.2-bin.tar.bz2)
 * [Lux app server 0.11.2, gzip](dist/lux-appserver-0.11.2-bin.tar.gz)

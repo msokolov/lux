@@ -73,18 +73,18 @@ ie out of the indexes.  In particular a very useful optimization would be
 the ability to compute <code>exists (/a/b/c[2])</code>in constant time. We often want
 to know if an element ever occurs more than once in some context.
 
-## Provide convenient access to advanced Solr and Lucene features
+## Provide more convenient access to more advanced Solr and Lucene features
 
-One basic thing we plan to do is to use the Solr query parser to parse queries in lux:search,
-rather than the Lucene query parser as we do now.  This will add some capabilities like date range
-query parsing.
+One basic thing we plan to do is to use the Solr query parser to parse
+queries in lux:search, rather than the Lucene query parser as we do now.
+This will add some capabilities like date range query parsing.
 
-More broadly,
-Solr provides a number of advanced query capabilities such as spelling
-suggestions, faceting, grouping, function queries, aggregate computations
-and so on.  Within-query features like function queries may be available by
-lux:search, but not in a truly integrated way.  Solr components are available 
-via the REST service, alongside XQuery, but again, not truly integrated.
+More broadly, Solr provides a number of advanced query capabilities such as
+spelling suggestions, faceting, grouping, function queries, aggregate
+computations and so on.  Within-query features like function queries are
+available via lux:search, but the optimizer doesn't make use of them.
+Other Solr components (like faceting and grouping) are available via the
+REST service, alongside XQuery, but again, not truly integrated.
 
 We will add XQuery functions that bind to Solr and Lucene functions, but we
 should also think about how to offer features that Solr provides as
