@@ -748,18 +748,6 @@ public class SearchTest extends BaseSearchTest {
         String query = "lux:count('timestamp:[2013-09-01T21:30:50.515Z TO NOW]')";
         assertSearch ("6636", query, null, 0, 0);
     }
-
-    @Test
-    public void testPredicateChain() throws Exception {
-    	String query = "count(//ACT[1]/SCENE[2]/SPEECH[3]/SPEAKER)";
-    	assertSearch ("6", query, null, 6);
-    }
-    
-    @Test
-    public void testNestedPredicateComparison() throws Exception {
-        String query = "exists(/PLAY[ACT[SCENE/TITLE='SCENE IV.  The platform.']])";
-        assertSearch ("true", query, null, 1);
-    }
     
 }
 
