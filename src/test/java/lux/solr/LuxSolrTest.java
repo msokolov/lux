@@ -195,7 +195,6 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQuery ("--12-01", "xs:gMonthDay", "xs:gMonthDay('--12-01')");
         
     }
-    
 
     @Test
     public void testMultiNodeConstruct () throws Exception {
@@ -204,6 +203,22 @@ public class LuxSolrTest extends BaseSolrTest {
                 + "element test { 'Hello, World' } }";
         String output = "<!-- this is a test --><?test-pi this is a test pi?><test>Hello, World</test>"; 
         assertQuery (output, "document", xml);
+    }
+    
+    @Test
+    public void testInsertRandomFields () throws Exception {
+        SolrInputDocument doc = new SolrInputDocument(); 
+        doc.addField ("lux_uri", "/doc/string10");
+        doc.addField ("string_s", "string");
+        doc.addField("number_i", "10");
+        try {
+            solr.add(doc);
+            solr.commit();
+            assertQuery ("<binary xmlns=\"http://luxdb.net\"/>", "document", "doc('/doc/string10')");
+        } finally {
+            solr.deleteById("/doc/string10");
+            solr.commit();
+        }
     }
 
 }
