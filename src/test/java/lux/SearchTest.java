@@ -756,7 +756,7 @@ public class SearchTest extends BaseSearchTest {
         String query = "lux:count('timestamp:[2013-09-01T21:30:50.515Z TO NOW]')";
         assertSearch ("6636", query, null, 0, 0);
     }
-
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
