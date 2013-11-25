@@ -21,6 +21,9 @@ import org.apache.solr.update.CommitUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.UpdateHandler;
 
+/**
+ * Used to write documents from within XQuery (lux:insert) and XSLT (xsl:result-document)
+ */
 public class SolrDocWriter implements DocWriter {
 
     private final SolrCore core;

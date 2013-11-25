@@ -50,6 +50,14 @@ public class SearchTest extends BaseSearchTest {
         results = assertSearch ("count(lux:search('*:*'))", QUERY_NO_DOCS, totalDocs);
         assertEquals (String.valueOf(totalDocs), results.iterator().next().toString());
     }
+
+    @Test
+    public void testCountActChildren () throws Exception {
+        // Test an assumption about query accuracy:
+        // span query slop is less precise than the XPath here, so 6 documents
+        // must be examined even though only 1 (the PLAY) contains the five child ACTs
+        assertSearch ("5", "count (/*/ACT)", 0, 6);
+    }
     
     @Test
     public void testExists () throws Exception {
@@ -104,8 +112,10 @@ public class SearchTest extends BaseSearchTest {
     	assertSearch  ("1", "count(/FM[exists(BLAH) = exists(BLARG)])", 0, 1);
     	assertSearch  ("0", "count(/FM[exists(BLAH) != exists(BLARG)])", 0, 1);
     	assertSearch  ("0", "count(/FM[BLAH eq string(BLARG)])", 0, 0);
+    	// NOTE: () eq () === ()
     	assertSearch  ("0", "count(/FM[BLAH eq BLARG])", 0, 0);
-    	assertSearch  ("0", "count(/FM[BLAH = BLARG])", 0, 1);
+    	// NOTE: () = () === false()
+    	assertSearch  ("0", "count(/FM[BLAH = BLARG])", 0, 0);
 
         // we don't optimize along the parent axis
         assertSearch  ("20", "count(//SCENE[not(exists(parent::ACT))])", 0, 26);
@@ -317,19 +327,13 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testIntersection () throws Exception {
-        // There were issues with 
-        // document order, which we have to assert in order to get lazy evaluation.
-        // Intersect in particular exposes the problem since it's optimized based on
-        // correct sorting (tip from Michael Kay).
-        // NB - count was 1164; reduced to 1138 by path query (20 scenes + 5 acts + 1 play = 26).
-        // Then reduced to 2! by a full text term query
         assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
         // TODO - why is this 141 and not 28?
+        // FIXME - sometimes it *is* 28???
         assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 141);
         assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7);
         // saxon cleverly optimizes this and gets rid of the intersect
-        // but TODO our optimizer fails to see the opportunity for a word query
-        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1138);
+        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1);
     }
     
     @Test
@@ -371,6 +375,7 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testReversePaths () throws Exception {
+        // expresses a deepish path in reverse order, using predicates
         assertSearch ("Where is your son?", "string(//LINE[3]" +
                 "[parent::SPEECH[not(preceding-sibling::SPEECH)]]" +
                 "[ancestor::SCENE[count(preceding-sibling::SCENE)=0]]" +
@@ -420,7 +425,7 @@ public class SearchTest extends BaseSearchTest {
             assertTrue ("expected exception not thrown", false);
         } catch (LuxException e) { }
         try {
-            assertSearch (null, "lux:search(1,'xx')", null, null, null);
+            assertSearch (null, "lux:search(1,2)", null, null, null);
             assertTrue ("expected exception not thrown", false);
         } catch (LuxException e) { }
         try {
@@ -455,6 +460,11 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("MARCELLUS", "for $doc in /SPEECH[LINE='Holla! Bernardo!'] return $doc/SPEAKER/string()", null, 1, 1);
     }
     
+    @Test
+    public void testEmptyReturn() throws Exception {
+        assertSearch (null, "for $doc in /SPEECH[LINE='Holla! Bernardo!'] return $doc/UNKNOWN/string()", null, 0, 0);
+    }
+    
     @Test 
     public void testBugFix0018b() throws Exception {
         assertSearch (HAMLET_TITLE_MARKUP, "lux:search(\"*:*\")[2]", null, 1, 1);
@@ -471,13 +481,15 @@ public class SearchTest extends BaseSearchTest {
         // optimization (to say nothing of additional constraints) into a user-supplied
         // query using the string query syntax.
         assertSearch ("ACT", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name())[1]", 0, 1);
+            " order by lux:key('doctype', $doc) return $doc/*/name())[1]", 0, 1);
     }
         
     @Test
     public void testOrderByPagination () throws Exception {
         assertSearch ("SPEAKER", "(for $doc in lux:search('bernardo')" + 
-            " order by lux:field-values('doctype', $doc) return $doc/*/name())[21]", 0, 1);
+            " order by lux:key('doctype', $doc) return $doc/*/name())[21]", 0, 1);
+        assertSearch ("<SPEAKER>BERNARDO</SPEAKER>", "(for $doc in lux:search('bernardo')" + 
+                " order by lux:key('doctype', $doc) return $doc)[21]", 0, 1);
     }
     
     @Test
@@ -601,6 +613,140 @@ public class SearchTest extends BaseSearchTest {
         // and therefore the root of document #44 in the test set
         String query = "(for $doc at $i in collection() where $doc/SCENE return $i)[1]";
         assertSearch ("44", query, null, 44);
+    }
+    
+    @Test
+    public void testFieldValuesComparison () throws Exception {
+    	String query = "collection()[lux:key('doctype')='SCENE'][1]/descendant::SPEECH[1]/SPEAKER/string()";
+    	// there are 20 scenes in Hamlet, but we only need to pull the first one for this query
+    	assertSearch ("BERNARDO", query, null, 1, 1);
+        
+    	query = "collection()[lux:key('doctype')='SCENE'][1]/descendant::SPEAKER[1]/string()";
+        assertSearch ("BERNARDO", query, null, 1, 1);
+
+        query = "count(collection()[lux:key('doctype')='SCENE'])";
+    	assertSearch ("20", query, null, 20, 0);
+    }
+
+    @Test
+    public void testPredicateChain() throws Exception {
+    	String query = "count(//ACT[1]/SCENE[2]/SPEECH[3]/SPEAKER)";
+    	assertSearch ("6", query, null, 6, 6);
+    }
+    
+    @Test
+    public void testNestedPredicateComparison() throws Exception {
+        String query = "exists(/PLAY[ACT[SCENE/TITLE='SCENE IV.  The platform.']])";
+    	assertSearch ("true", query, null, 1, 1);
+    }
+    
+    @Test
+    public void testRangeInequality() throws Exception {
+        // we have five ACTs 
+        String query = "count((/)[lux:key('doctype') <= 'ACT'])";
+        assertSearch ("5", query, null, 5, 0);
+        query = "count((/)[lux:key('doctype') le 'ACT'])";
+        assertSearch ("5", query, null, 5, 0);
+    }
+
+    @Test
+    public void testCombinedRange() throws Exception {
+        String query = "count((/)[lux:key('doctype') >= 'A'][lux:key('doctype') <= 'B'])";
+        assertSearch ("5", query, null, 5, 0);
+
+        // we have one FM and two GRPDESCR
+        query = "count((/)[lux:key('doctype') > 'F'][lux:key('doctype') < 'H'])";
+        assertSearch ("3", query, null, 3, 0);
+        query = "count((/)[lux:key('doctype') gt 'F' and lux:key('doctype') lt 'H'])";
+        assertSearch ("3", query, null, 3, 0);
+    }
+    
+    @Test
+    public void testRangeGenComp() throws Exception {
+        // we have only one SCNDESCR, but we don't optimize this yet
+        String query = "count((/)[lux:key('doctype') gt 'S' and lux:key('doctype') lt 'T' " +
+        		"and not(lux:key('doctype') = ('SCENE','SPEECH','SPEAKER','STAGEDIR'))])";
+        assertSearch ("1", query, null, 2552, 2552);
+    }
+    
+    @Test
+    public void testFieldValuesNoContext () throws Exception {
+    	// compare an integer against a string-valued field
+    	String query = "if (2 eq lux:key('xxx')) then 'yes' else 'no'";
+        try {
+            assertSearch ("false", query, null, 0, 0);
+        	fail ("expected exception not thrown");
+        } catch (LuxException e) {
+        	assertTrue (e.getMessage().contains("no context defined"));
+        }
+    }
+    
+    @Test
+    public void testIntFieldEquality() throws Exception {
+    	String query;
+    	// check that our int-valued field was indexed correctly:
+    	query = "(/ACT)[2]/lux:key('actnum')";
+    	assertSearch ("2", query, null, 1, 1);
+    	// do a basic int comparison
+    	query = "count(collection()[2 eq lux:key('actnum')])";
+    	assertSearch ("3", query, null, 3, 0);
+    	// Try comparing an integer against a string-valued field
+    	query = "count(collection()[2 eq lux:key('actstr')])";
+    	try {
+    		assertSearch ("0", query, null, 0, 0);
+    		fail ("expected exception not thrown");
+    	} catch (LuxException e) {
+    		assertEquals("Cannot compare xs:integer to xs:string", e.getMessage());
+    	}
+    }
+
+    @Test
+    public void testIntFieldInequality() throws Exception {
+    	String query;
+    	// do a basic int comparison
+    	query = "count(collection()[lux:key('actnum') lt 2])";
+    	assertSearch ("6", query, null, 6, 0);
+    	query = "count(collection()[lux:key('actnum') < 2])";
+    	assertSearch ("6", query, null, 6, 0);
+    	query = "count(collection()[lux:key('actnum') > 2][lux:key('actnum') <= 3])";
+    	assertSearch ("5", query, null, 5, 0);
+    }
+
+    @Test
+    public void testLongFieldInequality() throws Exception {
+    	// do a basic long comparison, and make sure comparison with other numeric types is allowed
+    	String query = "count(collection()[lux:key('scnlong') gt xs:int(5)])";
+    	assertSearch ("2", query, null, 2, 0);
+    }
+    
+    @Test @Ignore
+    public void testXPathRangeQuery () throws Exception {
+    	String query;
+    	// do a basic integer comparison; the cast is required for atomic comparison
+    	query = "count(//SCENE[xs:integer(@act) lt 2])";
+    	assertSearch ("8", query, null, 6, 6);
+    	query = "count(//SCENE[@act < 2])";
+    	assertSearch ("6", query, null, 4, 4);
+    	query = "count(//SCENE[xs:integer(@act) > 2][xs:integer(@act) <= 3])";
+    	assertSearch ("9", query, null, 7, 7);
+    }
+
+    @Test
+    public void testAttributePredicate() throws Exception {
+    	// from Geet Gangwar
+    	//context /@id[.='I2009']
+    	String query = "count(//SCENE/@act[.='2'])";
+    	assertSearch ("6", query, null, 4, 4);
+    	query = "//SCENE/@act[.='2']";
+    	XdmResultSet results = assertSearch (query, (Integer) null, 4, 4);
+    	assertEquals (6, results.getXdmValue().size());
+    }
+    
+    /* See LUX-62 */
+    @Test @Ignore
+    public void testTimestampRange () throws Exception {
+        String query = "lux:count('timestamp:[2013-09-01T21:30:50.515Z TO NOW]')";
+        assertSearch ("6636", query, null, 0, 0);
     }
 
     @Test

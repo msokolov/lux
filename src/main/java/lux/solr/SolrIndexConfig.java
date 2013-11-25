@@ -17,6 +17,7 @@ import lux.index.analysis.WhitespaceGapAnalyzer;
 import lux.index.field.FieldDefinition;
 import lux.index.field.FieldDefinition.Type;
 import lux.index.field.XPathField;
+import net.sf.saxon.s9api.Serializer;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -50,10 +51,18 @@ public class SolrIndexConfig implements SolrInfoMBean {
     private NamedList<String> xpathFieldConfig;
     private Compiler compiler;
     private ArrayBlockingQueue<XmlIndexer> indexerPool;
+    private ArrayBlockingQueue<Serializer> serializerPool;
+    private IndexSchema schema;
     
     public SolrIndexConfig (final IndexConfiguration indexConfig) {
         this.indexConfig = indexConfig;
         indexerPool = new ArrayBlockingQueue<XmlIndexer>(8);
+        serializerPool = new ArrayBlockingQueue<Serializer>(8);
+        // FIXME: possibly we need a pool of compilers as well?  The issue is they hold the Saxon Processor,
+        // and that in turn holds uri resolver, which needs to get transient pointers to per-request objects
+        // like the searcher, so it can read documents from the index.  ATM different requests will overwrite
+        // that pointer in a shared processor.  At the best, this causes some leakage across request (ie transaction)
+        // boundaries
         compiler = new Compiler (indexConfig);
     }
     
@@ -74,6 +83,22 @@ public class SolrIndexConfig implements SolrInfoMBean {
     public void returnXmlIndexer (XmlIndexer doneWithIt) {
         indexerPool.offer(doneWithIt);
         // if the pool was full, we just drop the indexer as garbage
+    }
+    
+    public Serializer checkoutSerializer() {
+        Serializer serializer = serializerPool.poll();
+        if (serializer == null) {
+            serializer = new Serializer();
+            serializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
+            serializer.setOutputProperty(Serializer.Property.BYTE_ORDER_MARK, "no");
+            serializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
+        }
+        return serializer;
+    }
+    
+    public void returnSerializer (Serializer doneWithIt) {
+        serializerPool.offer(doneWithIt);
+        // if the pool was full, we just drop the serializer
     }
     
     public static SolrIndexConfig registerIndexConfiguration (SolrCore core) {
@@ -110,9 +135,12 @@ public class SolrIndexConfig implements SolrInfoMBean {
             	}
             }
         }
-        SolrIndexConfig config = new SolrIndexConfig(IndexConfiguration.makeIndexConfiguration (options));
+        IndexConfiguration indexConfig = IndexConfiguration.makeIndexConfiguration (options);
         if (args != null) {
-            config.renameFields (args);
+            renameFields (indexConfig, args);
+        }
+        SolrIndexConfig config = new SolrIndexConfig(indexConfig);
+        if (args != null) {
             NamedList<String> fields = (NamedList<String>) args.get("fields");
             if (fields != null) {
                 config.applyFieldConfiguration(fields);
@@ -136,7 +164,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         }
     }
     
-    private void renameFields (@SuppressWarnings("rawtypes") final NamedList args) {
+    private static void renameFields (IndexConfiguration indexConfig, @SuppressWarnings("rawtypes") final NamedList args) {
         NamedList<?> aliases = (NamedList<?>) args.get ("fieldAliases");
         if (aliases == null) {
             return;
@@ -146,14 +174,14 @@ public class SolrIndexConfig implements SolrInfoMBean {
             Object value = aliases.getVal(i);
             if ("xmlFieldName".equals(name)) {
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_STORE), value.toString());
-                LoggerFactory.getLogger(getClass()).info("XML storage field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("XML storage field name: {}", value.toString());
             }
             else if ("uriFieldName".equals(name)) {
-                LoggerFactory.getLogger(getClass()).info("URI field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("URI field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.URI), value.toString());
             }
             else if ("textFieldName".equals(name)) {
-                LoggerFactory.getLogger(getClass()).info("XML text field name: {}", value.toString());
+                LoggerFactory.getLogger(SolrIndexConfig.class).info("XML text field name: {}", value.toString());
                 indexConfig.renameField(indexConfig.getField(FieldName.XML_TEXT), value.toString());
             }
         }
@@ -161,14 +189,14 @@ public class SolrIndexConfig implements SolrInfoMBean {
 
     public void inform(SolrCore core) {
         
-        IndexSchema schema = core.getSchema();
+        schema = core.getSchema();
         // XML_STORE is not listed explicitly by the indexer
-        informField (indexConfig.getField(FieldName.XML_STORE), schema);
+        informField (indexConfig.getField(FieldName.XML_STORE));
         for (FieldDefinition xmlField : indexConfig.getFields()) {
-            informField (xmlField, schema);
+            informField (xmlField);
         }
         if (xpathFieldConfig != null) {
-            addXPathFields(core.getSchema());
+            addXPathFields();
         }
         SchemaField uniqueKeyField = schema.getUniqueKeyField();
         if (uniqueKeyField == null) {
@@ -181,7 +209,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         
     }
     
-    private void informField (FieldDefinition xmlField, IndexSchema schema) {
+    private void informField (FieldDefinition xmlField) {
         Map<String,SchemaField> fields = schema.getFields();
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         Logger logger = LoggerFactory.getLogger(LuxUpdateProcessorFactory.class);
@@ -196,7 +224,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
             return;
         }
         // look up the type of this field using the mapping in this class
-        FieldType fieldType = getFieldType(actualField, schema);
+        FieldType fieldType = getFieldType(actualField);
         if (! fieldTypes.containsKey(fieldType.getTypeName())) {
             // The Solr schema does not define this field type, so add it
             logger.info("Defining fieldType: " + fieldType.getTypeName());
@@ -210,21 +238,21 @@ public class SolrIndexConfig implements SolrInfoMBean {
     }
     
     /** Add the xpathFields to the indexConfig using information about the field drawn from the schema. */
-    private void addXPathFields(IndexSchema schema) {
+    private void addXPathFields() {
         for (Entry<String,String> f : xpathFieldConfig) {
             SchemaField field = schema.getField(f.getKey());
             FieldType fieldType = field.getType();
             if (fieldType == null) {
                 throw new SolrException(ErrorCode.SERVER_ERROR, "Field " + f.getKey() + " declared in lux config, but not defined in schema");
             }
-            XPathField<String> xpathField = new XPathField<String>(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO, 
+            XPathField xpathField = new XPathField(f.getKey(), f.getValue(), fieldType.getAnalyzer(), field.stored() ? Store.YES : Store.NO,
                     Type.TEXT);
             
             indexConfig.addField(xpathField);
         }
     }
 
-    private FieldType getFieldType(FieldDefinition xmlField, IndexSchema schema) {
+    private FieldType getFieldType(FieldDefinition xmlField) {
         // TODO - we should store a field type name in XmlField and just look that up instead
         // of trying to infer from the analyzer
         Analyzer analyzer = xmlField.getAnalyzer();
@@ -256,6 +284,10 @@ public class SolrIndexConfig implements SolrInfoMBean {
             return new PathField ();
         }
         throw new SolrException(ErrorCode.BAD_REQUEST, "invalid xml field: " + fieldName + "; unknown analyzer type: " + analyzer);
+    }
+    
+    public IndexSchema getSchema () {
+        return schema;
     }
     
     // subclasses of built-in Solr field types exist purely so we can name them.

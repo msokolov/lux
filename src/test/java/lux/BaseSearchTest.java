@@ -37,7 +37,10 @@ public abstract class BaseSearchTest {
 
     public static void setup(String ... xmlfile) throws Exception {
         XmlIndexer indexer = new XmlIndexer (INDEX_QNAMES|INDEX_PATHS|STORE_DOCUMENT|INDEX_FULLTEXT|STORE_TINY_BINARY);
-        indexer.getConfiguration().addField(new XPathField<Integer>("doctype", "name(/*)", null, Store.NO, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("doctype", "name(/*)", null, Store.YES, Type.STRING));
+        indexer.getConfiguration().addField(new XPathField("actnum", "/*/@act", null, Store.YES, Type.INT));
+        indexer.getConfiguration().addField(new XPathField("scnlong", "/*/@scene", null, Store.YES, Type.LONG));
+        indexer.getConfiguration().addField(new XPathField("actstr", "/*/@act", null, Store.YES, Type.STRING));
         index = new IndexTestSupport(xmlfile, indexer, new RAMDirectory());
         
         totalDocs= index.totalDocs;
@@ -53,7 +56,7 @@ public abstract class BaseSearchTest {
     }
 
     protected void assertResultValue(XdmResultSet results, int sceneDocCount) {
-        assertEquals (String.valueOf(sceneDocCount), results.iterator().next().toString());
+        assertEquals ("incorrect query result", String.valueOf(sceneDocCount), results.iterator().next().toString());
     }
 
     protected XdmResultSet assertSearch(String query) throws Exception {
@@ -133,7 +136,7 @@ public abstract class BaseSearchTest {
         QueryStats stats = eval.getQueryStats();
         System.out.println (String.format("t=%d, tsearch=%d, tretrieve=%d, query=%s", 
                 stats.totalTime/MIL, stats.collectionTime/MIL, stats.retrievalTime/MIL, query));
-        System.out.println ("optimized query=" + stats.optimizedQuery);
+        //System.out.println ("optimized query=" + eval.getCompiler().getLastOptimized());
         System.out.println (String.format("cache hits=%d, misses=%d", 
                 eval.getDocReader().getCacheHits(), eval.getDocReader().getCacheMisses()));
         if (props != null) {

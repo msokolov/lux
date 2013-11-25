@@ -2,26 +2,51 @@ package lux.xpath;
 
 
 public class PathStep extends AbstractExpression {
+    public static final int MSELF = 1;
+    public static final int MCHILD = 2;
+    public static final int MPARENT = 4;
+    public static final int MDESCENDANT = 8;
+    public static final int MANCESTOR = 16;
+    public static final int MPRECEDING = 32;
+    public static final int MFOLLOWING = 64;
+    public static final int MPRECEDING_SIB = 128;
+    public static final int MFOLLOWING_SIB = 256;
+    public static final int MATTRIBUTE = 512;
+
     public enum Axis {
 
-        Self("self", true), Child("child", true), Parent("parent", false), 
-            Descendant("descendant", true), DescendantSelf("descendant-or-self", false),
-            Ancestor("ancestor", false), AncestorSelf("ancestor-or-self", false), 
-            Preceding("preceding", false), Following("following", true),
-            PrecedingSibling("preceding-sibling", false), FollowingSibling("following-sibling", true),
-            Attribute("attribute", true);
+        DescendantSelf("descendant-or-self", false, MDESCENDANT | MCHILD | MSELF),
+        Descendant("descendant", true, MDESCENDANT | MCHILD, DescendantSelf),
+        AncestorSelf("ancestor-or-self", false, MANCESTOR | MPARENT | MSELF), 
+        Ancestor("ancestor", false, MANCESTOR | MPARENT, AncestorSelf),
+        Self("self", true, MSELF, AncestorSelf, DescendantSelf),
+        Child("child", true, MCHILD, Descendant),
+        Parent("parent", false, MPARENT, Ancestor), 
+        Preceding("preceding", false, MPRECEDING | MPRECEDING_SIB),
+        Following("following", true, MFOLLOWING | MFOLLOWING_SIB),
+        PrecedingSibling("preceding-sibling", false, MPRECEDING_SIB, Preceding), 
+        FollowingSibling("following-sibling", true, MFOLLOWING_SIB, Following),
+        Attribute("attribute", true, MATTRIBUTE);
 
         public final String name;
         public final boolean isForward;
+        public final int rangeMask;
+        public Axis [] extensions;
 
-        Axis (String name, boolean forward) {
+        Axis (String name, boolean forward, int rangeMask, Axis ... extensions) {
             this.name = name;
             this.isForward = forward;
+            this.rangeMask = rangeMask;
+            this.extensions = extensions;
         }
 
         @Override
         public String toString() {
             return name;
+        }
+        
+        public boolean isAxisMask (int mask) {
+        	return (rangeMask & mask) != 0;
         }
     };
 
@@ -69,11 +94,35 @@ public class PathStep extends AbstractExpression {
     public AbstractExpression getLastContextStep () {
         // If self::* or self::node(), return Dot instead
         if (axis == Axis.Self && nodeTest.isWild()) {
-            return Dot.getInstance();
+            return new Dot();
         }
         return this;
     }
 
+    @Override
+    public boolean propEquals (AbstractExpression other) {
+        return axis == ((PathStep) other).axis &&
+            nodeTest.equivalent(((PathStep) other).nodeTest);
+    }
+
+    @Override
+    public boolean propGreaterEqual (AbstractExpression other) {
+    	PathStep otherStep = (PathStep) other;
+        int oax = otherStep.axis.rangeMask;
+        return (axis == otherStep.axis ||
+        		((axis.rangeMask & oax) == oax))
+            && nodeTest.propGreaterEqual(otherStep.nodeTest);
+    }
+    
+    @Override
+    public int equivHash () {
+    	return axis.ordinal() * nodeTest.equivHash();
+    }
+
+    @Override
+    public boolean isRestrictive () {
+        return true;
+    }
 
 }
 

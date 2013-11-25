@@ -6,23 +6,21 @@
    unpacking, running (./lux, or ./lux.bat) and running integration test
    in lux-appserver (mvn verify), or run demo, import shakespeare and search
 4a) test installation in existing Solr (ifpress)
+4b) write release notes, describing new work.  open issues are covered in the bug tracker
 5) commit and tag the head revision (as lux-${version}) in version control and push
    git commit
    git tag -a v0.6 -m 'lux version 0.6'
    git push origin master
    git push origin v0.6
-6) increment the version in pom.xml to the next -SNAPSHOT
-7) write release notes, describing new work.  open issues are covered in the bug tracker
 8) post binary files to luxdb.org
+   cp target/lux-{version}.jar /var/www/lux-dist
 9) deploy to maven central:
-# this never did work?  Maybe it was just lacking the -Pmaven-deploy,
-# which includes the gpg instructions
-# mvn deploy -Dgpg.passhprase=xxxxxxx
-mvn -Pmaven-deploy verify
-cd target
-jar -cvf bundle.jar lux-*.jar lux-*.asc
+   mvn -Pmaven-deploy deploy
 # go to https://oss.sonatype.org/index.html#stagingRepositories
-# Staging Upload / Artifact Bundle
+# (password is in .m2/settings.xml)
+# select the new repo; Close it; wait; Release it.
+
+9a) increment the version in pom.xml to the next -SNAPSHOT
 
 10) generate luxdb.org 
   mvn javadoc:javadoc

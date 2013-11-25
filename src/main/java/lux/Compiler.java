@@ -1,6 +1,10 @@
 package lux;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.transform.ErrorListener;
 
@@ -8,24 +12,20 @@ import lux.compiler.EXPathSupport;
 import lux.compiler.PathOptimizer;
 import lux.compiler.SaxonTranslator;
 import lux.exception.LuxException;
-import lux.functions.Commit;
-import lux.functions.Count;
-import lux.functions.DeleteDocument;
-import lux.functions.Eval;
-import lux.functions.Exists;
 import lux.functions.ExtensionFunctions;
-import lux.functions.FieldTerms;
-import lux.functions.FieldValues;
-import lux.functions.Highlight;
-import lux.functions.InsertDocument;
-import lux.functions.Search;
-import lux.functions.Transform;
+import lux.functions.LuxFunctionLibrary;
 import lux.functions.file.FileExtensions;
 import lux.index.FieldName;
 import lux.index.IndexConfiguration;
+import lux.index.field.FieldDefinition;
+import lux.index.field.XPathField;
 import lux.xml.GentleXmlReader;
 import lux.xpath.AbstractExpression;
 import lux.xpath.FunCall;
+import lux.xpath.NodeTest;
+import lux.xpath.PathStep;
+import lux.xpath.PathStep.Axis;
+import lux.xpath.PropEquiv;
 import lux.xquery.XQuery;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.Configuration.LicenseFeature;
@@ -34,6 +34,7 @@ import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
+import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XQueryExecutable;
 import net.sf.saxon.s9api.XsltCompiler;
@@ -54,12 +55,16 @@ public class Compiler {
     private final String uriFieldName;
     private final IndexConfiguration indexConfig;
     private final boolean isSaxonLicensed;
+    private final HashMap<PropEquiv,ArrayList<AbstractExpression>> fieldLeaves;
+    private final HashMap<AbstractExpression, XPathField> fieldExpressions;
+    private final HashMap<String,String> namespaceBindings;
+    private final PropEquiv tempEquiv;
 
-    // for testing
-    private XQuery lastOptimized;
-    
     public enum SearchStrategy {
-        NONE, LUX_SEARCH, SAXON_LICENSE
+        NONE, // the query is evaluated without any modification 
+        LUX_UNOPTIMIZED, // collection() is inserted for Root()
+        LUX_SEARCH, // full suite of Lux optimizations are applied, consistent with available indexes 
+        SAXON_LICENSE, // Only optimizations compatible with Saxon-PE/EE are applied  
     }
     private SearchStrategy searchStrategy;
 
@@ -84,7 +89,10 @@ public class Compiler {
         Configuration config = processor.getUnderlyingConfiguration();
         config.setDocumentNumberAllocator(new DocIDNumberAllocator());
         config.setConfigurationProperty(FeatureKeys.XQUERY_PRESERVE_NAMESPACES, false);
-
+        
+        namespaceBindings = new HashMap<String, String>();
+        namespaceBindings.put ("lux", Evaluator.LUX_NAMESPACE);
+        
         GentleXmlReader parser = new GentleXmlReader();
         config.getParseOptions().setEntityResolver(parser);
         // tried this, but it seems to lead to concurrent usage of the same parser:
@@ -105,6 +113,10 @@ public class Compiler {
         uriFieldName = indexConfig.getFieldName(FieldName.URI);
         //this.dialect = dialect;
         logger = LoggerFactory.getLogger(getClass());
+        fieldLeaves = new HashMap<PropEquiv, ArrayList<AbstractExpression>>();
+        fieldExpressions = new HashMap<AbstractExpression, XPathField>();
+        tempEquiv = new PropEquiv(null);
+        compileFieldExpressions ();
     }
     
     /**
@@ -115,11 +127,15 @@ public class Compiler {
      * @throws LuxException if any error occurs while compiling, such as a static XQuery error or syntax error.
      */
     public XQueryExecutable compile(String exprString) throws LuxException {
-        return compile (exprString, null, null);
+        return compile (exprString, null, null, null);
     }
     
     public XQueryExecutable compile(String exprString, ErrorListener errorListener) throws LuxException {
-        return compile (exprString, errorListener, null);
+        return compile (exprString, errorListener, null, null);
+    }
+    
+    public XQueryExecutable compile(String exprString, ErrorListener errorListener, QueryStats stats) throws LuxException {
+        return compile (exprString, errorListener, null, stats);
     }
     
     /**
@@ -128,11 +144,12 @@ public class Compiler {
      * @param errorListener receives any errors generated while compiling; may be null, in which case
      * any errors generated will be lost
      * @param baseURI the base URI of the compiled query
+     * @param stats if provided (not null), query text and timings are written here
      * @return the compiled, executable query object
      * @throws LuxException when a compilation error occurs.  The message is typically unhelpful; meaningful errors
      * are stored in the errorListener
      */
-    public XQueryExecutable compile(String exprString, ErrorListener errorListener, URI baseURI) throws LuxException {
+    public XQueryExecutable compile(String exprString, ErrorListener errorListener, URI baseURI, QueryStats stats) throws LuxException {
         XQueryExecutable xquery;
         XQueryCompiler xQueryCompiler = getXQueryCompiler();
         if (errorListener != null) {
@@ -147,28 +164,30 @@ public class Compiler {
             throw new LuxException (e);
         }
         SaxonTranslator translator = makeTranslator();
+        if (searchStrategy == SearchStrategy.NONE) {
+        	return xquery;
+        }
         XQuery abstractQuery = translator.queryFor (xquery);
-        /*if (searchStrategy == SearchStrategy.NONE) {
-            String expanded = new Expandifier().expandify(abstractQuery).toString();
-            return xquery;
-        }*/
-        PathOptimizer optimizer = new PathOptimizer(indexConfig);
+        PathOptimizer optimizer = new PathOptimizer(this);
         optimizer.setSearchStrategy(searchStrategy);
         XQuery optimizedQuery = null;
         try {
             optimizedQuery = optimizer.optimize(abstractQuery);
+            if (stats != null) {
+                stats.optimizedXQuery = optimizedQuery;
+            }
         } catch (LuxException e) {
             if (logger.isDebugEnabled()) {
                 logger.debug ("An error occurred while optimizing: " + abstractQuery.toString());
             }
             throw (e);
         }
-        lastOptimized = optimizedQuery;
+        String queryString = optimizedQuery.toString();
         if (logger.isDebugEnabled()) {
-            logger.debug("optimized xquery: " + optimizedQuery.toString());
+            logger.debug("optimized xquery: " + queryString);
         }
         try {
-            xquery = xQueryCompiler.compile(optimizedQuery.toString());
+            xquery = xQueryCompiler.compile(queryString);
         } catch (SaxonApiException e) {
             throw new LuxException (e);
         }
@@ -195,19 +214,7 @@ public class Compiler {
     }
 
     private void registerExtensionFunctions() {
-        // TODO: move this list into a single class in the lux.functions package
-        processor.registerExtensionFunction(new Search());
-        processor.registerExtensionFunction(new Count());
-        processor.registerExtensionFunction(new Exists());
-        processor.registerExtensionFunction(new FieldTerms());
-        processor.registerExtensionFunction(new FieldValues());
-        processor.registerExtensionFunction(new Transform());
-        processor.registerExtensionFunction(new Eval());
-        processor.registerExtensionFunction(new InsertDocument());
-        processor.registerExtensionFunction(new DeleteDocument());
-        processor.registerExtensionFunction(new Commit());
-        processor.registerExtensionFunction(new Highlight());
-
+        LuxFunctionLibrary.registerFunctions(processor);
         FileExtensions.registerFunctions(processor);
         ExtensionFunctions.registerFunctions(processor);
     }
@@ -218,6 +225,9 @@ public class Compiler {
 
     public XQueryCompiler getXQueryCompiler () {
         XQueryCompiler xqueryCompiler = processor.newXQueryCompiler();
+        for (java.util.Map.Entry<String, String> binding : namespaceBindings.entrySet()) {
+            xqueryCompiler.declareNamespace(binding.getKey(), binding.getValue());
+        }
         xqueryCompiler.declareNamespace("lux", FunCall.LUX_NAMESPACE);
         return xqueryCompiler;
     }
@@ -264,12 +274,93 @@ public class Compiler {
         return isSaxonLicensed;
     }
     
-    /**
-     * @return the last query that was compiled, in its translated and optimized form.
-     */
-    public XQuery getLastOptimized () { 
-        return lastOptimized; 
+    public List<AbstractExpression> getFieldLeaves(AbstractExpression leafExpr) {
+    	List<AbstractExpression> allLeaves = new ArrayList<AbstractExpression>();
+    	// get leaves that are equivalent to leafExpr
+    	addMatchingLeaves (leafExpr, allLeaves);
+    	if (leafExpr instanceof PathStep) {
+        	// also get leaves that are geq leafExpr
+    		PathStep.Axis axis = ((PathStep) leafExpr).getAxis();
+    		NodeTest nodeTest = ((PathStep) leafExpr).getNodeTest();
+    		PathStep step;
+    		for (Axis extAxis : axis.extensions) {
+        		// try various generalizations: self->ancestor-or-self, etc
+    			step = new PathStep (extAxis, nodeTest);
+    	    	addMatchingLeaves (step, allLeaves);
+    		}
+    		if (! nodeTest.isWild()) {
+    			// try matching indexes with "*"
+    			nodeTest = new NodeTest (nodeTest.getType());
+    			step = new PathStep (axis, nodeTest);
+    	    	addMatchingLeaves (step, allLeaves);
+        		for (Axis extAxis : axis.extensions) {
+        			step = new PathStep (extAxis, nodeTest);
+        	    	addMatchingLeaves (step, allLeaves);
+        		}
+    		}
+    	}
+    	return allLeaves;
+	}
+    
+    private void addMatchingLeaves (AbstractExpression expr, List<AbstractExpression> allLeaves) {
+    	tempEquiv.setExpression(expr);
+    	ArrayList<AbstractExpression> leaves = fieldLeaves.get(tempEquiv);
+    	if (leaves != null) {
+    		allLeaves.addAll (leaves);
+    	}
     }
+
+	public FieldDefinition getFieldForExpr(AbstractExpression fieldExpr) {
+		return fieldExpressions.get(fieldExpr);
+	}
+	
+	/**
+	 * bind the prefix to the namespace, making the binding available to compiled expressions 
+	 * @param prefix if empty, the default namespace is bound 
+	 * @param namespace if empty or null, any existing binding for the prefix is removed
+	 */
+	public void bindNamespacePrefix (String prefix, String namespace) {
+	    if (StringUtils.isEmpty(namespace)) {
+            namespaceBindings.remove(prefix);
+	    } else {
+            namespaceBindings.put(prefix, namespace);
+	    }
+	}
+	
+	/**
+	 *  Save an AbstractExpression version of each XPathField's xpath, for use when optimizing.
+	 *  This must be called whenever the underlying indexConfiguration's collection of XPath fields
+	 *  changes.  TODO: consider moving the addField method to Compiler?
+	 */
+	public void compileFieldExpressions () {
+		SaxonTranslator translator = new SaxonTranslator(processor.getUnderlyingConfiguration());
+		XPathCompiler xPathCompiler = getXPathCompiler();
+		for (Map.Entry<String,String> e : indexConfig.getNamespaceMap().entrySet()) {
+			xPathCompiler.declareNamespace(e.getKey(), e.getValue());
+		}
+		for (FieldDefinition field : indexConfig.getFields()) {
+			if (field instanceof XPathField) {
+				String xpath = ((XPathField) field).getXPath();
+				XPathExecutable xpathExec;
+				try {
+					xpathExec = xPathCompiler.compile(xpath);
+				} catch (SaxonApiException e) {
+					throw new LuxException("Error compiling index expression " + xpath + " for field " + field.getDefaultName());
+				}
+				AbstractExpression xpathExpr = translator.exprFor(xpathExec.getUnderlyingExpression().getInternalExpression());
+				AbstractExpression leaf = xpathExpr.getLastContextStep();
+				PropEquiv leafEquiv = new PropEquiv(leaf);
+				if (fieldLeaves.containsKey(leaf)) {
+					fieldLeaves.get(leafEquiv).add(leaf);
+				} else {
+					ArrayList<AbstractExpression> leaves = new ArrayList<AbstractExpression>();
+					leaves.add (leaf);
+					fieldLeaves.put(leafEquiv, leaves);
+				}
+				fieldExpressions.put(xpathExpr, (XPathField) field);
+			}
+		}
+	}
     
 }
 

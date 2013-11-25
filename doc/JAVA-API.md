@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Java API
+title: Lux Java API
 group: api
 pos: 3
 ---

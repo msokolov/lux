@@ -78,7 +78,7 @@ public class ElementConstructor extends AbstractExpression {
         }
         AbstractExpression content = getContent();
         if (content == null) {
-            buf.append (" />");
+            buf.append ("/>");
         } else {
             buf.append ('>');
             switch (content.getType()) {

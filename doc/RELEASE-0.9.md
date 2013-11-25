@@ -1,9 +1,23 @@
 ---
 layout: page
-title: Release 0.9
+title: Lux Release 0.9
 group: release
 pos: 6
 ---
+
+# Changes in Lux release 0.9.1
+
+* Enabling mapping of external filesystem paths to webapp locations in
+  AppServer component configuration in solrconfig.xml via lux.baseUri
+  parameter.
+
+* Added argument to lux:highlight for controlling the highlight tag name.
+
+* fixed an internal parser error when searching for an empty value like <code>(//a[@id=""])</code>
+
+* fixed a tinybin error encoding empty-valued attributes
+
+* Adding to the setup/getting started documentation
 
 # Changes in Lux release 0.9.0
 

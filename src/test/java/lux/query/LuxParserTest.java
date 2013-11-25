@@ -1,18 +1,25 @@
 package lux.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+
 import lux.index.IndexConfiguration;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.query.parser.LuxQueryParser;
+import lux.query.parser.XmlQueryParser;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
@@ -37,6 +44,7 @@ public class LuxParserTest {
     private static final String LUX_PATH = "lux_path";
     
     private LuxQueryParser parser;
+    private XmlQueryParser xmlQueryParser;
     private IndexConfiguration indexConfig;
     
     @Before
@@ -44,6 +52,7 @@ public class LuxParserTest {
         indexConfig = IndexConfiguration.DEFAULT;
         parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
         parser.bindNamespacePrefix("ns", "nsuri");
+        xmlQueryParser = new XmlQueryParser("lux_text", new DefaultAnalyzer());
     }
     
     @Test
@@ -109,6 +118,12 @@ public class LuxParserTest {
         // attribute text query
         assertUnparseQuery ("lux_att_text:attribute\\:term", makeTermPQuery(LUX_ATT_TEXT, "attribute:term"));
         assertUnparseQuery ("<@attribute:term", new NodeTextQuery(new Term(LUX_ATT_TEXT, "term"), "attribute"));
+    }
+    
+    @Test
+    public void testTermQueryXml () throws Exception {
+        assertQueryXMLRoundtrip(makeTermQuery("field:term"), makeTermPQuery("field:term"));
+        assertQueryXMLRoundtrip(makeTermQuery("lux_elt_text", "element:term"), makeTermPQuery(LUX_ELT_TEXT, "element:term"));
     }
     
     @Test
@@ -259,9 +274,84 @@ public class LuxParserTest {
         assertUnparseQuery ("+lux_path:b +lux_text:dog", makeBooleanPQuery(Occur.MUST, makeSpanTermPQuery(LUX_PATH, "b"), makeSpanTermPQuery(LUX_TEXT, "dog")));
         // test booleans in a span - should throw a parse error
     }
+    
+    @Test
+    public void testParseRangeQuery () throws Exception {
+        // test two spans in a boolean
+        TermRangeQuery termRangeQuery = makeTermRangeQuery(LUX_PATH, "a", "b", true, true);
+        assertParseQuery (termRangeQuery, "lux_path:[a TO b]");
+        ParseableQuery termRangePQuery = makeTermRangePQuery(LUX_PATH, "a", "b", true, true);
+        assertUnparseQuery ("lux_path:[a TO b]", termRangePQuery);
+        assertQueryXMLRoundtrip (termRangeQuery, termRangePQuery);
+    }
+    
+    @Test
+    public void testParseNumericRangeQuery () throws Exception {
+        // test two spans in a boolean
+        NumericRangeQuery<Integer> numericRangeQuery = makeNumericRangeQuery(LUX_PATH, 1, 2, true, false);
+        // Lucene's original query parser has no support for numeric range queries.
+        // If we want to support this, we would have to switch to the newer "pluggable" query parser
+        // assertParseQuery (numericRangeQuery, "lux_path:[1 TO 2}");
+        ParseableQuery numericRangePQuery = makeNumericRangePQuery(LUX_PATH, RangePQuery.Type.INT, "1", "2", true, false);
+        assertUnparseQuery ("lux_path:[1 TO 2}", numericRangePQuery);
+        assertQueryXMLRoundtrip (numericRangeQuery, numericRangePQuery);
 
+        numericRangeQuery = makeNumericRangeQuery(LUX_PATH, 1, null, true, false);
+        numericRangePQuery = makeNumericRangePQuery(LUX_PATH, RangePQuery.Type.INT, "1", null, true, false);
+        assertUnparseQuery ("lux_path:[1 TO *}", numericRangePQuery);
+        assertQueryXMLRoundtrip (numericRangeQuery, numericRangePQuery);
+    }
+
+    @Test
+    public void testIntersectRangeQuery () throws Exception {
+    	assertIntersection ("{A TO Z]", "[A TO Z]", "{A TO Z]");
+    	assertIntersection ("{M TO R]", "[A TO R]", "{M TO Z]");
+    	assertIntersection ("[M TO F}", "[A TO F}", "[M TO Z]"); // ??
+    	assertIntersection ("[* TO F]", "[* TO Z]", "[* TO F]");
+    	assertIntersection ("{A TO Z}", "[* TO Z}", "{A TO *]");
+    	assertIntersection ("[F TO M]", "{A TO Z}", "[F TO M]");
+    }
+    
+    @Test
+    public void testIntersectNumericRangeQuery () throws Exception {
+    	assertNumericIntersect ("{1 TO 10]", "[1 TO 10]", "{1 TO 10]");
+    	assertNumericIntersect ("{2 TO 8]", "[1 TO 8]", "{2 TO 10]");
+    	assertNumericIntersect ("[4 TO 2}", "[1 TO 2}", "[4 TO 10]"); // ??
+    	assertNumericIntersect ("[* TO 5]", "[* TO 10]", "[* TO 5]");
+    	assertNumericIntersect ("{1 TO 10}", "[* TO 10}", "{1 TO *]");
+    	assertNumericIntersect ("[5 TO 8]", "{1 TO 10}", "[5 TO 8]");
+    }
+    
+    public void assertIntersection (String expected, String q1, String q2) throws ParseException {
+    	RangePQuery qq1 = makeTermRangePQuery((TermRangeQuery) parser.parse(q1));
+    	RangePQuery qq2 = makeTermRangePQuery((TermRangeQuery) parser.parse(q2));
+    	assertIntersection (expected, qq1, qq2);
+    	qq1 = makeTermRangePQuery((TermRangeQuery) parser.parse(q1));
+    	assertIntersection (expected, qq2, qq1);
+    }
+
+    public void assertNumericIntersect(String expected, String q1, String q2) throws ParseException {
+    	RangePQuery qq1 = makeNumericRangePQuery((TermRangeQuery) parser.parse(q1));
+    	RangePQuery qq2 = makeNumericRangePQuery((TermRangeQuery) parser.parse(q2));
+    	assertIntersection (expected, qq1, qq2);
+    	qq1 = makeNumericRangePQuery((TermRangeQuery) parser.parse(q1));
+    	assertIntersection (expected, qq2, qq1);
+    }
+
+    private void assertIntersection (String expected, RangePQuery q1, RangePQuery q2) throws ParseException {
+    	boolean intersects = q1.intersect (q2);
+    	if (intersects && expected == null) {
+    		fail ("queries " + q1 + " and " + q2 + " should not intersect");
+    	}
+    	if (!intersects && expected != null) {
+    		fail ("queries " + q1 + " and " + q2 + " should intersect");
+    	}
+    	RangePQuery eq = makeTermRangePQuery ((TermRangeQuery) parser.parse(expected));
+    	assertEquals ("unexpected range query intersection", eq, q1);
+    }
+    
     // query construction helpers:
-
+    
     public static TermQuery makeTermQuery (String text) {
         return makeTermQuery (LUX_TEXT, text);
     }
@@ -352,6 +442,36 @@ public class LuxParserTest {
         }
         return new SpanBooleanPQuery(Occur.SHOULD, clauses);
     }
+    
+    public static TermRangeQuery makeTermRangeQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {
+        return TermRangeQuery.newStringRange(field, lower, upper, includeLower, includeUpper);
+    }
+    
+    public static NumericRangeQuery<Integer> makeNumericRangeQuery(String field, Integer lower, Integer upper, boolean includeLower, boolean includeUpper) {
+        return NumericRangeQuery.newIntRange(field, lower, upper, includeLower, includeUpper);
+    }
+    
+    public static RangePQuery makeTermRangePQuery(String field, String lower, String upper, boolean includeLower, boolean includeUpper) {
+        return new RangePQuery(field, RangePQuery.Type.STRING, lower, upper, includeLower, includeUpper);
+    }
+
+    public static RangePQuery makeNumericRangePQuery(String field, RangePQuery.Type type, String lower, String upper, boolean includeLower, boolean includeUpper) {
+        return new RangePQuery(field, type, lower, upper, includeLower, includeUpper);
+    }
+
+    public static RangePQuery makeTermRangePQuery(TermRangeQuery q) {
+        return new RangePQuery(q.getField(), RangePQuery.Type.STRING, 
+        		q.getLowerTerm() == null ? null : q.getLowerTerm().utf8ToString(), 
+        				q.getUpperTerm() == null ? null : q.getUpperTerm().utf8ToString(), 
+        						q.includesLower(), q.includesUpper());
+    }
+    
+    public static RangePQuery makeNumericRangePQuery(TermRangeQuery q) {
+        return new RangePQuery(q.getField(), RangePQuery.Type.INT, 
+        		q.getLowerTerm() == null ? null : q.getLowerTerm().utf8ToString(), 
+        				q.getUpperTerm() == null ? null : q.getUpperTerm().utf8ToString(), 
+        						q.includesLower(), q.includesUpper());
+    }
 
     // assertions:
 
@@ -362,5 +482,12 @@ public class LuxParserTest {
     private void assertUnparseQuery(String expected, ParseableQuery q) {
         assertEquals (expected, q.toQueryString("lux_text", indexConfig));
     }
+
+    private void assertQueryXMLRoundtrip(Query termRangeQuery, ParseableQuery termRangePQuery) throws ParserException {
+        String xmlQuery = termRangePQuery.toXmlNode("lux_text", indexConfig).toString();
+        Query q = xmlQueryParser.parse(new ByteArrayInputStream (xmlQuery.getBytes()));
+        assertEquals (termRangeQuery, q);
+    }
+
     
 }

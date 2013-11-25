@@ -32,6 +32,7 @@ public class LiteralExpression extends AbstractExpression {
 
     public static final LiteralExpression EMPTY = new LiteralExpression ("()", ValueType.EMPTY);
     public static final LiteralExpression ONE = new LiteralExpression (1L);
+    public static final LiteralExpression TRUE = new LiteralExpression (true);
     
     private static ValueType computeType (Object value) {
         if (value instanceof String) {
@@ -147,6 +148,8 @@ public class LiteralExpression extends AbstractExpression {
         case MONTH_DAY:
         case YEAR:
         case YEAR_MONTH:
+        case DAY_TIME_DURATION:
+        case YEAR_MONTH_DURATION:
             buf.append(valueType.name).append("(\"").append(value).append("\")");
             break;
             
@@ -220,16 +223,14 @@ public class LiteralExpression extends AbstractExpression {
     }
     
     @Override 
-    public boolean equals (Object other) {
-        if (other instanceof LiteralExpression) {
-            return value.equals(((LiteralExpression)other).value);
-        }
-        return false;
+    public boolean propEquals (AbstractExpression other) {
+    	return value.equals(((LiteralExpression)other).value) &&
+    			valueType.equals(((LiteralExpression)other).valueType);
     }
     
     @Override
-    public int hashCode () {
-        return value.hashCode();
+    public int equivHash () {
+        return value.hashCode() + valueType.ordinal();
     }
 }
 

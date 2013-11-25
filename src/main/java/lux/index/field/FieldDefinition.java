@@ -2,6 +2,7 @@ package lux.index.field;
 
 import lux.exception.LuxException;
 import lux.index.XmlIndexer;
+import lux.query.RangePQuery;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -47,14 +48,24 @@ public abstract class FieldDefinition {
      * other types provide each values as a Java object.
      */
     public enum Type {
-        TOKENS, STRING, BYTES, INT, LONG, TEXT;
+        TOKENS(SortField.Type.DOC, RangePQuery.Type.STRING), STRING(SortField.Type.STRING, RangePQuery.Type.STRING), 
+        BYTES(SortField.Type.BYTES, null), INT(SortField.Type.INT, RangePQuery.Type.INT), LONG(SortField.Type.LONG, RangePQuery.Type.LONG), 
+        TEXT(SortField.Type.DOC, RangePQuery.Type.STRING);
+        
+        private SortField.Type sortFieldType;
+        private lux.query.RangePQuery.Type rangeTermType;
+        
+        Type (SortField.Type sortFieldType, lux.query.RangePQuery.Type rangeTermType) {
+        	this.sortFieldType = sortFieldType;
+        	this.rangeTermType = rangeTermType;
+        }
+        
         public SortField.Type getLuceneSortFieldType () {
-            switch (this) {
-            case STRING: return SortField.Type.STRING;
-            case INT: return SortField.Type.INT;
-            case LONG: return SortField.Type.LONG;
-            default: return SortField.Type.DOC; // ignore??
-            }
+        	return sortFieldType;
+        }
+        
+        public RangePQuery.Type getRangeTermType () {
+        	return rangeTermType;
         }
     };
     
@@ -179,12 +190,12 @@ public abstract class FieldDefinition {
         }
         return options;
     }
-    
+
     @Override
     public String toString () {
         return name;
     }
-
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

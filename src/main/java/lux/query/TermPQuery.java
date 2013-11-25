@@ -78,6 +78,15 @@ public class TermPQuery extends ParseableQuery {
         return buf.toString();
     }
 
+    @Override
+    public boolean equals(ParseableQuery other) {
+        if (other instanceof TermPQuery) {
+            return term.equals(((TermPQuery) other).term) &&
+                    boost == (((TermPQuery) other).boost);
+        }
+        return false;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

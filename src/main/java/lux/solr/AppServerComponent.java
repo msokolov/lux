@@ -49,13 +49,17 @@ public class AppServerComponent extends XQueryComponent {
                 } else {
                     baseUri = "";
                 }
+                if (File.separatorChar == '\\') {
+                    baseUri = baseUri.replace('\\', '/');
+                }
                 if (! baseUri.endsWith("/")) {
                     // add trailing slash
                     baseUri = baseUri + '/';
                 }
-                if (baseUri.startsWith ("/")) {
-                	baseUri = "file://" + baseUri;
+                if (baseUri.startsWith("/") || (File.separatorChar == '\\' && baseUri.matches("^[A-Za-z]:/.*$"))) {
+                    baseUri = "file://" + baseUri;
                 }
+                //System.out.println ("BASE URI = " + baseUri);
                 String resourceBase=null;
                 if (baseUri.startsWith (RESOURCE_SCHEME)) {
                     resourceBase = baseUri.substring(RESOURCE_SCHEME.length());
@@ -82,7 +86,7 @@ public class AppServerComponent extends XQueryComponent {
                     URL url = new URL (queryPath);
                     String scheme = url.getProtocol();
                     if (scheme.equals("lux")) {
-                        // TODO
+                        // TODO implement lux: uri resolution
                     	throw new SolrException (ErrorCode.NOT_FOUND, queryPath + " not found (actually lux: scheme is not implemented)");
                     } else {
                         InputStream in = null;
@@ -114,7 +118,12 @@ public class AppServerComponent extends XQueryComponent {
         }
         super.prepare(rb);
     }
-    
+
+    @Override
+    public String getDefaultSerialization () {
+        return "html";
+    }
+
     /**
      * ignores start and len query parameters
      */

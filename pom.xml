@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.luxdb</groupId>
   <artifactId>lux</artifactId>
-  <version>0.9.3-SNAPSHOT</version>
+  <version>0.10.6-SNAPSHOT</version>
   <packaging>jar</packaging>
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -59,13 +59,12 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.6.2</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>1.2.16</version>
-      <type>jar</type>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.woodstox</groupId>
@@ -100,7 +99,7 @@
   	<dependency>
   		<groupId>junit</groupId>
   		<artifactId>junit</artifactId>
-  		<version>4.8.2</version>
+  		<version>4.10</version>
   		<scope>test</scope>
   	</dependency>
   	<dependency>
@@ -119,6 +118,11 @@
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
       <version>2.9.1</version>
+    </dependency>
+    <dependency>
+      <groupId>nu.validator.htmlparser</groupId>
+      <artifactId>htmlparser</artifactId>
+      <version>1.4</version>
     </dependency>
   </dependencies>
   <build>
@@ -203,7 +207,7 @@
         <artifactId>jetty-maven-plugin</artifactId>
         <version>8.1.8.v20121106</version>
         <configuration>
-          <scanIntervalSeconds>10</scanIntervalSeconds>
+          <!--  <scanIntervalSeconds>10</scanIntervalSeconds> -->
           <stopPort>8000</stopPort>
           <stopKey>STOP</stopKey>
           <!--
@@ -325,6 +329,34 @@
         </executions>
       </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <versionRange>[1.0.0,)</versionRange>
+                    <goals>
+                      <goal>enforce</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <profiles>
     <profile>

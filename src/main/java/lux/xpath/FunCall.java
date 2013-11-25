@@ -52,6 +52,7 @@ public class FunCall extends AbstractExpression {
     public static final QName LUX_SEARCH = new QName (LUX_NAMESPACE, "search", "lux");
     public static final QName LUX_COUNT = new QName (LUX_NAMESPACE, "count", "lux");
     public static final QName LUX_EXISTS = new QName (LUX_NAMESPACE, "exists", "lux");
+    public static final QName LUX_KEY = new QName (LUX_NAMESPACE, "key", "lux");
     public static final QName LUX_FIELD_VALUES = new QName (LUX_NAMESPACE, "field-values", "lux");
     
     public static final String FN_NAMESPACE = "http://www.w3.org/2005/xpath-functions";
@@ -66,6 +67,8 @@ public class FunCall extends AbstractExpression {
     public static final QName FN_COLLECTION = new QName (FN_NAMESPACE, "collection", "fn");
     public static final QName FN_STRING_JOIN = new QName (FN_NAMESPACE, "string-join", "fn");
     public static final QName FN_CONTAINS = new QName(FN_NAMESPACE, "contains", "fn");
+    public static final QName FN_MIN = new QName(FN_NAMESPACE, "min", "fn");
+    public static final QName FN_MAX = new QName(FN_NAMESPACE, "max", "fn");
 
     public static final String LOCAL_NAMESPACE = "http://www.w3.org/2005/xquery-local-functions";
     public static final String XS_NAMESPACE = "http://www.w3.org/2001/XMLSchema";    
@@ -126,6 +129,22 @@ public class FunCall extends AbstractExpression {
             return this;
         }
         return null;
+    }
+
+    @Override
+    public boolean propEquals (AbstractExpression other) {
+        return name.equals(((FunCall) other).name) &&
+        		returnType.equals(((FunCall) other).returnType);
+    }
+    
+    @Override
+    public int equivHash () {
+    	return 43 + returnType.ordinal() + name.hashCode();
+    }
+
+    @Override
+    public boolean isRestrictive () {
+        return (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS));
     }
 
 }

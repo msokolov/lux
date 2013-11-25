@@ -72,14 +72,14 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testFirstPage () throws Exception {
         // returns only the page including the first 10 results
-        assertXPathSearchCount (10, 100, "document", "doc", "(/)[doc]");
+        assertXPathSearchCount (10, 10, "document", "doc", "(/)[doc]");
         
-        assertXPathSearchCount (10, 100, "element", "doc", "(//doc)[position() > 10]");
+        assertXPathSearchCount (10, 20, "element", "doc", "(//doc)[position() > 10]");
     }
     
     @Test public void testPaging () throws Exception {
         // make the searcher page past the first 10 documents to find 10 xpath matches
-        assertXPathSearchCount (10, 100, "element", "doc", "//doc[title[number(.) < 95]]");
+        assertXPathSearchCount (10, 16, "element", "doc", "//doc[title[number(.) < 95]]");
     }
     
     /**
@@ -91,12 +91,12 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test public void testSorting () throws Exception {
         // should be 1, 10, 100, 11, 12, ..., 2, 21, 22, ...
         // which is docs 101, 92, 2, (since there are 2 docs with no title that are loaded first)
-        assertXPathSearchCount(1, 5, "xs:string", "1,10,100,11,12", "string-join(subsequence((for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string()),1,5),',')");
-        assertXPathSearchCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[1]");
-        assertXPathSearchCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:field-values('title') descending return $doc/title/string())[1]");
-        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:field-values('title') return $doc/title/string())[2]");
+        assertXPathSearchCount(1, 5, "xs:string", "1,10,100,11,12", "string-join(subsequence((for $doc in //doc order by $doc/lux:key('title') return $doc/title/string()),1,5),',')");
+        assertXPathSearchCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[1]");
+        assertXPathSearchCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:key('title') descending return $doc/title/string())[1]");
+        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[2]");
         // test providing the sort criteria directly to lux:search()
-        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in lux:search('<test:cat', (), 'title') return $doc/doc/title/string())[2]");
+        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in lux:search('<test:cat', 'title') return $doc/doc/title/string())[2]");
         // TODO: implement wildcard element query to test for existence of some element
         // assertXPathSearchCount(1, 2, "xs:string", "10", "lux:search('<doc:*', (), 'title')[2]");
     }
@@ -109,6 +109,7 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testCollectionFunction () throws Exception {
         assertXPathSearchCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
+        assertXPathSearchCount (1, 102, "xs:anyURI", "lux:/test100", "collection()[last()]/base-uri()");
         assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())");
     }
     
@@ -193,6 +194,31 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQuery ("---01", "xs:gDay", "xs:gDay('---01')");
         assertQuery ("--12-01", "xs:gMonthDay", "xs:gMonthDay('--12-01')");
         
+    }
+
+    @Test
+    public void testMultiNodeConstruct () throws Exception {
+        String xml = "document {comment { ' this is a test ' }, \n"
+                + "processing-instruction test-pi { 'this is a test pi' },\n"
+                + "element test { 'Hello, World' } }";
+        String output = "<!-- this is a test --><?test-pi this is a test pi?><test>Hello, World</test>"; 
+        assertQuery (output, "document", xml);
+    }
+    
+    @Test
+    public void testInsertRandomFields () throws Exception {
+        SolrInputDocument doc = new SolrInputDocument(); 
+        doc.addField ("lux_uri", "/doc/string10");
+        doc.addField ("string_s", "string");
+        doc.addField("number_i", "10");
+        try {
+            solr.add(doc);
+            solr.commit();
+            assertQuery ("<binary xmlns=\"http://luxdb.net\"/>", "document", "doc('/doc/string10')");
+        } finally {
+            solr.deleteById("/doc/string10");
+            solr.commit();
+        }
     }
 
 }

@@ -23,10 +23,28 @@ public class BooleanPQuery extends ParseableQuery {
     private Clause clauses[];
     
     public BooleanPQuery (Clause ... clauses) {
+    	setClauses (clauses);
+    }
+    
+    public BooleanPQuery (Occur occur, ParseableQuery ... queries) {
+        Clause[] cl= new Clause[queries.length];
+        int i = 0;
+        for (ParseableQuery query : queries) {
+            cl[i++] = new Clause(query, occur);
+        }
+        setClauses (cl);
+    }    
+    
+    private void setClauses (Clause[] clauses) {
+    	if (clauses.length == 0) {
+    		this.clauses = clauses;
+    		return;
+    	}
         Occur oc = clauses[0].getOccur();
         // We assume all the clauses have the same occur 
         // otherwise possibly merge the clauses if some of them are BooleanPQuery
         ArrayList<Clause> cl = new ArrayList<Clause> ();
+        RangePQuery rangeQuery = null;
         for (Clause clause : clauses) {
             ParseableQuery query = clause.getQuery();
             if (query instanceof BooleanPQuery) {
@@ -38,20 +56,26 @@ public class BooleanPQuery extends ParseableQuery {
                     }
                     continue;
                 }
+            } else if (query instanceof RangePQuery) {
+            	RangePQuery rquery = (RangePQuery) query;
+				if (rangeQuery == null) {
+            		rangeQuery = rquery;
+            	} else {
+            		if (rangeQuery.intersect (rquery)) {
+            			continue;
+            		} else {
+            			// assume similar fields are adjacent?
+            			rangeQuery = rquery;
+            		}
+            	}
+            } else if (query instanceof MatchAllPQuery && oc == Occur.MUST) {
+                continue;
             }
             // no merging possible
             cl.add (clause);
         }
         this.clauses = cl.toArray(new Clause[cl.size()]);
     }
-    
-    public BooleanPQuery (Occur occur, ParseableQuery ... queries) {
-        clauses = new Clause[queries.length];
-        int i = 0;
-        for (ParseableQuery query : queries) {
-            clauses[i++] = new Clause(query, occur);
-        }
-    }    
     
     public Occur getOccur () {
         return clauses.length > 0 ? clauses[0].occur : Occur.SHOULD;
@@ -137,6 +161,24 @@ public class BooleanPQuery extends ParseableQuery {
           }
         }
         return buf.toString();
+    }
+    
+    @Override
+    public boolean equals(ParseableQuery other) {
+        if (! (other instanceof BooleanPQuery)) {
+            return false;
+        }
+        BooleanPQuery oq = (BooleanPQuery) other;
+        if (clauses.length != oq.clauses.length) {
+            return false;
+        }
+        for (int i = 0; i < clauses.length; i++) {
+            if (! (clauses[i].occur == oq.clauses[i].occur &&
+                    clauses[i].query.equals(oq.clauses[i].query))) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

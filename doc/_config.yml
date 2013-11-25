@@ -1,2 +1,2 @@
-destination:    /hades/var/www/luxdb
+destination:    /var/www/luxdb
 root-url:       http://luxdb.org

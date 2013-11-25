@@ -1590,7 +1590,7 @@
     <!--  Lux update processor
         Indexes the given named field as an XML document. Enables index-assisted XQuery/XPath evaluation using Lux.
      --> 
-    <updateRequestProcessorChain name="lux-update-chain">
+    <updateRequestProcessorChain name="lux-update-chain" default="true">
       <lst name="namespaces">
         <str name="wp">http://www.mediawiki.org/xml/export-0.8/</str>
       </lst>
@@ -1609,6 +1609,8 @@
       </lst>
       <str name="strip-namespaces">no</str>
       <str name="xml-format">tiny</str>
+      <processor class="org.apache.solr.update.processor.DistributedUpdateProcessorFactory" />
+      <!-- must come *after* the DistributingUpdateProcessor for transaction log replay to work -->
       <processor class="lux.solr.LuxUpdateProcessorFactory" />
       <processor class="solr.LogUpdateProcessorFactory" />
       <processor class="solr.RunUpdateProcessorFactory" />

@@ -76,6 +76,8 @@ original query.  In addition to XQTS, Lux contains a battery of its own
 tests (which are available as part of the source distribution) that help
 ensure correct results.
 
+We use the travis-ci continuous integration service to monitor the health of our builds. This image reflects the current build status there: [![Build Status](https://travis-ci.org/msokolov/lux.png)](https://travis-ci.org/msokolov/lux) and links to the build history, so you can see when we break any of our tests.
+
 ## Performance ##
 
 Query performance varies depending on the query, and the data, and the environment,
@@ -231,7 +233,7 @@ contributions along these lines will be welcome.
 
 ### Enhancements
 
-Please see the [PLANS.md](Plans) page for more about future plans for Lux
+Please see the [Plans](PLANS.html) page for more about future plans for Lux
 development.
 
 ## Acknowledgements ##

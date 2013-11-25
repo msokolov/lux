@@ -1,0 +1,25 @@
+<test-suite>
+  <meta>
+    <title>Basic Test Queries</title>
+  </meta>
+  <setup>
+    <keys>
+      <key id="doctype">name(/*)</key>
+      <key id="title">/*/TITLE</key>
+      <key id="title_all">//TITLE</key>
+      <key id="scnnum" type="int">/SCENE/@scene</key>
+      <key id="actnum" type="int">/*/@act</key>
+    </keys>
+  </setup>
+  <test-cases>
+    <include file="base-cases.xml" />
+  </test-cases>
+  <queries id="qname-index">
+    <include file="qname-queries.xml" />
+  </queries>
+</test-suite>
+<!--
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/.
+-->

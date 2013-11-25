@@ -1,0 +1,25 @@
+<test-suite>
+  <meta>
+    <title>Path Test Queries</title>
+    <setup>
+    </setup>
+  </meta>
+  <test-cases>
+    <include file="query/base-cases.xml" />
+    <test-case name="range-type-mismatch">
+      <query>//TITLE[. &lt; 10]</query>
+      <expect>
+        <query id="range-type-mismatch" />
+        <error>Cannot convert string to double: "The Tragedy of Hamlet, Prince ..."</error>
+      </expect>
+    </test-case>
+  </test-cases>
+  <queries>
+    <include file="query/path-queries.xml" />
+  </queries>
+</test-suite>
+<!--
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/.
+-->

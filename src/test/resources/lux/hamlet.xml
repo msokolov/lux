@@ -57,9 +57,9 @@
 
 <PLAYSUBT>HAMLET</PLAYSUBT>
 
-<ACT><TITLE>ACT I</TITLE>
+<ACT act="1"><TITLE>ACT I</TITLE>
 
-<SCENE><TITLE>SCENE I.  Elsinore. A platform before the castle.</TITLE>
+<SCENE act="1" scene="1"><TITLE>SCENE I.  Elsinore. A platform before the castle.</TITLE>
 <STAGEDIR>FRANCISCO at his post. Enter to him BERNARDO</STAGEDIR>
 
 <SPEECH>
@@ -510,7 +510,7 @@
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE II.  A room of state in the castle.</TITLE>
+<SCENE act="1" scene="2"><TITLE>SCENE II.  A room of state in the castle.</TITLE>
 <STAGEDIR>Enter KING CLAUDIUS, QUEEN GERTRUDE, HAMLET,
 POLONIUS, LAERTES, VOLTIMAND, CORNELIUS, Lords,
 and Attendants</STAGEDIR>
@@ -1106,7 +1106,7 @@ and Attendants</STAGEDIR>
 <STAGEDIR>Exit</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE III.  A room in Polonius' house.</TITLE>
+<SCENE act="1" scene="3"><TITLE>SCENE III.  A room in Polonius' house.</TITLE>
 <STAGEDIR>Enter LAERTES and OPHELIA</STAGEDIR>
 
 <SPEECH>
@@ -1357,7 +1357,7 @@ and Attendants</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE IV.  The platform.</TITLE>
+<SCENE act="1" scene="4"><TITLE>SCENE IV.  The platform.</TITLE>
 <STAGEDIR>Enter HAMLET, HORATIO, and MARCELLUS</STAGEDIR>
 
 <SPEECH>
@@ -1591,7 +1591,7 @@ and Attendants</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE V.  Another part of the platform.</TITLE>
+<SCENE act="1" scene="5"><TITLE>SCENE V.  Another part of the platform.</TITLE>
 <STAGEDIR>Enter GHOST and HAMLET</STAGEDIR>
 
 <SPEECH>
@@ -2068,9 +2068,9 @@ and Attendants</STAGEDIR>
 
 </ACT>
 
-<ACT><TITLE>ACT II</TITLE>
+<ACT act="2"><TITLE>ACT II</TITLE>
 
-<SCENE><TITLE>SCENE I.  A room in POLONIUS' house.</TITLE>
+<SCENE act="2" scene="1"><TITLE>SCENE I.  A room in POLONIUS' house.</TITLE>
 <STAGEDIR>Enter POLONIUS and REYNALDO</STAGEDIR>
 
 <SPEECH>
@@ -2358,7 +2358,7 @@ and Attendants</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE II.  A room in the castle.</TITLE>
+<SCENE act="2" scene="2"><TITLE>SCENE II.  A room in the castle.</TITLE>
 <STAGEDIR>Enter KING CLAUDIUS, QUEEN GERTRUDE, ROSENCRANTZ,
 GUILDENSTERN, and Attendants</STAGEDIR>
 
@@ -3674,9 +3674,9 @@ Attendants</STAGEDIR>
 
 </ACT>
 
-<ACT><TITLE>ACT III</TITLE>
+<ACT act="3"><TITLE>ACT III</TITLE>
 
-<SCENE><TITLE>SCENE I.  A room in the castle.</TITLE>
+<SCENE act="3" scene="1"><TITLE>SCENE I.  A room in the castle.</TITLE>
 <STAGEDIR>Enter KING CLAUDIUS, QUEEN GERTRUDE, POLONIUS,
 OPHELIA, ROSENCRANTZ, and GUILDENSTERN</STAGEDIR>
 
@@ -4082,7 +4082,7 @@ OPHELIA, ROSENCRANTZ, and GUILDENSTERN</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE II.  A hall in the castle.</TITLE>
+<SCENE act="3" scene="2"><TITLE>SCENE II.  A hall in the castle.</TITLE>
 <STAGEDIR>Enter HAMLET and Players</STAGEDIR>
 
 <SPEECH>
@@ -5103,7 +5103,7 @@ in the end accepts his love</STAGEDIR>
 <STAGEDIR>Exit</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE III.  A room in the castle.</TITLE>
+<SCENE act="3" scene="3"><TITLE>SCENE III.  A room in the castle.</TITLE>
 <STAGEDIR>Enter KING CLAUDIUS, ROSENCRANTZ, and GUILDENSTERN</STAGEDIR>
 
 <SPEECH>
@@ -5258,7 +5258,7 @@ in the end accepts his love</STAGEDIR>
 <STAGEDIR>Exit</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE IV.  The Queen's closet.</TITLE>
+<SCENE act="3" scene="4"><TITLE>SCENE IV.  The Queen's closet.</TITLE>
 <STAGEDIR>Enter QUEEN MARGARET and POLONIUS</STAGEDIR>
 
 <SPEECH>
@@ -5741,9 +5741,9 @@ in the end accepts his love</STAGEDIR>
 
 </ACT>
 
-<ACT><TITLE>ACT IV</TITLE>
+<ACT act="4"><TITLE>ACT IV</TITLE>
 
-<SCENE><TITLE>SCENE I.  A room in the castle.</TITLE>
+<SCENE act="4" scene="1"><TITLE>SCENE I.  A room in the castle.</TITLE>
 <STAGEDIR>Enter KING CLAUDIUS, QUEEN GERTRUDE, ROSENCRANTZ,
 and GUILDENSTERN</STAGEDIR>
 
@@ -5828,7 +5828,7 @@ and GUILDENSTERN</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE II.  Another room in the castle.</TITLE>
+<SCENE act="4" scene="2"><TITLE>SCENE II.  Another room in the castle.</TITLE>
 <STAGEDIR>Enter HAMLET</STAGEDIR>
 
 <SPEECH>
@@ -5937,7 +5937,7 @@ and GUILDENSTERN</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE III.  Another room in the castle.</TITLE>
+<SCENE act="4" scene="3"> <TITLE>SCENE III.  Another room in the castle.</TITLE>
 <STAGEDIR>Enter KING CLAUDIUS, attended</STAGEDIR>
 
 <SPEECH>
@@ -6139,7 +6139,7 @@ and GUILDENSTERN</STAGEDIR>
 <STAGEDIR>Exit</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE IV.  A plain in Denmark.</TITLE>
+<SCENE act="4" scene="4"><TITLE>SCENE IV.  A plain in Denmark.</TITLE>
 <STAGEDIR>Enter FORTINBRAS, a Captain, and Soldiers, marching</STAGEDIR>
 
 <SPEECH>
@@ -6289,7 +6289,7 @@ and GUILDENSTERN</STAGEDIR>
 <STAGEDIR>Exit</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE V.  Elsinore. A room in the castle.</TITLE>
+<SCENE act="4" scene="5"><TITLE>SCENE V.  Elsinore. A room in the castle.</TITLE>
 <STAGEDIR>Enter QUEEN GERTRUDE, HORATIO, and a Gentleman</STAGEDIR>
 
 <SPEECH>
@@ -6817,7 +6817,7 @@ and GUILDENSTERN</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE VI.  Another room in the castle.</TITLE>
+<SCENE act="4" scene="6"><TITLE>SCENE VI.  Another room in the castle.</TITLE>
 <STAGEDIR>Enter HORATIO and a Servant</STAGEDIR>
 
 <SPEECH>
@@ -6889,7 +6889,7 @@ and GUILDENSTERN</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE VII.  Another room in the castle.</TITLE>
+<SCENE act="4" scene="7"><TITLE>SCENE VII.  Another room in the castle.</TITLE>
 <STAGEDIR>Enter KING CLAUDIUS and LAERTES</STAGEDIR>
 
 <SPEECH>
@@ -7276,9 +7276,9 @@ and GUILDENSTERN</STAGEDIR>
 
 </ACT>
 
-<ACT><TITLE>ACT V</TITLE>
+<ACT act="5"><TITLE>ACT V</TITLE>
 
-<SCENE><TITLE>SCENE I.  A churchyard.</TITLE>
+<SCENE act="5" scene="1"><TITLE>SCENE I.  A churchyard.</TITLE>
 <STAGEDIR>Enter two Clowns, with spades, &amp;c</STAGEDIR>
 
 <SPEECH>
@@ -8070,7 +8070,7 @@ CLAUDIUS, QUEEN GERTRUDE, their trains, &amp;c</STAGEDIR>
 <STAGEDIR>Exeunt</STAGEDIR>
 </SCENE>
 
-<SCENE><TITLE>SCENE II.  A hall in the castle.</TITLE>
+<SCENE act="5" scene="2"><TITLE>SCENE II.  A hall in the castle.</TITLE>
 <STAGEDIR>Enter HAMLET and HORATIO</STAGEDIR>
 
 <SPEECH>

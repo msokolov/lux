@@ -17,12 +17,14 @@ import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
+import net.sf.saxon.tree.tiny.TinyTree;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.util.BytesRef;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reads, parses and caches XML documents from a Lucene index. Assigns Lucene
@@ -30,12 +32,19 @@ import org.apache.lucene.util.BytesRef;
  * single query only, and is *not thread-safe*. 
  * 
  * TODO: a nice optimization would be to maintain a global cache, shared across threads, 
- * with some tunable resource-based eviction policy.
- * 
- * Not threadsafe.
+ * with some tunable resource-based eviction policy.  PLAN:
+ * 1) Build a cache that is limited by byte size (DONE: see NodeCache below)
+ * 2) autoconfigure size based on heap size (later: provide cache size configuration)
+ * 3) two-level cache strategy: global first, then per-query; when query completes, write newly
+ * cached docs to global cache.  Note: the global cache cannot use docID as a key.  It would have to use
+ * URIs
+ * 4) How to maintain memory limit?  Catch OOM when allocating docs? 
  */
 public class CachingDocReader {
-	private final LRUCache<Integer, XdmNode> cache = new LRUCache<Integer, XdmNode>(512);
+    // the portion of heap to allocate to each per-request document cache.  This should really rely on the
+    // number of clients
+    private final static int CACHE_RATIO = 100;
+	private final NodeCache cache = new NodeCache(java.lang.Runtime.getRuntime().maxMemory() / CACHE_RATIO);
     private final String xmlFieldName;
     private final String uriFieldName;
     private final HashSet<String> fieldsToRetrieve;
@@ -56,8 +65,7 @@ public class CachingDocReader {
      * @param indexConfig
      *            supplies the names of the xml storage and uri fields
      */
-    public CachingDocReader(DocumentBuilder builder, Configuration config,
-            IndexConfiguration indexConfig) {
+    public CachingDocReader(DocumentBuilder builder, Configuration config, IndexConfiguration indexConfig) {
         this.builder = builder;
         this.config = config;
         this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
@@ -68,24 +76,44 @@ public class CachingDocReader {
     }
 
     /**
+     * Reads the document with the given relative id from an atomic reader.
+     * If cached, the cached copy is returned. Otherwise the document is read from the index. 
+     * If the document does not exist in the index, or has been deleted, results are not
+     * well-defined: see {@link IndexReader}.
+     * 
+     * @param leafDocID the relative docid of the document to read
+     * @param context an atomic Lucene index reader context (a leaf of the segmented index tree)
+     * @return the document, as a Saxon XdmNode
+     * @throws IOException if there is some sort of low-level problem with the index
+     * @throws LuxException if there is an error building the document that has been retrieved
+     */
+    public XdmNode get(int leafDocID, AtomicReaderContext context) throws IOException {
+       int docID = leafDocID + context.docBase;
+       XdmNode node= cache.get(docID);
+       if (node != null) {
+           ++cacheHits;
+           return node;
+       }
+       DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
+       context.reader().document(leafDocID, fieldSelector);
+       Document document = fieldSelector.getDocument();
+       return getXdmNode(docID, document);
+    }
+    
+    /**
      * Reads the document with the given id. If cached, the cached copy is
      * returned. Otherwise the document is read from the index. If the document
      * does not exist in the index, or has been deleted, results are not
      * well-defined: see {@link IndexReader}.
      * 
-     * @param docID
-     *            the id of the document to read
-     * @param reader
-     *            the Lucene index reader
+     * @param docID the absolute docid of the document to read
+     * @param reader the Lucene index reader
      * @return the document, as a Saxon XdmNode
-     * @throws IOException
-     *             if there is some sort of low-level problem with the index
-     * @throws LuxException
-     *             if there is an error building the document that has been
-     *             retrieved
+     * @throws IOException if there is some sort of low-level problem with the index
+     * @throws LuxException if there is an error building the document that has been retrieved
      */
     public XdmNode get(int docID, IndexReader reader) throws IOException {
-        XdmNode node= cache.get(docID);
+        XdmNode node = cache.get(docID);
         if (node != null) {
             ++cacheHits;
             return node;
@@ -93,7 +121,11 @@ public class CachingDocReader {
         DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
         reader.document(docID, fieldSelector);
         Document document = fieldSelector.getDocument();
-        
+        return getXdmNode(docID, document);
+    }
+
+    private XdmNode getXdmNode(int docID, Document document) throws IOException {
+        XdmNode node = null;
         String xml = document.get(xmlFieldName);
         String uri = "lux:/" + document.get(uriFieldName);
         DocIDNumberAllocator docIdAllocator = (DocIDNumberAllocator) config.getDocumentNumberAllocator();
@@ -105,12 +137,12 @@ public class CachingDocReader {
             if (binaryValue == null) {
                 // This is a document without the expected fields, as will happen, eg if we just connect to
                 // some random database.
-                Logger.getLogger(CachingDocReader.class).warn ("Document " + docID + " has no content");
+                LoggerFactory.getLogger(CachingDocReader.class).warn ("Document {} has no content", docID);
                 bytes = new byte[0];
             } else {
                 bytes = binaryValue.bytes;
             }
-        	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N' && bytes[3] == 'Y') {
+        	if (bytes.length > 4 && bytes[0] == 'T' && bytes[1] == 'I' && bytes[2] == 'N') {
             	// An XML document stored in tiny binary format
 				TinyBinary tb = new TinyBinary(bytes, TinyBinaryField.UTF8);
             	node = new XdmNode (tb.getTinyDocument(config));
@@ -119,19 +151,19 @@ public class CachingDocReader {
             }
         }
         if (node == null) {
-        	StreamSource source = new StreamSource(new StringReader(xml));
-        	source.setSystemId(uri);
-        	try {
-        		node = builder.build(source);
-        	} catch (SaxonApiException e) {
-        		// shouldn't normally happen since the document would generally have
-        		// been parsed when indexed.
-        		throw new LuxException(e);
-        	}
-        	// associate the bytes with the xml stub (for all non-XML content)
-            if (bytes != null) {
-                ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
+            StreamSource source = new StreamSource(new StringReader(xml));
+            source.setSystemId(uri);
+            try {
+                node = builder.build(source);
+            } catch (SaxonApiException e) {
+                // shouldn't normally happen since the document would generally have
+                // been parsed when indexed.
+                throw new LuxException(e);
             }
+        }
+        // associate the bytes with the xml stub (for all non-XML content)
+        if (bytes != null) {
+            ((TinyDocumentImpl)node.getUnderlyingNode()).setUserData("_binaryDocument", bytes);
         }
         // doesn't seem to do what one might think:
         // ((TinyDocumentImpl) node.getUnderlyingNode()).setBaseURI(uri);
@@ -172,25 +204,71 @@ public class CachingDocReader {
         cache.clear();
     }
     
-    // from org.apache.lucene.queryparser.xml.builders.CachedFilterBuilder.LRUCache
-    // TODO: limit cache by something proportional to *bytes*, rather than number of entries
-    static class LRUCache<K, V> extends java.util.LinkedHashMap<K, V> {
+    static class NodeCache extends java.util.LinkedHashMap<Integer, XdmNode> {
+        
+        private long bytes;
+        private final long maxbytes;
 
-        public LRUCache(int maxsize) {
-          super(maxsize * 4 / 3 + 1, 0.75f, true);
-          this.maxsize = maxsize;
+        public NodeCache (long maxbytes) {
+            super((int) ((maxbytes / 100) * 4 / 3 + 1), 0.75f, true);
+            this.maxbytes = maxbytes;
+            this.bytes = 0;
         }
-
-        protected int maxsize;
-
+        
         @Override
-        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-          return size() > maxsize;
+        public XdmNode put (Integer key, XdmNode value) {
+            bytes += calculateSize (value);
+            return super.put(key, value);
+        }
+        
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Integer, XdmNode> eldest) {
+            while (bytes > maxbytes) {
+                remove(eldest.getKey());
+                bytes -= calculateSize (eldest.getValue());
+                for (Map.Entry<Integer, XdmNode> entry : entrySet()) {
+                    // get the next eldest
+                    eldest = entry;
+                    break;
+                }
+            }
+            return false;
         }
 
-      }
+        /**
+         * @param value a document whose size is to be calculated
+         * @return the size of a TinyBinary representation of the document, which should be pretty close to the actual
+         * heap size used.
+         */
+        private long calculateSize(XdmNode value) {
+            TinyTree tree = ((TinyDocumentImpl)value.getUnderlyingNode()).getTree();
+            int nodeCount = tree.getNumberOfNodes();
+            int attCount = tree.getNumberOfAttributes();
+            int nsCount = tree.getNumberOfNamespaces();
+            byte[] binary = (byte[]) ((TinyDocumentImpl)value.getUnderlyingNode()).getUserData("_binaryDocument");
+            int binSize = binary == null ? 0 : binary.length;
+            // gross estimate of the number of string pointers
+            // Note: we don't count the size of the names in the name pool, on the assumption they will be shared
+            // by a lot of documents.
+            int stringLen = 12 + 2 * nodeCount + 2 * attCount + 2 * nsCount;
+            // actually count the lengths of all the attributes
+            CharSequence[] attValueArray = tree.getAttributeValueArray();
+            for (int i = 0; i < attCount; i++) {
+                stringLen += attValueArray[i].length();
+            }
+            return 36
+                    + binSize
+                    + nodeCount * 19
+                    + attCount * 8
+                    + nsCount * 8
+                    + tree.getCharacterBuffer().length() * 2
+                    + (tree.getCommentBuffer() == null ? 0 : tree.getCommentBuffer().length() * 2) 
+                    + stringLen;
+        }
+    }
 
 }
+
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public License,

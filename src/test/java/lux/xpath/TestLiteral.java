@@ -60,8 +60,8 @@ public class TestLiteral {
 	@Test
 	public void testJavaEquals () {
 		// equals and hash code ignore the declared type and are based on the underlying java value
-		assertEquals (LiteralExpression.ONE, new LiteralExpression (1L, ValueType.ATOMIC));
-		assertEquals (LiteralExpression.ONE.hashCode(), new LiteralExpression (1L, ValueType.ATOMIC).hashCode());
+		assertTrue (! LiteralExpression.ONE.equals(new LiteralExpression (1L, ValueType.ATOMIC)));
+		assertTrue (LiteralExpression.ONE.hashCode() != new LiteralExpression (1L, ValueType.ATOMIC).hashCode());
 	}
 
 }

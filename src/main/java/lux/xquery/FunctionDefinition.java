@@ -9,11 +9,13 @@ public class FunctionDefinition extends FunCall {
 
     private final AbstractExpression body;
     private final int cardinality;
+    private final QName returnTypeName;
     
-    public FunctionDefinition (QName name, ValueType returnType, int cardinality, Variable[] args, AbstractExpression body) {
+    public FunctionDefinition (QName name, ValueType returnType, int cardinality, QName returnTypeName, Variable[] args, AbstractExpression body) {
         super (name, returnType, args);
         this.body = body;
         this.cardinality = cardinality;
+        this.returnTypeName = returnTypeName;
     }
     
     @Override public void toString (StringBuilder buf) {
@@ -21,7 +23,7 @@ public class FunctionDefinition extends FunCall {
         super.toString(buf);
         ValueType returnType = getReturnType();
         if (returnType != null) {
-            buf.append (" as ").append(returnType.toString()).append(ValueType.CARDINALITY_MARKER[cardinality]).append(" ");
+        	buf.append (" as ").append(returnType.toString(returnTypeName)).append(ValueType.CARDINALITY_MARKER[cardinality]).append(" ");
         }
         buf.append ("{ ");
         body.toString (buf);
@@ -35,6 +37,10 @@ public class FunctionDefinition extends FunCall {
     public int getCardinality() {
         return cardinality;
     }
+
+	public QName getReturnTypeName() {
+		return returnTypeName;
+	}
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

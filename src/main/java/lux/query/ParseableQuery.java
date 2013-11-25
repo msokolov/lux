@@ -27,5 +27,20 @@ public abstract class ParseableQuery {
     public String toString () {
         return toQueryString ("", IndexConfiguration.DEFAULT);
     }
+    
+    public boolean isSpanCompatible() {
+    	return false;
+    }
+    
+    public abstract boolean equals (ParseableQuery other);
+    
+    @Override
+    public int hashCode () {
+        return toString().hashCode();
+    }
+
+    public boolean isMatchAll() {
+        return false;
+    }
 
 }

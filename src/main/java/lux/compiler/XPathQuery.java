@@ -1,6 +1,8 @@
 package lux.compiler;
 
-import lux.exception.LuxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery;
 import lux.query.BooleanPQuery.Clause;
@@ -36,7 +38,14 @@ import org.apache.lucene.search.SortField;
  */
 public class XPathQuery {
 
+    // a Lucene query corresponding to an XQuery expression
     private final ParseableQuery pquery;
+
+    // a Lucene query corresponding to the base expression of an XQuery expression:
+    // this ignores any constraints deriving from predicates and is used for combining
+    // path queries
+    private ParseableQuery pathQuery;
+
     private ValueType valueType;
     private final boolean immutable;
     
@@ -46,8 +55,6 @@ public class XPathQuery {
      */
     private long facts;
 
-    private XPathQuery baseQuery;
-    
     /**
      * A Lucene sort order to be applied to the query.  This will have been computed from an XQuery order by expression.
      */
@@ -99,22 +106,31 @@ public class XPathQuery {
     /** queries that match all documents (have no filter) are empty. */
     public static final int EMPTY=0x00000040;
     
-    public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
+    /** queries whose path query constraint is already incorporated into the main query */
+    public static final int PATH_COMBINED=0x00000080;
     
-    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
+    public final static XPathQuery MATCH_ALL = new XPathQuery(MatchAllPQuery.getInstance(), MatchAllPQuery.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
+    
+    private final static XPathQuery PATH_MATCH_ALL = new XPathQuery(SpanMatchAll.getInstance(), SpanMatchAll.getInstance(), MINIMAL|SINGULAR|EMPTY, ValueType.DOCUMENT, true);
     
     /**
      * @param query a Lucene query
+     * @param pathQuery a Lucene query representing a constraint that the context item's path exists
      * @param resultFacts a bitmask with interesting facts about this query
      * @param valueType the type of results returned by the xpath expression, as specifically as 
      * @param immutable whether this query may be changed - set true for some internal statics like MATCH_ALL
      * can be determined.
      */
-    protected XPathQuery(ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
+    protected XPathQuery(ParseableQuery query, ParseableQuery pathQuery, long resultFacts, ValueType valueType, boolean immutable) {
         this.pquery = query;
+        this.pathQuery = pathQuery;
         this.facts = resultFacts;
         setType (valueType);
         this.immutable = immutable;
+    }
+    
+    protected XPathQuery(ParseableQuery query, long resultFacts, ValueType valueType, boolean immutable) {
+        this (query, null, resultFacts, valueType, immutable);
     }
     
     protected XPathQuery(ParseableQuery query, long resultFacts, ValueType valueType) {
@@ -123,18 +139,30 @@ public class XPathQuery {
     
     /** 
      * @param query the query on which the result is based
+     * @param pathQuery 
      * @param resultFacts the facts to use in the new query
      * @param valueType the result type of the new query
      * @param indexConfig the indexer configuration; controls which type of match-all query may be returned
      * @param sortFields the sort fields to record in the query
      * @return a new query (or an immutable query) based on an existing query with some modifications.
      */
-    public static XPathQuery getQuery (ParseableQuery query, long resultFacts, ValueType valueType, IndexConfiguration indexConfig, SortField[] sortFields) {
-        XPathQuery q = new XPathQuery (query, resultFacts, valueType);
+    public static XPathQuery getQuery (ParseableQuery query, ParseableQuery pathQuery, long resultFacts, ValueType valueType, IndexConfiguration indexConfig, SortField[] sortFields) {
+        XPathQuery q;
+        q = new XPathQuery (query, resultFacts, valueType);
+        q.setPathQuery(pathQuery);
         q.setSortFields(sortFields);
         return q;
     }
     
+    /* decides whether to create a pathQuery or a main query based on the type of the termQuery argument. */
+    public static XPathQuery getQuery(ParseableQuery termQuery, long facts,
+            ValueType type, IndexConfiguration indexConfig, SortField[] sortFields) {
+        if (termQuery.isSpanCompatible()) {
+            return getQuery (null, termQuery, facts, type, indexConfig, sortFields);
+        }
+        return getQuery (termQuery, null, facts, type, indexConfig, sortFields);
+    }
+
     public static XPathQuery getMatchAllQuery (IndexConfiguration indexConfig) {
         if (indexConfig.isOption(IndexConfiguration.INDEX_PATHS)) {
             return PATH_MATCH_ALL;
@@ -142,10 +170,6 @@ public class XPathQuery {
         return MATCH_ALL;
     }
     
-    public ParseableQuery getParseableQuery() {
-        return pquery;
-    }
-
     /**
      * @return whether it is known that the query will return the minimal set of
      *         documents containing the required result value. If false, some
@@ -170,35 +194,49 @@ public class XPathQuery {
      * @return the combined query
      */
     public XPathQuery combineBooleanQueries(Occur occur, XPathQuery precursor, Occur precursorOccur, ValueType type, IndexConfiguration config) {
-        ParseableQuery result;
-        if (isFact(IGNORABLE)) {
-            if (precursor.isFact(IGNORABLE)) {
-                precursorOccur = occur = Occur.SHOULD;
-            }
-            if (isEmpty() && isMinimal()) {
-            	return precursor;
-            }
-            return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
-        }
-        else if (precursor.isFact(IGNORABLE)) {
-        	if (precursor.isEmpty() && precursor.isMinimal()) {
-        		return this;
-        	}
-        	return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query 
+        XPathQuery result = combineIgnorableQueries(occur, precursor);
+        if (result != null) {
+            return result;
         }
         long resultFacts = combineQueryFacts (this, precursor);
-        result = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
-        SortField[] combined = combineSortFields(precursor);
-        return getQuery(result, resultFacts, type, config, combined);
+        ParseableQuery combined = combineBoolean (this.pquery, occur, precursor.pquery, precursorOccur);
+        SortField[] combinedSorts = combineSortFields(precursor);
+        XPathQuery q = getQuery(combined, null, resultFacts, type, config, combinedSorts);
+        q.setPathQuery(pathQuery);
+        return q;
+    }
+
+    private XPathQuery combineIgnorableQueries(Occur occur, XPathQuery precursor) {
+        if (occur == Occur.MUST && isFact(IGNORABLE) != precursor.isFact(IGNORABLE)) {
+            if (isFact(IGNORABLE)) {
+                if (isEmpty() && isMinimal()) {
+                    return precursor;
+                } else {
+                    return precursor.setFact(MINIMAL, false); // we are losing some information by ignoring this query
+                }
+            }
+            else {
+                if (precursor.isEmpty() && precursor.isMinimal()) {
+                    return this;
+                } else {
+                    return setFact (MINIMAL, false);  // we are losing some information by ignoring the precursor query
+                }
+            }
+        }
+        return null;
     }
 
     private SortField[] combineSortFields(XPathQuery precursor) {
         if (sortFields != null) {
             if (precursor.sortFields != null) {
-                SortField[] combined = new SortField [sortFields.length + precursor.sortFields.length];
-                System.arraycopy(sortFields, 0, combined, 0, sortFields.length);
-                System.arraycopy(precursor.sortFields, 0, combined, sortFields.length, precursor.sortFields.length);
-                return combined;
+            	ArrayList<SortField> combined = new ArrayList<SortField>(Arrays.asList(sortFields));
+            	SortField prevSort = combined.get(combined.size()-1);
+            	for (SortField sortField : precursor.sortFields) {
+            		if (! sortField.equals(prevSort)) {
+            			combined.add(sortField);
+            		}
+            	}
+                return combined.toArray(new SortField[combined.size()]);
             } else {
                 return sortFields;
             }
@@ -214,48 +252,54 @@ public class XPathQuery {
      * the constituent queries must be span queries as well.
      * @param precursor the other query
      * @param occur the boolean operator used to combine
+     * @param isPredicate whether the enclosing expression is a predicate (or a path expression)
      * @param type the return type of the combined query
      * @param distance the distance between the queries
      * @param config the index configuration
      * @return the combined query
      */
-    public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, ValueType type, int distance, IndexConfiguration config) {
-        if (isFact(IGNORABLE)) {
-            XPathQuery result = precursor.setFact (MINIMAL, false);
-            if (type != null) {
-                result.setType(type);
-            }
-            return result;
-        }
-        if (precursor.isFact(IGNORABLE)) {
-            XPathQuery result = setFact(MINIMAL, false);
-            if (type != null) {
-                result.setType(type);
-            }
-            return result;
+    public XPathQuery combineSpanQueries(XPathQuery precursor, Occur occur, boolean isPredicate, ValueType type, int distance, IndexConfiguration config) {
+        XPathQuery result = combineIgnorableQueries(occur, precursor);
+        if (result != null) {
+            return result.setType(type);
         }
         long resultFacts = combineQueryFacts (this, precursor);
-        ParseableQuery result = combineSpans (this.pquery, occur, precursor.pquery, distance);
-        SortField[] combinedSorts = combineSortFields(precursor);
-        XPathQuery q = new XPathQuery(result, resultFacts, type);
-        q.setSortFields(combinedSorts);
-        if (baseQuery != null) {
-            if (precursor.getBaseQuery() != null) {
-                q.setBaseQuery(baseQuery.combineBooleanQueries(occur, precursor.getBaseQuery(), occur, baseQuery.getResultType(), config));
-            } else {
-                q.setBaseQuery(baseQuery);
+        ParseableQuery combined, pathCombined; 
+        if (this.pathQuery == null) {
+            pathCombined = precursor.pathQuery;
+            if (precursor.isFact(PATH_COMBINED)) {
+                resultFacts |= PATH_COMBINED;
             }
-        } else if (precursor.getBaseQuery() != null) {
-            q.setBaseQuery(precursor.getBaseQuery());
+        } else if (precursor.pathQuery == null) {
+            pathCombined = this.pathQuery;
+            if (isFact(PATH_COMBINED)) {
+                resultFacts |= PATH_COMBINED;
+            }
+        } else {
+            pathCombined = combineSpans (this.pathQuery, occur, precursor.pathQuery, distance);
+            // we're adding something new to the path query, so it isn't known to be subsumed by the main query
+            resultFacts &= ~PATH_COMBINED;
         }
+        combined = combineBoolean(pquery, occur, precursor.pquery, occur);
+        if (isPredicate) {
+            // if this is a predicate, use existing pathQuery without combining, and add the combined pathQuery
+            // to the main query
+            combined = combineBoolean (combined, occur, pathCombined, occur);
+            pathCombined = pathQuery;
+            resultFacts |= PATH_COMBINED; // indicate that the path query has been incorporated into the main query, so it is redundant
+        }
+        SortField[] combinedSorts = combineSortFields(precursor);
+        XPathQuery q = new XPathQuery(combined, resultFacts, type);
+        q.setPathQuery(pathCombined);
+        q.setSortFields(combinedSorts);
         return q;
     }
 
     private static long combineQueryFacts (XPathQuery a, XPathQuery b) {
-        if (b.isEmpty()) {
+        if (b.isEmpty() && b.isMinimal()) {
             return a.facts; 
         }
-        else if (a.isEmpty()) {
+        else if (a.isEmpty() && a.isMinimal()) {
             return b.facts;
         }
         else {
@@ -264,47 +308,42 @@ public class XPathQuery {
     }
 
     private static ParseableQuery combineBoolean (ParseableQuery a, Occur aOccur, ParseableQuery b, Occur bOccur) {
-        if (a instanceof MatchAllPQuery) {
-            if (bOccur != Occur.MUST_NOT) {
-                return b;
-            }
-        }
-        if (b instanceof MatchAllPQuery) {
-            if (aOccur != Occur.MUST_NOT) {
-                return a;
-            }
-        }
         if (a == null || a.equals(b)) {
             return b;
         }
         if (b == null) {
             return a;
         }
+        if (a.isMatchAll()) {
+            if (bOccur != Occur.MUST_NOT) {
+                return b;
+            }
+        }
+        if (b.isMatchAll()) {
+            if (aOccur != Occur.MUST_NOT) {
+                return a;
+            }
+        }
         return new BooleanPQuery(new BooleanPQuery.Clause(a, aOccur), new BooleanPQuery.Clause(b,  bOccur));
     }
     
     private static ParseableQuery combineSpans (ParseableQuery a, Occur occur, ParseableQuery b, int distance) {
 
-        // distance == 0 means the two queries are adjacent
-        if (distance == 0) {
-            return combineFiniteSpan(a, occur, b, distance);
-        }
-
         // don't create a span query for //foo; a single term is enough
         // distance < 0 means no distance could be computed
-        if (a instanceof SpanMatchAll && occur != Occur.MUST_NOT && (distance > 90 || distance < 0)) {
+        if (a.isMatchAll() && occur != Occur.MUST_NOT && (distance > 90 || distance < 0)) {
             if (occur == Occur.SHOULD) {
                 return a;
             }
             return b;
         }
-        if (b instanceof SpanMatchAll) {
+        if (b.isMatchAll()) {
             if (occur == Occur.SHOULD) {
                 return b;
             }
             return a;
         }
-        if (distance > 0) {
+        if (distance >= 0) {
             // there is a specific distance (path steps separate by /*/, say)
             return combineFiniteSpan(a, occur, b, distance);
         }
@@ -324,19 +363,31 @@ public class XPathQuery {
                 (b instanceof SpanBooleanPQuery && ((SpanBooleanPQuery) b).getOccur() == Occur.MUST)) {
             return combineBooleanWithSpan(a, b, distance);
         }
+        if (a == MatchAllPQuery.getInstance()) {
+            return new SpanNearPQuery(distance, true, SpanMatchAll.getInstance(), b);
+        }
         return new SpanNearPQuery(distance, true, a, b);
     }
     
     private static ParseableQuery combineBooleanWithSpan(ParseableQuery a, ParseableQuery b, int distance) {
         // ((A NEAR B) AND C) NEAR D => ((A NEAR B) AND (C NEAR D))
+        // but what about
+        // A NEAR (B AND C) => (A NEAR B) AND (B NEAR C)
         SpanBooleanPQuery bq = (SpanBooleanPQuery) ((a instanceof SpanBooleanPQuery) ? a : b);
-        Clause[] clauses = new Clause [bq.getClauses().length];
-        System.arraycopy(bq.getClauses(), 0, clauses, 0, clauses.length);
-        int i = clauses.length-1;
-        if (bq == a) {
-            clauses[i] = new Clause (new SpanNearPQuery (distance, true, clauses[i].getQuery(), b), clauses[i].getOccur());
-        } else {
-            clauses[i] = new Clause (new SpanNearPQuery (distance, true, a, clauses[i].getQuery()), clauses[i].getOccur());
+        Clause[] bclauses = bq.getClauses();
+        Clause[] clauses = new Clause [bclauses.length];
+        for (int i = 0; i < clauses.length; i++) {
+            Clause clause = bclauses[i];
+            ParseableQuery query = clause.getQuery();
+            if (! query.isSpanCompatible()) {
+                clauses[i] = clause;
+                continue;
+            }
+            if (bq == a) {
+                clauses[i] = new Clause (new SpanNearPQuery (distance, true, query, b), clause.getOccur());
+            } else {
+                clauses[i] = new Clause (new SpanNearPQuery (distance, true, a, query), clause.getOccur());
+            }
         }
         return new SpanBooleanPQuery (clauses);
     }
@@ -351,7 +402,12 @@ public class XPathQuery {
     
     @Override
     public String toString () {
-        return pquery == null ? "" : pquery.toString();
+        StringBuilder buf = new StringBuilder ();
+        buf.append(pquery == null ? "" : pquery.toString());
+        if (pathQuery != null) {
+            buf.append('{').append(pathQuery.toString()).append('}');
+        }
+        return buf.toString();
     }
 
   public XPathQuery setFact(int fact, boolean t) {
@@ -375,23 +431,25 @@ public class XPathQuery {
       return facts;
   }
 
-  public void setType(ValueType type) {
-      if (immutable) throw new LuxException ("attempt to modify immutable query");
+  public XPathQuery setType(ValueType type) {
+	  XPathQuery query;
       if (type == null) {
           type = ValueType.VALUE;
       }
-      valueType = type;
-      facts &= ~BOOLEAN_FALSE;
-      if (valueType == ValueType.BOOLEAN) {
-          facts &= ~SINGULAR;
+	  if (immutable) {
+          query = new XPathQuery (pquery, facts, type);
+      } else {
+    	  query = this;
       }
-      else if (valueType == ValueType.BOOLEAN_FALSE) {
-          facts |= BOOLEAN_FALSE;
-          facts &= ~SINGULAR;
+      query.valueType = type;
+      query.facts &= ~BOOLEAN_FALSE;
+      if (query.valueType == ValueType.BOOLEAN) {
+          query.facts &= ~SINGULAR;
       }
-      else if (valueType == ValueType.DOCUMENT) {
-          facts |= SINGULAR;
+      else if (query.valueType == ValueType.DOCUMENT) {
+          query.facts |= SINGULAR;
       }
+      return query;
       // no other type info is stored in facts since it's not needed by search()
   }
 
@@ -400,21 +458,38 @@ public class XPathQuery {
   }
 
   public AbstractExpression toXmlNode(String defaultField, IndexConfiguration config) {
-      return getParseableQuery().toXmlNode(defaultField, config);
+      return getFullQuery().toXmlNode(defaultField, config);
   }
   
+  public ParseableQuery getBooleanQuery() {
+      return pquery;
+  }
+
   /**
    * A query generated by a predicate expression.  Predicates store their base query,
    * rather than their predicated filter query, as the base for path combinations, and
    * also set the filter query to add in as an additional filter.
    * @return the filter query.
    */
-  public XPathQuery getBaseQuery() {
-      return baseQuery;
+  public ParseableQuery getPathQuery() {
+      return pathQuery;
   }
 
-  public void setBaseQuery(XPathQuery baseQuery) {
-      this.baseQuery = baseQuery;
+  public void setPathQuery(ParseableQuery baseQuery) {
+      this.pathQuery = baseQuery;
+  }
+  
+  public ParseableQuery getFullQuery () {
+      ParseableQuery q = getBooleanQuery();
+      if (pathQuery != null && !isFact(PATH_COMBINED)) {
+          // add in the path constraint in baseQuery
+          if (q == null || q.isMatchAll()) {
+              q = pathQuery;
+          } else {
+              q = new BooleanPQuery (Occur.MUST, q, pathQuery);
+          }
+      }
+      return q;
   }
 
 }

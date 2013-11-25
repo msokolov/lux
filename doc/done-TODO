@@ -35,6 +35,39 @@ is ignored.
 We weren't pushing a query on the stack?
 ** mark subsequence (first or last) as SINGULAR
 * enhancements
+** distributed search (and indexing)
+*** search
+This is complicated b/c Saxon wants to pull results, and Solr, to push
+them.  We had a similar issue in the single-node search with Lucene, but
+managed to overcome by implementing our own pull-style Lucene searcher.
+It's not truly pull-style when the results are sorted (by relevance score
+or by value).  In that case we buffer the first N results (docids only),
+and if more get pulled, we fetch the next batch.
+
+In Solr Cloud, the RequestHandler orchestrates communication with a number
+of shards, and with a list of SearchComponents.  It calls each component
+once (distributedProcess()) in each phase.  Communication between these
+components is mediated by the ResponseBuilder, which holds information
+about the current state of the request.
+
+Ultimately what we need to do is evaluate the xquery (control passes to
+Saxon), and then when a search function is called, initiate the entire
+distributed search process, following a similar procedure as we currently
+do for sorted results in LuxSearcher: fetch the top N from each shard, and
+repeat if needed.
+
+This suggests tinkering with the RequestHandler.  XQueryComponent
+can *call* RequestHandler.handleRequestBody and then return STAGE_DONE.
+Now typically SearchComponents do not maintain a pointer to the handler
+that owns them.  We maintain a (per-core) singleton, SolrIndexConfig, which
+is available to the XQueryComponent via the core's plugin registry.
+Probably we can grab onto the RequestHandler from there?  There can be
+multiple request handlers though, and we want to make sure to use the same
+one: so we can iterate over all the request handlers in the core, and
+iterate over all the components in each handler until we find the one we're
+attached to.  Alternatively we could subclass the RequestHandler and inform
+the component (if it's an XQueryComponent)
+
 ** highlighting
 ** optimized sorting
 ** count(collection())

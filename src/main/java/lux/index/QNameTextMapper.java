@@ -11,7 +11,6 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 
 /**
@@ -21,23 +20,24 @@ public class QNameTextMapper extends XmlPathMapper {
 
     private int depth = -1;
     private StringBuilder[] stack;
-    private ArrayList<String> names;
-    private ArrayList<String> values;
+    private ArrayList<CharSequence> names;
+    private ArrayList<CharSequence> values;
+    private MutableString charBuffer = new MutableString();
     
     public QNameTextMapper () {
         stack = new StringBuilder[8];
-        names = new ArrayList<String>();
-        values = new ArrayList<String>();
+        names = new ArrayList<CharSequence>();
+        values = new ArrayList<CharSequence>();
         for (int i = 0; i < stack.length; i++) {
             stack[i] = new StringBuilder();
         }
     }
     
-    public ArrayList<String> getValues() {
+    public ArrayList<CharSequence> getValues() {
         return values;
     }
 
-    public ArrayList<String> getNames() {
+    public ArrayList<CharSequence> getNames() {
         return names;
     }
     
@@ -61,15 +61,16 @@ public class QNameTextMapper extends XmlPathMapper {
             super.handleEvent(reader, eventType);
             buf = pushStackFrame();
             for (int i = 0; i < reader.getAttributeCount(); i++) {
-                QName attQName = getEventAttQName (reader, i);
-                String name = '@' + encodeQName(attQName);
+                getEventAttQName (charBuffer, reader, i);
+                String name = '@' + charBuffer.toString();
                 names.add(name);
                 // surround value by terminal markers
                 // buf.append(QNameTextField.RECORD_START).
-                buf.append (reader.getAttributeValue(i));
+                // buf.append (reader.getAttributeValue(i));
                 //buf.append(QNameTextField.RECORD_END);
-                values.add(buf.toString());
-                buf.setLength(0);
+                // values.add(buf.toString());
+                values.add(reader.getAttributeValue (i));
+                //buf.setLength(0);
             }
             //buf.append(QNameTextField.RECORD_START);
             break;
@@ -78,7 +79,7 @@ public class QNameTextMapper extends XmlPathMapper {
             super.handleEvent(reader, eventType);
             buf = popStackFrame();
             //buf.append(QNameTextField.RECORD_END);
-            names.add(encodeQName(currentQName));
+            names.add(getCurrentQName());
             values.add(buf.toString());
             break;
             

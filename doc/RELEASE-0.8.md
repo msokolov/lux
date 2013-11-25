@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Release 0.8
+title: Lux Release 0.8
 group: release
 pos: 7
 ---

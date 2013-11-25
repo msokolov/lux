@@ -13,56 +13,77 @@ import lux.index.field.FieldDefinition;
 import lux.xml.tinybin.TinyBinary;
 import net.sf.saxon.Configuration;
 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexableField;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.SolrInputField;
+import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.schema.IndexSchema;
+import org.apache.solr.schema.SchemaField;
 import org.apache.solr.update.AddUpdateCommand;
 import org.apache.solr.update.DeleteUpdateCommand;
 import org.apache.solr.update.processor.UpdateRequestProcessor;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Handles documents written to Solr via its HTTP APIs
+ */
 public class LuxUpdateProcessor extends UpdateRequestProcessor {
 
     private final SolrIndexConfig solrIndexConfig;
     private final IndexConfiguration indexConfig;
     private final Configuration saxonConfig;
+    private final SolrQueryRequest req;
     
-    public LuxUpdateProcessor (SolrIndexConfig config, UpdateRequestProcessor next) {
+    public LuxUpdateProcessor (SolrIndexConfig config, SolrQueryRequest req, UpdateRequestProcessor next) {
         super(next);
         solrIndexConfig = config;
         indexConfig = solrIndexConfig.getIndexConfig();
         saxonConfig = solrIndexConfig.getCompiler().getProcessor().getUnderlyingConfiguration();
+        this.req = req;
     }
 
     @Override
-    public void processAdd (AddUpdateCommand cmd) throws IOException {
+    public void processAdd (final AddUpdateCommand cmd) throws IOException {
         SolrInputDocument solrInputDocument = cmd.getSolrInputDocument();
-        Object o = solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.XML_STORE));
-        XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
-        try {
-            if (o != null) {
+        String xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
+
+        // remove and stash the xml field value
+        SolrInputField xmlField = solrInputDocument.removeField(xmlFieldName);
+
+        Document luceneDocument = cmd.getLuceneDocument();
+
+        UpdateDocCommand luxCommand = null;
+        if (xmlField != null) {
+            // restore the xml field value
+            solrInputDocument.put (xmlFieldName, xmlField);
+            XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
+            Object xml = xmlField.getFirstValue();
+            try {
                 String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
                 try {
-                    if (o instanceof String) {
-                        String xml = (String) o;
-                        xmlIndexer.index (new StringReader(xml), uri);
-                    } else if (o instanceof byte[]) {
-                        TinyBinary xml = new TinyBinary ((byte[]) o, Charset.forName("utf-8"));
-                        xmlIndexer.index(xml.getTinyDocument(saxonConfig), uri);
+                    if (xml instanceof String) {
+                        xmlIndexer.index (new StringReader((String) xml), uri);
+                    } else if (xml instanceof byte[]) {
+                        TinyBinary xmlbin = new TinyBinary ((byte[]) xml, Charset.forName("utf-8"));
+                        xmlIndexer.index(xmlbin.getTinyDocument(saxonConfig), uri);
                     }
                 } catch (XMLStreamException e) {
                     LoggerFactory.getLogger(LuxUpdateProcessor.class).error ("Failed to parse " + FieldName.XML_STORE, e);
                 }
-                addDocumentFields (xmlIndexer, solrInputDocument);
+                addDocumentFields (xmlIndexer, solrIndexConfig.getSchema(), luceneDocument);
+                luxCommand = new UpdateDocCommand(req, solrInputDocument, luceneDocument, uri);
+            } finally {
+                solrIndexConfig.returnXmlIndexer(xmlIndexer);
             }
-        } finally {
-            solrIndexConfig.returnXmlIndexer(xmlIndexer);
         }
         if (next != null) {
-            next.processAdd(cmd);
+            next.processAdd(luxCommand == null ? cmd : luxCommand);
         }
     }
     
-    public static void addDocumentFields (XmlIndexer indexer, SolrInputDocument doc) {
+    public static void addDocumentFields (XmlIndexer indexer, IndexSchema indexSchema, Document doc) {
         IndexConfiguration indexConfig = indexer.getConfiguration();
         if (indexConfig.isOption(IndexConfiguration.STORE_TINY_BINARY)) {
             // remove the serialized xml field value -- we will store a TinyBinary instead
@@ -79,17 +100,25 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                 }
             }
             Iterable<?> values = field.getValues(indexer);
+            SchemaField schemaField = indexSchema.getField(fieldName);
             if (values != null) {
                 for (Object value : values) {
-                    doc.addField(fieldName, value);
+                    addField(doc, schemaField, value, 1.0f);
                 }
             } else {
                 for (IndexableField value : field.getFieldValues(indexer)) {
-                    doc.addField(fieldName, value);
+                    addField(doc, schemaField, value, 1.0f);
                 }
             }
         }
     }
+    
+    // from solr..DocumentBuilder
+    private static void addField(Document doc, SchemaField field, Object val, float boost) {
+        for (IndexableField f : field.getType().createFields(field, val, boost)) {
+          if (f != null) doc.add((Field) f); // null fields are not added
+        }
+      }
 
     @Override
     public void processDelete (DeleteUpdateCommand cmd) throws IOException {

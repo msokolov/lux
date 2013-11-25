@@ -157,6 +157,14 @@ public abstract class AbstractExpression implements Visitable {
     }
     
     /**
+     * @return the head of this expression; ie the leftmost path sub-expression, which is just this 
+     * expression (except for PathExpressions).
+     */
+    public AbstractExpression getHead() {
+        return this;
+    }
+    
+    /**
      * @return the tail of this expression; ie everything after the head is removed, which is null 
      * unless this is a PathExpression {@link PathExpression#getTail}.
      */
@@ -194,6 +202,153 @@ public abstract class AbstractExpression implements Visitable {
      * to their sub-expressions, the arguments, and like parentheses to their enclosing expression.
      */
     public abstract int getPrecedence ();
+
+    /**
+     * @param other another expression
+     * @return whether the two expressions are of the same type and share the same local properties
+     */
+    public boolean equivalent (AbstractExpression other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (! (getClass().isAssignableFrom(other.getClass()))) {
+            return false;
+        }
+        return propEquals ((AbstractExpression) other);
+    }
+
+    /**
+     * @param other another expression
+     * @return whether this expression is query-geq (fgreater-than-or-equal) to the other, in the sense
+     * that for all contexts c, exists(other|c) => exists(this|c). In particular, this implementation tests that 
+     * the two expressions are of the same type and have local properties consistent with geq, by calling
+     * propGreaterEqual.
+     */
+    public boolean geq (AbstractExpression other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (! (getClass().isAssignableFrom(other.getClass()))) {
+            return false;
+        }
+        return propGreaterEqual ((AbstractExpression) other);
+    }
+    
+    /**
+    	Traverse downwards, comparing with fromExpr for equivalence until one bottoms out,
+    	ignoring fromExpr (since it has already been checked).
+    	@param fromExpr
+    	@param fieldExpr
+    	@return whether fieldExpr >= queryExpr
+     */
+    public boolean matchDown (AbstractExpression fieldExpr, AbstractExpression fromExpr) {
+    	if (fieldExpr == fromExpr) {
+    		return true;
+    	}
+    	if (! fieldExpr.geq(this)) {
+    		// if fieldExpr does not encompass this at least formally, it is too restrictive
+    		return false;
+		}
+		// all of queryExpr's subs *must* return a value (for a
+		// non-empty result), so a necessary condition for fieldExpr
+		// >= queryExpr is that every sub of fieldExpr match *some*
+		// sub of queryExpr
+		AbstractExpression[] fsubs = fieldExpr.getSubs();
+		if (fsubs == null) {
+			return subs == null || subs.length == 0 || isRestrictive();
+		}
+		AbstractExpression qsubMatched = null;
+		OUTER: for (AbstractExpression fsub : fsubs) {
+			if (fsub == fromExpr) {
+				continue;
+			}
+			for (AbstractExpression sub : subs) {
+				if (sub.matchDown(fsub, null)) {
+					qsubMatched = sub;
+					continue OUTER;
+				}
+			}
+			// no equivalent sub found
+			return false;
+		}
+		if (!isRestrictive()) {
+			// at least one of queryExpr's children must return a value, so
+			// in addition it is necessary that every child of queryExpr be
+			// matched by some child of fieldExpr
+			OUTER: for (AbstractExpression sub : subs) {
+				if (sub == qsubMatched) {
+					continue;
+				}
+				for (AbstractExpression fsub : fsubs) {
+					if (sub.matchDown(fsub, null)) {
+						continue OUTER;
+					}
+				}
+				return false;
+			}
+		}
+		return true;
+	}
+
+    /**
+     * @return a hashcode that is consistent with {@link #equivalent(AbstractExpression)}
+     */
+    int equivHash () {
+        return type.ordinal();
+    }
+    
+    /**
+     * @param oex another expression
+     * @return whether the other expression and this one have all the same local properties
+     */
+    protected boolean propEquals (AbstractExpression oex) {
+        return (oex.getType() == type);
+    }
+    
+    /**
+     * @param oex another expression of the same type as this
+     * @return whether the expressions' properties imply: <code>this ge oex</code>
+     */
+    public boolean propGreaterEqual (AbstractExpression oex) {
+        return propEquals(oex);
+    }
+    
+    public boolean deepEquals (AbstractExpression oex) {
+    	if (! equivalent(oex)) {
+    		return false;
+    	}
+        if (subs == oex.subs) {
+        	return true;
+        }
+        if (subs == null || oex.subs == null) {
+        	return false;
+        }
+        if (subs.length != oex.subs.length) {
+        	return false;
+        }
+        for (int i = 0; i < subs.length; i++) {
+        	if (! (subs[i].deepEquals(oex.subs[i]))) {
+        		return false;
+        	}
+        }
+        return true;
+    }
+
+    /**
+     * An expression is restrictive when any empty sub implies the expression is empty.
+     * In other words, restrictive expressions only return results when all of their 
+     * subs are non-empty.  Eg: and, intersect, predicate, path step.
+     * @return whether this expression is restrictive
+     */
+    public boolean isRestrictive () {
+        return false;
+    }
 
 }
 
