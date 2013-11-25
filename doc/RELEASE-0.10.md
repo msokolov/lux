@@ -14,6 +14,11 @@ int-valued XPath index on `//@counter` is defined, an expression such as
 as something like: `lux:search('counter:{10 TO *}')//section[@counter >
 10]`.
 
+# Changes in Lux release 0.10.6
+
+This release includes a fix for LUX-71, which caused NullPointerExceptions
+while indexing non-xml documents.
+
 # Changes in Lux release 0.10.5
 
 This release introduces full-featured support for HTTP request/response
