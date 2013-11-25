@@ -62,11 +62,11 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
         SolrInputField luxIdField = solrInputDocument.removeField(idFieldName);
         String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
         Document luceneDocument = cmd.getLuceneDocument();
-        // restore the xml field value
-        solrInputDocument.addField(xmlFieldName, xmlField);
-        XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
         UpdateDocCommand luxCommand = null;
         if (xmlField != null) {
+            // restore the xml field value
+            solrInputDocument.put (xmlFieldName, xmlField);
+            XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
             Object xml = xmlField.getFirstValue();
             try {
                 try {

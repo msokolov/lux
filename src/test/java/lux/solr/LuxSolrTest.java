@@ -3,7 +3,6 @@ package lux.solr;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -13,7 +12,6 @@ import java.util.TimeZone;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -255,21 +253,19 @@ public class LuxSolrTest extends BaseSolrTest {
     }
     
     @Test
-    public void testInsertBinary() throws Exception {
+    public void testInsertRandomFields () throws Exception {
         // test inserting a document that doesn't have the Lux XML field
         SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField ("lux_uri", "/binary/1");
-        doc.addField ("text_s", "this is a plain text document");
-        Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
-        docs.add (doc);
-        solr.add (docs);
-        solr.commit();
+        doc.addField ("lux_uri", "/doc/string10");
+        doc.addField ("string_s", "string");
+        doc.addField("number_i", "10");
         try {
-            // what happens if you try to retrieve this document?
-            assertQuery("<binary xmlns=\"http://luxdb.net\"/>", "document", "doc('/binary/1')");
+            solr.add(doc);
+            solr.commit();
+            assertQuery ("<binary xmlns=\"http://luxdb.net\"/>", "document", "doc('/doc/string10')");
         } finally {
             // now clean up
-            solr.deleteById("/binary/1");
+            solr.deleteById("/doc/string10");
             solr.commit();
         }
     }
