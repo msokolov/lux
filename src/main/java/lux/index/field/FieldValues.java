@@ -2,8 +2,6 @@ package lux.index.field;
 
 import java.util.Iterator;
 
-import lux.index.IndexConfiguration;
-
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StoredField;
@@ -17,10 +15,10 @@ public class FieldValues implements Iterable<IndexableField> {
     private final String fieldName;
     private final Iterable<?> values;
     
-    public FieldValues (IndexConfiguration indexConfig, FieldDefinition field, Iterable<?> values) {
+    public FieldValues (FieldDefinition field, Iterable<?> values) {
         this.field = field;
         this.values = values;
-        this.fieldName = indexConfig.getFieldName(field);
+        this.fieldName = field.getName();
     }
 
     @Override

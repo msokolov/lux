@@ -7,12 +7,29 @@ pos: 5
 
 # New Features
 
-One major improvement in this release is optimization of comparisons
-between indexed expressions and suitable constants. For example, if an
-int-valued XPath index on `//@counter` is defined, an expression such as
-`//section[@counter > 10]` will be optimized using the index, and rewritten
-as something like: `lux:search('counter:{10 TO *}')//section[@counter >
-10]`.
+With this release, Lux optimizes comparisons between indexed expressions
+and suitable constants. For example, if an int-valued XPath index on
+`//@counter` is defined, an expression such as `//section[@counter > 10]`
+will be optimized using the index, and rewritten as something like:
+`lux:search('counter:{10 TO *}')//section[@counter > 10]`.
+
+XML text analysis can now be configured using Solr schema.xml.
+
+
+# Changes in Lux release 0.10.7
+
+Analyzers declared in solr schema for type of field named lux_text (or
+ whatever the xml text field is called) are used when indexing and querying
+ xml text field, and element and attribute text fields
+
+Simplified and reorganized index configuration representation of fields and
+field naming: created field roles, eliminated static singleton field
+definitions, tracked field renaming in the field object rather than in a
+map in the configuration object.
+
+lux:field-values() was deprecated (in favor of lux:key) and is now eliminated 
+
+# Changes in Lux release 0.10.6
 
 # Changes in Lux release 0.10.5
 

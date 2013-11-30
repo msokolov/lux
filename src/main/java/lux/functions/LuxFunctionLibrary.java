@@ -36,7 +36,6 @@ public class LuxFunctionLibrary extends IntegratedFunctionLibrary {
         processor.registerExtensionFunction(new Exists());
         processor.registerExtensionFunction(new FieldTerms());
         processor.registerExtensionFunction(new Key());
-        processor.registerExtensionFunction(new FieldValues());
         processor.registerExtensionFunction(new Transform());
         processor.registerExtensionFunction(new Eval());
         processor.registerExtensionFunction(new InsertDocument());

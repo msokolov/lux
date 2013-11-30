@@ -2,6 +2,7 @@ package lux.index.field;
 
 import java.util.Collections;
 
+import lux.index.FieldRole;
 import lux.index.XPathValueMapper;
 import lux.index.XmlIndexer;
 import lux.index.analysis.PathValueTokenStream;
@@ -14,23 +15,16 @@ import org.apache.lucene.util.Version;
 
 public class PathValueField extends FieldDefinition {
     
-    private static final PathValueField instance = new PathValueField();
-    
-    public static PathValueField getInstance() {
-        return instance;
-    }
-    
-    protected PathValueField () {
-        super ("lux_path_value", new WhitespaceAnalyzer(Version.LUCENE_41), Store.NO, Type.TOKENS);
+    public PathValueField () {
+        super (FieldRole.PATH_VALUE, new WhitespaceAnalyzer(Version.LUCENE_41), Store.NO, Type.TOKENS);
     }
     
     @Override
     public Iterable<IndexableField> getFieldValues(XmlIndexer indexer) {
         // replace with a custom Fieldable
         XPathValueMapper mapper = (XPathValueMapper) indexer.getPathMapper();        
-        return new FieldValues (indexer.getConfiguration(), this, Collections.singleton
-                (new TextField(indexer.getConfiguration().getFieldName(this), 
-                        new PathValueTokenStream(mapper.getPathValues()))));
+        return new FieldValues (this, Collections.singleton
+                (new TextField(getName(), new PathValueTokenStream(mapper.getPathValues()))));
     }
 
 }

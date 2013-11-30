@@ -51,7 +51,7 @@ public class RunnerBase {
     
     protected static void setup(int indexOptions, String sourceDirectory) throws Exception {
         dir = new RAMDirectory();
-        IndexConfiguration indexConfig = IndexConfiguration.makeIndexConfiguration(indexOptions);
+        IndexConfiguration indexConfig = new IndexConfiguration(indexOptions);
         XmlIndexer indexer = new XmlIndexer (indexConfig);
         Compiler compiler = new Compiler (indexConfig);
         processor = compiler.getProcessor();

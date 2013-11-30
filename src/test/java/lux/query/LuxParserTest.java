@@ -49,7 +49,7 @@ public class LuxParserTest {
     
     @Before
     public void setup () {
-        indexConfig = IndexConfiguration.DEFAULT;
+        indexConfig = new IndexConfiguration();
         parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
         parser.bindNamespacePrefix("ns", "nsuri");
         xmlQueryParser = new XmlQueryParser("lux_text", new DefaultAnalyzer());
@@ -128,7 +128,7 @@ public class LuxParserTest {
     
     @Test
     public void testParseNamespaceAware () throws Exception {
-        indexConfig = IndexConfiguration.makeIndexConfiguration(IndexConfiguration.NAMESPACE_AWARE);
+        indexConfig = new IndexConfiguration(IndexConfiguration.DEFAULT_OPTIONS | IndexConfiguration.NAMESPACE_AWARE);
         parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
         /*
          * If no namespace mapping is found, throw an error

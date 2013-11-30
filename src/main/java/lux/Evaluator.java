@@ -14,9 +14,10 @@ import javax.xml.transform.stream.StreamSource;
 
 import lux.exception.LuxException;
 import lux.functions.Search;
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
+import lux.index.analysis.DefaultAnalyzer;
 import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxQueryParser;
 import lux.query.parser.XmlQueryParser;
@@ -118,7 +119,7 @@ public class Evaluator {
      * rely on documents stored in Lucene.
      */
     public Evaluator () {
-        this (new Compiler(IndexConfiguration.DEFAULT), null, null);
+        this (new Compiler(new IndexConfiguration()), null, null);
     }
     
     /** Call this method to release the Evaluator from its role as the URI and Collection URI
@@ -417,8 +418,12 @@ public class Evaluator {
     public XmlQueryParser getXmlQueryParser () {
         if (xmlQueryParser == null) {
             IndexConfiguration config = compiler.getIndexConfiguration();
-            FieldDefinition field = config.getField(FieldName.ELEMENT_TEXT);
-            xmlQueryParser = new XmlQueryParser(config.getFieldName(field), field.getAnalyzer());
+            FieldDefinition field = config.getField(FieldRole.XML_TEXT);
+            if (field != null) {
+                xmlQueryParser = new XmlQueryParser(field.getName(), field.getAnalyzer());
+            } else {
+                xmlQueryParser = new XmlQueryParser("", new DefaultAnalyzer());
+            }
         }
         return xmlQueryParser;
     }

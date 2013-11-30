@@ -5,7 +5,6 @@ import java.io.IOException;
 import javax.xml.stream.XMLStreamException;
 
 import lux.exception.LuxException;
-import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import net.sf.saxon.om.NodeInfo;
 
@@ -24,7 +23,7 @@ public class DirectDocWriter implements DocWriter {
     public DirectDocWriter (XmlIndexer indexer, IndexWriter indexWriter) {
         this.indexer = indexer;
         this.indexWriter = indexWriter;
-        uriFieldName = indexer.getConfiguration().getFieldName(IndexConfiguration.URI);
+        uriFieldName = indexer.getConfiguration().getUriFieldName();
     }
     
     @Override

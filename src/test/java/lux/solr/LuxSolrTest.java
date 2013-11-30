@@ -48,9 +48,14 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQueryCount (102, LUX_PATH + ":\"{}\"");
         assertQueryCount (1, LUX_PATH + ":\"{} config luceneMatchVersion\"");
         assertQueryCount (2, XML_TEXT + ":true");
-        assertQueryCount (2, LUX_ELT_TEXT + ":enableLazyFieldLoading\\:true");
-        assertQueryCount (1, LUX_ATT_TEXT + ":id\\:1");
-        assertQueryCount (1, LUX_ATT_TEXT + ":type\\:random");
+        assertXPathSearchCount (2, 2, "xs:string", "schema", "lux:search('<enableLazyFieldLoading:true')/*/name()");
+        // this fails due to lower-casing of the embedded tag
+        // assertQueryCount (2, LUX_ELT_TEXT + ":enableLazyFieldLoading\\:true");
+        assertXPathSearchCount (1, 1, "xs:string", "doc", "lux:search('<@id:1')/*/name()");
+        assertXPathSearchCount (1, 1, "xs:string", "schema", "lux:search('<@type:random')/*/name()");
+        // these fails due to tokenization of the tagged term
+        // assertQueryCount (1, LUX_ATT_TEXT + ":id\\:1");
+        // assertQueryCount (1, LUX_ATT_TEXT + ":type\\:random");
     }
     
     @Test public void testXPathSearch() throws Exception {

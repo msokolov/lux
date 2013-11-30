@@ -39,6 +39,10 @@ public abstract class BaseSolrTest {
     }
     
     protected static void setup(String solrHome) throws Exception {
+        setup (solrHome, "collection1");
+    }
+    
+    protected static void setup(String solrHome, String coreName) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
         File lock = new File (solrHome + "/collection1/data/index/write.lock");
         if (lock.exists()) {
@@ -46,9 +50,8 @@ public abstract class BaseSolrTest {
         }
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
-        String defaultCoreName = coreContainer.getDefaultCoreName();
-        solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
-        solrCore = coreContainer.getCore(defaultCoreName);
+        solr = new EmbeddedSolrServer(coreContainer, coreName);
+        solrCore = coreContainer.getCore(coreName);
         try {
             solr.deleteByQuery("*:*");
             solr.commit();
@@ -143,14 +146,16 @@ public abstract class BaseSolrTest {
             long docMatches = rsp.getResults().getNumFound();
             assertEquals("unexpected number of documents retrieved", docCount, docMatches);
             assertEquals("unexpected result count", count, results.size());
-            assertEquals("unexpected result type", type, results.getName(0));
-            String returnValue = results.getVal(0).toString();
-            if (returnValue.startsWith("<")) {
-                // assume the returned value is an element - hack to avoid real
-                // parsing
-                assertEquals(value, returnValue.substring(1, returnValue.indexOf('>')));
-            } else {
-                assertEquals(value, returnValue);
+            if (count > 0) {
+                assertEquals("unexpected result type", type, results.getName(0));
+                String returnValue = results.getVal(0).toString();
+                if (returnValue.startsWith("<")) {
+                    // assume the returned value is an element - hack to avoid real
+                    // parsing
+                    assertEquals(value, returnValue.substring(1, returnValue.indexOf('>')));
+                } else {
+                    assertEquals(value, returnValue);
+                }
             }
         }
     }

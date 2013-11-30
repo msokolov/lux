@@ -6,7 +6,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.DocWriter;
 import lux.exception.LuxException;
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.xml.tinybin.TinyBinary;
@@ -35,8 +35,8 @@ public class SolrDocWriter implements DocWriter {
         this.core = core;
         this.xqueryComponent = xQueryComponent;
         IndexConfiguration indexConfig = xQueryComponent.getSolrIndexConfig().getIndexConfig();
-        uriFieldName = indexConfig.getFieldName(FieldName.URI);
-        xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
+        uriFieldName = indexConfig.getFieldName(FieldRole.URI);
+        xmlFieldName = indexConfig.getFieldName(FieldRole.XML_STORE);
     }
 
     @Override

@@ -69,7 +69,7 @@ public class CompilerTest {
     public void testInititalizeEXPath () throws Exception {
     	System.setProperty("org.expath.pkg.saxon.repo", "fail");
     	// ensure that Compiler can be created with invalid EXPath repo - just logs an error
-    	new Compiler(IndexConfiguration.DEFAULT);
+    	new Compiler(new IndexConfiguration());
     	System.setProperty("org.expath.pkg.saxon.repo", "");
     }
     

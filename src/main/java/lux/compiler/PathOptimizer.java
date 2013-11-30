@@ -12,7 +12,7 @@ import lux.Compiler;
 import lux.Compiler.SearchStrategy;
 import lux.SearchResultIterator;
 import lux.exception.LuxException;
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
 import lux.query.BooleanPQuery;
@@ -106,8 +106,8 @@ public class PathOptimizer extends ExpressionVisitorBase {
         this.compiler = compiler;
         this.indexConfig = compiler.getIndexConfiguration();
         MATCH_ALL = XPathQuery.getMatchAllQuery(indexConfig);
-        attrQNameField = indexConfig.getFieldName(FieldName.ATT_QNAME);
-        elementQNameField = indexConfig.getFieldName(FieldName.ELT_QNAME);
+        attrQNameField = indexConfig.getFieldName(FieldRole.ATT_QNAME);
+        elementQNameField = indexConfig.getFieldName(FieldRole.ELT_QNAME);
         optimizeForOrderedResults = true;
         log = LoggerFactory.getLogger(PathOptimizer.class);
     }
@@ -754,7 +754,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             if (axis == Axis.Attribute) {
                 nodeName = '@' + nodeName;
             }
-            Term term = new Term(indexConfig.getFieldName(FieldName.PATH), nodeName);
+            Term term = new Term(indexConfig.getFieldName(FieldRole.PATH), nodeName);
             return new SpanTermPQuery(term);
         } else {
             String fieldName = (axis == Axis.Attribute) ? attrQNameField : elementQNameField;
@@ -937,7 +937,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
             // will throw a run-time error if it gets executed
             return null;
         }
-        String fieldName = indexConfig.getFieldName(field);
+        String fieldName = field.getName();
         RangePQuery.Type rangeTermType = fieldType.getRangeTermType();
         ParseableQuery rangeQuery;
         String v = value.getValue().toString();
@@ -1218,17 +1218,17 @@ public class PathOptimizer extends ExpressionVisitorBase {
     }
 
     public static NodeTextQuery makeElementValueQuery(QName qname, String value, IndexConfiguration config) {
-        return new NodeTextQuery(new Term(config.getFieldName(IndexConfiguration.ELEMENT_TEXT), value),
+        return new NodeTextQuery(new Term(config.getElementTextFieldName(), value),
                 qname.getEncodedName());
     }
 
     public static ParseableQuery makeAttributeValueQuery(QName qname, String value, IndexConfiguration config) {
-        return new NodeTextQuery(new Term(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT), value),
+        return new NodeTextQuery(new Term(config.getAttributeTextFieldName(), value),
                 qname.getEncodedName());
     }
 
     public static ParseableQuery makeTextQuery(String value, IndexConfiguration config) {
-        return new NodeTextQuery(new Term(config.getFieldName(IndexConfiguration.XML_TEXT), value));
+        return new NodeTextQuery(new Term(config.getTextFieldName(), value));
     }
 
     @Override
