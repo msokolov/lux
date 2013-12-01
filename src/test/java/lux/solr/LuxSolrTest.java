@@ -132,17 +132,17 @@ public class LuxSolrTest extends BaseSolrTest {
         SolrQuery q = new SolrQuery();
         q.setRequestHandler(coreContainer.getAdminPath());
         q.setParam ("action", "CREATE");
-        q.setParam ("name", "core2");
-        q.setParam ("instanceDir", "core2");
+        q.setParam ("name", "core3");
+        q.setParam ("instanceDir", "core3");
         solr.query(q);
-        SolrServer core2 = new EmbeddedSolrServer(coreContainer, "core2");
-        core2.deleteByQuery("*:*");
-        core2.commit();
-        assertQueryCount (0, "*:*", core2);
+        SolrServer core3 = new EmbeddedSolrServer(coreContainer, "core3");
+        core3.deleteByQuery("*:*");
+        core3.commit();
+        assertQueryCount (0, "*:*", core3);
         // main core still works
         assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())", solr);
         // new core working too
-        assertXPathSearchCount(1, 0, "xs:integer", "0", "count(collection())", core2);
+        assertXPathSearchCount(1, 0, "xs:integer", "0", "count(collection())", core3);
     }
     
     @Test
