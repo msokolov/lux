@@ -25,7 +25,7 @@ public abstract class ParseableQuery {
     
     @Override
     public String toString () {
-        return toQueryString ("", IndexConfiguration.DEFAULT);
+        return toQueryString ("", new IndexConfiguration());
     }
     
     public boolean isSpanCompatible() {

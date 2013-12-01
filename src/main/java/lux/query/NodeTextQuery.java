@@ -79,10 +79,10 @@ public class NodeTextQuery extends ParseableQuery {
         if (StringUtils.isBlank(qName)) {
             buf.append ('<').append(':').append(text);
         }
-        else if (tf.equals(config.getFieldName(IndexConfiguration.ELEMENT_TEXT))) {
+        else if (tf.equals(config.getElementTextFieldName())) {
             buf.append ('<').append(qName).append(':').append(text);
         }
-        else if (tf.equals(config.getFieldName(IndexConfiguration.ATTRIBUTE_TEXT))) {
+        else if (tf.equals(config.getAttributeTextFieldName())) {
             buf.append ("<@").append(qName).append(':').append(text);
         }
         else {

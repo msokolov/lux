@@ -1,6 +1,7 @@
 package lux.index.field;
 
 import lux.exception.LuxException;
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 import lux.query.RangePQuery;
 
@@ -24,11 +25,11 @@ import org.apache.solr.schema.FieldProperties;
  * see {@link lux.index.IndexConfiguration} for a list of current built-in fields.
  */
 public abstract class FieldDefinition {
-    // the default name of the field as it appears in queries, and in the index
-    // the XmlIndexer maintains a list of field names so that these intrinsic names
-    // can be overridden by configuration
-    private final String name;
+
+    private final FieldRole role;
     
+    private String name;
+
     // indicate whether assumptions are being made about the name of this field.
     // Some fields are treated in a special way so that the names of the Lucene fields
     // can be altered by configuration (for example so as to be compatible with an 
@@ -72,13 +73,13 @@ public abstract class FieldDefinition {
     private final Type type;    
     
     // an Analyzer for text fields; if null, the field is not indexed
-    private final Analyzer analyzer;
+    private Analyzer analyzer;
 
     private final Store isStored;
     
     /**
      * Represents a Solr/Lucene field
-     * @param name the name of the field
+     * @param role the role of the field; may be null if the field has no special role.
      * @param analyzer the analyzer associated with the field.  This will
      * be used to analyze string field values, and to analyze queries.  If
      * the field values are not strings (eg if they are a TokenStream), the
@@ -87,8 +88,11 @@ public abstract class FieldDefinition {
      * @param type the type of the field values: STRING, TOKENS, INT.
      * @param renameable whether the field is allowed to be renamed
      */
-    public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type, boolean renameable) {
-        this.name = name;
+    public FieldDefinition (FieldRole role, Analyzer analyzer, Store isStored, Type type, boolean renameable) {
+        this.role = role;
+        if (role != null) {
+            this.name = role.getFieldName();
+        }
         this.analyzer = analyzer;
         this.isStored = isStored;
         this.type = type;
@@ -105,10 +109,20 @@ public abstract class FieldDefinition {
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
      */
-    public FieldDefinition (String name, Analyzer analyzer, Store isStored, Type type) {
-        this (name, analyzer, isStored, type, false);
+    public FieldDefinition (FieldRole role, Analyzer analyzer, Store isStored, Type type) {
+        this (role, analyzer, isStored, type, false);
     }
     
+    /**
+     * constructs a Field without any special role
+     * @param analyzer
+     * @param isStored
+     * @param type
+     */
+    public FieldDefinition(Analyzer analyzer, Store isStored, Type type) {
+        this (null, analyzer, isStored, type);
+    }
+
     /** Wraps the values as Field, which includes the values and the Lucene indexing options.
      * Subclasses must implement getValues() or override this method
      * @param indexer the indexer that holds the field values
@@ -119,7 +133,7 @@ public abstract class FieldDefinition {
         if (values == null) {
             throw new LuxException(getClass().getName() + ".getValues() returned null: did you neglect to implement it?");
         }
-        return new FieldValues (indexer.getConfiguration(), this, values);
+        return new FieldValues (this, values);
     }
 
 
@@ -132,21 +146,15 @@ public abstract class FieldDefinition {
         return null;
     }
     
-    /** Note that field name uniqueness is not enforced by the API, but if two fields with different 
-     * options share the same name, unpredictable behavior will ensue!  This is an historical quirk 
-     * of Lucene, which allows
-     * indexing a field in different ways at different times without enforcing a consistent schema.
-     * @return the unique name of the field, used in queries and when adding values during indexing
-     */
-    public String getDefaultName () {
-        return name;
-    }
-    
     /**
      * @return The type of data stored in the field.
      */
     public Type getType () {
         return type;
+    }
+    
+    public void setAnalyzer (Analyzer analyzer) {
+        this.analyzer = analyzer;
     }
 
     public Analyzer getAnalyzer() {
@@ -195,7 +203,25 @@ public abstract class FieldDefinition {
     public String toString () {
         return name;
     }
+
+    /** @return An immutable identifier for the field used to refer to it in code */
+    public FieldRole getFieldRole() {
+        return role;
+    }
     
+    /** @return The field name as it appears in queries, and in the index.  Defaults to the FieldName.
+    * the XmlIndexer maintains a list of field names so that these intrinsic names
+    * can be overridden by configuration
+    */
+    public String getName () {
+        return name;
+    }
+    
+    /** @see #getName */
+    public void setName(String luceneFieldName) {
+        this.name = luceneFieldName;
+    }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

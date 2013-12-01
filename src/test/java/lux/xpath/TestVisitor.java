@@ -12,7 +12,7 @@ import org.junit.Test;
 public class TestVisitor {
 
     @Test public void testVisit () {
-        PathOptimizer opt = new PathOptimizer (new Compiler(IndexConfiguration.DEFAULT));
+        PathOptimizer opt = new PathOptimizer (new Compiler(new IndexConfiguration()));
         PathExpression expr = new PathExpression (
                 new Root(),
                 new Predicate(

@@ -8,7 +8,7 @@ import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
@@ -127,7 +127,7 @@ public class IndexTest {
 
     private void assertPathQuery(IndexTestSupport indexTestSupport) throws ParseException, IOException {
         SrndQuery q = new QueryParser ().parse2("w(w({},\"ACT\"),\"SCENE\")");
-        Query q2 = q.makeLuceneQueryFieldNoBoost(indexTestSupport.indexer.getConfiguration().getFieldName(FieldName.PATH),  new BasicQueryFactory());
+        Query q2 = q.makeLuceneQueryFieldNoBoost(indexTestSupport.indexer.getConfiguration().getFieldName(FieldRole.PATH),  new BasicQueryFactory());
         DocIdSetIterator iter = indexTestSupport.searcher.search(q2);
         int count = 0;
         while (iter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
@@ -140,10 +140,10 @@ public class IndexTest {
         LuxSearcher searcher = indexTestSupport.searcher;
         XmlIndexer indexer = indexTestSupport.indexer;
         IndexConfiguration config = indexer.getConfiguration();
-        FieldDefinition field = config.getField(FieldName.ELEMENT_TEXT);
-        Query q = new XmlQueryParser(config.getFieldName(field), field.getAnalyzer()).parse
+        FieldDefinition field = config.getField(FieldRole.ELEMENT_TEXT);
+        Query q = new XmlQueryParser(field.getName(), field.getAnalyzer()).parse
                 (new ByteArrayInputStream(("<QNameTextQuery fieldName=\"" +
-                        config.getFieldName(FieldName.ELEMENT_TEXT) + "\" qName=\"" +
+                        config.getFieldName(FieldRole.ELEMENT_TEXT) + "\" qName=\"" +
                 		qName + "\">" + term +
                 				"</QNameTextQuery>").getBytes()));
         DocIdSetIterator iter = searcher.search(q);
@@ -320,7 +320,7 @@ public class IndexTest {
     
     @Test
     public void testXPathIndexNamespace () throws Exception {
-        IndexConfiguration indexConfig = IndexConfiguration.DEFAULT;
+        IndexConfiguration indexConfig = new IndexConfiguration();
         indexConfig.defineNamespaceMapping("", "");
         indexConfig.defineNamespaceMapping("x", "http://lux.net{test}");
         indexConfig.addField(new XPathField("title", "//x:title", new KeywordAnalyzer(), Store.NO, Type.STRING));

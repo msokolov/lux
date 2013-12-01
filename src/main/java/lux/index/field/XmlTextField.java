@@ -3,6 +3,7 @@ package lux.index.field;
 import java.io.IOException;
 import java.util.Collections;
 
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.XmlTextTokenStream;
@@ -18,14 +19,13 @@ import org.apache.lucene.index.IndexableField;
 
 public class XmlTextField extends FieldDefinition {
 
-    private static final XmlTextField instance = new XmlTextField();
-    
-    public static XmlTextField getInstance() {
-        return instance;
+    public XmlTextField () {
+        super (FieldRole.XML_TEXT, new DefaultAnalyzer(), Store.NO, Type.TOKENS, true);
     }
     
-    protected XmlTextField () {
-        super ("lux_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS, true);
+    public XmlTextField (String name, Analyzer analyzer) {
+        super (analyzer, Store.NO, Type.TOKENS);
+        setName(name);
     }
     
     @Override
@@ -33,14 +33,14 @@ public class XmlTextField extends FieldDefinition {
         XdmNode doc = indexer.getXdmNode();
         if (doc != null && doc.getUnderlyingNode() != null) {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
-            String fieldName = indexer.getConfiguration().getFieldName(this);
+            String fieldName = getName();
             Analyzer analyzer = getAnalyzer();
             TokenStream textTokens=null;
             try {
                 textTokens = analyzer.tokenStream(fieldName, new CharSequenceReader(""));
             } catch (IOException e) { }
             XmlTextTokenStream tokens = new XmlTextTokenStream (fieldName, analyzer, textTokens, doc, builder.getOffsets());
-            return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(new TextField(indexer.getConfiguration().getFieldName(this), tokens)));
+            return new FieldValues (this, Collections.singleton(new TextField(fieldName, tokens)));
         }
         return Collections.emptySet();
     }

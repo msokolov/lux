@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.Axis;
@@ -158,7 +158,7 @@ public class IndexTestSupport {
         DirectoryReader reader = DirectoryReader.open(dir);
         Fields fields = MultiFields.getFields(reader); 
         System.out.println ("Printing all terms (except uri)");
-        String uriFieldName = indexer.getConfiguration().getFieldName(FieldName.URI);
+        String uriFieldName = indexer.getConfiguration().getFieldName(FieldRole.URI);
         for (String field : fields) {
             if (field.equals(uriFieldName)) {
                 continue;

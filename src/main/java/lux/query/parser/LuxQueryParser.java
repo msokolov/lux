@@ -1,7 +1,8 @@
 package lux.query.parser;
 
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
+import lux.index.field.FieldDefinition;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
@@ -61,16 +62,17 @@ public class LuxQueryParser extends ExtendableQueryParser {
     }
 
     public static LuxQueryParser makeLuxQueryParser(IndexConfiguration config) {
-        Analyzer elementTextAnalyzer = config.getField(FieldName.ELEMENT_TEXT).getAnalyzer();
+        FieldDefinition elementTextField = config.getField(FieldRole.ELEMENT_TEXT);
+        Analyzer elementTextAnalyzer = elementTextField != null ? elementTextField.getAnalyzer() : config.getFieldAnalyzers().getWrappedAnalyzer(null);
         NodeQueryBuilder queryBuilder = new NodeQueryBuilder(elementTextAnalyzer, config.isOption(IndexConfiguration.NAMESPACE_AWARE));
         NodeParser nodeParser = new NodeParser(
-                config.getFieldName(FieldName.XML_TEXT),
-                config.getFieldName(FieldName.ELEMENT_TEXT),
-                config.getFieldName(FieldName.ATTRIBUTE_TEXT),
+                config.getTextFieldName(),
+                config.getFieldName(FieldRole.ELEMENT_TEXT),
+                config.getFieldName(FieldRole.ATTRIBUTE_TEXT),
                 queryBuilder);
         NodeExtensions ext = new NodeExtensions (nodeParser);
         LuxQueryParser parser = new LuxQueryParser(IndexConfiguration.LUCENE_VERSION, 
-                config.getFieldName(FieldName.XML_TEXT), 
+                config.getFieldName(FieldRole.XML_TEXT), 
                 config.getFieldAnalyzers(), 
                 ext,
                 queryBuilder);

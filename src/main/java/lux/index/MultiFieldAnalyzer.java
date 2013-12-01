@@ -29,7 +29,7 @@ public final class MultiFieldAnalyzer extends AnalyzerWrapper {
     }
     
     @Override
-    protected Analyzer getWrappedAnalyzer(String fieldName)
+    public Analyzer getWrappedAnalyzer(String fieldName)
     {
         if (analyzers.containsKey(fieldName)) {
             return analyzers.get(fieldName);

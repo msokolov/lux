@@ -7,12 +7,6 @@ import lux.xml.tinybin.TinyBinary;
 
 public class TinyBinarySolrField extends TinyBinaryField {
     
-    private static final TinyBinarySolrField instance = new TinyBinarySolrField();
-    
-    public static TinyBinarySolrField getInstance() {
-        return instance;
-    }
-    
     @Override
     public Iterable<?> getValues(XmlIndexer indexer) {
         TinyBinary tinyBinary = makeTinyBinary(indexer);

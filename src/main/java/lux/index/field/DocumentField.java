@@ -2,6 +2,7 @@ package lux.index.field;
 
 import java.util.Collections;
 
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.document.Field.Store;
@@ -12,14 +13,8 @@ import org.apache.lucene.document.Field.Store;
  */
 public class DocumentField extends FieldDefinition {
     
-    private static final DocumentField instance = new DocumentField();
-    
-    public static DocumentField getInstance() {
-        return instance;
-    }
-    
-    protected DocumentField () {
-        super ("lux_xml", null, Store.YES, Type.STRING, true);
+    public DocumentField () {
+        super (FieldRole.XML_STORE, null, Store.YES, Type.STRING, true);
     }
     
     /**

@@ -3,6 +3,7 @@ package lux.index.field;
 import java.nio.charset.Charset;
 import java.util.Collections;
 
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 import lux.xml.tinybin.TinyBinary;
 import net.sf.saxon.tree.tiny.TinyDocumentImpl;
@@ -19,14 +20,8 @@ import org.apache.lucene.document.StoredField;
 public class TinyBinaryField extends FieldDefinition {
 	public static final Charset UTF8 = Charset.forName("utf-8");
 
-    private static final TinyBinaryField instance = new TinyBinaryField();
-    
-    public static TinyBinaryField getInstance() {
-        return instance;
-    }
-    
-    protected TinyBinaryField () {
-        super ("lux_xml", null, Store.YES, Type.BYTES);
+    public TinyBinaryField () {
+        super (FieldRole.XML_STORE, null, Store.YES, Type.BYTES, true);
     }
     
     protected TinyBinary makeTinyBinary (XmlIndexer indexer) {
@@ -37,8 +32,7 @@ public class TinyBinaryField extends FieldDefinition {
     @Override
     public Iterable<?> getValues(XmlIndexer indexer) {
         TinyBinary tinyBinary = makeTinyBinary(indexer);
-        String fieldName = indexer.getConfiguration().getFieldName(this);
-        return Collections.singleton(new StoredField(fieldName, tinyBinary.getBytes(), 0, tinyBinary.length()));
+        return Collections.singleton(new StoredField(getName(), tinyBinary.getBytes(), 0, tinyBinary.length()));
     }
 
 }

@@ -61,8 +61,7 @@ public class TLogTest {
         try {
             cleanDirectory ("solr/collection1/data/tlog");
         } catch (IOException e) {}
-        String defaultCoreName = coreContainer.getDefaultCoreName();
-        SolrServer solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
+        SolrServer solr = new EmbeddedSolrServer(coreContainer, "collection1");
         solr.deleteByQuery("*:*");
         solr.commit();
         
@@ -100,7 +99,7 @@ public class TLogTest {
         // start up again
         initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
-        solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
+        solr = new EmbeddedSolrServer(coreContainer, "collection1");
 
         // retrieve the documents (from the transaction log):
         validateContent (solr);

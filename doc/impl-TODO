@@ -1,4 +1,26 @@
 * features
+** configurable analysis for word indexes
+This is all working now except one big fuckme: tagged text indexes include
+the tag name in the token that gets analyzed *by the raw query parser*; so
+you can't concoct queries like "lux_elt_text:elementname\:word".
+
+configurable analysis chains:
+
+ Analyzers declared in solr schema for type of field named lux_text (or whatever the xml text field is called)
+ are used when indexing and querying xml text field, and element and attribute text fields 
+
+ IndexConfiguration reorganized to make the access to fields, field names and types more sane.  Field definitions
+ are now per-core, not global.
+ 
+ Previously deprecated function lux:field-values was removed (use lux:key).
+
+*** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
+Apply custom analysis chain to each text node, and then wrap in
+QNameFilter.
+*** alternate fields
+with different analysis, different element exclusions, different attribute
+inclusion rules.  For example there should be a field that includes only
+attributes.
 ** distributed search
 *** count()
 *** exists()
@@ -179,14 +201,6 @@ dominate the test speed.
 ** Use Saxon CodeInjector to manipulate the expression tree
 Unfortunately this isn't quite feasible because CodeInjector doesn't get
 called at enough entry points.  It seemed close?
-* word index followthrough
-** provide hooks for custom analyzer in QNameAnalyzer/QNameTokenStream
-Apply custom analysis chain to each text node, and then wrap in
-QNameFilter.
-** alternate fields
-with different analysis, different element exclusions, different attribute
-inclusion rules.  For example there should be a field that includes only
-attributes.
 * testing for correctness
 ** develop an XQTS database query test
 Ignore queries that use the emptydocument as input Run the other queries

@@ -15,7 +15,6 @@ import lux.exception.LuxException;
 import lux.functions.ExtensionFunctions;
 import lux.functions.LuxFunctionLibrary;
 import lux.functions.file.FileExtensions;
-import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.FieldDefinition;
 import lux.index.field.XPathField;
@@ -110,7 +109,7 @@ public class Compiler {
         }
         defaultCollectionURIResolver = config.getCollectionURIResolver();
         registerExtensionFunctions();
-        uriFieldName = indexConfig.getFieldName(FieldName.URI);
+        uriFieldName = indexConfig.getUriFieldName();
         //this.dialect = dialect;
         logger = LoggerFactory.getLogger(getClass());
         fieldLeaves = new HashMap<PropEquiv, ArrayList<AbstractExpression>>();
@@ -345,7 +344,7 @@ public class Compiler {
 				try {
 					xpathExec = xPathCompiler.compile(xpath);
 				} catch (SaxonApiException e) {
-					throw new LuxException("Error compiling index expression " + xpath + " for field " + field.getDefaultName());
+					throw new LuxException("Error compiling index expression " + xpath + " for field " + field.getName());
 				}
 				AbstractExpression xpathExpr = translator.exprFor(xpathExec.getUnderlyingExpression().getInternalExpression());
 				AbstractExpression leaf = xpathExpr.getLastContextStep();

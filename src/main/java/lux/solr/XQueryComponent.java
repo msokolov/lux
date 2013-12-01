@@ -112,6 +112,7 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
     
     @Override
     public void inform(SolrCore core) {
+        // FIXME: this should be a per-core resource, not a singleton, or it should store info per-core internally
         solrIndexConfig = SolrIndexConfig.registerIndexConfiguration(core);
     }
 
