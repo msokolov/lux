@@ -214,7 +214,6 @@ public class SolrIndexConfig implements SolrInfoMBean {
     }
 
     private void registerXmlTextFields() {
-        // Update the XML_TEXT analyzer and set up any copyFields 
         String xmlFieldName = indexConfig.getFieldName(FieldRole.XML_TEXT);
         SchemaField schemaField = schema.getFieldOrNull(xmlFieldName);
         Analyzer xmlAnalyzer = null;
