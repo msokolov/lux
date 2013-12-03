@@ -7,6 +7,10 @@ pos: 4
 
 # New Features
 
+The full array of Lucene analysis tools can now be applied to Lux's XML
+text fields simply by configuring the fields in the Solr schema (or in the
+Java API by supplying a Lucene Analyzer to a Lux FieldDefinition).
+
 SolrCloud support!  Lux now handles distributed, sharded indexes by using
 Solr's distributed query and update functionality.  The short story is that
 everything works when you have your documents spread across multiple
@@ -24,7 +28,20 @@ ignored, and its value was always treated as a string.  Now we recognize
 the association and use Solr's conversion rules to index the
 appropriately-typed value.  Thanks to Mark Lawson for pointing this out.
 
-# Other Changes in Lux release 0.11.2
+# Changes in release 0.11.3
+
+Analyzers declared in solr schema for type of field named lux_text (or
+whatever the xml text field is called) are used when indexing and querying
+xml text field, and element and attribute text fields.
+
+We've simplified and reorganized the index configuration representation of
+fields and field naming: created field roles, eliminated static singleton
+field definitions, tracked field renaming in the field object rather than
+in a map in the configuration object.
+
+lux:field-values() was deprecated (in favor of lux:key) and is now eliminated 
+
+# Other Changes in release 0.11.2
 
 Fixed a bug (introduced w/0.11.0) that caused exceptions in the URI
 resolver when calling doc().

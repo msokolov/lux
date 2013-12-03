@@ -17,22 +17,12 @@ int-valued XPath index on `//@counter` is defined, an expression such as
 as something like: `lux:search('counter:{10 TO *}')//section[@counter >
 10]`.
 
-The full array of Lucene analysis tools can now be applied to Lux's XML
-text fields simply by configuring the fields in the Solr schema (or in the
-Java API by supplying a Lucene Analyzer to a Lux FieldDefinition).
+Configurable analysis; you can now specify which text analyzers to use with
+xml fields.
 
 # Changes in Lux release 0.10.7
 
-Analyzers declared in solr schema for type of field named lux_text (or
-whatever the xml text field is called) are used when indexing and querying
-xml text field, and element and attribute text fields.
-
-We've simplified and reorganized the index configuration representation of
-fields and field naming: created field roles, eliminated static singleton
-field definitions, tracked field renaming in the field object rather than
-in a map in the configuration object.
-
-lux:field-values() was deprecated (in favor of lux:key) and is now eliminated 
+Configurable analysis; see [0.11.3 release notes](RELEASE-0.11.md)
 
 # Changes in Lux release 0.10.6
 

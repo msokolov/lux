@@ -35,7 +35,9 @@ application that will manage its own local index using Lucene (not Solr).
 
 * [Lux 0.11.2 library (jar) only](dist/lux-0.11.2.jar)
 
-We also maintain a folder of older artifacts:
+We also maintain a folder of older artifacts.  The 0.10 series is being
+actively maintained in order to support users of Solr 4.2.1.  The main
+branch (currently 0.11) will eventually track the latest Solr releases.
 
 * [older artifacts](dist/?C=N;O=D)
 
