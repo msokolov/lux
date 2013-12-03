@@ -53,18 +53,18 @@ public class IndexConfiguration {
      * documents are stored as serialized XML. */
     public final static int STORE_TINY_BINARY =    0x00000010;
     
-    /** enables the {@link #ELT_QNAME} and {@link #ATT_QNAME} fields, causing element and attribute 
+    /** enables the element and attribute QName fields, causing element and attribute 
      * QNames to be indexed.  If paths are indexed, this isn't really needed. */
     public final static int INDEX_QNAMES =      0x00000020;
     
-    /** enables the {@link #PATH} field, causing element and attribute QName paths to be indexed. */
+    /** enables the path field, causing element and attribute QName paths to be indexed. */
     public final static int INDEX_PATHS =       0x00000040;
     
-    /** enables the {@link #XML_TEXT}, {@link #ELEMENT_TEXT}, and {@link #ATTRIBUTE_TEXT} fields,
-     * causing element and attribute text to be indexed. */
+    /** enables the xml text, element text, and attribute text fields,
+     * causing the text content of xml documents to be indexed. */
     public final static int INDEX_FULLTEXT =    0x00000080;
     
-    /** enables the {@link #PATH_VALUE} field (if INDEX_PATHS is set), and the {@link #QNAME_VALUE} field (if
+    /** enables the path value field (if INDEX_PATHS is set), and/or the QName value field (if
      * INDEX_QNAMES is set), causing values to be indexed.  This is an experimental feature that is not
      * fully supported.
      */

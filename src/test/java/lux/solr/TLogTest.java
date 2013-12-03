@@ -17,7 +17,6 @@ import net.sf.saxon.tree.tiny.TinyDocumentImpl;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -57,13 +56,13 @@ public class TLogTest extends BaseSolrTest {
         BaseSolrTest.addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs);
         solr.add(docs);
         
-        QueryResponse response = search ("lux_uri:src/test/resources/conf/schema.xml", solr);
+        QueryResponse response = search ("lux_uri:src/test/resources/conf/schema.xml");
         assertEquals (0, response.getResults().getNumFound());
 
         // soft commit -- note must waitSearcher in order to see commit
         // we want it in the tlog, but not saved out to the index yet
         solr.commit(true, true, true);
-        response = search ("lux_uri:src/test/resources/conf/schema.xml", solr);
+        response = search ("lux_uri:src/test/resources/conf/schema.xml");
         assertEquals (1, response.getResults().getNumFound());
         assertEquals ("src/test/resources/conf/schema.xml", response.getResults().get(0).get("lux_uri"));
         List<?> xml = (List<?>) response.getResults().get(0).get("lux_xml");
@@ -96,11 +95,11 @@ public class TLogTest extends BaseSolrTest {
         solr = new EmbeddedSolrServer(coreContainer, "collection1");
 
         // retrieve the documents (from the replayed transaction log):
-        validateContent (solr);
+        validateContent ();
         
         // commit
         solr.commit();
-        validateContent (solr);
+        validateContent ();
         
     }
     
@@ -118,8 +117,8 @@ public class TLogTest extends BaseSolrTest {
         FileUtils.copyDirectory(new File(srcDir), new File(destDir));
     }
 
-    private void validateContent (SolrServer solr) throws SolrServerException {
-        QueryResponse response = search ("*:*", solr);
+    private void validateContent () throws SolrServerException {
+        QueryResponse response = search ("*:*");
         assertEquals (2, response.getResults().getNumFound());
         assertEquals ("src/test/resources/conf/schema.xml", response.getResults().get(0).get("lux_uri"));
         List<?> xml = (List<?>) response.getResults().get(0).get("lux_xml");
@@ -130,7 +129,7 @@ public class TLogTest extends BaseSolrTest {
         assertEquals (new XdmNode(schema).toString(), new XdmNode(result).toString());
     }
     
-    private QueryResponse search (String q, SolrServer solr) throws SolrServerException {
+    private QueryResponse search (String q) throws SolrServerException {
         SolrQuery query = new SolrQuery();
         query.setQuery (q);
         query.addField("lux_uri");
