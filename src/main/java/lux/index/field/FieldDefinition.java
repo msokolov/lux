@@ -108,12 +108,11 @@ public abstract class FieldDefinition {
     }
     
     /**
-     * construct an non-renameable field
-     * @param name the name of the field
+     * construct a field definition fulfilling a specific role known to the indexer and optimizer
+     * 
+     * @param role the role of the field
      * @param analyzer the analyzer associated with the field.  This will
-     * be used to analyze string field values, and to analyze queries.  If
-     * the field values are not strings (eg if they are a TokenStream), the
-     * analyzer is used only for queries.
+     * be used to analyze string field values, and to analyze queries.
      * @param isStored whether the field values are to be stored
      * @param type the type of the field values: STRING, TOKENS, INT.
      */
@@ -122,7 +121,7 @@ public abstract class FieldDefinition {
     }
     
     /**
-     * constructs a Field without any special role
+     * creates a field definition without any special role
      * @param analyzer
      * @param isStored
      * @param type
@@ -227,7 +226,8 @@ public abstract class FieldDefinition {
         return name;
     }
     
-    /** @see #getName */
+    /** @param luceneFieldName the name of the Lucene field to associate with this definition
+     * @see #getName */
     public void setName(String luceneFieldName) {
         this.name = luceneFieldName;
     }
