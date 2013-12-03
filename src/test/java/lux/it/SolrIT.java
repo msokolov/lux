@@ -44,10 +44,10 @@ import com.meterware.httpunit.WebResponse;
  */
 public class SolrIT {
 
-    private final String TEST_SERVER_PATH = "http://localhost:8080/testapp";
+    private final String TEST_SERVER_PATH = "http://localhost:8080/collection1/testapp";
     private final String APP_SERVER_PATH = "http://localhost:8080/collection1/testapp";
-    private final String XQUERY_PATH = "http://localhost:8080/xquery";
-    private final String LUX_PATH = "http://localhost:8080/lux/";
+    private final String XQUERY_PATH = "http://localhost:8080/collection1/xquery";
+    private final String LUX_PATH = "http://localhost:8080/collection1/lux/";
     private static WebClient httpclient;
     private static Evaluator eval;
     

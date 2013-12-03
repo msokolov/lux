@@ -7,7 +7,6 @@ import java.util.Map;
 import javax.xml.transform.stream.StreamSource;
 
 import lux.exception.LuxException;
-import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.field.TinyBinaryField;
 import lux.xml.tinybin.TinyBinary;
@@ -57,8 +56,8 @@ public class CachingDocReader {
     public CachingDocReader(DocumentBuilder builder, Configuration config, IndexConfiguration indexConfig) {
         this.builder = builder;
         this.config = config;
-        this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
-        this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
+        this.xmlFieldName = indexConfig.getXmlFieldName();
+        this.uriFieldName = indexConfig.getUriFieldName();
     }
 
     /**

@@ -17,6 +17,11 @@ public class CloudTest extends BaseDistributedSearchTestCase {
     }
     
     @Override
+    public String getSolrHome () {
+        return "zk-solr";
+    }
+    
+    @Override
     public void doTest() throws Exception {
         del("*:*");
         

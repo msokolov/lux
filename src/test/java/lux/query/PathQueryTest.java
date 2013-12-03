@@ -13,7 +13,7 @@ public class PathQueryTest extends QNameQueryTest {
 
     @Override
     public XmlIndexer getIndexer() {
-        return new XmlIndexer(IndexConfiguration.INDEX_PATHS | IndexConfiguration.INDEX_FULLTEXT);
+        return new XmlIndexer(IndexConfiguration.INDEX_PATHS | IndexConfiguration.INDEX_FULLTEXT | IndexConfiguration.INDEX_QNAMES);
     }
 
 }

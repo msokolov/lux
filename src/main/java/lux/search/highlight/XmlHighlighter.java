@@ -8,7 +8,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import lux.exception.LuxException;
-import lux.index.FieldName;
 import lux.index.IndexConfiguration;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.XmlTextTokenStream;
@@ -54,7 +53,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
     
     public XmlHighlighter(Processor processor, IndexConfiguration indexConfig, HighlightFormatter highlighter) {
         super(processor);
-        textFieldName = indexConfig.getFieldName(FieldName.XML_TEXT);
+        textFieldName = indexConfig.getTextFieldName();
         analyzer = indexConfig.getFieldAnalyzers();
         this.highlighter = highlighter;
         textReader = new XmlStreamTextReader();

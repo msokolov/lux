@@ -3,6 +3,7 @@ package lux.index.field;
 import java.util.Collections;
 import java.util.Set;
 
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.document.Field.Store;
@@ -17,14 +18,8 @@ import org.apache.lucene.document.LongField;
  */
 public class IDField extends FieldDefinition {
     
-    private static final IDField instance = new IDField();
-    
-    public static IDField getInstance() {
-        return instance;
-    }
-    
-    protected IDField () {
-        super ("lux_docid", null, Store.YES, Type.LONG, false);
+    public IDField () {
+        super (FieldRole.ID, null, Store.YES, Type.LONG, false);
     }
     
     /**

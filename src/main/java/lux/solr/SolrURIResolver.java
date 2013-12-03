@@ -9,9 +9,8 @@ import lux.CachingDocReader;
 import lux.LuxURIResolver;
 import lux.exception.LuxException;
 import lux.exception.NotFoundException;
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
-import lux.index.field.IDField;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -35,11 +34,11 @@ public class SolrURIResolver extends LuxURIResolver {
     
     SolrURIResolver(XQueryComponent xqueryComponent, URIResolver systemURIResolver) {
         super (systemURIResolver, null,  
-                xqueryComponent.getSolrIndexConfig().getIndexConfig().getFieldName(FieldName.URI));
+                xqueryComponent.getSolrIndexConfig().getIndexConfig().getFieldName(FieldRole.URI));
         this.xqueryComponent = xqueryComponent;
         IndexConfiguration indexConfig = xqueryComponent.getSolrIndexConfig().getIndexConfig();
-        this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
-        this.idFieldName = indexConfig.getFieldName(IDField.getInstance());
+        this.xmlFieldName = indexConfig.getFieldName(FieldRole.XML_STORE);
+        this.idFieldName = indexConfig.getFieldName(FieldRole.ID);
     }
 
     @Override

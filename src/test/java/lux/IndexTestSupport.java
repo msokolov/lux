@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 import lux.search.LuxSearcher;
 import net.sf.saxon.s9api.SaxonApiException;
@@ -108,7 +108,7 @@ public class IndexTestSupport extends IndexTestSupportBase {
         DirectoryReader reader = DirectoryReader.open(dir);
         Fields fields = MultiFields.getFields(reader); 
         System.out.println ("Printing all terms (except uri)");
-        String uriFieldName = indexer.getConfiguration().getFieldName(FieldName.URI);
+        String uriFieldName = indexer.getConfiguration().getFieldName(FieldRole.URI);
         for (String field : fields) {
             if (field.equals(uriFieldName)) {
                 continue;

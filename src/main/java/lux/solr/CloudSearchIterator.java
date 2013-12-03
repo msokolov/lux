@@ -4,9 +4,8 @@ import lux.Evaluator;
 import lux.SearchIteratorBase;
 import lux.exception.LuxException;
 import lux.functions.SearchBase.QueryParser;
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
-import lux.index.field.IDField;
 import net.sf.saxon.om.DocumentInfo;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
@@ -61,9 +60,9 @@ public class CloudSearchIterator extends SearchIteratorBase {
         this.queryParser = queryParser;
         this.query = query;
         IndexConfiguration indexConfig = eval.getCompiler().getIndexConfiguration();
-        this.xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
-        this.uriFieldName = indexConfig.getFieldName(FieldName.URI);
-        this.idFieldName = indexConfig.getFieldName(IDField.getInstance());
+        this.xmlFieldName = indexConfig.getFieldName(FieldRole.XML_STORE);
+        this.uriFieldName = indexConfig.getFieldName(FieldRole.URI);
+        this.idFieldName = indexConfig.getFieldName(FieldRole.ID);
     }
 
     @Override

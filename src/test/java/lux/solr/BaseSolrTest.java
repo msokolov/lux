@@ -41,6 +41,10 @@ public abstract class BaseSolrTest {
     }
     
     protected static void setup(String solrHome) throws Exception {
+        setup (solrHome, "collection1");
+    }
+    
+    protected static void setup(String solrHome, String coreName) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
         File f = new File("solr/collection1/data/tlog");
         if (f.exists()) {
@@ -52,9 +56,8 @@ public abstract class BaseSolrTest {
         }
         coreContainer = new CoreContainer (solrHome);
         coreContainer.load();
-        String defaultCoreName = coreContainer.getDefaultCoreName();
-        solr = new EmbeddedSolrServer(coreContainer, defaultCoreName);
-        solrCore = coreContainer.getCore(defaultCoreName);
+        solr = new EmbeddedSolrServer(coreContainer, coreName);
+        solrCore = coreContainer.getCore(coreName);
         try {
             solr.deleteByQuery("*:*");
             solr.commit();
@@ -166,14 +169,16 @@ public abstract class BaseSolrTest {
             long docMatches = rsp.getResults().getNumFound();
             assertEquals("unexpected number of documents retrieved", docCount, docMatches);
             assertEquals("unexpected result count", count, results.size());
-            assertEquals("unexpected result type", type, results.getName(0));
-            String returnValue = results.getVal(0).toString();
-            if (returnValue.startsWith("<")) {
-                // assume the returned value is an element - hack to avoid real
-                // parsing
-                assertEquals(value, returnValue.substring(1, returnValue.indexOf('>')));
-            } else {
-                assertEquals(value, returnValue);
+            if (count > 0) {
+                assertEquals("unexpected result type", type, results.getName(0));
+                String returnValue = results.getVal(0).toString();
+                if (returnValue.startsWith("<")) {
+                    // assume the returned value is an element - hack to avoid real
+                    // parsing
+                    assertEquals(value, returnValue.substring(1, returnValue.indexOf('>')));
+                } else {
+                    assertEquals(value, returnValue);
+                }
             }
         }
     }
@@ -188,9 +193,15 @@ public abstract class BaseSolrTest {
     }
     
     static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
-        SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField (URI, uri);
-        doc.addField(LUX_XML, text);
-        docs.add(doc);
+        // add doc using default field names
+        addSolrDoc (uri, text, docs, URI, LUX_XML);
     }
+
+    static void addSolrDoc(String uri, String text, Collection<SolrInputDocument> docs, String uriFieldName, String xmlFieldName) throws FileNotFoundException, IOException {
+        SolrInputDocument doc = new SolrInputDocument(); 
+        doc.addField (uriFieldName, uri);
+        doc.addField (xmlFieldName, text);
+        docs.add (doc);
+    }
+
 }

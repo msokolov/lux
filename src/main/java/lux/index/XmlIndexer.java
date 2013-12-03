@@ -428,7 +428,7 @@ public class XmlIndexer {
     }
 
     private void addLuceneDocument(IndexWriter indexWriter) throws CorruptIndexException, IOException {
-        indexWriter.deleteDocuments(new Term(configuration.getFieldName(URI), uri));
+        indexWriter.deleteDocuments(new Term(configuration.getUriFieldName(), uri));
         indexWriter.addDocument(createLuceneDocument());
     }
 

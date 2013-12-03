@@ -3,6 +3,7 @@ package lux.index.field;
 import java.io.IOException;
 import java.util.Collections;
 
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
@@ -23,16 +24,10 @@ import org.apache.lucene.index.IndexableField;
  */
 public class ElementTextField extends FieldDefinition {
     
-    private static final ElementTextField instance = new ElementTextField();
-        
-    public static ElementTextField getInstance() {
-        return instance;
-    }
-    
-    protected ElementTextField () {
+    public ElementTextField () {
         // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
         // element/attribute text tokens are generated)
-        super ("lux_elt_text", new DefaultAnalyzer(), Store.NO, Type.TOKENS);
+        super (FieldRole.ELEMENT_TEXT, new DefaultAnalyzer(), Store.NO, Type.TOKENS);
     }
     
     @Override
@@ -40,17 +35,15 @@ public class ElementTextField extends FieldDefinition {
         XdmNode doc = indexer.getXdmNode();
         if (doc != null && doc.getUnderlyingNode() != null) {
             SaxonDocBuilder builder = indexer.getSaxonDocBuilder();
-            String fieldName = indexer.getConfiguration().getFieldName(this);
             Analyzer analyzer = getAnalyzer();
             TokenStream textTokens=null;
             try {
-                textTokens = analyzer.tokenStream(fieldName, new CharSequenceReader(""));
+                textTokens = analyzer.tokenStream(getName(), new CharSequenceReader(""));
             } catch (IOException e) { }
  
-            ElementTokenStream tokens = new ElementTokenStream (fieldName, analyzer, textTokens, doc, builder.getOffsets());
+            ElementTokenStream tokens = new ElementTokenStream (getName(), analyzer, textTokens, doc, builder.getOffsets());
             ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
-            return new FieldValues (indexer.getConfiguration(), this, Collections.singleton(
-                        new TextField(indexer.getConfiguration().getFieldName(this), tokens)));
+            return new FieldValues (this, Collections.singleton(new TextField(getName(), tokens)));
         }
         return Collections.emptySet();
     }

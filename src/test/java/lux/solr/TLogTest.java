@@ -23,10 +23,9 @@ import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.core.CoreContainer;
-import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Test;
 
 public class TLogTest extends BaseSolrTest {
     
@@ -108,11 +107,13 @@ public class TLogTest extends BaseSolrTest {
     private void removeDirectory(String directory) throws IOException {
         FileUtils.deleteDirectory(new File(directory));
     }
-
+    
+    /*
     private void cleanDirectory(String directory) throws IOException {
         FileUtils.cleanDirectory(new File(directory));
     }
-
+     */
+    
     private void copyDirectory(String srcDir, String destDir) throws IOException {
         FileUtils.copyDirectory(new File(srcDir), new File(destDir));
     }

@@ -21,8 +21,8 @@ import com.meterware.httpunit.WebResponse;
  */
 public class SolrRestIT {
     
-    private final String SOLR_SERVER_PATH = "http://localhost:8080";
-    private final String XQUERY_PATH = "http://localhost:8080/xquery";
+    private final String SOLR_SERVER_PATH = "http://localhost:8080/collection1";
+    private final String XQUERY_PATH = "http://localhost:8080/collection1/xquery";
     private static WebClient httpclient;
 
     @BeforeClass

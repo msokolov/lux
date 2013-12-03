@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import lux.index.FieldName;
+import lux.index.FieldRole;
 
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -67,11 +67,13 @@ public class SolrMultiCoreTest extends BaseSolrTest {
         SolrIndexConfig config1 = (SolrIndexConfig) coreContainer.getCore("core1").getInfoRegistry().get(SolrIndexConfig.class.getName());
     
         assertEquals ("lux_uri", config1.getCompiler().getUriFieldName());
-        assertEquals ("lux_xml", config1.getIndexConfig().getFieldName(FieldName.XML_STORE));
+        assertEquals ("lux_xml", config1.getIndexConfig().getFieldName(FieldRole.XML_STORE));
 
         SolrIndexConfig config2 = (SolrIndexConfig) coreContainer.getCore("core2").getInfoRegistry().get(SolrIndexConfig.class.getName());
+        assertEquals ("uri", config2.getIndexConfig().getUriFieldName());
+        assertEquals ("xml", config2.getIndexConfig().getXmlFieldName());
+        assertEquals ("xml", config2.getIndexConfig().getFieldName(FieldRole.XML_STORE));
         assertEquals ("uri", config2.getCompiler().getUriFieldName());
-        assertEquals ("xml", config2.getIndexConfig().getFieldName(FieldName.XML_STORE));
     }
 
     static void addSolrDocAltFields(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {

@@ -35,7 +35,7 @@
        that you fully re-index after changing this setting as it can
        affect both how text is indexed and queried.
   -->
-  <luceneMatchVersion>LUCENE_41</luceneMatchVersion>
+  <luceneMatchVersion>LUCENE_42</luceneMatchVersion>
 
   <!-- lib directives can be used to instruct Solr to load an Jars identified
        and use them to resolve any "plugins" specified in your solrconfig.xml or
@@ -299,7 +299,7 @@
          have some sort of hard autoCommit to limit the log size.
       -->
      <autoCommit> 
-       <maxTime>15000</maxTime> 
+       <maxTime>150000</maxTime> 
        <openSearcher>false</openSearcher> 
      </autoCommit>
 
@@ -308,11 +308,9 @@
          but does not ensure that data is synced to disk.  This is
          faster and more near-realtime friendly than a hard commit.
       -->
-     <!--
        <autoSoftCommit> 
          <maxTime>1000</maxTime> 
        </autoSoftCommit>
-      -->
 
     <!-- Update Related Event Listeners
          
@@ -783,7 +781,6 @@
       -->
   </requestHandler>
 
-
   <!-- A request handler that returns indented JSON by default -->
   <requestHandler name="/query" class="solr.SearchHandler">
      <lst name="defaults">
@@ -829,7 +826,6 @@
       <str name="update.chain">lux-update-chain</str>
     </lst>                  
   </requestHandler>
-
 
   <!-- Solr Cell Update Request Handler
 
@@ -917,6 +913,7 @@
     -->
   <requestHandler name="/admin/" 
                   class="solr.admin.AdminHandlers" />
+
   <!-- This single handler is equivalent to the following... -->
   <!--
      <requestHandler name="/admin/luke"       class="solr.admin.LukeRequestHandler" />
@@ -1543,9 +1540,7 @@
        by SearchHandler) or in LocalParams
     -->
     <!-- example of registering a query parser -->
-  <!--
-     <queryParser name="myparser" class="com.mycompany.MyQParserPlugin"/>
-    -->
+     <queryParser name="xml" class="lux.solr.XmlQParserPlugin"/>
   
   <!-- Function Parsers
 
@@ -1593,30 +1588,44 @@
     <!--  Lux update processor
         Indexes the given named field as an XML document. Enables index-assisted XQuery/XPath evaluation using Lux.
      --> 
-    <updateRequestProcessorChain name="lux-update-chain">
-        <lst name="namespaces">
-            <str name="wp">http://www.mediawiki.org/xml/export-0.8/</str>
-        </lst>
-        <lst name="fields">
-          <!--  define additional fields using XPath-->
-          <str name="title">
-            /descendant::title[1],
-            /descendant::wp:title[1],
-            /SPEECH/LINE[1]
-          </str>
-          <str name="doctype_s">local-name(/*)</str>
-        </lst>
-        <lst name="fieldAliases">
-          <str name="xmlFieldName">xml</str>
-          <str name="uriFieldName">uri</str>
-        </lst>
-        <str name="strip-namespaces">no</str>
-       <processor class="solr.DistributedUpdateProcessorFactory" />
-       <!-- must come *after* the DistributingUpdateProcessor for transaction log replay to work -->
-       <processor class="lux.solr.LuxUpdateProcessorFactory" />
-       <processor class="solr.LogUpdateProcessorFactory" />
-       <processor class="solr.RunUpdateProcessorFactory" />
-     </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="lux-update-chain" default="true">
+      <lst name="namespaces">
+        <str name="wp">http://www.mediawiki.org/xml/export-0.8/</str>
+      </lst>
+      <lst name="fields">
+        <!--  define additional fields using XPath-->
+        <str name="title">
+          /descendant::title[1],
+          /descendant::wp:title[1],
+          /SPEECH/LINE[1],
+          /*/TITLE
+        </str>
+        <str name="doctype_s">local-name(/*)</str>
+        
+        <!--  a DateField -->
+        <str name="modified_dt">/*/@modified</str>
+        
+        <!--  a TrieDateField -->
+        <str name="modified_tdt">/*/@modified</str>
+        
+        <!--  a LatLon field -->
+        <str name="location_p">/*/@location</str>
+        
+      </lst>
+      <lst name="fieldAliases">
+        <str name="xmlFieldName">lux_xml</str>
+        <str name="uriFieldName">lux_uri</str>
+      </lst>
+      <str name="strip-namespaces">no</str>
+      <str name="xml-format">tiny</str>
+      <!-- must come *before* the DistributingUpdateProcessor for lux_docid generation to work -->
+      <processor class="lux.solr.CloudIdProcessorFactory" />
+      <processor class="org.apache.solr.update.processor.DistributedUpdateProcessorFactory" />
+      <!-- must come *after* the DistributingUpdateProcessor for transaction log replay to work -->
+      <processor class="lux.solr.LuxUpdateProcessorFactory" />
+      <processor class="solr.LogUpdateProcessorFactory" />
+      <processor class="solr.RunUpdateProcessorFactory" />
+    </updateRequestProcessorChain>
       
 
   <!-- This component, handler and response writer together provide an
@@ -1649,11 +1658,27 @@
       <str name="lux.contentType">text/html;charset=UTF-8</str>
       <str name="wt">lux</str>
     </lst>
+    <lst name="invariants">
+      <str name="lux.baseUri">resource:</str>
+    </lst>
     <arr name="components">
       <str>lux-app-server</str>
       <str>stats</str>
       <str>debug</str>
       <!-- highlight? facet? -->
+    </arr>
+  </requestHandler>
+
+  <requestHandler name="/testapp" class="solr.SearchHandler" id="testapp">
+    <lst name="defaults">
+      <str name="lux.contentType">text/html;charset=UTF-8</str>
+      <str name="wt">lux</str>
+    </lst>
+    <lst name="invariants">
+      <str name="lux.baseUri">${user.dir}/src/test/resources</str>
+    </lst>
+    <arr name="components">
+      <str>lux-app-server</str>
     </arr>
   </requestHandler>
   

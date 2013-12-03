@@ -88,43 +88,40 @@ public class IndexConfiguration {
     public final static int DEFAULT_OPTIONS = STORE_DOCUMENT | INDEX_QNAMES | INDEX_PATHS | INDEX_FULLTEXT | NAMESPACE_AWARE;
 
     /** unique identifier field that identifies a document */
-    public static final FieldDefinition URI = URIField.getInstance();
+    public final FieldDefinition URI = new URIField();
     
     /** field that stores xml documents */
-    private static final FieldDefinition XML_STORE = DocumentField.getInstance();
+    private final FieldDefinition XML_STORE = new DocumentField();
 
     /** field that stores xml documents */
-    private static final FieldDefinition TINY_BINARY_STORE = TinyBinaryField.getInstance();
+    private final FieldDefinition TINY_BINARY_STORE = new TinyBinaryField();
 
     /** element QName field */    
-    public static final FieldDefinition ELT_QNAME = ElementQNameField.getInstance();
+    private final FieldDefinition ELT_QNAME = new ElementQNameField();
 
     /** attribute QName field */    
-    public static final FieldDefinition ATT_QNAME = AttributeQNameField.getInstance();
+    private final FieldDefinition ATT_QNAME = new AttributeQNameField();
     
     /** path field */
-    public static final FieldDefinition PATH = PathField.getInstance();
+    private final FieldDefinition PATH = new PathField();
 
     /** element text field indexes all the text along with element QNames. */
-    public static final FieldDefinition ELEMENT_TEXT = ElementTextField.getInstance();
+    private final FieldDefinition ELEMENT_TEXT = new ElementTextField();
 
     /** attribute text field indexes all the text along with attribute QNames. */
-    public static final FieldDefinition ATTRIBUTE_TEXT = AttributeTextField.getInstance();
+    private final FieldDefinition ATTRIBUTE_TEXT = new AttributeTextField();
 
     /** full text field that indexes all the text in a document (not including attribute values). */
-    public static final FieldDefinition XML_TEXT = XmlTextField.getInstance();
+    private final FieldDefinition XML_TEXT = new XmlTextField();
     
     // not fully supported?
-    public static final FieldDefinition PATH_VALUE = PathValueField.getInstance();
-    public static final FieldDefinition QNAME_VALUE = QNameValueField.getInstance();
+    private final FieldDefinition PATH_VALUE = new PathValueField();
+    private final FieldDefinition QNAME_VALUE = new QNameValueField();
 
-    /** The default configuration instance */
-    public static final IndexConfiguration DEFAULT = new IndexConfiguration();
-    
     private long options;
     
-    private final HashMap<String, FieldDefinition> fields;
-    private final HashMap<FieldDefinition, String> fieldNames;
+    private final HashMap<FieldRole, FieldDefinition> fieldsByRole; // maintains which field fulfills a given role
+    private final HashMap<String, FieldDefinition> fieldsByName; // map of fields by their lucene field name
     private MultiFieldAnalyzer fieldAnalyzers;
     private final HashMap<String,String> namespaceMap;
 
@@ -133,23 +130,10 @@ public class IndexConfiguration {
         return fieldAnalyzers;
     }
     
-    /** 
-     * @param options
-     * @return a new IndexCOnfiguration with the given options, unless the options are the default options,
-     * in which case {@link #DEFAULT} is returned.
-     */
-    public static IndexConfiguration makeIndexConfiguration (long options) {
-        long opt = options | NAMESPACE_AWARE;
-        if (opt == DEFAULT_OPTIONS) {
-            return DEFAULT;
-        }
-        return new IndexConfiguration(opt);
-    }
-
-    protected IndexConfiguration (long options) {
+    public IndexConfiguration (long options) {
         namespaceMap = new HashMap<String, String>();
-        fields = new HashMap<String, FieldDefinition>();
-        fieldNames = new HashMap<FieldDefinition, String>();
+        fieldsByRole = new HashMap<FieldRole, FieldDefinition>();
+        fieldsByName = new HashMap<String, FieldDefinition>();
         fieldAnalyzers = new MultiFieldAnalyzer();
         fieldAnalyzers.put(null, new DefaultAnalyzer());
         addField (URI);
@@ -157,7 +141,7 @@ public class IndexConfiguration {
         init();
     }
     
-    protected IndexConfiguration () {
+    public IndexConfiguration () {
         this (DEFAULT_OPTIONS);
     }
     
@@ -171,7 +155,7 @@ public class IndexConfiguration {
         }
         if (isOption (INDEX_PATHS)) {
             if (isOption (INDEX_EACH_PATH)) {
-                addField (PathOccurrenceField.getInstance());
+                addField (new PathOccurrenceField());
             } else {
                 addField(PATH);
             }
@@ -199,7 +183,7 @@ public class IndexConfiguration {
         if (isOption (STORE_DOCUMENT)) {
             if (isOption (STORE_TINY_BINARY )) {
                 if (isOption(SOLR)) {
-                    addField(TinyBinarySolrField.getInstance());
+                    addField(new TinyBinarySolrField());
                 } else {
                     addField(TINY_BINARY_STORE);
                 }
@@ -207,48 +191,48 @@ public class IndexConfiguration {
             	addField(XML_STORE);
             }
         }
-        addField (IDField.getInstance());
+        addField  (new IDField());
     }
     
     /** adds a new field 
      * @param field the field to add
      */
     public void addField (FieldDefinition field) {
-        FieldDefinition existing = fields.get(field.getDefaultName());
+        FieldRole role = field.getFieldRole ();
+        FieldDefinition existing = null;
+        if (role != null) {
+            existing = fieldsByRole.get(role);
+        }
+        if (existing == null) {
+            existing = fieldsByName.get(field.getName());
+        }
         if (existing != null) {
             if (existing != field) {
                 throw new IllegalStateException ("Duplicate field name: " + field);
             }
             return;
         }
-        fields.put(field.getDefaultName(), field);
-        fieldAnalyzers.put(getFieldName(field), field.getAnalyzer());
+        if (role != null) {
+            fieldsByRole.put(role, field);
+        }
+        fieldsByName.put(field.getName(), field);
+        fieldAnalyzers.put(field.getName(), field.getAnalyzer());
     }
     
     /** 
      * Get the effective name of a field, given its canonical name.  Fields may be renamed, or aliased, for 
      * compatibility with existing schemas.
-     * @param field a field's canonical name
+     * @param role
      * @return the effective name of the field 
      */
-    public String getFieldName (FieldName field) {
-        return getFieldName (field.getField());
+    public String getFieldName (FieldRole role) {
+        FieldDefinition field = fieldsByRole.get(role);
+        if (field == null) {
+            return "";
+        }
+        return field.getName();
     }
 
-    /** 
-     * Get the effective name of a field, given its definition.  Fields may be renamed, or aliased, for 
-     * compatibility with existing schemas.
-     * @param field a field definition
-     * @return the effective name of the field
-     */
-    public String getFieldName (FieldDefinition field) {
-        String alias = fieldNames.get(field);
-        if (alias != null) {
-            return alias;
-        }
-        return field.getDefaultName();
-    }
-    
     /**
      * rename an existing field; the new name is used in the index.
      * @param field the definition of a field
@@ -258,34 +242,36 @@ public class IndexConfiguration {
         if (! field.isRenameable()) {
             throw new IllegalArgumentException("Attempt to rename field " + field + " whose name is fixed");
         }
-        String currentName = fieldNames.get (field);
-        if (currentName == null) {
-            currentName = field.getDefaultName();
+        String currentName = field.getName();
+        if (currentName.equals(name)) {
+            return;
         }
-        if (currentName != null) {
-            if (currentName.equals(name)) {
-            	return;
-            }
-            fields.remove(currentName);
-        }
-        fieldNames.put(field, name);
-        fields.put(name, field);
+        field.setName(name);
+        fieldsByName.remove(currentName);
+        fieldsByName.put(name, field);
     }
 
+    /**
+     * @return a list of all the fields whose values are to provided by this indexer.
+     */
     public Collection<FieldDefinition> getFields () {
-        return fields.values();
+        return fieldsByName.values();
     }
     
-    public FieldDefinition getField (FieldName fieldName) {
-        return fieldName.getField();
+    public FieldDefinition getField (FieldRole fieldName) {
+        return fieldsByRole.get(fieldName);
     }
     
     public FieldDefinition getField (String fieldName) {
-        return fields.get(fieldName);
+        return fieldsByName.get(fieldName);
     }
     
     public String getDefaultFieldName () {
-        return getFieldName (XML_TEXT);
+        FieldDefinition textField = fieldsByRole.get(FieldRole.XML_TEXT);
+        if (textField != null) {
+            return textField.getName();
+        }
+        return "";
     }
     
     /**
@@ -306,6 +292,26 @@ public class IndexConfiguration {
     
     public void defineNamespaceMapping (String prefix, String namespaceURI) {
         namespaceMap.put(prefix, namespaceURI);
+    }
+    
+    public String getUriFieldName () {
+        return URI.getName();
+    }
+
+    public String getXmlFieldName () {
+        return XML_STORE.getName();
+    }
+
+    public String getTextFieldName () {
+        return XML_TEXT.getName();
+    }
+
+    public String getElementTextFieldName () {
+        return ELEMENT_TEXT.getName();
+    }
+
+    public String getAttributeTextFieldName () {
+        return ATTRIBUTE_TEXT.getName();
     }
 
 }

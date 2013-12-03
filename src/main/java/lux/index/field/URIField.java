@@ -3,6 +3,7 @@ package lux.index.field;
 import java.util.Collections;
 import java.util.Set;
 
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -11,19 +12,13 @@ import org.apache.lucene.document.StringField;
 
 public class URIField extends FieldDefinition {
     
-    private static final URIField instance = new URIField();
-    
-    public static URIField getInstance() {
-        return instance;
-    }
-    
-    protected URIField () {
-        super ("lux_uri", new KeywordAnalyzer(), Store.YES, Type.STRING, true);
+    public URIField () {
+        super (FieldRole.URI, new KeywordAnalyzer(), Store.YES, Type.STRING, true);
     }
     
     @Override
     public Set<StringField> getFieldValues(XmlIndexer indexer) {
-        return Collections.singleton(new StringField(indexer.getConfiguration().getFieldName(this), indexer.getURI(), Store.YES)); 
+        return Collections.singleton(new StringField(getName(), indexer.getURI(), Store.YES)); 
     }
     
     @Override

@@ -32,15 +32,17 @@ public class XPathField extends FieldDefinition {
      * @param type the type of data indexed by the field
      */
     public XPathField (String name, String xpath, Analyzer analyzer, Store isStored, Type type) {
-        super (name, analyzer, isStored, type);
+        super (analyzer, isStored, type);
         this.xpath = xpath;
         schemaField= null;
+        setName (name);
     }
 
     public XPathField (String name, String xpath, Analyzer analyzer, Store isStored, SchemaField schemaField) {
-        super (name, analyzer, isStored, Type.SOLR_FIELD);
+        super (analyzer, isStored, Type.SOLR_FIELD);
         this.xpath = xpath;
         this.schemaField = schemaField;
+        setName (name);
     }
 
     public String getXPath () {
@@ -53,7 +55,7 @@ public class XPathField extends FieldDefinition {
         try {
             value = indexer.evaluateXPath (xpath);
         } catch (SaxonApiException e) {
-            throw new LuxException("error getting values for field: " + getDefaultName(), e);
+            throw new LuxException("error getting values for field: " + getName(), e);
         }
         return new XPathValueIterator(value.iterator());
     }

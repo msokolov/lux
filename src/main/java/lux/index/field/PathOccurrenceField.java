@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import lux.index.FieldRole;
 import lux.index.XmlIndexer;
 
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -15,15 +16,10 @@ import org.apache.lucene.document.Field.Store;
  */
 public class PathOccurrenceField extends FieldDefinition {
     
-    private static final PathOccurrenceField instance = new PathOccurrenceField();
     private final Pattern spacePattern = Pattern.compile(" ");
     
-    public static PathOccurrenceField getInstance() {
-        return instance;
-    }
-    
-    protected PathOccurrenceField () {
-        super ("lux_path", new KeywordAnalyzer(), Store.NO, Type.STRING);
+    public PathOccurrenceField () {
+        super (FieldRole.PATH, new KeywordAnalyzer(), Store.NO, Type.STRING);
     }
     
     @Override

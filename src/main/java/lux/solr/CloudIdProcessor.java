@@ -2,9 +2,8 @@ package lux.solr;
 
 import java.io.IOException;
 
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
-import lux.index.field.IDField;
 
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.request.SolrQueryRequest;
@@ -29,8 +28,8 @@ public class CloudIdProcessor extends UpdateRequestProcessor {
     public CloudIdProcessor (SolrIndexConfig config, SolrQueryRequest req, UpdateRequestProcessor next) {
         super(next);
         IndexConfiguration indexConfig = config.getIndexConfig();
-        idFieldName = indexConfig.getFieldName(IDField.getInstance());
-        uriFieldName = indexConfig.getFieldName(FieldName.URI);
+        idFieldName = indexConfig.getFieldName(FieldRole.ID);
+        uriFieldName = indexConfig.getFieldName(FieldRole.URI);
     }
 
     @Override

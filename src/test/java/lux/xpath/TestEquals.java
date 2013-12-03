@@ -16,7 +16,7 @@ public class TestEquals {
 
     @Before
     public void startup() {
-        compiler = new Compiler (IndexConfiguration.DEFAULT);
+        compiler = new Compiler (new IndexConfiguration());
         translator = new SaxonTranslator (compiler.getProcessor().getUnderlyingConfiguration());
     }
 

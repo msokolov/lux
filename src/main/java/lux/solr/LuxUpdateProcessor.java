@@ -6,11 +6,10 @@ import java.nio.charset.Charset;
 
 import javax.xml.stream.XMLStreamException;
 
-import lux.index.FieldName;
+import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.field.FieldDefinition;
-import lux.index.field.IDField;
 import lux.xml.tinybin.TinyBinary;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.om.NodeInfo;
@@ -53,17 +52,16 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     @Override
     public void processAdd (final AddUpdateCommand cmd) throws IOException {
         SolrInputDocument solrInputDocument = cmd.getSolrInputDocument();
-        String xmlFieldName = indexConfig.getFieldName(FieldName.XML_STORE);
-        String idFieldName = indexConfig.getFieldName(IDField.getInstance());
-        
-        // remove and stash the lux_xml and lux_docid field values so that AddUpdateCommand.getLuceneDocument
-        // doesn't add the lux_xml field in the standard way
+        String xmlFieldName = indexConfig.getFieldName(FieldRole.XML_STORE);
+        String idFieldName = indexConfig.getFieldName(FieldRole.ID);
+
+        // remove and stash the xml field value
         SolrInputField xmlField = solrInputDocument.removeField(xmlFieldName);
         SolrInputField luxIdField = solrInputDocument.removeField(idFieldName);
-        String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldName.URI));
+        String uri = (String) solrInputDocument.getFieldValue(indexConfig.getFieldName(FieldRole.URI));
         Document luceneDocument = cmd.getLuceneDocument();
         UpdateDocCommand luxCommand = null;
-        if (xmlField != null) {
+        if (uri != null && xmlField != null) {
             // restore the xml field value
             solrInputDocument.put (xmlFieldName, xmlField);
             XmlIndexer xmlIndexer = solrIndexConfig.checkoutXmlIndexer();
@@ -82,8 +80,7 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
                     // addDocumentFIelds below?
                     //luceneDocument = xmlIndexer.createLuceneDocument();
                 } catch (XMLStreamException e) {
-                    logger.error ("Failed to parse " + uri, e);
-                    // logger.debug (xml.toString());
+                    logger.error ("Failed to parse " + FieldRole.XML_STORE, e);
                 }
                 addDocumentFields (xmlIndexer, solrIndexConfig.getSchema(), luceneDocument);
                 if (luxIdField != null) {
@@ -112,12 +109,12 @@ public class LuxUpdateProcessor extends UpdateRequestProcessor {
     private void addDocumentFields (XmlIndexer indexer, IndexSchema indexSchema, Document doc) {
         if (indexConfig.isOption(IndexConfiguration.STORE_TINY_BINARY)) {
             // remove the serialized xml field value -- we will store a TinyBinary instead
-            doc.removeField(indexConfig.getFieldName(FieldName.XML_STORE));
+            doc.removeField(indexConfig.getFieldName(FieldRole.XML_STORE));
         }
         for (FieldDefinition field : indexConfig.getFields()) {
-            String fieldName = indexConfig.getFieldName(field);
-            if (field == indexConfig.getField(FieldName.URI) ||  
-                field == indexConfig.getField(FieldName.XML_STORE))
+            String fieldName = field.getName();
+            if (field == indexConfig.getField(FieldRole.URI) ||  
+                field == indexConfig.getField(FieldRole.XML_STORE))
             {
                 if (doc.getField(fieldName) != null) {
                     // uri and xml are provided externally in LuxUpdateProcessor
