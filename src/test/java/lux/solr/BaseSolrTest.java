@@ -37,7 +37,7 @@ public abstract class BaseSolrTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-       setup ("solr");
+        setup ("solr");
     }
     
     protected static void setup(String solrHome) throws Exception {
@@ -71,13 +71,9 @@ public abstract class BaseSolrTest {
         try {
             if (solr != null) {
                 solr.rollback();
+                solrCore.close();
             }
         } catch (SolrException e) {
-        }
-        // This is needed to avoid LockObtainedException when running the whole test suite,
-        // but it sometimes causes warnings about too many close() calls ... 
-        while (solrCore != null && ! solrCore.isClosed()) {
-            solrCore.close();
         }
         if (coreContainer != null) {
             coreContainer.shutdown();
