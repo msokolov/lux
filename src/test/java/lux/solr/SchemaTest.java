@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.solr.common.SolrInputDocument;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.After;
 import org.junit.Test;
 
 /** Tests for configurable analysis chain */
@@ -13,6 +15,17 @@ public class SchemaTest extends BaseSolrTest {
     @BeforeClass
     public static void setup() throws Exception {
         // inhibit the startup of a default core by our superclass
+    }
+    
+    @AfterClass
+    public static void tearDown() throws Exception {
+        // inhibit the teardown of a default core by our superclass
+    }
+
+    @After
+    public void shutdown() throws Exception {
+        // instead teardown after each test
+        BaseSolrTest.tearDown();
     }
     
     @Test
