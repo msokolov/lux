@@ -17,6 +17,7 @@ import org.apache.solr.common.SolrException;
 import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequestBase;
 import org.apache.solr.response.SolrQueryResponse;
@@ -143,12 +144,18 @@ public class ResponseWriterTest extends BaseSolrTest {
             map.put(params[i], params[i+1]);
         }
         SolrParams solrParams = new MapSolrParams(map);
-        return new SolrQueryRequestBase(solrCore, solrParams) { };
+        return new SimpleSolrQuery(solrCore, solrParams);
     }
     
     private XdmNode buildDocument (String xml) throws SaxonApiException {
         Processor processor = new Processor(false);
         return processor.newDocumentBuilder().build(new StreamSource (new StringReader (xml)));
+    }
+    
+    private static class SimpleSolrQuery extends SolrQueryRequestBase {
+        SimpleSolrQuery (SolrCore core, SolrParams params) {
+            super (core, params);
+        }
     }
 
 }
