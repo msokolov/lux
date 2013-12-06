@@ -2,9 +2,9 @@ package lux.index.analysis;
 
 import java.util.Iterator;
 
+import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.XdmNode;
-import net.sf.saxon.s9api.XdmNodeKind;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
 /**
@@ -16,7 +16,7 @@ public class ContentIterator implements Iterator<XdmNode> {
     private XdmNode next = null;  // storage for lookahead
         
     public ContentIterator(XdmNode node) {
-        descendants = node.axisIterator(Axis.DESCENDANT_OR_SELF);
+        descendants = new TextNodeDescendantIterator(node);
     }
 
     @Override
@@ -38,18 +38,23 @@ public class ContentIterator implements Iterator<XdmNode> {
         return getNext ();
     }
         
-    private XdmNode getNext () {
+    protected XdmNode getNext () {
         while (descendants.hasNext()) {
-            XdmNode node = (XdmNode) descendants.next();
-            if (node.getNodeKind() == XdmNodeKind.TEXT) {
-                return node;
-            }
+            return (XdmNode) descendants.next();
         }
         return null;
     }
 
     @Override
     public void remove() {
+    }
+    
+    class TextNodeDescendantIterator extends XdmSequenceIterator {
+
+        protected TextNodeDescendantIterator(XdmNode node) {
+            super (node.getUnderlyingNode().iterateAxis(Axis.DESCENDANT_OR_SELF.getAxisNumber(),  NodeKindTest.TEXT));
+        }
+        
     }
         
 }

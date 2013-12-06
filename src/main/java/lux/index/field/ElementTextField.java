@@ -9,6 +9,7 @@ import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.ElementTokenStream;
 import lux.index.analysis.QNameTokenFilter;
+import lux.index.analysis.XmlTokenStreamBase;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -25,8 +26,6 @@ import org.apache.lucene.index.IndexableField;
 public class ElementTextField extends FieldDefinition {
     
     public ElementTextField () {
-        // TODO - enable caller to supply analyzer (extending our analyzer so we can ensure that
-        // element/attribute text tokens are generated)
         super (FieldRole.ELEMENT_TEXT, new DefaultAnalyzer(), Store.NO, Type.TOKENS);
     }
     
@@ -41,8 +40,10 @@ public class ElementTextField extends FieldDefinition {
                 textTokens = analyzer.tokenStream(getName(), new CharSequenceReader(""));
             } catch (IOException e) { }
  
-            ElementTokenStream tokens = new ElementTokenStream (getName(), analyzer, textTokens, doc, builder.getOffsets());
-            ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
+            XmlTokenStreamBase tokens = new ElementTokenStream (getName(), analyzer, textTokens, doc, builder.getOffsets());
+            IndexConfiguration config = indexer.getConfiguration();
+            ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(config.isOption(IndexConfiguration.NAMESPACE_AWARE));
+            config.configureElementVisibility(tokens);
             return new FieldValues (this, Collections.singleton(new TextField(getName(), tokens)));
         }
         return Collections.emptySet();

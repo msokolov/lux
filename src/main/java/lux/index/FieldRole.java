@@ -1,5 +1,8 @@
 package lux.index;
 
+/**
+ * Certain fields are known to the indexer and optimizer: these are identified by their FieldRole. 
+  */
 public  enum FieldRole {
     
     URI("lux_uri"),

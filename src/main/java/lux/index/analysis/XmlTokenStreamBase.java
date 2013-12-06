@@ -3,9 +3,11 @@ package lux.index.analysis;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
@@ -16,7 +18,7 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 /**
  * <p>
  * This is the root of a set of xml-aware TokenStream classes that work by selecting text
- * a node at a time (using {@link XmlTokenStreamBase#contentIterator}) from an XML document, and then 
+ * a node at a time from an XML document, and then 
  * passing that text to the wrapped TokenStream.  The wrapped TokenStream is re-used for each text node.
  * The outermost link in the chain will be a TokenFilter that applies a sequence of structure-related 
  * Attributes to each text token (ie a list of QNames, but can be any kind of structural attribute
@@ -40,7 +42,7 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
  * token stream, which is the same pattern for each of these; only the classes vary.  But we 
  * can't do the work in the constructor due to Java structural issues.
  */
-abstract class XmlTokenStreamBase extends TokenStream {
+public abstract class XmlTokenStreamBase extends TokenStream {
 
     private final String fieldName;
     // The analyzer creates the wrapped TokenStream/Tokenizer that does the text analysis
@@ -50,6 +52,9 @@ abstract class XmlTokenStreamBase extends TokenStream {
     protected Iterator<XdmNode> contentIter; // retrieves the nodes with text to index
     protected CharTermAttribute termAtt;
     protected Reader charStream = new OffsetCharFilter(new StringReader(""));
+    protected ElementVisibility defVis;
+    protected HashMap<QName,ElementVisibility> eltVis;
+    protected EmptyTokenStream empty;
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
     XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
@@ -58,7 +63,9 @@ abstract class XmlTokenStreamBase extends TokenStream {
         this.fieldName = fieldName;
         this.analyzer = analyzer;
         termAtt = addAttribute(CharTermAttribute.class);
-        //tokenizer = new StandardTokenizer(IndexConfiguration.LUCENE_VERSION, this, new CharSequenceReader(""));
+        empty = new EmptyTokenStream(wrapped);
+        defVis = ElementVisibility.OPAQUE;
+        eltVis = new HashMap<QName, ElementVisibility>();
     }
     
     @Override
@@ -128,6 +135,35 @@ abstract class XmlTokenStreamBase extends TokenStream {
     abstract boolean resetTokenizer(CharSequence cs);
 
     abstract void updateNodeAtts ();
+
+    /**
+     * @param qname the name of an element as an s9api QName
+     * @return the explicitly-specified visibility of the element name, or null if the element has the default
+     * visibility.
+     */
+    public ElementVisibility getElementVisibility(QName qname) {
+        return eltVis.get(qname);
+    }
+
+    /** sets the visibility of elements with the given name
+     * @param qname the name of an element as an s9api QName
+     * @param vis the visibility of the element's content from the perspective of containing elements.
+     * visibility.
+     */
+    public void setElementVisibility(QName qname, ElementVisibility vis) {
+        eltVis.put(qname, vis);
+    }
+
+    /** @return the visibility of elements not explicitly specified using setElementVisibility.
+     * Always {@link ElementVisibility#OPAQUE}.
+     */
+    public ElementVisibility getDefaultVisibility() {
+        return defVis;
+    }
+
+    public void setDefaultVisibility(ElementVisibility vis) {
+        this.defVis = vis;
+    }
 }
 
 /*

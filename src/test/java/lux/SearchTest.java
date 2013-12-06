@@ -325,6 +325,8 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("PRINCE FORTINBRAS", "(//SPEECH)[last()]/SPEAKER/string()", null, 1164);
     }
     
+    // FIXME contains() optimization relies on deep indexing of the SPEECH element; with 
+    // elements opaque by default this fails.  So make LINE transparent
     @Test
     public void testIntersection () throws Exception {
         assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
@@ -343,6 +345,57 @@ public class SearchTest extends BaseSearchTest {
          * TODO: Why is this not more optimal?
          * */
         assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 88, 87);        
+    }
+    
+    /* Tests relating to element visibility
+     * 
+     * setup: all elements opaque by default, LINE transparent, name transparent, SCENE a container,
+     * hidden is hidden
+     */
+    
+    @Test
+    public void testOpaqueElement() throws Exception {
+        // /PLAY/FM/P[2] contains "Bosak" but P is opaque
+        assertSearch ("0", "lux:count('<FM:Bosak')", null, 0, 0);
+        // <name> element is transparent so phrases continue through it
+        assertSearch ("3", "lux:count('<P:\"XML version by Jon Bosak\"')", null, 3, 0);
+        assertSearch ("1", "count(/FM[contains(., 'Bosak')])", null, 1, 1);
+    }
+    
+    @Test
+    public void testTransparentElement() throws Exception {
+        // sword always occurs in LINE elements, which are transparent, so indexed as part of SPEECH
+        assertSearch ("5", "lux:count('<SPEECH:\"swear by my sword\"')", null, 5, 0);
+        assertSearch ("24", "lux:count('<SPEECH:sword')", null, 24, 0);
+        // this will check every speech
+        assertSearch ("2", "count(/SPEECH[contains(.,'Swear by my sword')])", null, 1138, 1138);
+        // this is filtered by *sword*
+        assertSearch ("13", "count(/SPEECH[contains(.,\"sword\")])", null, 13, 13);
+        assertSearch ("1", "count(/ACT[contains(.,\"Swear by my sword\")])", null, 5, 5);
+        // content of LINE is included in <:SPEECH but not above that, since SPEECH is opaque:
+        assertSearch ("0", "lux:count('<ACT:sword')", null, 0, 0);
+    }
+    
+    @Test 
+    public void testContainerElement() throws Exception {
+        // SCENE is a container element; sword occurs in I;5, II;2, III;1, III;3, IV;3, IV;5, IV;7, V;2,
+        // a PLAY, 5 ACTs, and 8 SCENEs
+        assertSearch ("14", "let $d := lux:search('<SCENE:sword','lux:docid')[2] return concat(name($d/*), ' ', substring($d,1,20))", null, 2, 2);
+        assertSearch ("14", "lux:count('<SCENE:sword')", null, 14, 0);
+        assertSearch ("1", "lux:count('<SCENE:\"Swear by my sword\"')", null, 0, 0);
+        assertSearch ("1", "count(/SCENE[contains(.,\"Swear by my sword\"')])", null, 25, 25);
+    }
+    
+    @Test
+    public void testHiddenElement() throws Exception {
+        assertSearch ("0", "lux:count('<hidden:adam')", null, 0, 0);
+        // 2x /PLAY/ACT/SCENE/SPEECH/LINE, in the same SCENE, but not /PLAY/FM/P/name/hidden
+        // and we don't handle the possessive in Adam's, so only 5, not 7
+        assertSearch ("5", "lux:count('<LINE:adam')", null, 5, 0);
+        assertSearch ("5", "lux:count('adam')", null, 5, 0);
+        // phrase wraps around hidden element
+        assertSearch ("4", "lux:count('<name:\"michael sokolov\"')", null, 4, 0);
+        assertSearch ("4", "lux:count('\"michael sokolov\"')", null, 4, 0);
     }
     
     @Test
@@ -405,12 +458,15 @@ public class SearchTest extends BaseSearchTest {
     }
     
     @Test public void testContains () throws Exception {
+        /*
+         * When we had a contains optimization:
         assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
         assertSearch ("true", "contains(/PLAY,'Holla')", null, 1, 1);
         // searches match all 10 instances of 'given' since they will be case-insensitive
         // There is also one occurrence of 'forgiveness' that should match
         assertSearch ("1", "count (/LINE[contains(.,'Given')])", null, 11, 11);
         assertSearch ("10", "count (/LINE[contains(.,'given')])", null, 11, 11);
+        */
         int lineCount = index.elementCounts.get("LINE");
         // has to check every /LINE document:
         assertSearch ("1", "count(/LINE[contains(.,'olla! Bern')])", null, lineCount, lineCount);        
@@ -548,8 +604,9 @@ public class SearchTest extends BaseSearchTest {
     @Test
     public void testHighlightComplexContent() throws Exception {
         assertSearch ("<FM>\n<P>Text placed in the public domain by Moby Lexical Tools, 1992.</P>\n" +
-        		"<P>SGML markup by <B>Jon</B> <B>Bosak</B>, 1992-1994.</P>\n" +
-        		"<P>XML version by <B>Jon</B> <B>Bosak</B>, 1996-1998.</P>\n" +
+        		"<P>SGML markup by <name><B>Jon</B> <B>Bosak</B></name>, 1992-1994.</P>\n" +
+        		"<P>XML version by <name><B>Jon</B> <B>Bosak</B></name>, 1996-1998.</P>\n" +
+        		"<P>XML attributes and name tagging added by <name>Michael <hidden>Adam</hidden> Sokolov</name>, 2013</P>\n" +
         		"<P>This work may be freely copied and distributed worldwide.</P>\n</FM>", 
                 "lux:highlight(/FM, 'Jon Bosak')", null, null);
     }

@@ -598,9 +598,13 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // By default, do not attempt any optimization; throw away any filters coming from the function arguments
         Occur occur = Occur.SHOULD;;
         if (name.equals(FunCall.FN_CONTAINS)) {
+            /*
+             * This is only possible under special circumstances; no hidden elements, and we have to mimic analysis
+             * which is now configurable, plus it can blow up.
             if (optimizeFnContains (funcall)) {
                 occur = Occur.MUST;
             }
+            */
         }
         else if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
              name.getNamespaceURI().equals(FunCall.XS_NAMESPACE)) {

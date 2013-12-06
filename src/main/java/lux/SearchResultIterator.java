@@ -66,8 +66,11 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         if (searcher == null) {
             throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
+        Sort sort = null;
         if (sortCriteria != null) {
-            Sort sort = makeSortFromCriteria();
+            sort = makeSortFromCriteria();
+        }
+        if (sort != null) {
             docIter = searcher.search(query, sort);
         } else {
             docIter = searcher.searchOrdered(query);
@@ -77,6 +80,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         }
     }
 
+    // return null to indicate sorting by docid
     private Sort makeSortFromCriteria() {
         String[] fields = sortCriteria.split("\\s*,\\s*");
         SortField[] sortFields = new SortField [fields.length];
@@ -120,7 +124,16 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                     throw new LuxException ("not countenanced: attempt to sort by irrelevance");
                 }
                 sortFields[i] = SortField.FIELD_SCORE;
-            } 
+            }
+            else if (field.equals("lux:docid")) {
+                if (reverse == Boolean.FALSE) {
+                    throw new LuxException ("not countenanced: attempt to sort by descending docid");
+                }
+                if (fields.length == 1) {
+                    return null;
+                }
+                sortFields[i] = SortField.FIELD_DOC;
+            }
             else if (emptyGreatest == Boolean.TRUE) {
                 if (type == SortField.Type.STRING) {
                     sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);

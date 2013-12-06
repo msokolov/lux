@@ -46,12 +46,11 @@ import org.apache.lucene.store.Directory;
  * between field and handler is implicit: the field calls an XmlIndexer
  * getter to retrieve the handler.
  * 
- * Also, this class is not thread-safe 
+ * This class is not thread-safe 
  * 
  * This is all kind of a mess, and not readily extendable.  If you want to
  * add a new type of field (a new XmlField instance), you have to modify
- * the indexer, which has knowledge of all the possible fields.  This is
- * not a good design.
+ * the indexer, which has knowledge of all the possible fields.
  * 
  * Also, not every combination of indexing options will actually work.  We
  * need to consider which things one might actually want to turn on and
@@ -448,8 +447,8 @@ public class XmlIndexer {
     public IndexConfiguration getConfiguration() {
         return configuration;
     }
-
-}
+    
+ }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,

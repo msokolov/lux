@@ -101,7 +101,7 @@ public abstract class FieldDefinition {
     
     /**
      * construct an non-renameable field
-     * @param name the name of the field
+     * @param role the role of the field
      * @param analyzer the analyzer associated with the field.  This will
      * be used to analyze string field values, and to analyze queries.  If
      * the field values are not strings (eg if they are a TokenStream), the
@@ -217,7 +217,8 @@ public abstract class FieldDefinition {
         return name;
     }
     
-    /** @see #getName */
+    /** @param luceneFieldName the name of the field as it appears in queries, and in the index 
+     * @see #getName */
     public void setName(String luceneFieldName) {
         this.name = luceneFieldName;
     }
