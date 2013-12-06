@@ -2,6 +2,7 @@ package lux.solr;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.Collection;
 
 import lux.index.FieldRole;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
@@ -23,10 +25,12 @@ public class SolrMultiCoreTest extends BaseSolrTest {
     @BeforeClass 
     public static void setup() throws Exception {
 
-        BaseSolrTest.setup("solr-multi");
+        FileUtils.cleanDirectory(new File("solr-multi/core2/data/index"));
+        FileUtils.cleanDirectory(new File("solr-multi/core2/data/tlog"));
         
-        core1 = new EmbeddedSolrServer(coreContainer, "core1");
-        core1.deleteByQuery("*:*");
+        BaseSolrTest.setup("solr-multi", "core1");
+        
+        core1 = solr;
         
         core2 = new EmbeddedSolrServer(coreContainer, "core2");
         core2.deleteByQuery("*:*");

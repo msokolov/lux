@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest.METHOD;
@@ -44,10 +45,11 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome, String coreName) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
-        File lock = new File (solrHome + "/collection1/data/index/write.lock");
-        if (lock.exists()) {
-            lock.delete();
-        }
+        File index = new File (solrHome + "/" + coreName + "/data/index/");
+        FileUtils.cleanDirectory(index);
+        File tlog= new File (solrHome + "/" + coreName + "/data/tlog/");
+        FileUtils.cleanDirectory(tlog);
+
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
         solr = new EmbeddedSolrServer(coreContainer, coreName);
@@ -65,11 +67,6 @@ public abstract class BaseSolrTest {
         try {
             solr.rollback();
         } catch (SolrException e) {
-        }
-        // This is needed to avoid LockObtainedException when running the whole test suite,
-        // but it sometimes causes warnings about too many close() calls ... 
-        while (solrCore != null && ! solrCore.isClosed()) {
-            solrCore.close();
         }
         if (coreContainer != null) {
             coreContainer.shutdown();
