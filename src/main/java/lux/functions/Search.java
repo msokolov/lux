@@ -38,17 +38,17 @@ public class Search extends SearchBase {
     }
 
     @Override
-    public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
-        return SequenceType.makeSequenceType(NodeKindTest.DOCUMENT, StaticProperty.ALLOWS_ZERO_OR_MORE);
-    }
-    
-    @Override
     public SequenceType[] getArgumentTypes() {
         return new SequenceType[] { 
                 SequenceType.SINGLE_ITEM,       // query: as element node or string
                 SequenceType.OPTIONAL_STRING,   // sort key stanza
                 SequenceType.OPTIONAL_INTEGER   // start - index of first result (1-based)
                 };
+    }
+    
+    @Override
+    public SequenceType getResultType(SequenceType[] suppliedArgumentTypes) {
+        return SequenceType.makeSequenceType(NodeKindTest.DOCUMENT, StaticProperty.ALLOWS_ZERO_OR_MORE);
     }
     
     @Override

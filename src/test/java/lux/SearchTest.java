@@ -325,26 +325,27 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("PRINCE FORTINBRAS", "(//SPEECH)[last()]/SPEAKER/string()", null, 1164);
     }
     
-    // FIXME contains() optimization relies on deep indexing of the SPEECH element; with 
-    // elements opaque by default this fails.  So make LINE transparent
     @Test
     public void testIntersection () throws Exception {
-        assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
-        // TODO - why is this 141 and not 28?
-        // FIXME - sometimes it *is* 28???
-        assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 141);
-        assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7);
+        assertSearch ("4", "count(/SCENE[@act='3'])", null, 4);
+        assertSearch ("5", "count(/SCENE[@scene='2'])", null, 5);
         // saxon cleverly optimizes this and gets rid of the intersect
-        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1);
+        assertSearch ("1", "count(/SCENE[@act='3'] intersect /SCENE[@scene=2])", null, 1);
     }
     
     @Test
     public void testDocumentIdentity() throws Exception {
-        /* This test confirms that document identity is preserved when creating Saxon documents. 
-         * document count was 1670 using path indexes; reduced to 88 using full text queries
-         * TODO: Why is this not more optimal?
-         * */
-        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 88, 87);        
+        /* This test confirms that document identity is preserved when creating Saxon documents
+         * because the intersect operator relies on document/node identity. Each search call
+         * retrieves the documents separately and uses the cache to preserve identity across multiple
+         * searches. 
+         */
+        assertSearch ("28", "count(lux:search('<SPEECH:Horatio')/SPEECH[contains(., 'Horatio')])", null, 40, 40);        
+        assertSearch ("8", "count(lux:search('<SPEECH:philosophy')//SPEECH[contains(., 'philosophy')])", null, 7, 7);
+        // in docid order - TODO: shouldn't there be some early termination here?
+        assertSearch ("1", "count(lux:search('<SPEECH:philosophy', 'lux:docid')//SPEECH[contains(., 'philosophy')] intersect lux:search('<SPEECH:Horatio', 'lux:docid')/SPEECH[contains(., 'Horatio')])", null, 47, 43);        
+        // in relevance order - Saxon sorts the documents
+        assertSearch ("1", "count(lux:search('<SPEECH:philosophy')//SPEECH[contains(., 'philosophy')] intersect lux:search('<SPEECH:Horatio')/SPEECH[contains(., 'Horatio')])", null, 47, 43);
     }
     
     /* Tests relating to element visibility
@@ -367,23 +368,19 @@ public class SearchTest extends BaseSearchTest {
         // sword always occurs in LINE elements, which are transparent, so indexed as part of SPEECH
         assertSearch ("5", "lux:count('<SPEECH:\"swear by my sword\"')", null, 5, 0);
         assertSearch ("24", "lux:count('<SPEECH:sword')", null, 24, 0);
-        // this will check every speech
-        assertSearch ("2", "count(/SPEECH[contains(.,'Swear by my sword')])", null, 1138, 1138);
-        // this is filtered by *sword*
-        assertSearch ("13", "count(/SPEECH[contains(.,\"sword\")])", null, 13, 13);
-        assertSearch ("1", "count(/ACT[contains(.,\"Swear by my sword\")])", null, 5, 5);
         // content of LINE is included in <:SPEECH but not above that, since SPEECH is opaque:
         assertSearch ("0", "lux:count('<ACT:sword')", null, 0, 0);
     }
     
     @Test 
     public void testContainerElement() throws Exception {
-        // SCENE is a container element; sword occurs in I;5, II;2, III;1, III;3, IV;3, IV;5, IV;7, V;2,
-        // a PLAY, 5 ACTs, and 8 SCENEs
-        assertSearch ("14", "let $d := lux:search('<SCENE:sword','lux:docid')[2] return concat(name($d/*), ' ', substring($d,1,20))", null, 2, 2);
-        assertSearch ("14", "lux:count('<SCENE:sword')", null, 14, 0);
-        assertSearch ("1", "lux:count('<SCENE:\"Swear by my sword\"')", null, 0, 0);
-        assertSearch ("1", "count(/SCENE[contains(.,\"Swear by my sword\"')])", null, 25, 25);
+        // SCENE is a container element; sword occurs in I;5, II;2, III;1, III;3, IV;3, IV;5, IV;7.
+        // V;2 has 'swords', but there's no stemming in the default analyzer:
+        // a PLAY, 4 ACTs, and 7 SCENEs
+        assertSearch ("12", "lux:count('<SCENE:sword')", null, 12, 0);
+        assertSearch ("3", "lux:count('<SCENE:\"Swear by my sword\"')", null, 3, 0);
+        // checks all 20 of the scenes
+        assertSearch ("1", "count(/SCENE[contains(.,\"Swear by my sword\")])", null, 20, 20);
     }
     
     @Test
@@ -666,10 +663,10 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testWhereAtClause () throws Exception {
-        // return the index of the first /SCENE document ; the first SCENE is the 44th element in hamlet.xml,
-        // and therefore the root of document #44 in the test set
+        // return the index of the first /SCENE document ; the first SCENE is the 49th element in hamlet.xml,
+        // and therefore the root of document #49 in the test set
         String query = "(for $doc at $i in collection() where $doc/SCENE return $i)[1]";
-        assertSearch ("44", query, null, 44);
+        assertSearch ("49", query, null, 49);
     }
     
     @Test

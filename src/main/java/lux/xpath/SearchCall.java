@@ -75,7 +75,9 @@ public class SearchCall extends FunCall {
             args.add(new LiteralExpression (createSortString(sortFields)));
         } else if (! generated) {
             // if this is an explicit function call that has no explicit ordering, order by relevance
-            args.add(new LiteralExpression ("lux:score descending"));
+            args.add(new LiteralExpression (lux.SearchResultIterator.LUX_SCORE + " descending"));
+        } else {
+            args.add(new LiteralExpression (lux.SearchResultIterator.LUX_DOCID));
         }
         subs = args.toArray(new AbstractExpression[args.size()]);
     }

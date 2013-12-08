@@ -597,16 +597,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         optimizeSubExpressions(funcall);
         // By default, do not attempt any optimization; throw away any filters coming from the function arguments
         Occur occur = Occur.SHOULD;;
-        if (name.equals(FunCall.FN_CONTAINS)) {
-            /*
-             * This is only possible under special circumstances; no hidden elements, and we have to mimic analysis
-             * which is now configurable, plus it can blow up.
-            if (optimizeFnContains (funcall)) {
-                occur = Occur.MUST;
-            }
-            */
-        }
-        else if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
+        if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
              name.getNamespaceURI().equals(FunCall.XS_NAMESPACE)) {
         	// require that the function argument's query match if it is a special function,
             // or an atomic type constructor (functions in the xs: namespace)
@@ -1119,45 +1110,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
             return (PathStep) last;
         }
         return null;
-    }
-
-    private boolean optimizeFnContains(FunCall funcall) {
-        if (!indexConfig.isOption(INDEX_FULLTEXT)) {
-            return false;
-        }
-        if (! (funcall.getName().equals(FunCall.FN_CONTAINS))) {
-            return false;
-        }
-        LiteralExpression value = null;
-        AbstractExpression path = null;
-        AbstractExpression op1 = funcall.getSubs()[0], op2 = funcall.getSubs()[1];
-        if (op2.getType() == Type.LITERAL) {
-            value = (LiteralExpression) op2;
-            path = op1;
-        } else {
-            // TODO: handle variables
-            return false;
-        }
-        PathStep step = getLastPathStep (path);
-        if (step == null) {
-            return false;
-        }
-        String v = value.getValue().toString();
-        if (! v.matches("\\w+")) {
-            // when optimizing contains(), we have to do a wildcard
-            // query; we can only do this if the term contains only
-            // word characters: this depends on the index definition of course,
-            // so this really needs to be tuned if analysis is changed...
-            return false;
-        }
-        ParseableQuery termQuery = createTermQuery(step, "*" + v + "*");
-        if (termQuery != null) {
-            combineTermQuery (termQuery, step.getNodeTest().getType());
-            // TODO: if the term matches an index: ie is all lower case, it could be minimal
-            peek().setFact(MINIMAL, false);
-            return true;
-        }
-        return false;
     }
 
     private void optimizeBinaryOperation (BinaryOperation op) {

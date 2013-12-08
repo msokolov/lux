@@ -1,5 +1,6 @@
 package lux.xpath;
 
+import static lux.SearchResultIterator.LUX_DOCID;
 import lux.xml.QName;
 import lux.xml.ValueType;
 
@@ -92,8 +93,19 @@ public class FunCall extends AbstractExpression {
             return false;
         }
         if (name.getNamespaceURI().equals(LUX_NAMESPACE)) {
-            if (name.getLocalPart().equals("search"))
-                return true;
+            if (name.getLocalPart().equals("search")) {
+                // TODO: depends on sorting argument!!
+                if (getSubs().length > 1) {
+                    AbstractExpression sortExpr = getSubs()[1];
+                    if (sortExpr instanceof LiteralExpression) {
+                        if (((LiteralExpression)sortExpr).getValue().equals (LUX_DOCID)) {
+                            return true;
+                        }
+                    }
+                }
+                // ordered some other how
+                return false;
+            }
         }
         if (name.getNamespaceURI().equals(FN_NAMESPACE)) {
             if (name.getLocalPart().equals ("reverse") || name.getLocalPart().equals("unordered")) {

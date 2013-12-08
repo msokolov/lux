@@ -1,5 +1,7 @@
 package lux.functions;
 
+import static lux.SearchResultIterator.LUX_DOCID;
+import lux.functions.SearchBase.SearchCall;
 import net.sf.saxon.expr.Container;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.StaticContext;
@@ -24,10 +26,13 @@ public class LuxFunctionLibrary extends IntegratedFunctionLibrary {
             return null;
         }
         ExtensionFunctionCall f = ifc.getFunction();
-        LuxFunctionCall fc = new LuxFunctionCall(f);
-        fc.setFunctionName(functionName);
-        fc.setArguments(staticArgs);
-        return fc;
+        if (f instanceof SearchCall && staticArgs.length > 1 && staticArgs[1].toString().equals(LUX_DOCID)) {
+            LuxFunctionCall fc = new LuxFunctionCall(f);
+            fc.setFunctionName(functionName);
+            fc.setArguments(staticArgs);
+            return fc;
+        }
+        return ifc;
     }
     
     public static void registerFunctions (Processor processor) {

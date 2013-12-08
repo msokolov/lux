@@ -25,6 +25,8 @@ import org.apache.lucene.search.SortField;
  */
 public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     
+    public static final String LUX_SCORE = "lux:score";
+    public static final String LUX_DOCID = "lux:docid";
     private final DocIdSetIterator docIter;
     private final Query query;
     private final QueryStats stats;
@@ -119,13 +121,13 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                     throw new LuxException ("invalid keyword '" + tokens[j] + "' in: " + sortCriteria);
                 }
             }
-            if (field.equals("lux:score")) {
+            if (field.equals(LUX_SCORE)) {
                 if (reverse == Boolean.FALSE) {
                     throw new LuxException ("not countenanced: attempt to sort by irrelevance");
                 }
                 sortFields[i] = SortField.FIELD_SCORE;
             }
-            else if (field.equals("lux:docid")) {
+            else if (field.equals(LUX_DOCID)) {
                 if (reverse == Boolean.FALSE) {
                     throw new LuxException ("not countenanced: attempt to sort by descending docid");
                 }
