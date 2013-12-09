@@ -4,6 +4,7 @@ import static lux.SearchResultIterator.LUX_DOCID;
 import lux.functions.SearchBase.SearchCall;
 import net.sf.saxon.expr.Container;
 import net.sf.saxon.expr.Expression;
+import net.sf.saxon.expr.Literal;
 import net.sf.saxon.expr.StaticContext;
 import net.sf.saxon.functions.IntegratedFunctionCall;
 import net.sf.saxon.functions.IntegratedFunctionLibrary;
@@ -26,7 +27,9 @@ public class LuxFunctionLibrary extends IntegratedFunctionLibrary {
             return null;
         }
         ExtensionFunctionCall f = ifc.getFunction();
-        if (f instanceof SearchCall && staticArgs.length > 1 && staticArgs[1].toString().equals(LUX_DOCID)) {
+        // Is the search sorting results in document order: ie do we have a single sort criterion "lux:docid"?
+        if (f instanceof SearchCall && staticArgs.length > 1 && staticArgs[1] instanceof Literal && 
+                ((Literal)staticArgs[1]).getValue().getStringValue().equals(LUX_DOCID)) {
             LuxFunctionCall fc = new LuxFunctionCall(f);
             fc.setFunctionName(functionName);
             fc.setArguments(staticArgs);

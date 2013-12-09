@@ -1373,13 +1373,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // from the
         // for and where clauses
         flwor.getSubs()[0] = optimizeExpression(flwor.getReturnExpression(), peek());
-        // XPathQuery returnQuery = pop();
-        peek().setSortFields(null); // ignore any ordering expressions found in
-                                    // the return clause
+        XPathQuery returnQuery = peek();
+        returnQuery.setSortFields(null); // ignore any ordering expressions found in the return clause
+        
         int length = flwor.getClauses().length;
         // iterate in reverse order so we can unwind the query stack from its
         // "top"
         // which corresponds to the "bottom" of the expression tree.
+        boolean isOrdered = false;
 
         for (int i = length - 1; i >= 0; i--) {
             FLWORClause clause = flwor.getClauses()[i];
@@ -1403,14 +1404,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
             	XPathQuery q = combineQueries (clauseq, Occur.MUST, returnq, returnq.getResultType());
             	//q.setBaseQuery(combineBaseQueries(returnq, clauseq));
             	push (q);
+            	if (clause instanceof ForClause) {
+            	    clause.setSequence(optimizeExpression(seq, peek()));
+            	} else if (clause instanceof OrderByClause) {
+            	    isOrdered = true;
+            	}
             }
-            if (clause instanceof ForClause) {
-                clause.setSequence(optimizeExpression(seq, peek()));
-            }
-            // TODO: optimize where and order by clauses?
+            // TODO: optimize content of where and order by clauses?
         }
         // push (combineQueries (pop(), Occur.MUST, returnQuery,
         // returnQuery.getResultType()));
+        if (isOrdered) {
+            // mark as unordered() - this is counterintuitive, but it is supposed to indicate to the optimizer
+            // that the order of this expression is not significant - ie it should not be document-ordered?
+            return new FunCall (new QName(FunCall.FN_NAMESPACE, "unordered"), returnQuery.getResultType(), flwor);
+        }
         return flwor;
     }
 

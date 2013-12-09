@@ -342,8 +342,8 @@ public class SearchTest extends BaseSearchTest {
          */
         assertSearch ("28", "count(lux:search('<SPEECH:Horatio')/SPEECH[contains(., 'Horatio')])", null, 40, 40);        
         assertSearch ("8", "count(lux:search('<SPEECH:philosophy')//SPEECH[contains(., 'philosophy')])", null, 7, 7);
-        // in docid order - TODO: shouldn't there be some early termination here?
-        assertSearch ("1", "count(lux:search('<SPEECH:philosophy', 'lux:docid')//SPEECH[contains(., 'philosophy')] intersect lux:search('<SPEECH:Horatio', 'lux:docid')/SPEECH[contains(., 'Horatio')])", null, 47, 43);        
+        // in docid order
+        assertSearch ("1", "count(lux:search('<SPEECH:philosophy', 'lux:docid')//SPEECH[contains(., 'philosophy')] intersect lux:search('<SPEECH:Horatio', 'lux:docid')/SPEECH[contains(., 'Horatio')])", null, 29, 25);        
         // in relevance order - Saxon sorts the documents
         assertSearch ("1", "count(lux:search('<SPEECH:philosophy')//SPEECH[contains(., 'philosophy')] intersect lux:search('<SPEECH:Horatio')/SPEECH[contains(., 'Horatio')])", null, 47, 43);
     }

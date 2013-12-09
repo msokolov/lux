@@ -1,6 +1,6 @@
 package lux.xpath;
 
-import static lux.SearchResultIterator.LUX_DOCID;
+import lux.SearchResultIterator;
 import lux.xml.QName;
 import lux.xml.ValueType;
 
@@ -60,6 +60,7 @@ public class FunCall extends AbstractExpression {
     public static final QName FN_ROOT = new QName (FN_NAMESPACE, "root", "fn");
     public static final QName FN_LAST = new QName (FN_NAMESPACE, "last", "fn");
     public static final QName FN_DATA = new QName (FN_NAMESPACE, "data", "fn");
+    public static final QName FN_UNORDERED = new QName (FN_NAMESPACE, "unordered", "fn");
     public static final QName FN_SUBSEQUENCE = new QName (FN_NAMESPACE, "subsequence", "fn");
     public static final QName FN_COUNT = new QName (FN_NAMESPACE, "count", "fn");
     public static final QName FN_EXISTS = new QName (FN_NAMESPACE, "exists", "fn");
@@ -94,16 +95,16 @@ public class FunCall extends AbstractExpression {
         }
         if (name.getNamespaceURI().equals(LUX_NAMESPACE)) {
             if (name.getLocalPart().equals("search")) {
-                // TODO: depends on sorting argument!!
+                // if we are returning results ordered by docid, that is document ordered already
                 if (getSubs().length > 1) {
                     AbstractExpression sortExpr = getSubs()[1];
                     if (sortExpr instanceof LiteralExpression) {
-                        if (((LiteralExpression)sortExpr).getValue().equals (LUX_DOCID)) {
+                        if (((LiteralExpression)sortExpr).getValue().equals (SearchResultIterator.LUX_DOCID)) {
                             return true;
                         }
                     }
                 }
-                // ordered some other how
+                // ordered some other way
                 return false;
             }
         }
@@ -139,6 +140,9 @@ public class FunCall extends AbstractExpression {
     public AbstractExpression getRoot () {
         if (name.equals(LUX_SEARCH)) {
             return this;
+        }
+        if (name.equals(FN_UNORDERED) || name.equals(FN_SUBSEQUENCE)) {
+            return getSubs()[0].getRoot();
         }
         return null;
     }
