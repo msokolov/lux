@@ -87,20 +87,11 @@ public class CachingDocReader {
      * @throws LuxException if there is an error building the document that has been retrieved
      */
     public XdmNode get(int leafDocID, AtomicReaderContext context) throws IOException {
-       int docID = leafDocID + context.docBase;
-       XdmNode node= cache.get(docID);
-       if (node != null) {
-           ++cacheHits;
-           return node;
-       }
-       DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
-       context.reader().document(leafDocID, fieldSelector);
-       Document document = fieldSelector.getDocument();
-       return getXdmNode(docID, document);
+       return get (leafDocID + context.docBase, leafDocID, context.reader());
     }
     
     /**
-     * Reads the document with the given id. If cached, the cached copy is
+     * Reads the document with the given id from a top-level reader. If cached, the cached copy is
      * returned. Otherwise the document is read from the index. If the document
      * does not exist in the index, or has been deleted, results are not
      * well-defined: see {@link IndexReader}.
@@ -112,13 +103,17 @@ public class CachingDocReader {
      * @throws LuxException if there is an error building the document that has been retrieved
      */
     public XdmNode get(int docID, IndexReader reader) throws IOException {
+        return get (docID, docID, reader);
+    }
+    
+    private XdmNode get(int docID, int luceneDocID, IndexReader reader) throws IOException {
         XdmNode node = cache.get(docID);
         if (node != null) {
             ++cacheHits;
             return node;
         }
         DocumentStoredFieldVisitor fieldSelector = new DocumentStoredFieldVisitor(fieldsToRetrieve);
-        reader.document(docID, fieldSelector);
+        reader.document(luceneDocID, fieldSelector);
         Document document = fieldSelector.getDocument();
         return getXdmNode(docID, document);
     }
