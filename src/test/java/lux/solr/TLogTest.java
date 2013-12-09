@@ -88,7 +88,8 @@ public class TLogTest {
         copyDirectory ("solr/collection1/data", "solr/collection1/data2");
         
         // shut down
-        solr.shutdown();
+        coreContainer.getCore("collection1").close();
+        //solr.shutdown();
         coreContainer.shutdown();
         
         // restore contents of data directory to before we shutdown
@@ -107,6 +108,7 @@ public class TLogTest {
         // commit
         solr.commit();
         validateContent (solr);
+        coreContainer.getCore("collection1").close();
         
     }
     
