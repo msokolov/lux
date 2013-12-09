@@ -15,6 +15,7 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.common.SolrInputDocument;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -48,6 +49,12 @@ public class SolrMultiCoreTest extends BaseSolrTest {
         core2.add (even_docs);        
         core1.commit();
         core2.commit();
+    }
+    
+    @AfterClass
+    public static void tearDown () throws Exception {
+        coreContainer.getCore("core2").close();
+        BaseSolrTest.tearDown();
     }
     
     @Test
