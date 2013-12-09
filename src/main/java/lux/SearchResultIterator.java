@@ -60,7 +60,6 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         this.searcher = searcher;
         this.docCache = docReader;
         this.stats = stats;
-        this.sortCriteria = sortCriteria;
         this.start = start;
         if (stats != null) {
             stats.query = query.toString();
@@ -70,12 +69,14 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
         }
         Sort sort = null;
         if (sortCriteria != null) {
-            sort = makeSortFromCriteria();
+            sort = makeSortFromCriteria(sortCriteria);
         }
         if (sort != null) {
             docIter = searcher.search(query, sort);
+            this.sortCriteria = sortCriteria;
         } else {
             docIter = searcher.searchOrdered(query);
+            this.sortCriteria = null;
         }
         if (start > 1) {
             advanceTo (start);
@@ -83,8 +84,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
     }
 
     // return null to indicate sorting by docid
-    private Sort makeSortFromCriteria() {
-        String[] fields = sortCriteria.split("\\s*,\\s*");
+    private Sort makeSortFromCriteria(String criteria) {
+        String[] fields = criteria.split("\\s*,\\s*");
         SortField[] sortFields = new SortField [fields.length];
         for (int i = 0; i < fields.length; i++) {
             SortField.Type type = SortField.Type.STRING;
@@ -94,22 +95,22 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
             Boolean emptyGreatest = null;
             for (int j = 1; j < tokens.length; j++) {
                 if (tokens[j].equals("descending")) {
-                    reverse = setBooleanOnce (reverse, true, sortCriteria);
+                    reverse = setBooleanOnce (reverse, true, criteria);
                 } else if (tokens[j].equals("ascending")) {
-                    reverse = setBooleanOnce (reverse, false, sortCriteria);
+                    reverse = setBooleanOnce (reverse, false, criteria);
                 } else if (tokens[j].equals("empty")) {
                     if (j == tokens.length-1) {
-                        throw new LuxException ("missing keyword after 'empty' in: " + sortCriteria);
+                        throw new LuxException ("missing keyword after 'empty' in: " + criteria);
                     }
                     j = j + 1;
                     if (tokens[j].equals("least")) {
-                        emptyGreatest = setBooleanOnce(emptyGreatest, false, sortCriteria);
+                        emptyGreatest = setBooleanOnce(emptyGreatest, false, criteria);
                     } 
                     else if (tokens[j].equals("greatest")) {
-                        emptyGreatest = setBooleanOnce(emptyGreatest, true, sortCriteria);
+                        emptyGreatest = setBooleanOnce(emptyGreatest, true, criteria);
                     }
                     else {
-                        throw new LuxException ("missing or invalid keyword after 'empty' in: " + sortCriteria);
+                        throw new LuxException ("missing or invalid keyword after 'empty' in: " + criteria);
                     }
                 } else if (tokens[j].equals("int")) {
                     type = SortField.Type.INT;
@@ -118,7 +119,7 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                 } else if (tokens[j].equals("string")) {
                     type = SortField.Type.STRING;
                 } else {
-                    throw new LuxException ("invalid keyword '" + tokens[j] + "' in: " + sortCriteria);
+                    throw new LuxException ("invalid keyword '" + tokens[j] + "' in: " + criteria);
                 }
             }
             if (field.equals(LUX_SCORE)) {
@@ -191,8 +192,8 @@ public class SearchResultIterator implements SequenceIterator<NodeInfo> {
                     doc = docCache.get(docID, ((DocIterator) docIter).getCurrentReaderContext());
                 } else {
                     //  FIXME: use relative docID and leaf reader here  so we can avoid a binary search to find the 
-                //  correct reader.  In fact the LuxSearcher *already* has the correct leaf reader - we just need
-                // to make it available here - probably via the docIter
+                    //  correct reader.  In fact the LuxSearcher *already* has the correct leaf reader - we just need
+                    // to make it available here - probably via the docIter
                     doc = docCache.get(docID, searcher.getIndexReader());
                 }
                 NodeInfo item = (NodeInfo) doc.getUnderlyingValue();
