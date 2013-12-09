@@ -68,6 +68,7 @@ public abstract class BaseSolrTest {
             solr.rollback();
         } catch (SolrException e) {
         }
+        solrCore.close();
         if (coreContainer != null) {
             coreContainer.shutdown();
         }
