@@ -29,12 +29,12 @@ import org.apache.lucene.search.Weight;
       /**
        * @param query the lucene query whose results will be iterated
        * @param ordered whether the docs must be scored in order
-     * @param luxSearcher TODO
+       * @param luxSearcher TODO
        * @throws IOException
        */
       DocIterator (LuxSearcher luxSearcher, Query query, boolean ordered) throws IOException {
           this.luxSearcher = luxSearcher;
-        weight = this.luxSearcher.createNormalizedWeight(query);
+          weight = this.luxSearcher.createNormalizedWeight(query);
           leaves = this.luxSearcher.getIndexReader().leaves();
           this.ordered = ordered;
           nextReader = 0;
