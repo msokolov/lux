@@ -1,2 +1,2 @@
 language: java
-after_failure: cat ./target/surefire-reports/lux.solr.*.txt
+# after_failure: cat ./target/surefire-reports/lux.solr.*.txt
