@@ -27,9 +27,15 @@ public class SolrMultiCoreTest extends BaseSolrTest {
     @BeforeClass 
     public static void setup() throws Exception {
         System.out.println("SolrMultiCoreTest.setup()");
-        FileUtils.cleanDirectory(new File("solr-multi/core2/data/index"));
+        File f = new File("solr-multi/core2/data/index");
+        if (f.exists()) {
+            FileUtils.cleanDirectory(f);
+        }
         System.out.println("solr-multi/core2/data/index");
-        FileUtils.cleanDirectory(new File("solr-multi/core2/data/tlog"));
+        f = new File("solr-multi/core2/data/tlog");
+        if (f.exists()) {
+            FileUtils.cleanDirectory(new File("solr-multi/core2/data/tlog"));
+        }
         System.out.println("solr-multi/core2/data/tlog");
         
         BaseSolrTest.setup("solr-multi", "core1");
