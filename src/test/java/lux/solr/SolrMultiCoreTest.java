@@ -25,16 +25,21 @@ public class SolrMultiCoreTest extends BaseSolrTest {
 
     @BeforeClass 
     public static void setup() throws Exception {
-
+        System.out.println("SolrMultiCoreTest.setup()");
         FileUtils.cleanDirectory(new File("solr-multi/core2/data/index"));
+        System.out.println("solr-multi/core2/data/index");
         FileUtils.cleanDirectory(new File("solr-multi/core2/data/tlog"));
+        System.out.println("solr-multi/core2/data/tlog");
         
         BaseSolrTest.setup("solr-multi", "core1");
+        System.out.println("solr-multi/core1 setup");
         
         core1 = solr;
         
         core2 = new EmbeddedSolrServer(coreContainer, "core2");
         core2.deleteByQuery("*:*");
+
+        System.out.println("solr-multi/core2 ok");
         
         Collection<SolrInputDocument> odd_docs = new ArrayList<SolrInputDocument> ();
         Collection<SolrInputDocument> even_docs = new ArrayList<SolrInputDocument> ();
