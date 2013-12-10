@@ -72,6 +72,8 @@ public abstract class BaseSolrTest {
         if (coreContainer != null) {
             coreContainer.shutdown();
         }
+        FileUtils.cleanDirectory(new File(solrCore.getDataDir() + "/index"));
+        FileUtils.cleanDirectory(new File(solrCore.getDataDir() + "/tlog"));
     }
     
     protected void assertQuery (Object result, String query) throws Exception {
