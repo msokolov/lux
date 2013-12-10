@@ -46,9 +46,13 @@ public abstract class BaseSolrTest {
     protected static void setup(String solrHome, String coreName) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
         File index = new File (solrHome + "/" + coreName + "/data/index/");
-        FileUtils.cleanDirectory(index);
+        if (index.exists()) {
+            FileUtils.cleanDirectory(index);
+        }
         File tlog= new File (solrHome + "/" + coreName + "/data/tlog/");
-        FileUtils.cleanDirectory(tlog);
+        if (tlog.exists()) {
+            FileUtils.cleanDirectory(tlog);
+        }
 
         CoreContainer.Initializer initializer = new CoreContainer.Initializer();
         coreContainer = initializer.initialize();
