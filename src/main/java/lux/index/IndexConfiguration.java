@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import lux.index.analysis.DefaultAnalyzer;
+import lux.index.analysis.ElementVisibility;
+import lux.index.analysis.XmlTokenStreamBase;
 import lux.index.field.AttributeQNameField;
 import lux.index.field.AttributeTextField;
 import lux.index.field.DocumentField;
@@ -22,6 +24,7 @@ import lux.index.field.TinyBinarySolrField;
 import lux.index.field.URIField;
 import lux.index.field.XmlTextField;
 import lux.xml.tinybin.TinyBinary;
+import net.sf.saxon.s9api.QName;
 
 import org.apache.lucene.util.Version;
 
@@ -53,18 +56,18 @@ public class IndexConfiguration {
      * documents are stored as serialized XML. */
     public final static int STORE_TINY_BINARY =    0x00000010;
     
-    /** enables the element and attribute QName fields, causing element and attribute 
+    /** enables the lux_elt_name and lux_att_name fields, causing element and attribute 
      * QNames to be indexed.  If paths are indexed, this isn't really needed. */
     public final static int INDEX_QNAMES =      0x00000020;
     
-    /** enables the path field, causing element and attribute QName paths to be indexed. */
+    /** enables the lux_path field, causing element and attribute QName paths to be indexed. */
     public final static int INDEX_PATHS =       0x00000040;
     
-    /** enables the xml text, element text, and attribute text fields,
-     * causing the text content of xml documents to be indexed. */
+    /** enables the lux_text, lux_elt_text, and lux_att_text fields,
+     * causing element and attribute text to be indexed. */
     public final static int INDEX_FULLTEXT =    0x00000080;
     
-    /** enables the path value field (if INDEX_PATHS is set), and/or the QName value field (if
+    /** enables the lux_path_value field (if INDEX_PATHS is set), and the lux_qname_value field (if
      * INDEX_QNAMES is set), causing values to be indexed.  This is an experimental feature that is not
      * fully supported.
      */
@@ -125,6 +128,10 @@ public class IndexConfiguration {
     private MultiFieldAnalyzer fieldAnalyzers;
     private final HashMap<String,String> namespaceMap;
 
+    // element visibility
+    private HashMap<QName,ElementVisibility> eltVis;
+    private ElementVisibility defVis;
+    
     /** @return the analyzers associated with the fields to be indexed */
     public MultiFieldAnalyzer getFieldAnalyzers() {
         return fieldAnalyzers;
@@ -136,6 +143,10 @@ public class IndexConfiguration {
         fieldsByName = new HashMap<String, FieldDefinition>();
         fieldAnalyzers = new MultiFieldAnalyzer();
         fieldAnalyzers.put(null, new DefaultAnalyzer());
+
+        eltVis = new HashMap<QName, ElementVisibility>();
+        defVis = ElementVisibility.OPAQUE;
+        
         addField (URI);
         this.options = options | NAMESPACE_AWARE;
         init();
@@ -312,6 +323,46 @@ public class IndexConfiguration {
 
     public String getAttributeTextFieldName () {
         return ATTRIBUTE_TEXT.getName();
+    }
+    
+    /**
+     * @param clarkName the name of an element in clark-notation: {namespace}local-name, or simply local-name 
+     * if the element name is in no namespace.
+     * @return the explicitly-specified visibility of the element name, or null if the element has the default
+     * visibility.
+     */
+    public ElementVisibility getElementVisibility (String clarkName) {
+        return eltVis.get(QName.fromClarkName(clarkName));
+    }
+
+    /** sets the visibility of elements with the given name
+     * @param clarkName the name of an element in clark-notation: {namespace}local-name, or simply local-name 
+     * if the element name is in no namespace.
+     * @param vis the visibility of the element's content from the perspective of containing elements.
+     * visibility.
+     */
+    public void setElementVisibility (String clarkName, ElementVisibility vis) {
+        eltVis.put(QName.fromClarkName(clarkName), vis);
+    }
+
+    /** @return the visibility of elements not explicitly specified using setElementVisibility.
+     * Always {@link ElementVisibility#OPAQUE}.
+     */
+    public ElementVisibility getDefaultVisibility() {
+        return defVis;
+    }
+    
+    /*
+    public void setDefaultVisibility(ElementVisibility vis) {
+        this.defVis = vis;
+    }
+    */
+
+    public void configureElementVisibility (XmlTokenStreamBase tokens) {
+        tokens.setDefaultVisibility(defVis);
+        for (Map.Entry<QName, ElementVisibility> entry : eltVis.entrySet()) {
+            tokens.setElementVisibility(entry.getKey(), entry.getValue());
+        }
     }
 
 }

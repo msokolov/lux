@@ -2,6 +2,7 @@ package lux.solr;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,10 +10,13 @@ import java.util.Collection;
 
 import lux.index.FieldRole;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.core.SolrCore;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -22,15 +26,22 @@ public class SolrMultiCoreTest extends BaseSolrTest {
 
     @BeforeClass 
     public static void setup() throws Exception {
-
-        BaseSolrTest.setup("solr-multi");
+        File f = new File("solr-multi/core2/data/index");
+        if (f.exists()) {
+            FileUtils.cleanDirectory(f);
+        }
+        f = new File("solr-multi/core2/data/tlog");
+        if (f.exists()) {
+            FileUtils.cleanDirectory(new File("solr-multi/core2/data/tlog"));
+        }
         
-        core1 = new EmbeddedSolrServer(coreContainer, "core1");
-        core1.deleteByQuery("*:*");
+        BaseSolrTest.setup("solr-multi", "core1");
+        
+        core1 = solr;
         
         core2 = new EmbeddedSolrServer(coreContainer, "core2");
         core2.deleteByQuery("*:*");
-        
+
         Collection<SolrInputDocument> odd_docs = new ArrayList<SolrInputDocument> ();
         Collection<SolrInputDocument> even_docs = new ArrayList<SolrInputDocument> ();
         for (int i = 1; i <= 100; i++) {
@@ -44,6 +55,14 @@ public class SolrMultiCoreTest extends BaseSolrTest {
         core2.add (even_docs);        
         core1.commit();
         core2.commit();
+    }
+    
+    @AfterClass
+    public static void tearDown () throws Exception {
+        coreContainer.getCore("core2").close();
+        BaseSolrTest.tearDown();
+        FileUtils.cleanDirectory(new File("solr-multi/core2/data/index"));
+        FileUtils.cleanDirectory(new File("solr-multi/core2/data/tlog"));
     }
     
     @Test
@@ -64,16 +83,17 @@ public class SolrMultiCoreTest extends BaseSolrTest {
      */
     @Test
     public void testRenameFields () throws Exception {
-        SolrIndexConfig config1 = (SolrIndexConfig) coreContainer.getCore("core1").getInfoRegistry().get(SolrIndexConfig.class.getName());
-    
+        SolrCore c1 = coreContainer.getCore("core1");
+        SolrIndexConfig config1 = (SolrIndexConfig) c1.getInfoRegistry().get(SolrIndexConfig.class.getName());
+        c1.close();
         assertEquals ("lux_uri", config1.getCompiler().getUriFieldName());
         assertEquals ("lux_xml", config1.getIndexConfig().getFieldName(FieldRole.XML_STORE));
 
-        SolrIndexConfig config2 = (SolrIndexConfig) coreContainer.getCore("core2").getInfoRegistry().get(SolrIndexConfig.class.getName());
-        assertEquals ("uri", config2.getIndexConfig().getUriFieldName());
-        assertEquals ("xml", config2.getIndexConfig().getXmlFieldName());
-        assertEquals ("xml", config2.getIndexConfig().getFieldName(FieldRole.XML_STORE));
+        SolrCore c2 = coreContainer.getCore("core2");
+        SolrIndexConfig config2 = (SolrIndexConfig) c2.getInfoRegistry().get(SolrIndexConfig.class.getName());
+        c2.close();
         assertEquals ("uri", config2.getCompiler().getUriFieldName());
+        assertEquals ("xml", config2.getIndexConfig().getFieldName(FieldRole.XML_STORE));
     }
 
     static void addSolrDocAltFields(String uri, String text, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {

@@ -327,30 +327,72 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testIntersection () throws Exception {
-        assertSearch ("2", "count(/SPEECH[contains(., 'philosophy')])", null, 2);
-        // TODO - why is this 141 and not 28?
-        // FIXME - sometimes it *is* 28???
-        assertSearch ("28", "count(/SPEECH[contains(., 'Horatio')])", null, 141);
-        assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7);
+        assertSearch ("4", "count(/SCENE[@act='3'])", null, 4);
+        assertSearch ("5", "count(/SCENE[@scene='2'])", null, 5);
         // saxon cleverly optimizes this and gets rid of the intersect
-        assertSearch ("1", "count(/SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'Horatio')])", null, 1);
+        assertSearch ("1", "count(/SCENE[@act='3'] intersect /SCENE[@scene=2])", null, 1);
     }
     
     @Test
     public void testDocumentIdentity() throws Exception {
-        /* This test confirms that document identity is preserved when creating Saxon documents 
-         * since the speech containing the two words is only retrieved once, and is the same
-         * node.
-         * 
-         * There are two speeches with the word 'philosophy' - for each /PLAY/ACT/SCENE/SPEECH
-         * 8 occurrences in 7 documents.
-         * 
-         * 5 speeches w/mercy, 3 come after the second (last) philosophy; we end up retrieving all 8 philosophy
-         * SPEECH nodes plus two /SPEECH docs with mercy
-         * */
-        assertSearch ("8", "count(//SPEECH[contains(., 'philosophy')])", null, 7, 7);        
-        assertSearch ("5", "count(/SPEECH[contains(., 'mercy')])", null, 5, 5);        
-        assertSearch ("1", "count(//SPEECH[contains(., 'philosophy')] intersect /SPEECH[contains(., 'mercy')])", null, 10, 9);        
+        /* This test confirms that document identity is preserved when creating Saxon documents
+         * because the intersect operator relies on document/node identity. Each search call
+         * retrieves the documents separately and uses the cache to preserve identity across multiple
+         * searches. 
+         */
+        assertSearch ("28", "count(lux:search('<SPEECH:Horatio')/SPEECH[contains(., 'Horatio')])", null, 40, 40);        
+        assertSearch ("8", "count(lux:search('<SPEECH:philosophy')//SPEECH[contains(., 'philosophy')])", null, 7, 7);
+        // in docid order
+        assertSearch ("1", "count(lux:search('<SPEECH:philosophy', 'lux:docid')//SPEECH[contains(., 'philosophy')] intersect lux:search('<SPEECH:Horatio', 'lux:docid')/SPEECH[contains(., 'Horatio')])", null, 29, 29);        
+        // in relevance order - Saxon sorts the documents
+        assertSearch ("1", "count(lux:search('<SPEECH:philosophy')//SPEECH[contains(., 'philosophy')] intersect lux:search('<SPEECH:Horatio')/SPEECH[contains(., 'Horatio')])", null, 47, 47);
+    }
+    
+    /* Tests relating to element visibility
+     * 
+     * setup: all elements opaque by default, LINE transparent, name transparent, SCENE a container,
+     * hidden is hidden
+     */
+    
+    @Test
+    public void testOpaqueElement() throws Exception {
+        // /PLAY/FM/P[2] contains "Bosak" but P is opaque
+        assertSearch ("0", "lux:count('<FM:Bosak')", null, 0, 0);
+        // <name> element is transparent so phrases continue through it
+        assertSearch ("3", "lux:count('<P:\"XML version by Jon Bosak\"')", null, 3, 0);
+        assertSearch ("1", "count(/FM[contains(., 'Bosak')])", null, 1, 1);
+    }
+    
+    @Test
+    public void testTransparentElement() throws Exception {
+        // sword always occurs in LINE elements, which are transparent, so indexed as part of SPEECH
+        assertSearch ("5", "lux:count('<SPEECH:\"swear by my sword\"')", null, 5, 0);
+        assertSearch ("24", "lux:count('<SPEECH:sword')", null, 24, 0);
+        // content of LINE is included in <:SPEECH but not above that, since SPEECH is opaque:
+        assertSearch ("0", "lux:count('<ACT:sword')", null, 0, 0);
+    }
+    
+    @Test 
+    public void testContainerElement() throws Exception {
+        // SCENE is a container element; sword occurs in I;5, II;2, III;1, III;3, IV;3, IV;5, IV;7.
+        // V;2 has 'swords', but there's no stemming in the default analyzer:
+        // a PLAY, 4 ACTs, and 7 SCENEs
+        assertSearch ("12", "lux:count('<SCENE:sword')", null, 12, 0);
+        assertSearch ("3", "lux:count('<SCENE:\"Swear by my sword\"')", null, 3, 0);
+        // checks all 20 of the scenes
+        assertSearch ("1", "count(/SCENE[contains(.,\"Swear by my sword\")])", null, 20, 20);
+    }
+    
+    @Test
+    public void testHiddenElement() throws Exception {
+        assertSearch ("0", "lux:count('<hidden:adam')", null, 0, 0);
+        // 2x /PLAY/ACT/SCENE/SPEECH/LINE, in the same SCENE, but not /PLAY/FM/P/name/hidden
+        // and we don't handle the possessive in Adam's, so only 5, not 7
+        assertSearch ("5", "lux:count('<LINE:adam')", null, 5, 0);
+        assertSearch ("5", "lux:count('adam')", null, 5, 0);
+        // phrase wraps around hidden element
+        assertSearch ("4", "lux:count('<name:\"michael sokolov\"')", null, 4, 0);
+        assertSearch ("4", "lux:count('\"michael sokolov\"')", null, 4, 0);
     }
     
     @Test
@@ -363,8 +405,8 @@ public class SearchTest extends BaseSearchTest {
          * /ACT[2]/SCENE[1], but since this will already have been created, its Saxon document 
          * number would be low using the built-in numbering scheme, and the order mismatch causes 
          * Saxon to terminate the intersection prematurely. */
-        assertSearch ("5", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))", null, 9, 8);
-        assertSearch ("6", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))", null, 10, 8);
+        assertSearch ("5", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 30))", null, 9, 9);
+        assertSearch ("6", "count(/ACT/SCENE intersect subsequence(//SCENE, 1, 31))", null, 10, 10);
     }
     
     @Test
@@ -413,12 +455,15 @@ public class SearchTest extends BaseSearchTest {
     }
     
     @Test public void testContains () throws Exception {
+        /*
+         * When we had a contains optimization:
         assertSearch ("5", "count(//LINE[contains(.,'Holla')])", null, 5, 5);
         assertSearch ("true", "contains(/PLAY,'Holla')", null, 1, 1);
         // searches match all 10 instances of 'given' since they will be case-insensitive
         // There is also one occurrence of 'forgiveness' that should match
         assertSearch ("1", "count (/LINE[contains(.,'Given')])", null, 11, 11);
         assertSearch ("10", "count (/LINE[contains(.,'given')])", null, 11, 11);
+        */
         int lineCount = index.elementCounts.get("LINE");
         // has to check every /LINE document:
         assertSearch ("1", "count(/LINE[contains(.,'olla! Bern')])", null, lineCount, lineCount);        
@@ -556,8 +601,9 @@ public class SearchTest extends BaseSearchTest {
     @Test
     public void testHighlightComplexContent() throws Exception {
         assertSearch ("<FM>\n<P>Text placed in the public domain by Moby Lexical Tools, 1992.</P>\n" +
-        		"<P>SGML markup by <B>Jon</B> <B>Bosak</B>, 1992-1994.</P>\n" +
-        		"<P>XML version by <B>Jon</B> <B>Bosak</B>, 1996-1998.</P>\n" +
+        		"<P>SGML markup by <name><B>Jon</B> <B>Bosak</B></name>, 1992-1994.</P>\n" +
+        		"<P>XML version by <name><B>Jon</B> <B>Bosak</B></name>, 1996-1998.</P>\n" +
+        		"<P>XML attributes and name tagging added by <name>Michael <hidden>Adam</hidden> Sokolov</name>, 2013</P>\n" +
         		"<P>This work may be freely copied and distributed worldwide.</P>\n</FM>", 
                 "lux:highlight(/FM, 'Jon Bosak')", null, null);
     }
@@ -617,10 +663,10 @@ public class SearchTest extends BaseSearchTest {
     
     @Test
     public void testWhereAtClause () throws Exception {
-        // return the index of the first /SCENE document ; the first SCENE is the 44th element in hamlet.xml,
-        // and therefore the root of document #44 in the test set
+        // return the index of the first /SCENE document ; the first SCENE is the 49th element in hamlet.xml,
+        // and therefore the root of document #49 in the test set
         String query = "(for $doc at $i in collection() where $doc/SCENE return $i)[1]";
-        assertSearch ("44", query, null, 44);
+        assertSearch ("49", query, null, 49);
     }
     
     @Test

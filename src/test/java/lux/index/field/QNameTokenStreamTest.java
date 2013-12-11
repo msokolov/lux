@@ -8,11 +8,14 @@ import java.io.IOException;
 import lux.index.analysis.AttributeTokenStream;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.ElementTokenStream;
+import lux.index.analysis.ElementVisibility;
 import lux.index.analysis.XmlTextTokenStream;
+import lux.index.analysis.XmlTokenStreamBase;
 import lux.xml.OffsetDocBuilder;
 import lux.xml.Offsets;
 import lux.xml.XmlReader;
 import net.sf.saxon.s9api.Processor;
+import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
@@ -36,7 +39,22 @@ public class QNameTokenStreamTest {
     public void testElementTokenStream() throws Exception {
 
         setup("lux/reader-test.xml", ElementTokenStream.class);
+        ((XmlTokenStreamBase) tokenStream).setDefaultVisibility(ElementVisibility.TRANSPARENT);
         
+        verifyAllElementText();
+    }
+
+    @Test
+    public void testElementTokenStreamContainer() throws Exception {
+
+        setup("lux/reader-test.xml", ElementTokenStream.class);
+        ((XmlTokenStreamBase) tokenStream).setDefaultVisibility(ElementVisibility.OPAQUE);
+        ((XmlTokenStreamBase) tokenStream).setElementVisibility(new QName("test"), ElementVisibility.CONTAINER);
+        
+        verifyAllElementText();
+    }
+
+    private void verifyAllElementText() throws IOException {
         assertToken("title:test", 1);
         assertToken("test:test", 0);
 
@@ -53,6 +71,29 @@ public class QNameTokenStreamTest {
 
         assertToken ("token:12345678", 1);
         assertToken ("test:12345678", 0);
+
+        assertToken ("test:the", 1);
+        assertToken ("test:end", 1);
+        assertFalse (tokenStream.incrementToken());
+    }
+    
+    @Test
+    public void testOpaqueElementTokenStream() throws Exception {
+
+        setup("lux/reader-test.xml", ElementTokenStream.class);
+        assertEquals ("unexpected default", ElementVisibility.OPAQUE, ((XmlTokenStreamBase) tokenStream).getDefaultVisibility());
+        
+        assertToken("title:test", 1);
+        assertToken("entities:0", 1);
+        
+        // check position increments for tokens in a phrase
+        // also test correct offset calculation for CDATA
+        for (String token : "this is some markup that is escaped".split(" ")) {
+            assertToken("test:" + token, 1);
+        }
+        assertToken ("entities:ģé", 1);
+
+        assertToken ("token:12345678", 1);
 
         assertToken ("test:the", 1);
         assertToken ("test:end", 1);

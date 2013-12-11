@@ -12,7 +12,7 @@
     <test-case name="match-all-0">
       <query type="element">/*</query>
       <expect>
-        <query id="PATH_MATCH_ALL_Q">lux:search(#PATH_MATCH_ALL_Q#)/child::element()</query>
+        <query id="PATH_MATCH_ALL_Q">lux:search(#PATH_MATCH_ALL_Q#,"lux:docid")/child::element()</query>
       </expect>
     </test-case>
     <test-case name="match-all-1">
@@ -61,7 +61,7 @@
     </test-case>
     <test-case name="rooted-path-to-predicate">
       <query>//ACT/SCENE/root()</query>
-      <expect><query id="ACT_SCENE">lux:search(#ACT_SCENE#)[(descendant::element(ACT)/child::element(SCENE))/root(.)]</query></expect>
+      <expect><query id="ACT_SCENE">lux:search(#ACT_SCENE#,"lux:docid")[(descendant::element(ACT)/child::element(SCENE))/root(.)]</query></expect>
     </test-case>
     <test-case name="attr-predicate-0">
       <query>//*[@attr]</query>
@@ -382,7 +382,7 @@
       <!-- fn:collection() is implicit -->
       <query>collection()//SCENE</query>
       <expect>
-        <query id="SCENE">lux:search(#SCENE#)/descendant::element(SCENE)</query>
+        <query id="SCENE">lux:search(#SCENE#,"lux:docid")/descendant::element(SCENE)</query>
       </expect>
     </test-case>
     <test-case name="order-by">

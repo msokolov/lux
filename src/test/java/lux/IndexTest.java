@@ -373,7 +373,7 @@ public class IndexTest {
         while (results.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
             ++count;
         }
-        assertEquals (6636, count);
+        assertEquals (6641, count);
         /*
         */
         searcher.close();

@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.solr.common.SolrInputDocument;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.After;
 import org.junit.Test;
 
 /** Tests for configurable analysis chain */
@@ -19,19 +19,17 @@ public class SchemaTest extends BaseSolrTest {
     
     @AfterClass
     public static void tearDown() throws Exception {
-        // inhibit the teardown of a default core by our superclass
+        // inhibit the class-level tearDown by our superclass; do it after each test:
     }
-
+    
     @After
-    public void shutdown() throws Exception {
-        // instead teardown after each test
+    public void myTearDown () throws Exception {
         BaseSolrTest.tearDown();
     }
     
     @Test
     public void testConfigureXmlAnalyzer () throws Exception {
-        // schema alters the text analysis used for lux_text
-        // and thereby lux_elt_text and lux_att_text as well
+        // schema alters the text analysis used for lux_text, lux_elt_text and lux_att_text as well
         BaseSolrTest.setup("solr", "core2");
         Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
         addSolrDoc ("test1", "<doc><title id='1'>This is a test</title><test>balloons</test>comma,separated</doc>", docs,
@@ -68,24 +66,22 @@ public class SchemaTest extends BaseSolrTest {
         assertXPathSearchCount (1, 1, "document", "doc", "lux:search('lux_text_case:This')");
         
         // test that stemming and case-folding have been applied to the element text index as well
-        assertQueryCount (1, "lux_elt_text:doc\\:balloon");
-        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<doc:balloon')");
-        // This doesn't work because stemming gets applied to the 'doc:balloons'
-        // but this isn't an issue if we just say that the supported thing is lux:search('<doc:balloons')
+        assertQueryCount (1, "lux_elt_text:test\\:balloon");
+        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<test:balloon')");
+        // This doesn't work because stemming gets applied to the 'test:balloons'
+        // but this isn't an issue if we just say that the supported thing is lux:search('<test:balloons')
         //assertQueryCount (1, "lux_elt_text:doc\\:balloons");
-        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<doc:balloons')");
+        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<test:balloons')");
         //assertQueryCount (1, "lux_elt_text:doc\\:tests");
-        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<doc:tests')");
+        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<title:tests')");
         assertQueryCount (0, "lux_elt_text:doc\\:comma");
         assertXPathSearchCount (0, 0, "document", "", "lux:search('<doc:comma')");
         assertQueryCount (1, "lux_elt_text:doc\\:comma,separated");
         assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<doc:comma,separated')");
-        assertQueryCount (1, "lux_elt_text:doc\\:this");
-        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<doc:this')");
-        assertQueryCount (1, "lux_elt_text:doc\\:This");
-        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<doc:This')");
-
-        
+        assertQueryCount (1, "lux_elt_text:title\\:this");
+        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<title:this')");
+        assertQueryCount (1, "lux_elt_text:title\\:This");
+        assertXPathSearchCount (1, 1, "document", "doc", "lux:search('<title:This')");
     }
 
     @Test

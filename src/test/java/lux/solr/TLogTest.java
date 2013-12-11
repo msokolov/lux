@@ -74,6 +74,9 @@ public class TLogTest extends BaseSolrTest {
         System.out.println ("shut down solr");
         
         // shut down
+        coreContainer.getCore("collection1").close();
+        //solr.shutdown();
+
         coreContainer.shutdown();
         solr.shutdown();
         File lock = new File("solr/collection1/data/index/write.lock");
@@ -100,7 +103,7 @@ public class TLogTest extends BaseSolrTest {
         // commit
         solr.commit();
         validateContent ();
-        
+        coreContainer.getCore("collection1").close();
     }
     
     private void removeDirectory(String directory) throws IOException {

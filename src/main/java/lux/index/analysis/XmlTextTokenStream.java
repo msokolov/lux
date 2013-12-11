@@ -1,7 +1,9 @@
 package lux.index.analysis;
 
 import lux.xml.Offsets;
+import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmNodeKind;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -12,6 +14,8 @@ import org.apache.lucene.analysis.TokenStream;
  */
 public final class XmlTextTokenStream extends TextOffsetTokenStream {
 
+    protected final TokenStream origWrapped;
+    
     /**
      * Creates a TokenStream returning tokens drawn from the text content of the document.
      * @param fieldName nominally: the field to be analyzed; the analyzer receives this when the
@@ -23,13 +27,26 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
      * In theory this can be used for faster highlighting, but until that is proven, 
      * this should always be null.
      */
+    
     public XmlTextTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
         super(fieldName, analyzer, wrapped, doc, offsets);
         contentIter = new ContentIterator(doc);
+        origWrapped = wrapped;
     }
 
     @Override
     void updateNodeAtts() {
+        AncestorIterator nodeAncestors = new AncestorIterator(curNode);
+        while (nodeAncestors.hasNext()) {
+            XdmNode e = (XdmNode) nodeAncestors.next();
+            assert (e.getNodeKind() == XdmNodeKind.ELEMENT);
+            QName qname = e.getNodeName();
+            if (eltVis.get(qname) == ElementVisibility.HIDDEN) {
+                setWrappedTokenStream(empty);
+                return;
+            }
+        }
+        setWrappedTokenStream(origWrapped);
     }
 
 }

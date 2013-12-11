@@ -1,5 +1,7 @@
 package lux.solr;
 
+import java.util.ArrayList;
+
 import lux.Evaluator;
 import lux.SearchIteratorBase;
 import lux.exception.LuxException;
@@ -166,9 +168,14 @@ public class CloudSearchIterator extends SearchIteratorBase {
     private String [] getEffectiveSortCriteria () {
         if (effectiveCriteria == null) {
             assert sortCriteria != null;
-            effectiveCriteria = new String [sortCriteria.length + 1];
-            System.arraycopy(sortCriteria, 0, effectiveCriteria, 0, sortCriteria.length);
-            effectiveCriteria [effectiveCriteria.length-1] = idFieldName;
+            ArrayList<String> tmp = new ArrayList<String>();
+            for (String s : sortCriteria) {
+                if (! s.equals(FieldRole.LUX_DOCID)) {
+                    tmp.add(s);
+                }
+            }
+            tmp.add(idFieldName);
+            effectiveCriteria = tmp.toArray(new String[tmp.size()]);
         }
         return effectiveCriteria; 
     }

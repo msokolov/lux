@@ -11,8 +11,6 @@ import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.SequenceType;
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.search.Query;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +50,7 @@ public class Contains extends ExtensionFunctionDefinition {
     
     public class ContainsCall extends NamespaceAwareFunctionCall {
         
+        @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
             Item queryArg = arguments[0].head();

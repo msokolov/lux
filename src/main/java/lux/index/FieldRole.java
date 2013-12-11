@@ -1,5 +1,8 @@
 package lux.index;
 
+/**
+ * Certain fields are known to the indexer and optimizer: these are identified by their FieldRole. 
+  */
 public  enum FieldRole {
     
     URI("lux_uri"),
@@ -13,6 +16,10 @@ public  enum FieldRole {
     ELEMENT_TEXT("lux_elt_text"),
     ATTRIBUTE_TEXT("lux_att_text"),
     XML_TEXT("lux_text");
+
+    // sort keys only
+    public static final String LUX_DOCID = "lux:docid";
+    public static final String LUX_SCORE = "lux:score";
     
     private String luceneFieldName;
     

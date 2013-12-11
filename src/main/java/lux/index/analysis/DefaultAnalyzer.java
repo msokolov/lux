@@ -18,6 +18,8 @@ public final class DefaultAnalyzer extends Analyzer {
         TokenStream tokenStream =  new LowerCaseFilter(IndexConfiguration.LUCENE_VERSION, tokenizer);
         // ASCIIFoldingFilter
         // Stemming
+        // Possessives
+        // hyphenated words
         return new TokenStreamComponents(tokenizer, tokenStream);
     }
 

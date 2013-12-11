@@ -27,6 +27,7 @@ public class SearchResultIterator extends SearchIteratorBase {
     private final DocIdSetIterator docIter;
     private final LuxSearcher searcher;
     private CachingDocReader docCache;
+    private Sort sort;
     
     /**
      * Executes a Lucene search.
@@ -52,17 +53,20 @@ public class SearchResultIterator extends SearchIteratorBase {
         if (searcher == null) {
             throw new LuxException("Attempted to search using an Evaluator that has no searcher");
         }
-        if (sortCriteria != null && sortCriteria.length > 0) {
-            Sort sort = makeSortFromCriteria(sortCriteria);
+        if (sortCriteria != null) {
+            sort = makeSortFromCriteria(sortCriteria);
+        } else {
+            sort = null;
+        }
+        if (sort != null) {
             docIter = searcher.search(query, sort);
         } else {
             docIter = searcher.searchOrdered(query);
         }
-        if (start > 0) {
+        if (start1 > 1) {
             advanceTo (start1);
         }
     }
-
     
     /**
      * @return the next result.  Returns null when there are no more results.
@@ -83,13 +87,13 @@ public class SearchResultIterator extends SearchIteratorBase {
             } else {
                 long t1 = System.nanoTime();
                 XdmItem doc;
-                if (sortCriteria == null) {
+                if (sort == null) {
                     // in this case, we are iterating over the readers in order, so we can make the retrieval a bit
                     // faster by going directly to the appropriate leaf reader
                     doc = docCache.get(docID, ((DocIterator) docIter).getCurrentReaderContext());
                 } else {
-                    // FIXME: use relative docID and leaf reader here  so we can avoid a binary search to find the 
-                    // correct reader.  In fact the LuxSearcher *already* has the correct leaf reader - we just need
+                    //  FIXME: use relative docID and leaf reader here  so we can avoid a binary search to find the 
+                    //  correct reader.  In fact the LuxSearcher *already* has the correct leaf reader - we just need
                     // to make it available here - probably via the docIter
                     doc = docCache.get(docID, searcher.getIndexReader());
                 }

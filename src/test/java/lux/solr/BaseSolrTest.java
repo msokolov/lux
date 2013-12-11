@@ -46,13 +46,13 @@ public abstract class BaseSolrTest {
     
     protected static void setup(String solrHome, String coreName) throws Exception {
         System.setProperty("solr.solr.home", solrHome);
-        File f = new File("solr/collection1/data/tlog");
-        if (f.exists()) {
-            FileUtils.cleanDirectory (f);
+        File index = new File (solrHome + "/" + coreName + "/data/index/");
+        if (index.exists()) {
+            FileUtils.cleanDirectory(index);
         }
-        f = new File("solr/collection1/data/index");
-        if (f.exists ()) {
-            FileUtils.cleanDirectory (new File("solr/collection1/data/index"));
+        File tlog= new File (solrHome + "/" + coreName + "/data/tlog/");
+        if (tlog.exists()) {
+            FileUtils.cleanDirectory(tlog);
         }
         coreContainer = new CoreContainer (solrHome);
         coreContainer.load();
@@ -75,9 +75,12 @@ public abstract class BaseSolrTest {
             }
         } catch (SolrException e) {
         }
+        solrCore.close();
         if (coreContainer != null) {
             coreContainer.shutdown();
         }
+        FileUtils.cleanDirectory(new File(solrCore.getDataDir() + "/index"));
+        FileUtils.cleanDirectory(new File(solrCore.getDataDir() + "/tlog"));
     }
     
     protected void assertQuery (Object result, String query) throws Exception {

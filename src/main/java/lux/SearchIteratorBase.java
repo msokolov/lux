@@ -1,6 +1,7 @@
 package lux;
 
 import lux.exception.LuxException;
+import lux.index.FieldRole;
 import lux.solr.MissingStringLastComparatorSource;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
@@ -63,12 +64,21 @@ public abstract class SearchIteratorBase implements SequenceIterator<NodeInfo> {
                     throw new LuxException ("invalid keyword '" + tokens[j] + "' in: " + criteria[i]);
                 }
             }
-            if (field.equals("lux:score")) {
+            if (field.equals(FieldRole.LUX_SCORE)) {
                 if (reverse == Boolean.FALSE) {
                     throw new LuxException ("not countenanced: attempt to sort by irrelevance");
                 }
                 sortFields[i] = SortField.FIELD_SCORE;
-            } 
+            }
+            else if (field.equals(FieldRole.LUX_DOCID)) {
+                if (reverse == Boolean.FALSE) {
+                    throw new LuxException ("not countenanced: attempt to sort by descending docid");
+                }
+                if (criteria.length == 1) {
+                    return null;
+                }
+                sortFields[i] = SortField.FIELD_DOC;
+            }
             else if (emptyGreatest == Boolean.TRUE) {
                 if (type == SortField.Type.STRING) {
                     sortFields[i] = new SortField(field, MISSING_LAST, reverse == Boolean.TRUE);

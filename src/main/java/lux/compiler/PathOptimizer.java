@@ -595,12 +595,7 @@ public class PathOptimizer extends ExpressionVisitorBase {
         optimizeSubExpressions(funcall);
         // By default, do not attempt any optimization; throw away any filters coming from the function arguments
         Occur occur = Occur.SHOULD;;
-        if (name.equals(FunCall.FN_CONTAINS)) {
-            if (optimizeFnContains (funcall)) {
-                occur = Occur.MUST;
-            }
-        }
-        else if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
+        if (name.equals(FunCall.FN_ROOT) || name.equals(FunCall.FN_DATA) || name.equals(FunCall.FN_EXISTS) ||
              name.getNamespaceURI().equals(FunCall.XS_NAMESPACE)) {
         	// require that the function argument's query match if it is a special function,
             // or an atomic type constructor (functions in the xs: namespace)
@@ -1113,45 +1108,6 @@ public class PathOptimizer extends ExpressionVisitorBase {
         return null;
     }
 
-    private boolean optimizeFnContains(FunCall funcall) {
-        if (!indexConfig.isOption(INDEX_FULLTEXT)) {
-            return false;
-        }
-        if (! (funcall.getName().equals(FunCall.FN_CONTAINS))) {
-            return false;
-        }
-        LiteralExpression value = null;
-        AbstractExpression path = null;
-        AbstractExpression op1 = funcall.getSubs()[0], op2 = funcall.getSubs()[1];
-        if (op2.getType() == Type.LITERAL) {
-            value = (LiteralExpression) op2;
-            path = op1;
-        } else {
-            // TODO: handle variables
-            return false;
-        }
-        PathStep step = getLastPathStep (path);
-        if (step == null) {
-            return false;
-        }
-        String v = value.getValue().toString();
-        if (! v.matches("\\w+")) {
-            // when optimizing contains(), we have to do a wildcard
-            // query; we can only do this if the term contains only
-            // word characters: this depends on the index definition of course,
-            // so this really needs to be tuned if analysis is changed...
-            return false;
-        }
-        ParseableQuery termQuery = createTermQuery(step, "*" + v + "*");
-        if (termQuery != null) {
-            combineTermQuery (termQuery, step.getNodeTest().getType());
-            // TODO: if the term matches an index: ie is all lower case, it could be minimal
-            peek().setFact(MINIMAL, false);
-            return true;
-        }
-        return false;
-    }
-
     private void optimizeBinaryOperation (BinaryOperation op) {
         if (!indexConfig.isOption(INDEX_FULLTEXT)) {
             return;
@@ -1413,13 +1369,14 @@ public class PathOptimizer extends ExpressionVisitorBase {
         // from the
         // for and where clauses
         flwor.getSubs()[0] = optimizeExpression(flwor.getReturnExpression(), peek());
-        // XPathQuery returnQuery = pop();
-        peek().setSortFields(null); // ignore any ordering expressions found in
-                                    // the return clause
+        XPathQuery returnQuery = peek();
+        returnQuery.setSortFields(null); // ignore any ordering expressions found in the return clause
+        
         int length = flwor.getClauses().length;
         // iterate in reverse order so we can unwind the query stack from its
         // "top"
         // which corresponds to the "bottom" of the expression tree.
+        boolean isOrdered = false;
 
         for (int i = length - 1; i >= 0; i--) {
             FLWORClause clause = flwor.getClauses()[i];
@@ -1443,14 +1400,21 @@ public class PathOptimizer extends ExpressionVisitorBase {
             	XPathQuery q = combineQueries (clauseq, Occur.MUST, returnq, returnq.getResultType());
             	//q.setBaseQuery(combineBaseQueries(returnq, clauseq));
             	push (q);
+            	if (clause instanceof ForClause) {
+            	    clause.setSequence(optimizeExpression(seq, peek()));
+            	} else if (clause instanceof OrderByClause) {
+            	    isOrdered = true;
+            	}
             }
-            if (clause instanceof ForClause) {
-                clause.setSequence(optimizeExpression(seq, peek()));
-            }
-            // TODO: optimize where and order by clauses?
+            // TODO: optimize content of where and order by clauses?
         }
         // push (combineQueries (pop(), Occur.MUST, returnQuery,
         // returnQuery.getResultType()));
+        if (isOrdered) {
+            // mark as unordered() - this is counterintuitive, but it is supposed to indicate to the optimizer
+            // that the order of this expression is not significant - ie it should not be document-ordered?
+            return new FunCall (new QName(FunCall.FN_NAMESPACE, "unordered"), returnQuery.getResultType(), flwor);
+        }
         return flwor;
     }
 
