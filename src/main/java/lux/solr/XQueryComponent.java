@@ -809,7 +809,9 @@ public class XQueryComponent extends QueryComponent implements SolrCoreAware {
                     }
                 }
                 if (part == null) {
-                    part = new XdmNode (new TextFragmentValue(text, "#part" + i));
+                    TextFragmentValue node = new TextFragmentValue(text, "#part" + i);
+                    node.setConfiguration(builder.getConfiguration());
+                    part = new XdmNode (node);
                 }
             }
             result.add (part);
