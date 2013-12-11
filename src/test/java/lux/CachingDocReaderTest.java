@@ -72,7 +72,7 @@ public class CachingDocReaderTest {
 	public void testEmptyDocument () throws Exception {
 	    RAMDirectory dir = new RAMDirectory();
 	    // add a document to the index that has no xml-valued field:
-	    IndexWriter writer = new IndexWriter (dir, new IndexWriterConfig(Version.LUCENE_44, new DefaultAnalyzer()));
+	    IndexWriter writer = new IndexWriter (dir, new IndexWriterConfig(Version.LUCENE_46, new DefaultAnalyzer()));
 	    StringField field = new StringField("string", "value", Store.YES);
 	    writer.addDocument(Arrays.asList(new StringField[] { field } ));
 	    writer.commit();

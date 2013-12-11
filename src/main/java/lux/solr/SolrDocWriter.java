@@ -18,7 +18,7 @@ import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.tree.tiny.TinyNodeImpl;
 
-import org.apache.solr.client.solrj.request.UpdateRequestExt;
+import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.ShardParams;
@@ -97,7 +97,7 @@ public class SolrDocWriter implements DocWriter {
         SolrQueryResponse rsp = new SolrQueryResponse();
         SolrQueryRequest req = UpdateDocCommand.makeSolrRequest(core);
         ((ModifiableSolrParams)req.getParams()).add(ShardParams.SHARDS, urls.toArray(new String[urls.size()]));
-        UpdateRequestExt updateReq = new UpdateRequestExt();
+        UpdateRequest updateReq = new UpdateRequest();
         updateReq.add(solrDoc);
         UpdateDocCommand cmd = new UpdateDocCommand(req, solrDoc, null, uri);
         UpdateRequestProcessorChain updateChain = xqueryComponent.getCore().getUpdateProcessingChain("lux-update-chain");

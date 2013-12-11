@@ -229,7 +229,8 @@ public class XmlHighlighter extends SaxonDocBuilder {
      * @throws XMLStreamException 
      */
     private void highlightTextNode() throws IOException, XMLStreamException {
-        xmlStreamTokens.reset(analyzer.tokenStream(textFieldName, textReader));
+        TokenStream tokenStream = analyzer.tokenStream(textFieldName, textReader); 
+        xmlStreamTokens.reset (tokenStream);
         lastEndOffset = 0;
         for (boolean next = xmlStreamTokens.incrementToken(); 
                     next && (offsetAtt.startOffset() < maxDocCharsToAnalyze); 
@@ -249,6 +250,8 @@ public class XmlHighlighter extends SaxonDocBuilder {
         handleTokenGroup();
         tokenGroup.clear();
         writeTrailingText();
+        tokenStream.end();
+        tokenStream.close();
     }
 
     private void writeTrailingText() throws XMLStreamException {

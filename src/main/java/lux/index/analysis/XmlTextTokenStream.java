@@ -14,8 +14,6 @@ import org.apache.lucene.analysis.TokenStream;
  */
 public final class XmlTextTokenStream extends TextOffsetTokenStream {
 
-    protected final TokenStream origWrapped;
-    
     /**
      * Creates a TokenStream returning tokens drawn from the text content of the document.
      * @param fieldName nominally: the field to be analyzed; the analyzer receives this when the
@@ -31,22 +29,20 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
     public XmlTextTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
         super(fieldName, analyzer, wrapped, doc, offsets);
         contentIter = new ContentIterator(doc);
-        origWrapped = wrapped;
     }
 
     @Override
-    void updateNodeAtts() {
+    public boolean updateNodeAtts() {
         AncestorIterator nodeAncestors = new AncestorIterator(curNode);
         while (nodeAncestors.hasNext()) {
             XdmNode e = (XdmNode) nodeAncestors.next();
             assert (e.getNodeKind() == XdmNodeKind.ELEMENT);
             QName qname = e.getNodeName();
             if (eltVis.get(qname) == ElementVisibility.HIDDEN) {
-                setWrappedTokenStream(empty);
-                return;
+                return false;
             }
         }
-        setWrappedTokenStream(origWrapped);
+        return true;
     }
 
 }

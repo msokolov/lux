@@ -21,7 +21,7 @@ public class WildcardAnalyzer extends Analyzer {
     @Override
     protected TokenStreamComponents createComponents(String fieldName, Reader aReader) {
         Tokenizer tokenizer = new KeywordTokenizer(aReader);
-        TokenStream outer = new LowerCaseFilter(Version.LUCENE_44, new ASCIIFoldingFilter(tokenizer));
+        TokenStream outer = new LowerCaseFilter(Version.LUCENE_46, new ASCIIFoldingFilter(tokenizer));
         return new TokenStreamComponents(tokenizer, outer);
     }
 

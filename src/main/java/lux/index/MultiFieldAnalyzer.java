@@ -16,6 +16,7 @@ public final class MultiFieldAnalyzer extends AnalyzerWrapper {
     private HashMap<String,Analyzer> analyzers;
     
     public MultiFieldAnalyzer () {
+        super(Analyzer.PER_FIELD_REUSE_STRATEGY);
         analyzers = new HashMap<String,Analyzer>();
         analyzers.put(null, new KeywordAnalyzer());
     }

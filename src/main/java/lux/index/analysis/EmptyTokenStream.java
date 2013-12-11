@@ -3,11 +3,10 @@ package lux.index.analysis;
 import java.io.IOException;
 
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.util.AttributeSource;
 
 final class EmptyTokenStream extends TokenStream {
 
-    public EmptyTokenStream(AttributeSource source) {
+    public EmptyTokenStream(TokenStream source) {
         super (source);
     }
     

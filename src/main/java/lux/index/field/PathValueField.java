@@ -16,7 +16,7 @@ import org.apache.lucene.util.Version;
 public class PathValueField extends FieldDefinition {
     
     public PathValueField () {
-        super (FieldRole.PATH_VALUE, new WhitespaceAnalyzer(Version.LUCENE_44), Store.NO, Type.TOKENS);
+        super (FieldRole.PATH_VALUE, new WhitespaceAnalyzer(Version.LUCENE_46), Store.NO, Type.TOKENS);
     }
     
     @Override

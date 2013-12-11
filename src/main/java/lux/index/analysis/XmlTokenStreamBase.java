@@ -54,7 +54,7 @@ public abstract class XmlTokenStreamBase extends TokenStream {
     protected Reader charStream = new OffsetCharFilter(new StringReader(""));
     protected ElementVisibility defVis;
     protected HashMap<QName,ElementVisibility> eltVis;
-    protected EmptyTokenStream empty;
+    // protected EmptyTokenStream empty;
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
     XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
@@ -63,7 +63,7 @@ public abstract class XmlTokenStreamBase extends TokenStream {
         this.fieldName = fieldName;
         this.analyzer = analyzer;
         termAtt = addAttribute(CharTermAttribute.class);
-        empty = new EmptyTokenStream(wrapped);
+        // empty = new EmptyTokenStream(wrapped);
         defVis = ElementVisibility.OPAQUE;
         eltVis = new HashMap<QName, ElementVisibility>();
     }
@@ -74,7 +74,13 @@ public abstract class XmlTokenStreamBase extends TokenStream {
         wrapped.reset();
     }
     
+    @Override
+    public void close () throws IOException {
+        wrapped.close();
+    }
+    
     public void reset (Reader reader) throws IOException {
+        close();
         TokenStream reset = analyzer.tokenStream (fieldName, reader);
         // This must be the same token stream: ie the Analyzer must be re-usable, and the 
         // original token stream must have arisen from it.  We don't check for actual
@@ -124,7 +130,9 @@ public abstract class XmlTokenStreamBase extends TokenStream {
             curNode = (XdmNode) contentIter.next();            
             // wrap the content in a reader and hand it to the tokenizer
             NodeInfo nodeInfo = curNode.getUnderlyingNode();
-            updateNodeAtts ();
+            if (! updateNodeAtts ()) {
+                continue;
+            }
             if (resetTokenizer(nodeInfo.getStringValueCS())) {
                 return true;
             }
@@ -134,7 +142,8 @@ public abstract class XmlTokenStreamBase extends TokenStream {
 
     abstract boolean resetTokenizer(CharSequence cs);
 
-    abstract void updateNodeAtts ();
+    /** @return false if the node is hidden */
+    abstract boolean updateNodeAtts ();
 
     /**
      * @param qname the name of an element as an s9api QName

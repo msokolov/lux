@@ -35,7 +35,7 @@ import org.apache.lucene.util.Version;
  */
 public class IndexConfiguration {
 
-    public static final Version LUCENE_VERSION = Version.LUCENE_44;
+    public static final Version LUCENE_VERSION = Version.LUCENE_46;
 
     /** causes a document node to be built during indexing. Must be set if any XPathFields are to be defined. */
     public final static int BUILD_DOCUMENT =    0x00000001;

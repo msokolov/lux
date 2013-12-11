@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.luxdb</groupId>
   <artifactId>lux</artifactId>
-  <version>0.11.3-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -74,13 +74,13 @@
     <dependency>
       <groupId>org.apache.solr</groupId>
       <artifactId>solr-test-framework</artifactId>
-      <version>4.4.0</version>
+      <version>4.6.0</version>
       <scope>test</scope>
     </dependency>
   	<dependency>
   		<groupId>org.apache.solr</groupId>
   		<artifactId>solr-core</artifactId>
-  		<version>4.4.0</version>
+  		<version>4.6.0</version>
   		<exclusions>
   			<exclusion>
   				<artifactId>wstx-asl</artifactId>

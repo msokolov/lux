@@ -43,14 +43,9 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
     }
     
     @Override
-    protected void updateNodeAtts () {
+    protected boolean updateNodeAtts () {
         getAncestorQNames();
-        if (qnameAtt.hasNext()) {
-            setWrappedTokenStream(qnameTokenFilter);
-        } else {
-            // the text is hidden, just skip it
-            setWrappedTokenStream(empty);
-        }
+        return qnameAtt.hasNext();
     }
     
     private void getAncestorQNames() {

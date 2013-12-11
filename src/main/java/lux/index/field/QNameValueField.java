@@ -16,7 +16,7 @@ import org.apache.lucene.util.Version;
 public class QNameValueField extends FieldDefinition {
     
     public QNameValueField () {
-        super (FieldRole.QNAME_VALUE, new WhitespaceAnalyzer(Version.LUCENE_44), Store.NO, Type.TOKENS);
+        super (FieldRole.QNAME_VALUE, new WhitespaceAnalyzer(Version.LUCENE_46), Store.NO, Type.TOKENS);
     }
     
     @Override

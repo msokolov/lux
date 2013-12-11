@@ -37,8 +37,10 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
     }
     
     @Override
-    protected void updateNodeAtts() {
+    protected boolean updateNodeAtts() {
+        // TODO: hide attribute content of hidden elements by returning false
         getAttributeQName();
+        return true;
     }
     
     private void getAttributeQName() {
