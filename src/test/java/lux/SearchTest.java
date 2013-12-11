@@ -803,6 +803,11 @@ public class SearchTest extends BaseSearchTest {
         assertSearch ("6636", query, null, 0, 0);
     }
     
+    @Test
+    public void testEmptySort() throws Exception {
+        assertSearch ("PLAY", "name(lux:search('yorick',())[1]/*)", null, 1, 1);
+    }
+    
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
