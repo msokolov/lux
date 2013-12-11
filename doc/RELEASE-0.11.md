@@ -11,6 +11,9 @@ The full array of Lucene analysis tools can now be applied to Lux's XML
 text fields simply by configuring the fields in the Solr schema (or in the
 Java API by supplying a Lucene Analyzer to a Lux FieldDefinition).
 
+Lux's API now provides control over element visibility as a tradeoff
+between index size and power.
+
 SolrCloud support!  Lux now handles distributed, sharded indexes by using
 Solr's distributed query and update functionality.  The short story is that
 everything works when you have your documents spread across multiple
@@ -40,6 +43,15 @@ field definitions, tracked field renaming in the field object rather than
 in a map in the configuration object.
 
 lux:field-values() was deprecated (in favor of lux:key) and is now eliminated 
+
+Element transparency: the contents of *transparent* elements are also
+indexed as part of enclosing elements, while the contents of *opaque*
+elements are not.  Further, elements may be declared (by name) to be
+*container* elements, which "see into" descendant opaque elements, indexing
+all descendant content, with the exception of *hidden* elements, whose
+content is not indexed at all.  Elements are opaque by default - in
+previous releases they were effectively transparent - all text was tagged
+with all enclosing element names.
 
 # Other Changes in release 0.11.2
 
