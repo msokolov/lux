@@ -18,6 +18,7 @@ import net.sf.saxon.event.PipelineConfiguration;
 import net.sf.saxon.evpull.BracketedDocumentIterator;
 import net.sf.saxon.evpull.Decomposer;
 import net.sf.saxon.evpull.EventIterator;
+import net.sf.saxon.evpull.EventToStaxBridge;
 import net.sf.saxon.evpull.SingletonEventIterator;
 import net.sf.saxon.om.DocumentInfo;
 import net.sf.saxon.om.NodeInfo;
