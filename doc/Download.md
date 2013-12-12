@@ -11,29 +11,21 @@ The Lux app server bundle is a complete server bundle, including Jetty.  It
 does require a working Java installation.  It will probably work with a
 recent OpenJDK JVM, but has only been tested with Oracle/Sun JVMs.
 
-## Latest unstable binary release ##
-
-* [Lux app server 0.11.3-SNAPSHOT, bzip](dist/lux-appserver-0.11.3-SNAPSHOT-bin.tar.bz2)
-* [Lux app server 0.11.3-SNAPSHOT, gzip](dist/lux-appserver-0.11.3-SNAPSHOT-bin.tar.gz)
-* [Lux app server 0.11.3-SNAPSHOT, zip](dist/lux-appserver-0.11.3-SNAPSHOT-bin.zip)
-
-* [Lux 0.11.3-SNAPSHOT Solr war (web application) only](dist/lux-appserver-0.11.3-SNAPSHOT.war)
-
 ## Latest stable binary release ##
 
-* [Lux app server 0.11.2, bzip](dist/lux-appserver-0.11.2-bin.tar.bz2)
-* [Lux app server 0.11.2, gzip](dist/lux-appserver-0.11.2-bin.tar.gz)
-* [Lux app server 0.11.2, zip](dist/lux-appserver-0.11.2-bin.zip)
+* [Lux app server 1.0.1, bzip](dist/lux-appserver-1.0.1-bin.tar.bz2)
+* [Lux app server 1.0.1, gzip](dist/lux-appserver-1.0.1-bin.tar.gz)
+* [Lux app server 1.0.1, zip](dist/lux-appserver-1.0.1-bin.zip)
 
 The war-only distribution is useful if you want to run this in an existing
 J2EE web app container.
 
-* [Lux 0.11.2-enabled Solr war (web application) only](dist/lux-appserver-0.11.2.war)
+* [Lux 1.0.1-enabled Solr war (web application) only](dist/lux-appserver-1.0.1.war)
 
 Download the Lux library (jar) if you want to embed Lux in a Java
 application that will manage its own local index using Lucene (not Solr).
 
-* [Lux 0.11.2 library (jar) only](dist/lux-0.11.2.jar)
+* [Lux 1.0.1 library (jar) only](dist/lux-1.0.1.jar)
 
 We also maintain a folder of older artifacts.  The 0.10 series is being
 actively maintained in order to support users of Solr 4.2.1.  The main
@@ -54,6 +46,6 @@ following in your pom.xml:
                   <dependency>
                      <groupId>org.luxdb</groupId>
                      <artifactId>lux<artifactId>
-                     <version>0.11.2</version>
+                     <version>1.0.1</version>
                   </dependency>
 
