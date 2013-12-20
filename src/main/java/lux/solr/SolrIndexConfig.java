@@ -199,7 +199,6 @@ public class SolrIndexConfig implements SolrInfoMBean {
 
     public void inform(SolrCore core) {
         schema = core.getLatestSchema();
-
         // XML_STORE is not listed explicitly by the indexer
         informField (indexConfig.getField(FieldRole.XML_STORE), core);
         // This must be run before informField() registers default analyzers with the Schema
@@ -225,8 +224,8 @@ public class SolrIndexConfig implements SolrInfoMBean {
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         String fieldName = xmlField.getName();
         if (schemaFields.containsKey(fieldName) && xmlField.getType() != Type.TOKENS) {
-            // The Solr schema has a definition for this field, and it's not a TOKENS field:
-            // TOKENS fields need to install their own special field type since they wrap the
+            // The Solr schema has a definition for this field, but it's not a TOKENS field:
+            // We're only interested in TOKENS fields here; these need to install their own special field type since they wrap the
             // analyzer defined by the schema
             return;
         }

@@ -36,6 +36,13 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
     private QNameTokenFilter qnameTokenFilter;
     public ElementTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
         super(fieldName, analyzer, wrapped, doc, offsets);
+        // TODO:
+        /*
+        if (wrapped instanceof QNameTokenFilter) {
+            qnameTokenFilter = (QNameTokenFilter) wrapped;
+            eltVis.putAll(qnameTokenFilter.getElementVisibility());
+        } else 
+        */
         qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
         contentIter = new ContentIterator(doc);
         qnameAtt = qnameTokenFilter.addAttribute(QNameAttribute.class);
@@ -49,6 +56,7 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
     }
     
     private void getAncestorQNames() {
+        // list the QNames of containing elements in qnameAtt filtered by the visibility rules
         assert(curNode.getNodeKind() == XdmNodeKind.TEXT);
         AncestorIterator nodeAncestors = new AncestorIterator(curNode);
         qnameAtt.clearQNames();
@@ -59,19 +67,26 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
             QName qname = e.getNodeName();
             ElementVisibility vis = eltVis.get(qname);
             if (vis == null) {
+                // nothing configured for this QName, use the default visibility
                 vis = defVis;
             }
             if (vis == ElementVisibility.HIDDEN) {
+                // this node is hidden: don't index its content
+                qnameAtt.clearQNames();
                 return;
             }
             if (isOpaque) {
+                // we hit an opaque element in a previous iteration, so this element can't "see" the content
+                // unless it is a container, which sees through opaque elements
                 if (vis == ElementVisibility.CONTAINER) {
                     qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(),  qname.getLocalName(), qname.getPrefix()));
                 }
             } else {
+                // all elements so far have been transparent, so tag the content with this element name
                 qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(),  qname.getLocalName(), qname.getPrefix()));
                 if (vis == ElementVisibility.OPAQUE || vis == ElementVisibility.CONTAINER) {
-                    // continue, checking for containers
+                    // set the opaque flag if this element is opaque (containers are always opaque).
+                    // still continue, because there might be containers
                     isOpaque = true;
                 }
             }
