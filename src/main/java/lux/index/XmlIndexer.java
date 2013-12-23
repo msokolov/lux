@@ -181,7 +181,7 @@ public class XmlIndexer {
         return compiler;
     }
 
-    private Processor getProcessor () {
+    public Processor getProcessor () {
         if (processor == null) {
             processor = new Processor(false);
         }

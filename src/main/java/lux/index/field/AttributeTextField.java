@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.util.Collections;
 
 import lux.index.FieldRole;
-import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.analysis.AttributeTokenStream;
 import lux.index.analysis.DefaultAnalyzer;
-import lux.index.analysis.QNameTokenFilter;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
 
@@ -38,8 +36,7 @@ public class AttributeTextField extends FieldDefinition {
             try {
                 textTokens = analyzer.tokenStream(getName(), new CharSequenceReader(""));
             } catch (IOException e) { }
-            AttributeTokenStream tokens = new AttributeTokenStream(getName(), analyzer, textTokens, doc, builder.getOffsets());
-            ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(indexer.getConfiguration().isOption(IndexConfiguration.NAMESPACE_AWARE));
+            AttributeTokenStream tokens = new AttributeTokenStream(getName(), analyzer, textTokens, doc, builder.getOffsets(), indexer.getProcessor());
             return new FieldValues (this, Collections.singleton(new TextField(getName(), tokens)));
         }
         return Collections.emptySet();

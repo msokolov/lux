@@ -63,7 +63,15 @@ public class LuxQueryParser extends ExtendableQueryParser {
 
     public static LuxQueryParser makeLuxQueryParser(IndexConfiguration config) {
         FieldDefinition elementTextField = config.getField(FieldRole.ELEMENT_TEXT);
-        Analyzer elementTextAnalyzer = elementTextField != null ? elementTextField.getAnalyzer() : config.getFieldAnalyzers().getWrappedAnalyzer(null);
+        Analyzer elementTextAnalyzer;
+        if (elementTextField == null) {
+            elementTextAnalyzer = config.getFieldAnalyzers().getWrappedAnalyzer(null);
+        } else {
+            elementTextAnalyzer = elementTextField.getQueryAnalyzer(); 
+            if (elementTextAnalyzer == null) {
+                elementTextAnalyzer = elementTextField.getAnalyzer(); 
+            }
+        }
         NodeQueryBuilder queryBuilder = new NodeQueryBuilder(elementTextAnalyzer, config.isOption(IndexConfiguration.NAMESPACE_AWARE));
         NodeParser nodeParser = new NodeParser(
                 config.getTextFieldName(),

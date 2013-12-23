@@ -15,7 +15,6 @@ import lux.xml.OffsetDocBuilder;
 import lux.xml.Offsets;
 import lux.xml.XmlReader;
 import net.sf.saxon.s9api.Processor;
-import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmNode;
 
 import org.apache.commons.io.IOUtils;
@@ -29,6 +28,7 @@ import org.junit.Test;
 
 public class QNameTokenStreamTest {
     
+    Processor processor;
     TokenStream tokenStream;
     CharTermAttribute termAtt;
     PositionIncrementAttribute posAtt;
@@ -49,7 +49,8 @@ public class QNameTokenStreamTest {
 
         setup("lux/reader-test.xml", ElementTokenStream.class);
         ((XmlTokenStreamBase) tokenStream).setDefaultVisibility(ElementVisibility.OPAQUE);
-        ((XmlTokenStreamBase) tokenStream).setElementVisibility(new QName("test"), ElementVisibility.CONTAINER);
+        int testNameCode = processor.getUnderlyingConfiguration().getNamePool().allocateClarkName("test");
+        ((XmlTokenStreamBase) tokenStream).setElementVisibility(testNameCode, ElementVisibility.CONTAINER);
         
         verifyAllElementText();
     }
@@ -143,8 +144,8 @@ public class QNameTokenStreamTest {
     private void setup(String filename, Class<?> tokenStreamClass) throws Exception {
         byte[] input = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream(filename));
         inputString = new String (input, "utf-8");
-        Processor proc = new Processor(false);
-        OffsetDocBuilder builder = new OffsetDocBuilder(proc);
+        processor = new Processor(false);
+        OffsetDocBuilder builder = new OffsetDocBuilder(processor);
         boolean hasCRLF = false;
         for (byte b : input) {
             if (b == '\r') {
@@ -159,8 +160,8 @@ public class QNameTokenStreamTest {
         XdmNode doc = builder.getDocument();
         DefaultAnalyzer defaultAnalyzer = new DefaultAnalyzer();
         TokenStream textTokens = defaultAnalyzer.tokenStream("dummy", new CharSequenceReader(""));
-        tokenStream = (TokenStream) tokenStreamClass.getConstructor(String.class, Analyzer.class, TokenStream.class, XdmNode.class, Offsets.class).
-                newInstance("dummy", defaultAnalyzer, textTokens, doc, builder.getOffsets());
+        tokenStream = (TokenStream) tokenStreamClass.getConstructor(String.class, Analyzer.class, TokenStream.class, XdmNode.class, Offsets.class, Processor.class).
+                newInstance("dummy", defaultAnalyzer, textTokens, doc, builder.getOffsets(), processor);
         termAtt = tokenStream.addAttribute(CharTermAttribute.class);
         offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
         posAtt = tokenStream.addAttribute(PositionIncrementAttribute.class);

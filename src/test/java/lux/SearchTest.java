@@ -389,6 +389,8 @@ public class SearchTest extends BaseSearchTest {
         // 2x /PLAY/ACT/SCENE/SPEECH/LINE, in the same SCENE, but not /PLAY/FM/P/name/hidden
         // and we don't handle the possessive in Adam's, so only 5, not 7
         assertSearch ("5", "lux:count('<LINE:adam')", null, 5, 0);
+        assertSearch ("0", "lux:count('name:adam')", null, 0, 0);
+        assertSearch ("0", "lux:count('hidden:adam')", null, 0, 0);
         assertSearch ("5", "lux:count('adam')", null, 5, 0);
         // phrase wraps around hidden element
         assertSearch ("4", "lux:count('<name:\"michael sokolov\"')", null, 4, 0);

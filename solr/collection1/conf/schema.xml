@@ -317,7 +317,6 @@
       	<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
 <!--         <filter class="solr.ICUFoldingFilterFactory"/> -->
         <filter class="solr.KStemFilterFactory" />
-        <filter class="lux.index.analysis.QNameFilterFactory" xmlns:ns="urn:ns" visibility="opaque" transparent="i,ns:i" container="div" default-visibility="x" />
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>

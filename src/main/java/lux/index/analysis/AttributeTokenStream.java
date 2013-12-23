@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
 
-import lux.index.attribute.QNameAttribute;
 import lux.xml.Offsets;
 import net.sf.saxon.s9api.Axis;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
@@ -19,26 +19,21 @@ import org.apache.lucene.analysis.TokenStream;
  */
 public final class AttributeTokenStream extends TextOffsetTokenStream {
 
-    private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
-    private final QNameTokenFilter qnameTokenFilter;
-    
-    public AttributeTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
-        super(fieldName, analyzer, wrapped, doc, offsets);
-        qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
-        setWrappedTokenStream (qnameTokenFilter);
-        contentIter = new ContentIterator(doc);
+    public AttributeTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets, Processor processor) {
+        super(fieldName, analyzer, wrapped, doc, offsets, processor);
+        contentIter = new AttributeIterator(doc);
     }
     
     @Override
     public void reset (Reader reader) throws IOException {
         super.reset(reader);
-        qnameTokenFilter.reset(getWrappedTokenStream());        
+        qnameTokenFilter.reset(getWrappedTokenStream());  
         setWrappedTokenStream (qnameTokenFilter);
     }
     
     @Override
     protected boolean updateNodeAtts() {
-        // TODO: hide attribute content of hidden elements by returning false
+        // TODO: hide attribute content of hidden elements by returning false?
         getAttributeQName();
         return true;
     }
@@ -53,13 +48,13 @@ public final class AttributeTokenStream extends TextOffsetTokenStream {
      * Iterates over /descendant::element()/@*); all descendant elements'
      * attributes
      */
-    private static class ContentIterator implements Iterator<XdmNode> {
+    private static class AttributeIterator implements Iterator<XdmNode> {
 
         private XdmSequenceIterator descendants;
         private XdmSequenceIterator attributes;
         private XdmNode next = null; // storage for lookahead
 
-        protected ContentIterator(XdmNode node) {
+        protected AttributeIterator(XdmNode node) {
             descendants = node.axisIterator(Axis.DESCENDANT_OR_SELF);
             attributes = EMPTY;
             next = null;

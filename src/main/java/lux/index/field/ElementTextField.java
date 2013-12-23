@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.util.Collections;
 
 import lux.index.FieldRole;
-import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.ElementTokenStream;
-import lux.index.analysis.QNameTokenFilter;
 import lux.index.analysis.XmlTokenStreamBase;
 import lux.xml.SaxonDocBuilder;
 import net.sf.saxon.s9api.XdmNode;
@@ -40,10 +38,8 @@ public class ElementTextField extends FieldDefinition {
                 textTokens = analyzer.tokenStream(getName(), new CharSequenceReader(""));
             } catch (IOException e) { }
  
-            XmlTokenStreamBase tokens = new ElementTokenStream (getName(), analyzer, textTokens, doc, builder.getOffsets());
-            IndexConfiguration config = indexer.getConfiguration();
-            ((QNameTokenFilter) tokens.getWrappedTokenStream()).setNamespaceAware(config.isOption(IndexConfiguration.NAMESPACE_AWARE));
-            config.configureElementVisibility(tokens);
+            XmlTokenStreamBase tokens = new ElementTokenStream (getName(), analyzer, textTokens, doc, builder.getOffsets(), indexer.getProcessor());
+            tokens.configureElementVisibility(indexer);
             return new FieldValues (this, Collections.singleton(new TextField(getName(), tokens)));
         }
         return Collections.emptySet();

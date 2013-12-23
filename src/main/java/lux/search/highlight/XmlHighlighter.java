@@ -50,9 +50,11 @@ public class XmlHighlighter extends SaxonDocBuilder {
     private int maxDocCharsToAnalyze = Integer.MAX_VALUE;
     private String textFieldName;
     private Analyzer analyzer;
+    private Processor processor;
     
     public XmlHighlighter(Processor processor, IndexConfiguration indexConfig, HighlightFormatter highlighter) {
         super(processor);
+        this.processor = processor;
         textFieldName = indexConfig.getTextFieldName();
         analyzer = indexConfig.getFieldAnalyzers();
         this.highlighter = highlighter;
@@ -87,7 +89,7 @@ public class XmlHighlighter extends SaxonDocBuilder {
         try {
             textTokens = defaultAnalyzer.tokenStream("xml_text", new CharSequenceReader(""));
         } catch (IOException e) { }
-        init(new XmlTextTokenStream("xml_text", defaultAnalyzer, textTokens, new XdmNode (node), null));
+        init(new XmlTextTokenStream("xml_text", defaultAnalyzer, textTokens, new XdmNode (node), null, processor));
         XmlReader xmlReader = new XmlReader ();
         xmlReader.addHandler(this);
         xmlReader.read(node);

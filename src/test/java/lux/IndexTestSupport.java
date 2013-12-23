@@ -104,6 +104,7 @@ public class IndexTestSupport extends IndexTestSupportBase {
         printAllTerms (dir, indexer);
     }
     
+    // actually only prints a sample of all terms 
     public static void printAllTerms(Directory dir, XmlIndexer indexer) throws IOException {
         DirectoryReader reader = DirectoryReader.open(dir);
         Fields fields = MultiFields.getFields(reader); 
@@ -116,7 +117,8 @@ public class IndexTestSupport extends IndexTestSupportBase {
             Terms terms = fields.terms(field);
             TermsEnum termsEnum = terms.iterator(null);
             BytesRef text;
-            while ((text = termsEnum.next()) != null) {
+            int count = 0;
+            while ((text = termsEnum.next()) != null && count++ < 100) {
                 System.out.println (field + " " + text.utf8ToString() + ' ' + termsEnum.docFreq());
             }
         }

@@ -120,26 +120,26 @@ public abstract class BaseSolrTest {
         }
     }
 
-    protected void assertQueryCount(int count, String query, SolrServer core) throws SolrServerException {
+    protected void assertSolrQueryCount(int count, String query, SolrServer core) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
         QueryResponse rsp = core.query(q);
         assertEquals(count, rsp.getResults().getNumFound());
     }
 
-    protected void assertQueryCount(int count, String query) throws SolrServerException {
-        assertQueryCount (count, query, solr); 
+    protected void assertSolrQueryCount(int count, String query) throws SolrServerException {
+        assertSolrQueryCount (count, query, solr); 
     }
 
-    protected void assertXPathSearchCount(int count, int docCount, String type, String value, String query) throws SolrServerException {
-        assertXPathSearchCount (count, docCount, type, value, query, solr);
+    protected void assertQueryCount(int count, int docCount, String type, String value, String query) throws SolrServerException {
+        assertQueryCount (count, docCount, type, value, query, solr);
     }
     
-    protected void assertXPathSearchCount(int count, int docCount, String type, String value, String query, SolrServer core)
+    protected void assertQueryCount(int count, int docCount, String type, String value, String query, SolrServer core)
             throws SolrServerException {
-        assertXPathSearchCount(count, docCount, 10, type, value, query, core);
+        assertQueryCount(count, docCount, 10, type, value, query, core);
     }
 
-    protected void assertXPathSearchError(String error, String query) throws SolrServerException {
+    protected void assertQueryError(String error, String query) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
         q.setRequestHandler(SOLR_QUERY_TYPE);
         QueryResponse rsp = solr.query(q, METHOD.POST);
@@ -147,12 +147,16 @@ public abstract class BaseSolrTest {
         assertTrue("Error " + actualError + " does not contain expected error " + error, actualError.contains(error));
     }
 
-    protected void assertXPathSearchCount(int count, int docCount, int maxResults, String type, String value,
-            String query) throws SolrServerException {
-        assertXPathSearchCount (count, docCount, maxResults, type, value, query, solr);
+    protected void assertQueryCount(int count, String query) throws SolrServerException {
+        assertQueryCount (count, count, 100, null, null, query, solr);
     }
     
-    protected void assertXPathSearchCount(int count, int docCount, int maxResults, String type, String value,
+    protected void assertQueryCount(int count, int docCount, int maxResults, String type, String value,
+            String query) throws SolrServerException {
+        assertQueryCount (count, docCount, maxResults, type, value, query, solr);
+    }
+    
+    protected void assertQueryCount(int count, int docCount, int maxResults, String type, String value,
             String query, SolrServer core) throws SolrServerException {
         SolrQuery q = new SolrQuery(query);
         q.setRequestHandler(SOLR_QUERY_TYPE);
@@ -161,7 +165,7 @@ public abstract class BaseSolrTest {
         QueryResponse rsp = core.query(q, METHOD.POST);
         NamedList<?> results = (NamedList<?>) rsp.getResponse().get("xpath-results");
         String error = (String) rsp.getResponse().get("xpath-error");
-        if (type.equals("error")) {
+        if ("error".equals(type)) {
             assertEquals(value, error);
         } else {
             assertNull("got unexpected error: " + error, error);
@@ -169,25 +173,35 @@ public abstract class BaseSolrTest {
             assertEquals("unexpected number of documents retrieved", docCount, docMatches);
             assertEquals("unexpected result count", count, results.size());
             if (count > 0) {
-                assertEquals("unexpected result type", type, results.getName(0));
-                String returnValue = results.getVal(0).toString();
-                if (returnValue.startsWith("<")) {
-                    // assume the returned value is an element - hack to avoid real
-                    // parsing
-                    assertEquals(value, returnValue.substring(1, returnValue.indexOf('>')));
-                } else {
-                    assertEquals(value, returnValue);
+                if (type != null) {
+                    assertEquals("unexpected result type", type, results.getName(0));
+                }
+                if (value != null) {
+                    String returnValue = results.getVal(0).toString();
+                    if (returnValue.startsWith("<")) {
+                        // assume the returned value is an element - hack to avoid real
+                        // parsing
+                        assertEquals(value, returnValue.substring(1, returnValue.indexOf('>')));
+                    } else {
+                        assertEquals(value, returnValue);
+                    }
                 }
             }
         }
     }
 
+    // insert docs using the standard field names: lux_uri,lux:xml 
     static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs) throws FileNotFoundException, IOException {
+        addSolrDocFromFile (path, docs, URI, LUX_XML);
+    }
+    
+    // insert docs using the provided field names
+    static void addSolrDocFromFile(String path, Collection<SolrInputDocument> docs, String uriFieldName, String xmlFieldName) throws FileNotFoundException, IOException {
         SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField (URI, path);
+        doc.addField (uriFieldName, path);
         FileInputStream in = new FileInputStream (path);
         String buf = IOUtils.toString(in);
-        doc.addField(LUX_XML, buf);
+        doc.addField(xmlFieldName, buf);
         docs.add(doc);
     }
     
