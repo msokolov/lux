@@ -1,6 +1,7 @@
 package lux.index.analysis;
 
 import java.io.IOException;
+import java.util.Map;
 
 import lux.index.attribute.QNameAttribute;
 import lux.xml.QName;
@@ -23,13 +24,21 @@ final public class QNameTokenFilter extends TokenFilter {
     private final QNameAttribute qnameAtt = addAttribute(QNameAttribute.class);
     private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
     private final PositionIncrementAttribute posAtt = addAttribute(PositionIncrementAttribute.class);
+    private final ElementVisibility defVis; 
+    private final Map<String,ElementVisibility> elVis; 
     private boolean namespaceAware;
     private CharsRef term;
 
     protected QNameTokenFilter(TokenStream input) {
+        this (input, ElementVisibility.OPAQUE, null);
+    }
+    
+    protected QNameTokenFilter(TokenStream input, ElementVisibility defVis, Map<String,ElementVisibility> elVis) {
         super(input);
         term = new CharsRef();
         setNamespaceAware(true);
+        this.defVis = defVis;
+        this.elVis = elVis;
     }
     
     public final void reset (TokenStream inputAgain) {
@@ -42,6 +51,7 @@ final public class QNameTokenFilter extends TokenFilter {
             if (!input.incrementToken()) {
                 return false;
             }
+            // make a copy of the current term so we can prefix it below
             term.copyChars(termAtt.buffer(), 0, termAtt.length());
         }
         else {
@@ -73,6 +83,18 @@ final public class QNameTokenFilter extends TokenFilter {
 
     public void setNamespaceAware(boolean namespaceAware) {
         this.namespaceAware = namespaceAware;
+    }
+
+    public ElementVisibility getDefaultVisibility() {
+        return defVis;
+    }
+
+    public Map<String, ElementVisibility> getElementVisibility() {
+        return elVis;
+    }
+    
+    public TokenStream getInput () {
+        return input;
     }
 
 }
