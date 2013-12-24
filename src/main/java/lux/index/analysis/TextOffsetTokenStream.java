@@ -3,6 +3,7 @@ package lux.index.analysis;
 import java.io.IOException;
 
 import lux.xml.Offsets;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 
@@ -25,8 +26,8 @@ public abstract class TextOffsetTokenStream extends XmlTokenStreamBase {
     
     private CharSequenceStream charSequenceStream;
 
-    public TextOffsetTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
-        super(fieldName, analyzer, wrapped);
+    public TextOffsetTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets, Processor processor) {
+        super(fieldName, analyzer, wrapped, processor);
         //charSequenceStream = new CharSequenceStream(null);
         //charStream = new OffsetCharFilter(charSequenceStream);
         this.offsets = offsets;
