@@ -10,12 +10,12 @@ import net.sf.saxon.s9api.XdmSequenceIterator;
 /**
  * Iterates over //text(); all descendant text nodes
  */
-public class ContentIterator implements Iterator<XdmNode> {
+public class TextIterator implements Iterator<XdmNode> {
         
     private XdmSequenceIterator descendants;
     private XdmNode next = null;  // storage for lookahead
         
-    public ContentIterator(XdmNode node) {
+    public TextIterator(XdmNode node) {
         descendants = new TextNodeDescendantIterator(node);
     }
 

@@ -68,14 +68,14 @@ public class SolrMultiCoreTest extends BaseSolrTest {
     @Test
     public void testMultipleCores () throws SolrServerException {
         // We can start two cores with different documents:
-        assertQueryCount (50, "*:*", core1);
-        assertQueryCount (50, "*:*", core2);
-        assertQueryCount (1, "lux_uri:test1", core1);
-        assertQueryCount (0, "uri:test1", core2);
+        assertSolrQueryCount (50, "*:*", core1);
+        assertSolrQueryCount (50, "*:*", core2);
+        assertSolrQueryCount (1, "lux_uri:test1", core1);
+        assertSolrQueryCount (0, "uri:test1", core2);
         // We can run xquery against them:
         // relies on documents like: <doc id="1">100</doc>, <doc id="2">99</doc>
-        assertXPathSearchCount (1, 1, "xs:double", "99.0", "number((/doc/title)[1])", core2);
-        assertXPathSearchCount (1, 1, "xs:double", "100.0", "number((/doc/title)[1])", core1);
+        assertQueryCount (1, 1, "xs:double", "99.0", "number((/doc/title)[1])", core2);
+        assertQueryCount (1, 1, "xs:double", "100.0", "number((/doc/title)[1])", core1);
     }
 
     /*

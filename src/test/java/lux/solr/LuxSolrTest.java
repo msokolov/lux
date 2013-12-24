@@ -26,12 +26,12 @@ public class LuxSolrTest extends BaseSolrTest {
 
     @BeforeClass
     public static void setup () throws Exception {
-        BaseSolrTest.setup();
+        BaseSolrTest.setup("solr", "core2"); // use core2 since its schema has the element visibility configuration
         Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument> ();
-        addSolrDocFromFile("src/test/resources/conf/schema.xml", docs);
-        addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs);
+        addSolrDocFromFile("src/test/resources/conf/schema.xml", docs, "uri", "xml");
+        addSolrDocFromFile("src/test/resources/conf/solrconfig.xml", docs, "uri", "xml");
         for (int i = 1; i <= 100; i++) {
-            addSolrDoc ("test" + i, "<doc><title id='" + i + "'>" + (101-i) + "</title><test>cat</test></doc>", docs);
+            addSolrDoc ("test" + i, "<doc><title id='" + i + "'>" + (101-i) + "</title><test>cat</test></doc>", docs, "uri", "xml");
         }
         solr.add (docs);
         solr.commit();
@@ -39,20 +39,20 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testIndex() throws Exception {
         // make sure the documents have the values we expect
-        assertQueryCount (102, "*:*");
+        assertSolrQueryCount (102, "*:*");
         // QNAME index is no longer part of the default setup created by LuxUpdateProcessor
         //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":config");
         //assertQueryCount (1, XmlIndexer.ELT_QNAME.getName() + ":schema");
-        assertQueryCount (1, LUX_PATH + ":\"{} schema types fieldType\"");
-        assertQueryCount (1, LUX_PATH + ":schema");
-        assertQueryCount (102, LUX_PATH + ":\"{}\"");
-        assertQueryCount (1, LUX_PATH + ":\"{} config luceneMatchVersion\"");
-        assertQueryCount (2, XML_TEXT + ":true");
-        assertXPathSearchCount (2, 2, "xs:string", "schema", "lux:search('<enableLazyFieldLoading:true')/*/name()");
+        assertSolrQueryCount (1, LUX_PATH + ":\"{} schema types fieldType\"");
+        assertSolrQueryCount (1, LUX_PATH + ":schema");
+        assertSolrQueryCount (102, LUX_PATH + ":\"{}\"");
+        assertSolrQueryCount (1, LUX_PATH + ":\"{} config luceneMatchVersion\"");
+        assertSolrQueryCount (2, XML_TEXT + ":true");
+        assertQueryCount (2, 2, "xs:string", "schema", "lux:search('<enableLazyFieldLoading:true')/*/name()");
         // this fails due to lower-casing of the embedded tag
         // assertQueryCount (2, LUX_ELT_TEXT + ":enableLazyFieldLoading\\:true");
-        assertXPathSearchCount (1, 1, "xs:string", "doc", "lux:search('<@id:1')/*/name()");
-        assertXPathSearchCount (1, 1, "xs:string", "schema", "lux:search('<@type:random')/*/name()");
+        assertQueryCount (1, 1, "xs:string", "doc", "lux:search('<@id:1')/*/name()");
+        assertQueryCount (1, 1, "xs:string", "schema", "lux:search('<@type:random')/*/name()");
         // these fails due to tokenization of the tagged term
         // assertQueryCount (1, LUX_ATT_TEXT + ":id\\:1");
         // assertQueryCount (1, LUX_ATT_TEXT + ":type\\:random");
@@ -60,31 +60,31 @@ public class LuxSolrTest extends BaseSolrTest {
     
     @Test public void testXPathSearch() throws Exception {
         // test search using standard search query handler, custom query parser
-        assertXPathSearchCount (1, 1, "element", "config", "//config");
-        assertXPathSearchCount (34, 1, 50, "element", "abortOnConfigurationError", "/config/*");
+        assertQueryCount (1, 1, "element", "config", "//config");
+        assertQueryCount (34, 1, 50, "element", "abortOnConfigurationError", "/config/*");
     }
     
     @Test public void testAtomicResult () throws Exception {
         // This also tests lazy evaluation - like paging within xpath.  Because we only retrieve
         // the first value (in document order), we only need to retrieve one value.
-        assertXPathSearchCount (1, 1, "xs:double", "100.0", "number((/doc/title)[1])");
+        assertQueryCount (1, 1, "xs:double", "100.0", "number((/doc/title)[1])");
     }
     
     @Test public void testLiteral () throws Exception {
         // no documents were retrieved, 1 result returned = 12
-        assertXPathSearchCount(1, 0, "xs:double", "12.0", "xs:double(12.0)");
+        assertQueryCount(1, 0, "xs:double", "12.0", "xs:double(12.0)");
     }
     
     @Test public void testFirstPage () throws Exception {
         // returns only the page including the first 10 results
-        assertXPathSearchCount (10, 10, "document", "doc", "(/)[doc]");
+        assertQueryCount (10, 10, "document", "doc", "(/)[doc]");
         
-        assertXPathSearchCount (10, 20, "element", "doc", "(//doc)[position() > 10]");
+        assertQueryCount (10, 20, "element", "doc", "(//doc)[position() > 10]");
     }
     
     @Test public void testPaging () throws Exception {
         // make the searcher page past the first 10 documents to find 10 xpath matches
-        assertXPathSearchCount (10, 16, "element", "doc", "//doc[title[number(.) < 95]]");
+        assertQueryCount (10, 16, "element", "doc", "//doc[title[number(.) < 95]]");
     }
     
     /**
@@ -96,34 +96,34 @@ public class LuxSolrTest extends BaseSolrTest {
     @Test public void testSorting () throws Exception {
         // should be 1, 10, 100, 11, 12, ..., 2, 21, 22, ...
         // which is docs 101, 92, 2, (since there are 2 docs with no title that are loaded first)
-        assertXPathSearchCount(1, 5, "xs:string", "1,10,100,11,12", "string-join(subsequence((for $doc in //doc order by $doc/lux:key('title') return $doc/title/string()),1,5),',')");
-        assertXPathSearchCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[1]");
-        assertXPathSearchCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:key('title') descending return $doc/title/string())[1]");
-        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[2]");
+        assertQueryCount(1, 5, "xs:string", "1,10,100,11,12", "string-join(subsequence((for $doc in //doc order by $doc/lux:key('title') return $doc/title/string()),1,5),',')");
+        assertQueryCount(1, 1, "xs:string", "1", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[1]");
+        assertQueryCount(1, 1, "xs:string", "99", "(for $doc in //doc order by $doc/lux:key('title') descending return $doc/title/string())[1]");
+        assertQueryCount(1, 2, "xs:string", "10", "(for $doc in //doc order by $doc/lux:key('title') return $doc/title/string())[2]");
         // test providing the sort criteria directly to lux:search()
-        assertXPathSearchCount(1, 2, "xs:string", "10", "(for $doc in lux:search('<test:cat', 'title') return $doc/doc/title/string())[2]");
+        assertQueryCount(1, 2, "xs:string", "10", "(for $doc in lux:search('<test:cat', 'title') return $doc/doc/title/string())[2]");
         // TODO: implement wildcard element query to test for existence of some element
         // assertXPathSearchCount(1, 2, "xs:string", "10", "lux:search('<doc:*', (), 'title')[2]");
     }
     
     @Test public void testDocFunction () throws Exception {
-        assertXPathSearchCount (1, 0, "document", "doc", "doc('test50')");
-        assertXPathSearchCount (0, 0, "error", "document not found: /foo\n", "doc('/foo')");
+        assertQueryCount (1, 0, "document", "doc", "doc('test50')");
+        assertQueryCount (0, 0, "error", "document not found: /foo\n", "doc('/foo')");
     }
     
     @Test public void testCollectionFunction () throws Exception {
-        assertXPathSearchCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
-        assertXPathSearchCount (1, 102, "xs:anyURI", "lux:/test100", "collection()[last()]/base-uri()");
-        assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())");
+        assertQueryCount (1, 1, "xs:anyURI", "lux:/src/test/resources/conf/schema.xml", "collection()[1]/base-uri()");
+        assertQueryCount (1, 102, "xs:anyURI", "lux:/test100", "collection()[last()]/base-uri()");
+        assertQueryCount (1, 102, "xs:integer", "102", "count(collection())");
     }
     
     @Test public void testQueryError () throws Exception {
-        assertXPathSearchError("Prefix lux_elt_name_ms has not been declared; Line#: 1; Column#: 22\n", "lux_elt_name_ms:config");
+        assertQueryError("Prefix lux_elt_name_ms has not been declared; Line#: 1; Column#: 22\n", "lux_elt_name_ms:config");
     }
     
     @Test
     public void testSyntaxError () throws Exception {
-        assertXPathSearchError("Unexpected token name \"bad\" beyond end of query; Line#: 1; Column#: 4\n", "hey bad boy");
+        assertQueryError("Unexpected token name \"bad\" beyond end of query; Line#: 1; Column#: 4\n", "hey bad boy");
     }
     
     @Test
@@ -137,11 +137,11 @@ public class LuxSolrTest extends BaseSolrTest {
         SolrServer core3 = new EmbeddedSolrServer(coreContainer, "core3");
         core3.deleteByQuery("*:*");
         core3.commit();
-        assertQueryCount (0, "*:*", core3);
+        assertSolrQueryCount (0, "*:*", core3);
         // main core still works
-        assertXPathSearchCount (1, 102, "xs:integer", "102", "count(collection())", solr);
+        assertQueryCount (1, 102, "xs:integer", "102", "count(collection())", solr);
         // new core working too
-        assertXPathSearchCount(1, 0, "xs:integer", "0", "count(collection())", core3);
+        assertQueryCount(1, 0, "xs:integer", "0", "count(collection())", core3);
     }
     
     @Test
@@ -218,8 +218,8 @@ public class LuxSolrTest extends BaseSolrTest {
         assertQuery ("ok", "(lux:insert('/test', <dfdoc modified='2000-01-01T01:02:03Z'>ok</dfdoc>), lux:commit(), 'ok')");
         assertQuery ("ok", "(lux:insert('/test2', <dfdoc modified='2000-01-01T02:03:04Z'>dokey</dfdoc>), lux:commit(), 'ok')");
         Date d = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz").parse("2000-01-01T01:02:03GMT+00:00");
-        assertSolrQuery(d, "modified_dt", "lux_uri:\\/test");
-        assertSolrQuery(d, "modified_tdt", "lux_uri:\\/test");
+        assertSolrQuery(d, "modified_dt", "uri:\\/test");
+        assertSolrQuery(d, "modified_tdt", "uri:\\/test");
         
         assertQuery ("ok", "/dfdoc[@modified='2000-01-01T01:02:03Z']/string()");
         assertQuery ("ok", "/dfdoc[@modified=xs:dateTime('2000-01-01T01:02:03Z')]/string()");
@@ -246,7 +246,7 @@ public class LuxSolrTest extends BaseSolrTest {
         // assertQuery ("ok", "lux:search('<@modified:[\"2000-01-01T01:02:03Z\" TO *]')/string()");
         // bad date format
         try {
-            assertXPathSearchError("ok", "(lux:insert('/test', <doc modified='2000-01-01' />), lux:commit(), 'ok')");
+            assertQueryError("ok", "(lux:insert('/test', <doc modified='2000-01-01' />), lux:commit(), 'ok')");
             assertFalse ("no exception thrown", true);
         } catch (Exception ex) {
             assertTrue (ex.getMessage().contains("2000-01-01"));
@@ -259,7 +259,7 @@ public class LuxSolrTest extends BaseSolrTest {
     public void testInsertRandomFields () throws Exception {
         // test inserting a document that doesn't have the Lux XML field
         SolrInputDocument doc = new SolrInputDocument(); 
-        doc.addField ("lux_uri", "/doc/string10");
+        doc.addField ("uri", "/doc/string10");
         doc.addField ("string_s", "string");
         doc.addField("number_i", "10");
         try {
@@ -271,6 +271,37 @@ public class LuxSolrTest extends BaseSolrTest {
             solr.deleteById("/doc/string10");
             solr.commit();
         }
+    }
+    
+    @Test
+    public void testConfigElementVisibility () throws Exception {
+        assertQuery ("ok", "(lux:insert('/test', <doc><div>ok <hidden>bad</hidden><i>go</i> <x>away</x></div> <x><i>often</i> enough</x></doc>), lux:commit(), 'ok')");
+        // xml text field includes all text
+        assertQueryCount (1, "lux:search('ok')/string()");
+        assertQueryCount (1, "lux:search('go')/string()");
+        // except text in hidden elements
+        assertQueryCount (0, "lux:search('bad')/string()");
+        
+        // xml element text field includes transparent elements
+        assertQueryCount (1, "lux:search('<i:go')/string()");
+        // container element sees into opaque and transparent elements 
+        assertQueryCount (1, "lux:search('<div:go')/string()");
+        assertQueryCount (1, "lux:search('<div:away')/string()");
+        // but not hidden elements
+        assertQueryCount (0, "lux:search('<hidden:bad')/string()");
+        // even as part of container elements
+        assertQueryCount (0, "lux:search('<div:bad')/string()");
+        // phrase wraps around hidden element
+        assertQueryCount (1, "lux:search('ok go')/string()");
+        
+        // regular element does not "see" into opaque or container elements
+        assertQueryCount (0, "lux:search('<doc:ok')/string()");
+        assertQueryCount (0, "lux:search('<doc:often')/string()");
+        assertQueryCount (0, "lux:search('<doc:enough')/string()");
+
+        // but does see into itself, and transparent element
+        assertQueryCount (1, "lux:search('<x:\"often enough\"')/string()");
+        
     }
 
 }

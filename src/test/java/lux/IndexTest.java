@@ -120,6 +120,7 @@ public class IndexTest {
 
     @Test
     public void testIndexFullTextOnly () throws Exception {
+        //IndexTestSupport indexTestSupport = 
         buildIndex ("full-text-only", INDEX_FULLTEXT);        
         assertTotalDocs ();
         //printAllTerms(indexTestSupport);
@@ -242,9 +243,10 @@ public class IndexTest {
     
     @Test
     public void testIndexQNameTextOnly() throws Exception {
+        // IndexTestSupport indexTestSupport = 
         buildIndex ("qname-text", INDEX_QNAMES | INDEX_FULLTEXT | BUILD_DOCUMENT);
         assertTotalDocs ();
-        //printAllTerms();
+        // printAllTerms(indexTestSupport);
     }
 
     @Test

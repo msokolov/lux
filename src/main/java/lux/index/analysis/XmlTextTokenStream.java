@@ -1,7 +1,7 @@
 package lux.index.analysis;
 
 import lux.xml.Offsets;
-import net.sf.saxon.s9api.QName;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
 
@@ -26,9 +26,13 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
      * this should always be null.
      */
     
-    public XmlTextTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
-        super(fieldName, analyzer, wrapped, doc, offsets);
-        contentIter = new ContentIterator(doc);
+    public XmlTextTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets, Processor processor) {
+        super(fieldName, analyzer, wrapped, doc, offsets, processor);
+        if (qnameTokenFilter == wrapped) {
+            // don't add qnames to our tokens
+            setWrappedTokenStream (qnameTokenFilter.getInput());
+        }
+        contentIter = new TextIterator(doc);
     }
 
     @Override
@@ -37,8 +41,8 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
         while (nodeAncestors.hasNext()) {
             XdmNode e = (XdmNode) nodeAncestors.next();
             assert (e.getNodeKind() == XdmNodeKind.ELEMENT);
-            QName qname = e.getNodeName();
-            if (eltVis.get(qname) == ElementVisibility.HIDDEN) {
+            int namecode = e.getUnderlyingNode().getNameCode();
+            if (eltVis.get(namecode) == ElementVisibility.HIDDEN) {
                 return false;
             }
         }

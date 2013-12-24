@@ -80,6 +80,9 @@ public abstract class FieldDefinition {
     // an Analyzer for text fields; if null, the field is not indexed
     private Analyzer analyzer;
 
+    // an Analyzer to use for query parsing
+    private Analyzer queryAnalyzer;
+
     private final Store isStored;
     
     /**
@@ -160,14 +163,38 @@ public abstract class FieldDefinition {
         return type;
     }
     
+    /**
+     * Sets the analyzer that will be used to process text when indexing this field.  The analyzer will also
+     * be used to process query text, unless a specific query analyzer is provided using #setQueryAnalyzer. 
+     * @param analyzer the {@link org.apache.lucene.analysis.Analyzer} to set
+     */
     public void setAnalyzer (Analyzer analyzer) {
         this.analyzer = analyzer;
     }
 
+    /**
+     * @return the Analyzer used for indexing, and query analysis if no query analyzer is set.
+     */
     public Analyzer getAnalyzer() {
         return analyzer;
     }
+    
+    /**
+     * Sets the analyzer that will be used to process text when parsing queries. 
+     * @param analyzer the {@link org.apache.lucene.analysis.Analyzer} to set
+     */
+    public void setQueryAnalyzer (Analyzer analyzer) {
+        this.queryAnalyzer = analyzer;
+    }
 
+    /**
+     * @return the Analyzer used for query parsing. If no specific query analyzer has been set, 
+     * returns the index analyzer (the result of {@link #getAnalyzer()}).
+     */
+    public Analyzer getQueryAnalyzer() {
+        return queryAnalyzer == null ? getAnalyzer() : queryAnalyzer;
+    }
+    
     public Store isStored() {
         return isStored;
     }

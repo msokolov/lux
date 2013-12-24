@@ -39,8 +39,9 @@ public class XmlTextField extends FieldDefinition {
             try {
                 textTokens = analyzer.tokenStream(fieldName, new CharSequenceReader(""));
             } catch (IOException e) { }
-            XmlTextTokenStream tokens = new XmlTextTokenStream (fieldName, analyzer, textTokens, doc, builder.getOffsets());
-            indexer.getConfiguration().configureElementVisibility(tokens);
+            XmlTextTokenStream tokens = new XmlTextTokenStream (fieldName, analyzer, textTokens, doc, builder.getOffsets(), indexer.getProcessor());
+            
+            tokens.configureElementVisibility(indexer);
             return new FieldValues (this, Collections.singleton(new TextField(fieldName, tokens)));
         }
         return Collections.emptySet();

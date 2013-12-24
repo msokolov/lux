@@ -7,7 +7,6 @@ import java.util.Map;
 
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.analysis.ElementVisibility;
-import lux.index.analysis.XmlTokenStreamBase;
 import lux.index.field.AttributeQNameField;
 import lux.index.field.AttributeTextField;
 import lux.index.field.DocumentField;
@@ -24,7 +23,6 @@ import lux.index.field.TinyBinarySolrField;
 import lux.index.field.URIField;
 import lux.index.field.XmlTextField;
 import lux.xml.tinybin.TinyBinary;
-import net.sf.saxon.s9api.QName;
 
 import org.apache.lucene.util.Version;
 
@@ -129,7 +127,7 @@ public class IndexConfiguration {
     private final HashMap<String,String> namespaceMap;
 
     // element visibility
-    private HashMap<QName,ElementVisibility> eltVis;
+    private HashMap<String,ElementVisibility> eltVis;
     private ElementVisibility defVis;
     
     /** @return the analyzers associated with the fields to be indexed */
@@ -144,7 +142,7 @@ public class IndexConfiguration {
         fieldAnalyzers = new MultiFieldAnalyzer();
         fieldAnalyzers.put(null, new DefaultAnalyzer());
 
-        eltVis = new HashMap<QName, ElementVisibility>();
+        eltVis = new HashMap<String, ElementVisibility>();
         defVis = ElementVisibility.OPAQUE;
         
         addField (URI);
@@ -227,7 +225,8 @@ public class IndexConfiguration {
             fieldsByRole.put(role, field);
         }
         fieldsByName.put(field.getName(), field);
-        fieldAnalyzers.put(field.getName(), field.getAnalyzer());
+        // get query analyzer
+        fieldAnalyzers.put(field.getName(), field.getQueryAnalyzer());
     }
     
     /** 
@@ -332,7 +331,7 @@ public class IndexConfiguration {
      * visibility.
      */
     public ElementVisibility getElementVisibility (String clarkName) {
-        return eltVis.get(QName.fromClarkName(clarkName));
+        return eltVis.get(clarkName);
     }
 
     /** sets the visibility of elements with the given name
@@ -342,7 +341,7 @@ public class IndexConfiguration {
      * visibility.
      */
     public void setElementVisibility (String clarkName, ElementVisibility vis) {
-        eltVis.put(QName.fromClarkName(clarkName), vis);
+        eltVis.put(clarkName, vis);
     }
 
     /** @return the visibility of elements not explicitly specified using setElementVisibility.
@@ -358,11 +357,8 @@ public class IndexConfiguration {
     }
     */
 
-    public void configureElementVisibility (XmlTokenStreamBase tokens) {
-        tokens.setDefaultVisibility(defVis);
-        for (Map.Entry<QName, ElementVisibility> entry : eltVis.entrySet()) {
-            tokens.setElementVisibility(entry.getKey(), entry.getValue());
-        }
+    public Map<String,ElementVisibility> getVisibilityMap () {
+        return Collections.unmodifiableMap(eltVis);
     }
 
 }

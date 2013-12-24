@@ -199,7 +199,6 @@ public class SolrIndexConfig implements SolrInfoMBean {
 
     public void inform(SolrCore core) {
         schema = core.getLatestSchema();
-
         // XML_STORE is not listed explicitly by the indexer
         informField (indexConfig.getField(FieldRole.XML_STORE), core);
         // This must be run before informField() registers default analyzers with the Schema
@@ -225,8 +224,8 @@ public class SolrIndexConfig implements SolrInfoMBean {
         Map<String,FieldType> fieldTypes = schema.getFieldTypes();
         String fieldName = xmlField.getName();
         if (schemaFields.containsKey(fieldName) && xmlField.getType() != Type.TOKENS) {
-            // The Solr schema has a definition for this field, and it's not a TOKENS field:
-            // TOKENS fields need to install their own special field type since they wrap the
+            // The Solr schema has a definition for this field, but it's not a TOKENS field:
+            // We're only interested in TOKENS fields here; these need to install their own special field type since they wrap the
             // analyzer defined by the schema
             return;
         }
@@ -248,13 +247,16 @@ public class SolrIndexConfig implements SolrInfoMBean {
         String xmlFieldName = indexConfig.getFieldName(FieldRole.XML_TEXT);
         SchemaField schemaField = schema.getFieldOrNull(xmlFieldName);
         Analyzer xmlAnalyzer = null;
+        Analyzer xmlQueryAnalyzer = null;
         if (schemaField != null) {
             xmlAnalyzer = schemaField.getType().getAnalyzer();
+            xmlQueryAnalyzer = schemaField.getType().getQueryAnalyzer();
             if (xmlAnalyzer != null) {
                 for (FieldRole role : new FieldRole [ ] { FieldRole.XML_TEXT, FieldRole.ELEMENT_TEXT, FieldRole.ATTRIBUTE_TEXT }) {
                     FieldDefinition field = indexConfig.getField(role);
                     field.setAnalyzer(xmlAnalyzer); // this analyzer is used when indexing
-                    indexConfig.getFieldAnalyzers().put(field.getName(), xmlAnalyzer); // this analyzer is used when parsing queries
+                    field.setQueryAnalyzer(xmlQueryAnalyzer); // this analyzer is used when indexing
+                    indexConfig.getFieldAnalyzers().put(field.getName(), xmlQueryAnalyzer); // this analyzer is used when parsing queries
                 }
             }
         }
@@ -263,6 +265,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
             SchemaField destination = copyField.getDestination();
             Analyzer analyzer = destination.getType().getAnalyzer();
             if (analyzer == null) {
+                // can this happen?? what about the query analyzer? can that be null? 
                 if (xmlAnalyzer != null) {
                     analyzer = xmlAnalyzer; // why would you copy it then?
                 } else {
@@ -271,6 +274,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
             }
             // TODO: should there be additional element and attribute text fields as well?
             XmlTextField xmlCopyField = new XmlTextField (destination.getName(), analyzer);
+            xmlCopyField.setQueryAnalyzer(analyzer);
             indexConfig.addField(xmlCopyField);
         }
     }
@@ -387,7 +391,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         FieldableField (FieldDefinition xmlField) {
             typeName = xmlField.getName() + "-fieldable-type";
             this.analyzer = xmlField.getAnalyzer();
-            this.queryAnalyzer = xmlField.getAnalyzer();
+            this.queryAnalyzer = xmlField.getQueryAnalyzer();
         }
 
         @Override

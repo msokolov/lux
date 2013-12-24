@@ -5,9 +5,15 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
+import lux.index.IndexConfiguration;
+import lux.index.XmlIndexer;
+import lux.index.attribute.QNameAttribute;
+
+import net.sf.saxon.om.NamePool;
 import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.s9api.QName;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 
@@ -53,19 +59,35 @@ public abstract class XmlTokenStreamBase extends TokenStream {
     protected CharTermAttribute termAtt;
     protected Reader charStream = new OffsetCharFilter(new StringReader(""));
     protected ElementVisibility defVis;
-    protected HashMap<QName,ElementVisibility> eltVis;
+    protected HashMap<Integer,ElementVisibility> eltVis;
+    protected final QNameAttribute qnameAtt;
+    protected final QNameTokenFilter qnameTokenFilter;
     // protected EmptyTokenStream empty;
     protected static final XdmSequenceIterator EMPTY = new EmptyXdmIterator(null);
 
-    XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped) {
+    XmlTokenStreamBase(String fieldName, Analyzer analyzer, TokenStream wrapped, Processor processor) {
         super (wrapped);
         this.wrapped = wrapped;
         this.fieldName = fieldName;
         this.analyzer = analyzer;
         termAtt = addAttribute(CharTermAttribute.class);
         // empty = new EmptyTokenStream(wrapped);
-        defVis = ElementVisibility.OPAQUE;
-        eltVis = new HashMap<QName, ElementVisibility>();
+        eltVis = new HashMap<Integer, ElementVisibility>();
+        // FIXME - don't use QNameTokenFilter for this -- that handles prefixing tokens
+        // use instead an XmlVisibilityFilter that encapsulatres the logic currently in ElementTokenStream
+        if (wrapped instanceof QNameTokenFilter) {
+            qnameTokenFilter = (QNameTokenFilter) wrapped;
+            defVis = qnameTokenFilter.getDefaultVisibility();
+            NamePool namePool = processor.getUnderlyingConfiguration().getNamePool();
+            for (Entry<String, ElementVisibility> entry : qnameTokenFilter.getElementVisibility().entrySet()) {
+                int namecode = namePool.allocateClarkName(entry.getKey());
+                eltVis.put(namecode, entry.getValue());
+            }
+        } else { 
+            defVis = ElementVisibility.OPAQUE;
+            qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
+        }
+        qnameAtt = qnameTokenFilter.addAttribute(QNameAttribute.class);
     }
     
     @Override
@@ -146,23 +168,27 @@ public abstract class XmlTokenStreamBase extends TokenStream {
     abstract boolean updateNodeAtts ();
 
     /**
-     * @param qname the name of an element as an s9api QName
+     * @param clarkName the name of an element as a clarkName ({namespace}name)
      * @return the explicitly-specified visibility of the element name, or null if the element has the default
      * visibility.
      */
-    public ElementVisibility getElementVisibility(QName qname) {
-        return eltVis.get(qname);
+    public ElementVisibility getElementVisibility(String clarkName) {
+        return eltVis.get(clarkName);
     }
 
-    /** sets the visibility of elements with the given name
-     * @param qname the name of an element as an s9api QName
-     * @param vis the visibility of the element's content from the perspective of containing elements.
+    /**
+     * @param namecode the name of an element as a namecode from a {@link net.sf.saxon.om.NamePool}
+     * @param visibility the explicitly-specified visibility of the element name, or null to give the element the default
      * visibility.
      */
-    public void setElementVisibility(QName qname, ElementVisibility vis) {
-        eltVis.put(qname, vis);
+    public void setElementVisibility(int namecode, ElementVisibility visibility) {
+        if (visibility == null) {
+            eltVis.remove(namecode);
+        } else {
+            eltVis.put(namecode, visibility);
+        }
     }
-
+    
     /** @return the visibility of elements not explicitly specified using setElementVisibility.
      * Always {@link ElementVisibility#OPAQUE}.
      */
@@ -172,6 +198,23 @@ public abstract class XmlTokenStreamBase extends TokenStream {
 
     public void setDefaultVisibility(ElementVisibility vis) {
         this.defVis = vis;
+    }
+
+    public void configureElementVisibility(XmlIndexer indexer) {
+        IndexConfiguration config = indexer.getConfiguration();
+        if (qnameTokenFilter != null) {
+            qnameTokenFilter.setNamespaceAware(config.isOption(IndexConfiguration.NAMESPACE_AWARE));
+        }
+        NamePool namePool = indexer.getProcessor().getUnderlyingConfiguration().getNamePool();
+        if (defVis == null) {
+            defVis = config.getDefaultVisibility();
+        }
+        for (Entry<String, ElementVisibility> e : config.getVisibilityMap().entrySet()) {
+            int namecode = namePool.allocateClarkName(e.getKey());
+            if (! eltVis.containsKey(namecode)) {
+                eltVis.put(namecode, e.getValue());
+            }
+        }
     }
 }
 

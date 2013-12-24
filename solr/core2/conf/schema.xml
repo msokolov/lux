@@ -354,6 +354,7 @@
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="solr.KStemFilterFactory" />
+        <filter class="lux.index.analysis.QNameFilterFactory" visibility="opaque" transparent="i,{urn:ns}i" container="div" default-visibility="x" hidden="hidden" />
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>

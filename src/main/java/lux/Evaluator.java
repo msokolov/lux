@@ -42,6 +42,7 @@ import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -439,7 +440,11 @@ public class Evaluator {
             IndexConfiguration config = compiler.getIndexConfiguration();
             FieldDefinition field = config.getField(FieldRole.XML_TEXT);
             if (field != null) {
-                xmlQueryParser = new XmlQueryParser(field.getName(), field.getAnalyzer());
+                Analyzer analyzer = field.getQueryAnalyzer(); 
+                if (analyzer == null) {
+                    analyzer = field.getAnalyzer(); 
+                }
+                xmlQueryParser = new XmlQueryParser(field.getName(), analyzer);
             } else {
                 xmlQueryParser = new XmlQueryParser("", new DefaultAnalyzer());
             }

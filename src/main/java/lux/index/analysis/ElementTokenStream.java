@@ -1,7 +1,7 @@
 package lux.index.analysis;
 
-import lux.index.attribute.QNameAttribute;
 import lux.xml.Offsets;
+import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmNodeKind;
@@ -32,13 +32,9 @@ import org.apache.lucene.analysis.TokenStream;
  */
 public final class ElementTokenStream extends TextOffsetTokenStream {
     
-    private final QNameAttribute qnameAtt;
-    private QNameTokenFilter qnameTokenFilter;
-    public ElementTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets) {
-        super(fieldName, analyzer, wrapped, doc, offsets);
-        qnameTokenFilter = new QNameTokenFilter (getWrappedTokenStream());
-        contentIter = new ContentIterator(doc);
-        qnameAtt = qnameTokenFilter.addAttribute(QNameAttribute.class);
+    public ElementTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets, Processor processor) {
+        super(fieldName, analyzer, wrapped, doc, offsets, processor);
+        contentIter = new TextIterator(doc);
         setWrappedTokenStream (qnameTokenFilter);
     }
     
@@ -49,6 +45,7 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
     }
     
     private void getAncestorQNames() {
+        // list the QNames of containing elements in qnameAtt filtered by the visibility rules
         assert(curNode.getNodeKind() == XdmNodeKind.TEXT);
         AncestorIterator nodeAncestors = new AncestorIterator(curNode);
         qnameAtt.clearQNames();
@@ -56,22 +53,31 @@ public final class ElementTokenStream extends TextOffsetTokenStream {
         while (nodeAncestors.hasNext()) {
             XdmNode e = (XdmNode) nodeAncestors.next();
             assert (e.getNodeKind() == XdmNodeKind.ELEMENT);
-            QName qname = e.getNodeName();
-            ElementVisibility vis = eltVis.get(qname);
+            int nameCode = e.getUnderlyingNode().getNameCode();
+            ElementVisibility vis = eltVis.get(nameCode);
             if (vis == null) {
+                // nothing configured for this QName, use the default visibility
                 vis = defVis;
             }
             if (vis == ElementVisibility.HIDDEN) {
+                // this node is hidden: don't index its content
+                qnameAtt.clearQNames();
                 return;
             }
+            // TODO; avoid allocating all these QNames?
+            QName qname = e.getNodeName();
             if (isOpaque) {
+                // we hit an opaque element in a previous iteration, so this element can't "see" the content
+                // unless it is a container, which sees through opaque elements
                 if (vis == ElementVisibility.CONTAINER) {
                     qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(),  qname.getLocalName(), qname.getPrefix()));
                 }
             } else {
+                // all elements so far have been transparent, so tag the content with this element name
                 qnameAtt.addQName(new lux.xml.QName(qname.getNamespaceURI(),  qname.getLocalName(), qname.getPrefix()));
                 if (vis == ElementVisibility.OPAQUE || vis == ElementVisibility.CONTAINER) {
-                    // continue, checking for containers
+                    // set the opaque flag if this element is opaque (containers are always opaque).
+                    // still continue, because there might be containers
                     isOpaque = true;
                 }
             }
