@@ -2,27 +2,86 @@
 Low-profile optimized xquery data store suitable for embedding, in a java
 process, or as a web service. And an app server, but this is really
 secondary.
-** correctness
-** speed
-** features
-* Distribution
-** blog post
-** lucene
-mention on the mailing list
-** xml-dev
-mention on the mailing list
-* Plans
-** envision use cases
-** optimize
-** fix bugs
-** Evangelize
-write some blog posts, send out announcements to email lists, tweet
-* Advanced Indexing techniques
-** index XML structure
-"shred" or "fragment" - should help w/large docs.. Additional query
-optimizations will be possible (like indexed //foo without the need for any
-post-evaluation, joins, etc).
-* Saxon integration
-** compatible API
-Expose some kind of API like Saxon's? Or behave as a Saxon Configuration
-plus a preprocessing optimizer?
+** Method
+Prioritize: correctness, performance, features
+* Architecture Review
+I was thinking about what it would take to do an elasticsearch version.  ES
+doesn't have the same kind of plugin architecture as Solr, but it *does*
+have plugins.  So to do this I need to have a high-level map of components
+and their relationships and dependencies.  Currently waiting for Sonar/J
+
+** Solr Dependencies
+also check dependencies on *lux.solr* in the rest of the code base
+*** lux.solr
+In general, there are lots of useful bits in here that could be abstracted
+out, but there are many Solr-adaptor pieces that will have to be converted,
+too, and it's all mixed together in this package, so there is some work.
+**** App Server
+The app server plugs into Solr's filter framework and conforms to its
+request/response conventions.  Probably would need to be completely
+overhauled.  Also see LuxDispatchFilter, LuxResponseWriter.
+**** distributed identifier
+Lux generates a long-valued distributed id to represent document ordering.
+This is currently done using a Solr UpdateProcessor, but seems like it
+could just as easily be done when creating the document.
+**** distributed search
+Presents an iterator-styled API driven by batched remote searches.
+Currently makes heavy use of Solr APIs, but it would make sense to abstract
+the remote search mechanism and keep this abstraction in place.
+**** local search
+The question here is whether it is even sensible to plug into the search
+mechanism at a low level as we do now.  Assuming that searches are all
+going to be distributed anyway, we are forced into creating an adaptor
+between pull-style (Saxon result iterator) and push-style (top N
+collector).  Accepting that reality, is it even sensible to run *in the
+same process*?  Well -- being a plugin is nice from one point of view,
+since it makes distribution/installation much easier.
+**** indexing
+We could perform the XML indexing as an external process, but there are
+some hurdles. We need to be able to create multiple tokens at the same
+position, for example, at least if we want to support the full range of
+element transparency options.  The document would bloat quite a bit, too.
+*** lux.functions
+**** FieldTerms
+We don't currently use the Solr schema to convert term bytes to strings; we
+return raw Lucene terms converted using utf8 encoding.  This means non-text
+fields will return something weird.
+***** SolrTermsIterator
+retrieves index terms from a distributed index using the Solr terms service
+**** Key
+***** getFieldValue(Document, Evaluator, String fieldName, FieldDefinition)
+converts document field values to Strings using the Solr SchemaType 
+***** getFieldValue (SolrDocument, Evaluator, String, FieldDefinition)
+converts Solr document field values to Strings using the Solr SchemaType;
+SolrDocuments arise during distributed (SolrCloud) operation.
+**** SearchBase
+checks the Solr ResponseBuilder to see if this is a distributed request.
+If it is, creates a solr CloudSearchIterator instead of the local Lucene
+iterator.
+*** lux.index.field
+**** FieldDefinition
+The dependency is really only in javadoc, but there is a method
+getSolrFieldProperties () which is used by SolrIndexConfig to populate the
+Solr schema with Lux's field definitions
+**** XPathField
+When loading XPath field definitions from solrconfig.xml, we associate each
+XPath field with a Solr SchemaField (defined in schema.xml).  There is also
+an equivalent constructor that handles simple types (string, text, int),
+which can be used outside Solr.
+This Solr-field-based constructor is used in two places:
+***** XPathField.XPathValueIterator.next()
+converts XPath string values to Lucene IndexableField values, for indexing.
+***** Key function
+converts index values back to strings; see under lux.functions
+
+* ES plugin
+There is an idea of a Plugin, and Modules, and an Index command (module?)
+** look at some other plugins
+** install ES
+** branch lux
+** split lux
+*** lux-core
+*** lux-solr
+*** lux-elasticsearch
+** lux/es tests?
+* ifpress core ES
