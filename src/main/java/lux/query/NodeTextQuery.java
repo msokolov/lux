@@ -1,7 +1,7 @@
 package lux.query;
 
 import lux.index.IndexConfiguration;
-import lux.query.parser.LuxQueryParser;
+import lux.query.parser.NodeQueryParser;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
@@ -75,7 +75,7 @@ public class NodeTextQuery extends ParseableQuery {
     public String toQueryString (String field, IndexConfiguration config) {
         StringBuilder buf = new StringBuilder ();
         String tf = term.field();
-        String text = LuxQueryParser.escapeQParser(term.text());
+        String text = NodeQueryParser.escapeQParser(term.text());
         if (StringUtils.isBlank(qName)) {
             buf.append ('<').append(':').append(text);
         }

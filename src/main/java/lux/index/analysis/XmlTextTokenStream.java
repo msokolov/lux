@@ -24,6 +24,7 @@ public final class XmlTextTokenStream extends TextOffsetTokenStream {
      * @param offsets if provided, character offsets are captured in this object
      * In theory this can be used for faster highlighting, but until that is proven, 
      * this should always be null.
+     * @param processor the Saxon XPath/XQuery processor that created the document doc
      */
     
     public XmlTextTokenStream(String fieldName, Analyzer analyzer, TokenStream wrapped, XdmNode doc, Offsets offsets, Processor processor) {

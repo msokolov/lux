@@ -41,7 +41,7 @@ public class SearchCall extends FunCall {
     }
 
     /** used to convert a generic lux:search FunCall into a SearchCall 
-     * @param abstractExpression the query, as a string to be parsed by {@link lux.query.parser.LuxQueryParser},
+     * @param abstractExpression the query, as a string to be parsed by {@link lux.query.parser.NodeQueryParser},
      * or as a node to be parsed by {@link lux.query.parser.XmlQueryParser}.
      */
     public SearchCall(AbstractExpression abstractExpression) {

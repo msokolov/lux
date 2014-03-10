@@ -6,7 +6,7 @@ import java.io.ByteArrayInputStream;
 
 import lux.index.IndexConfiguration;
 import lux.index.analysis.DefaultAnalyzer;
-import lux.query.parser.LuxQueryParser;
+import lux.query.parser.NodeQueryParser;
 import lux.query.parser.XmlQueryParser;
 
 import org.apache.lucene.index.Term;
@@ -43,25 +43,25 @@ public class LuxParserTest {
     private static final String LUX_TEXT = "lux_text";
     private static final String LUX_PATH = "lux_path";
     
-    private LuxQueryParser parser;
+    private NodeQueryParser parser;
     private XmlQueryParser xmlQueryParser;
     private IndexConfiguration indexConfig;
     
     @Before
     public void setup () {
         indexConfig = new IndexConfiguration();
-        parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
+        parser = NodeQueryParser.makeLuxQueryParser(indexConfig);
         parser.bindNamespacePrefix("ns", "nsuri");
         xmlQueryParser = new XmlQueryParser("lux_text", new DefaultAnalyzer());
     }
     
     @Test
     public void testEscapeQParser () {
-        assertEquals ("", LuxQueryParser.escapeQParser(""));
-        assertEquals ("dog", LuxQueryParser.escapeQParser("dog"));
-        assertEquals ("big\\:dog", LuxQueryParser.escapeQParser("big:dog"));
-        assertEquals ("\\\\\\!\\^\\(\\)\\-\\+\\{\\}\\[\\]\\|\\:\\\"", LuxQueryParser.escapeQParser("\\!^()-+{}[]|:\""));
-        assertEquals ("\"Tom & Jerry\"", LuxQueryParser.escapeQParser("Tom & Jerry"));
+        assertEquals ("", NodeQueryParser.escapeQParser(""));
+        assertEquals ("dog", NodeQueryParser.escapeQParser("dog"));
+        assertEquals ("big\\:dog", NodeQueryParser.escapeQParser("big:dog"));
+        assertEquals ("\\\\\\!\\^\\(\\)\\-\\+\\{\\}\\[\\]\\|\\:\\\"", NodeQueryParser.escapeQParser("\\!^()-+{}[]|:\""));
+        assertEquals ("\"Tom & Jerry\"", NodeQueryParser.escapeQParser("Tom & Jerry"));
     }
 
     @Test
@@ -129,7 +129,7 @@ public class LuxParserTest {
     @Test
     public void testParseNamespaceAware () throws Exception {
         indexConfig = new IndexConfiguration(IndexConfiguration.DEFAULT_OPTIONS | IndexConfiguration.NAMESPACE_AWARE);
-        parser = LuxQueryParser.makeLuxQueryParser(indexConfig);
+        parser = NodeQueryParser.makeLuxQueryParser(indexConfig);
         /*
          * If no namespace mapping is found, throw an error
          */

@@ -1,4 +1,10 @@
 * features
+** elasticsearch
+notes just feeling my way around another giant codebase
+*** implement Plugin.onModule(ModuleOfInterest)
+*** DocumentMapper
+provided by InternalIndexShard.mapperService; see IIS.prepareIndex
+*** SourceToParse
 ** configurable analysis for word indexes
 This is all working now except one big fuckme: tagged text indexes include
 the tag name in the token that gets analyzed *by the raw query parser*; so

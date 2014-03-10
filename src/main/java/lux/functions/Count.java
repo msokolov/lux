@@ -3,8 +3,9 @@ package lux.functions;
 import java.io.IOException;
 
 import lux.Evaluator;
-import lux.solr.CloudSearchIterator;
+import lux.query.parser.LuxSearchQueryParser;
 import lux.xpath.FunCall;
+import net.sf.saxon.om.Item;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.SingletonIterator;
@@ -13,7 +14,6 @@ import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
 
 import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
 /**
@@ -45,19 +45,19 @@ public class Count extends SearchBase {
     }
     
     @Override 
-    public UnfailingIterator<Int64Value> iterate (Query query, Evaluator saxon, String[] sortCriteria, int start) throws XPathException {
+    public UnfailingIterator<Int64Value> iterate (Item query, LuxSearchQueryParser parser, Evaluator eval, String[] sortCriteria, int start) throws XPathException {
         int count = 0;
         long t = System.currentTimeMillis();
         try {
-            DocIdSetIterator counter = saxon.getSearcher().search(query);
+            DocIdSetIterator counter = eval.getSearcher().search(query);
             while (counter.nextDoc() != Scorer.NO_MORE_DOCS) {
                 ++count;
             }
         } catch (IOException e) {
             throw new XPathException (e);
         }
-        saxon.getQueryStats().totalTime = System.currentTimeMillis() - t;
-        saxon.getQueryStats().docCount += count;
+        eval.getQueryStats().totalTime = System.currentTimeMillis() - t;
+        eval.getQueryStats().docCount += count;
         return SingletonIterator.makeIterator(new Int64Value(count));
     }
 

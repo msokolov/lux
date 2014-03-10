@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.luxdb</groupId>
   <artifactId>lux</artifactId>
-  <version>1.0.2-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -56,6 +56,11 @@
         </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-core</artifactId>
+      <version>4.6.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.6.2</version>
@@ -71,35 +76,6 @@
       <artifactId>woodstox-core-asl</artifactId>
       <version>4.1.1</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.solr</groupId>
-      <artifactId>solr-test-framework</artifactId>
-      <version>4.6.0</version>
-      <scope>test</scope>
-    </dependency>
-  	<dependency>
-  		<groupId>org.apache.solr</groupId>
-  		<artifactId>solr-core</artifactId>
-  		<version>4.6.0</version>
-  		<exclusions>
-  			<exclusion>
-  				<artifactId>wstx-asl</artifactId>
-  				<groupId>org.codehaus.woodstox</groupId>
-  			</exclusion>
-  			<exclusion>
-  				<artifactId>slf4j-jdk14</artifactId>
-  				<groupId>org.slf4j</groupId>
-  			</exclusion>
-  			<exclusion>
-  				<artifactId>velocity-tools</artifactId>
-  				<groupId>org.apache.velocity</groupId>
-  			</exclusion>
-  			<exclusion>
-  				<artifactId>hadoop-annotations</artifactId>
-  				<groupId>org.apache.hadoop</groupId>
-  			</exclusion>
-  		</exclusions>
-  	</dependency>
   	<dependency>
 	  <groupId>javax.servlet</groupId>
 	  <artifactId>servlet-api</artifactId>
@@ -138,6 +114,31 @@
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>1.1.1</version>
+    </dependency>
+    <dependency>
+    	<groupId>commons-lang</groupId>
+    	<artifactId>commons-lang</artifactId>
+    	<version>2.6</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.lucene</groupId>
+    	<artifactId>lucene-queryparser</artifactId>
+    	<version>4.6.1</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.lucene</groupId>
+    	<artifactId>lucene-analyzers-common</artifactId>
+    	<version>4.6.1</version>
+    </dependency>
+    <dependency>
+    	<groupId>commons-io</groupId>
+    	<artifactId>commons-io</artifactId>
+    	<version>2.4</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.lucene</groupId>
+    	<artifactId>lucene-highlighter</artifactId>
+    	<version>4.6.1</version>
     </dependency>
   </dependencies>
   <build>

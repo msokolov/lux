@@ -1,25 +1,23 @@
 package lux.functions;
 
 import lux.Evaluator;
-import lux.SearchResultIterator;
-import lux.query.parser.LuxQueryParser;
+import lux.QueryContext;
+import lux.query.parser.LuxSearchQueryParser;
+import lux.query.parser.NodeQueryParser;
 import lux.query.parser.XmlQueryParser;
-import lux.solr.CloudSearchIterator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
-import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.om.Item;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.SequenceType;
 
-import org.apache.lucene.search.Query;
-
 /**
  * <code>function lux:search($query as item(), $sort as xs:string?, $start as xs:int?) as document-node()*</code>
  * <p>Executes a Lucene search query and returns documents.  If the query argument is an element or document 
- * node, it is parsed using the {@link XmlQueryParser}; otherwise its string value is parsed using the {@link LuxQueryParser}.
+ * node, it is parsed using the {@link XmlQueryParser}; otherwise its string value is parsed using the {@link NodeQueryParser}.
  * For details about the query syntaxes, see the parser documentation.</p>
  * <p>$sort defines sort criteria: multiple criteria are separated by commas; each criterion is a field
  * name (or lux:score) with optional keywords appended: ascending|descending, empty least|empty greatest.
@@ -67,29 +65,9 @@ public class Search extends SearchBase {
      * @throws XPathException
      */
     @Override
-    public SequenceIterator<NodeInfo> iterate(final Query query, Evaluator eval, String[] sortCriteria, int start) throws XPathException {        
-        try {
-            return new SearchResultIterator (eval, query, sortCriteria, start);
-        } catch (Exception e) {
-            throw new XPathException (e);
-        }
-    }
-    
-    /**
-     * Execute distributed search, returning an iterator that retrieves all the search results lazily.
-     *
-     * @param query the query to execute, as a String 
-     * @param eval 
-     * @return an iterator with the results of executing the query and applying the expression to its result.
-     * @throws XPathException
-     */
-    @Override
-    public SequenceIterator<NodeInfo> iterateDistributed(final String query, QueryParser queryParser, Evaluator eval, String[] sortCriteria, int start) throws XPathException {        
-        try {
-            return new CloudSearchIterator (eval, query, queryParser, sortCriteria, start);
-        } catch (Exception e) {
-            throw new XPathException (e);
-        }
+    public SequenceIterator<? extends Item> iterate(final Item queryArg, final LuxSearchQueryParser parser, final Evaluator eval, final String[] sortCriteria, final int start) throws XPathException {        
+        QueryContext queryContext = eval.getQueryContext();
+        return queryContext.createSearchIterator(queryArg, parser, eval, sortCriteria, start);
     }
     
 }

@@ -1,6 +1,7 @@
 package lux.functions;
 
 import lux.Evaluator;
+import lux.query.parser.LuxSearchQueryParser;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -57,7 +58,8 @@ public class Contains extends ExtensionFunctionDefinition {
             
             // TODO: refactor to NAFC?
             Evaluator eval = SearchBase.getEvaluator(context);
-            Query query = parseQuery(queryArg, eval);
+            LuxSearchQueryParser parser = new LuxSearchQueryParser(getNamespaceResolver());
+            Query query = parser.parse(queryArg, eval);
             LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
             // TODO: implement by (1) enhancing PathOptimizer to incorporate our query with the 
             // context query, and (2) traversing our context item using XmlHighlighter with an enhanced

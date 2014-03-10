@@ -19,7 +19,7 @@ import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.field.FieldDefinition;
-import lux.query.parser.LuxQueryParser;
+import lux.query.parser.NodeQueryParser;
 import lux.query.parser.XmlQueryParser;
 import lux.search.LuxSearcher;
 import lux.xml.QName;
@@ -65,7 +65,7 @@ public class Evaluator {
     private final TransformErrorListener errorListener;
 
     LuxSearcher searcher;
-    private LuxQueryParser queryParser;
+    private NodeQueryParser queryParser;
     private XmlQueryParser xmlQueryParser;
     private QueryStats queryStats;
     private QueryContext queryContext;
@@ -296,7 +296,7 @@ public class Evaluator {
         /**
          * Evaluator provides this method as an implementation of CollectionURIResolver in support of fn:collection() (and fn:uri-collection()).
          * @param href the path to resolve.  If empty or null, all documents are returned (from the index).  Paths beginning "lux:" are parsed
-         * (after removing the prefix) using {@link LuxQueryParser} and evaluated as queries against the index.  Other paths
+         * (after removing the prefix) using {@link NodeQueryParser} and evaluated as queries against the index.  Other paths
          * are resolved using the default resolver.
          * @param base the base uri of the calling context (see {@link CollectionURIResolver}).  This is ignored for lux queries.
          */
@@ -425,9 +425,9 @@ public class Evaluator {
     /**
      * @return a new parser, which will be cached for re-use, or the cached parser
      */
-    public LuxQueryParser getLuxQueryParser() {
+    public NodeQueryParser getLuxQueryParser() {
         if (queryParser == null) {
-            queryParser = LuxQueryParser.makeLuxQueryParser(compiler.getIndexConfiguration());
+            queryParser = NodeQueryParser.makeLuxQueryParser(compiler.getIndexConfiguration());
         }
         return queryParser;
     }
