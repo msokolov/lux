@@ -309,7 +309,7 @@
             <artifactItem>
               <groupId>net.sf.saxon</groupId>
               <artifactId>Saxon-HE</artifactId>
-              <version>9.4.0.7</version>
+              <version>9.5.1.3</version>
             </artifactItem>
             <artifactItem>
               <groupId>xerces</groupId>
