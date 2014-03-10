@@ -6,14 +6,14 @@ import org.apache.lucene.queryparser.ext.ParserExtension;
 import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.queryparser.classic.ParseException;
 
-class NodeParser extends ParserExtension {
+class NodeParserExtension extends ParserExtension {
     
     private final String textFieldName;
     private final String elementTextFieldName;
     private final String attributeTextFieldName;
     NodeQueryBuilder queryBuilder;
     
-    NodeParser (String textFieldName, String elementTextFieldName, String attributeTextFieldName, NodeQueryBuilder queryBuilder) {
+    NodeParserExtension (String textFieldName, String elementTextFieldName, String attributeTextFieldName, NodeQueryBuilder queryBuilder) {
         this.queryBuilder = queryBuilder;
         this.textFieldName = textFieldName;
         this.elementTextFieldName = elementTextFieldName;

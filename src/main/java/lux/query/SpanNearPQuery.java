@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import lux.index.IndexConfiguration;
 import lux.query.BooleanPQuery.Clause;
-import lux.query.parser.LuxQueryParser;
+import lux.query.parser.NodeQueryParser;
 import lux.xml.QName;
 import lux.xpath.AbstractExpression;
 import lux.xpath.LiteralExpression;
@@ -128,7 +128,7 @@ public class SpanNearPQuery extends ParseableQuery {
     // TODO: refactor this messiness
     private String toPathOccurrenceQueryString (ParseableQuery q, String field, IndexConfiguration config) {
         if (q instanceof SpanTermPQuery) {
-            return (LuxQueryParser.escapeQParser(((SpanTermPQuery)q).getTerm().text()));
+            return (NodeQueryParser.escapeQParser(((SpanTermPQuery)q).getTerm().text()));
         } else if (q instanceof SpanNearPQuery) {
             return (((SpanNearPQuery) q).toPathOccurrenceQueryString(field, config, true));
         } else if (q instanceof SpanBooleanPQuery) {

@@ -1,7 +1,7 @@
 package lux.query;
 
 import lux.index.IndexConfiguration;
-import lux.query.parser.LuxQueryParser;
+import lux.query.parser.NodeQueryParser;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
@@ -69,7 +69,7 @@ public class TermPQuery extends ParseableQuery {
         }
         buf.append (':');
         
-        buf.append (LuxQueryParser.escapeQParser(term.text()));
+        buf.append (NodeQueryParser.escapeQParser(term.text()));
         
         if (boost != 1.0f) {
             buf.append('^').append(Float.toString(boost));

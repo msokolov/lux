@@ -52,16 +52,16 @@ import org.apache.lucene.util.Version;
  * replaced by a SpanNearQuery, if the term is required, or a SpanOrQuery, otherwise.  Note
  * that all BooleanQueries nested inside a marked query must also themselves be marked (as a Span).
  */
-public class LuxQueryParser extends ExtendableQueryParser {
+public class NodeQueryParser extends ExtendableQueryParser {
     
     private final NodeQueryBuilder queryBuilder;
     
-    public LuxQueryParser(Version matchVersion, String f, Analyzer a, Extensions ext, NodeQueryBuilder queryBuilder) {
+    public NodeQueryParser(Version matchVersion, String f, Analyzer a, Extensions ext, NodeQueryBuilder queryBuilder) {
         super(matchVersion, f, a, ext);
         this.queryBuilder = queryBuilder;
     }
 
-    public static LuxQueryParser makeLuxQueryParser(IndexConfiguration config) {
+    public static NodeQueryParser makeLuxQueryParser(IndexConfiguration config) {
         FieldDefinition elementTextField = config.getField(FieldRole.ELEMENT_TEXT);
         Analyzer elementTextAnalyzer;
         if (elementTextField == null) {
@@ -73,13 +73,13 @@ public class LuxQueryParser extends ExtendableQueryParser {
             }
         }
         NodeQueryBuilder queryBuilder = new NodeQueryBuilder(elementTextAnalyzer, config.isOption(IndexConfiguration.NAMESPACE_AWARE));
-        NodeParser nodeParser = new NodeParser(
+        NodeParserExtension nodeParser = new NodeParserExtension(
                 config.getTextFieldName(),
                 config.getFieldName(FieldRole.ELEMENT_TEXT),
                 config.getFieldName(FieldRole.ATTRIBUTE_TEXT),
                 queryBuilder);
         NodeExtensions ext = new NodeExtensions (nodeParser);
-        LuxQueryParser parser = new LuxQueryParser(IndexConfiguration.LUCENE_VERSION, 
+        NodeQueryParser parser = new NodeQueryParser(IndexConfiguration.LUCENE_VERSION, 
                 config.getFieldName(FieldRole.XML_TEXT), 
                 config.getFieldAnalyzers(), 
                 ext,

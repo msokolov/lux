@@ -3,7 +3,7 @@ package lux.query;
 import java.util.ArrayList;
 
 import lux.index.IndexConfiguration;
-import lux.query.parser.LuxQueryParser;
+import lux.query.parser.NodeQueryParser;
 import lux.xml.QName;
 import lux.xpath.LiteralExpression;
 import lux.xquery.AttributeConstructor;
@@ -99,9 +99,9 @@ public class RangePQuery extends ParseableQuery {
         StringBuilder buf = new StringBuilder ();
         buf.append(fieldName).append (':')
            .append (includeLower ? '[' : '{')
-           .append (lowerTerm == null ? '*' : LuxQueryParser.escapeQParser(lowerTerm))
+           .append (lowerTerm == null ? '*' : NodeQueryParser.escapeQParser(lowerTerm))
            .append (" TO ")
-           .append (upperTerm == null ? '*' : LuxQueryParser.escapeQParser(upperTerm))
+           .append (upperTerm == null ? '*' : NodeQueryParser.escapeQParser(upperTerm))
            .append (includeUpper ? ']' : '}');
         return buf.toString();
     }
