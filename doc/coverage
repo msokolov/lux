@@ -39,3 +39,48 @@ total 82
 
 3/24/2013
 total 80
+
+1/9/2014
+total 86
+
+Evaluator
+  close()
+  iterator() w/null context
+  build(InputStream)
+  LuxCollectionURIResolver.resolve("") should be invoked by collection()?
+  reopenSearcher() before any searching
+  getDocBuilder()
+  getXmlQueryParser() for xml_text with no analyzer defined???
+
+CachingDocReader
+  get(long)  (get from cache only -- why would we ever want this?? )
+  getBuildTime()
+
+Compiler
+  compile(String, ErrorListener)
+  compile w/no search strategy (ie no indexes)
+  test w/saxon PE/EE
+  bindNamespacePrefix
+  configure multiple XPaths with the same leaf node so the optimizer has to choose
+
+LuxURIResolver
+  resolve(String href, String base) w/base != null
+  getDocument(String uri) with no searcher should throw an exception
+
+QueryContext
+  QueryContext(Object) -- supply a context item
+  bindVariable() for an unsupported type like a random java Object, array, etc
+
+QueryStats.toString()
+
+SearchIteratorBase
+  sort by docid, and then something else -- kooky, but currently supported
+  sort by docid in reverse -- throw an exception
+  current() -- perhaps we didn't tell Saxon it could call these?
+  position()
+
+SearchResultIterator (Evaluator, Query, String[], int)
+  where the Evaluator has no searcher - should throw an exception
+  test w/no stats
+  advanceTo(int pos) w/pos out of bounds
+
