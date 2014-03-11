@@ -5,6 +5,13 @@ group: release
 pos: 3
 ---
 
+# Lux 1.1.0
+
+Code reorganization: the Solr support is moving into its own Maven module.
+
+lux:key() now raises an error when an undefined field is used rather than
+returning an empty sequence.  This seems less surprising.
+
 # Lux 1.0.1
 
 Release 1.0.1 crosses a major version milestone.  We did this more to remark

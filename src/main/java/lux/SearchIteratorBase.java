@@ -2,6 +2,7 @@ package lux;
 
 import lux.exception.LuxException;
 import lux.index.FieldRole;
+import lux.search.MissingStringLastComparatorSource;
 //import lux.solr.MissingStringLastComparatorSource;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.SequenceIterator;
@@ -18,7 +19,6 @@ public abstract class SearchIteratorBase implements SequenceIterator<NodeInfo> {
     protected NodeInfo current = null;
     protected int position = 0;
 
-    // FIXME: copy MSLCS from solr?
     public static final MissingStringLastComparatorSource MISSING_LAST = new MissingStringLastComparatorSource();
 
     public SearchIteratorBase (Evaluator eval, String[] sortCriteria, int start1) {

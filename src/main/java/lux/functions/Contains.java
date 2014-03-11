@@ -1,19 +1,13 @@
 package lux.functions;
 
-import lux.Evaluator;
-import lux.query.parser.LuxSearchQueryParser;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.Item;
 import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.SequenceType;
-
-import org.apache.lucene.search.Query;
-import org.slf4j.LoggerFactory;
 
 /**
  * <code>function lux:contains($query as item()) as xs:boolean</code>
@@ -54,13 +48,8 @@ public class Contains extends ExtensionFunctionDefinition {
         @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
             
-            Item queryArg = arguments[0].head();
+            // Item queryArg = arguments[0].head();
             
-            // TODO: refactor to NAFC?
-            Evaluator eval = SearchBase.getEvaluator(context);
-            LuxSearchQueryParser parser = new LuxSearchQueryParser(getNamespaceResolver());
-            Query query = parser.parse(queryArg, eval);
-            LoggerFactory.getLogger(SearchBase.class).debug("executing query: {}", query);
             // TODO: implement by (1) enhancing PathOptimizer to incorporate our query with the 
             // context query, and (2) traversing our context item using XmlHighlighter with an enhanced
             // HighlightFormatter that can terminate early and cause a result to be returned indicating

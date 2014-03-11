@@ -69,7 +69,7 @@ public class Eval extends ExtensionFunctionDefinition {
         public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
             String query = arguments[0].head().getStringValue();
-            Evaluator eval = SearchBase.getEvaluator(context);
+            Evaluator eval = SearchBase.getSearchService(context).getEvaluator();
             XQueryCompiler xqueryCompiler = eval.getCompiler().getXQueryCompiler();
             xqueryCompiler.setErrorListener(eval.getErrorListener());
             try {

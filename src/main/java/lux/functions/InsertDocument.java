@@ -65,7 +65,7 @@ public class InsertDocument extends ExtensionFunctionDefinition {
             if (! (node.getNodeKind() == Type.DOCUMENT || node.getNodeKind() == Type.ELEMENT)) {
                 throw new XPathException ("Attempt to insert unsupported node type");
             }
-            Evaluator eval = SearchBase.getEvaluator(context);
+            Evaluator eval = SearchBase.getSearchService(context).getEvaluator();
             try {
                 eval.getDocWriter().write(node, uri);
             } catch (Exception e) {

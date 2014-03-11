@@ -11,7 +11,6 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.SortField;
-import org.apache.solr.schema.FieldProperties;
 
 /**
  * represents a field in the index corresponding to some XML content.

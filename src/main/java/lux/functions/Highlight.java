@@ -4,6 +4,7 @@ import javax.xml.stream.XMLStreamException;
 
 import lux.Evaluator;
 import lux.index.IndexConfiguration;
+import lux.search.SearchService;
 import lux.search.highlight.TagFormatter;
 import lux.search.highlight.XmlHighlighter;
 import lux.xpath.FunCall;
@@ -78,8 +79,9 @@ public class Highlight extends ExtensionFunctionDefinition {
                 return EmptySequence.getInstance();
             }
             Item queryArg = arguments[1].head(); 
-            Evaluator eval = SearchBase.getEvaluator(context);
-            Query query = parseQuery(queryArg, eval);
+            SearchService searchService = SearchBase.getSearchService(context);
+            Evaluator eval = searchService.getEvaluator();
+            Query query = searchService.getParser().parse (queryArg, searchService.getEvaluator());
             IndexConfiguration indexConfiguration = eval.getCompiler().getIndexConfiguration();
             TagFormatter formatter;
             if (arguments.length < 3) {

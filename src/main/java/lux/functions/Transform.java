@@ -76,7 +76,7 @@ public class Transform extends ExtensionFunctionDefinition {
             NodeInfo stylesheet = (NodeInfo) arguments[0].head();
             NodeInfo node = (NodeInfo) arguments[1].head();
 
-            Evaluator eval = SearchBase.getEvaluator(context);
+            Evaluator eval = SearchBase.getSearchService(context).getEvaluator();
             XsltCompiler xsltCompiler = eval.getCompiler().getXsltCompiler();
             xsltCompiler.setErrorListener(eval.getErrorListener());
             try {

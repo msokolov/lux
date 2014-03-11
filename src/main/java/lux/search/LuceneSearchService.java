@@ -3,7 +3,7 @@ package lux.search;
 import java.io.IOException;
 
 import lux.Evaluator;
-import lux.QueryContext;
+import lux.SearchResultIterator;
 import lux.index.field.FieldDefinition;
 import lux.query.parser.LuxSearchQueryParser;
 import net.sf.saxon.om.AtomicArray;
@@ -24,22 +24,26 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
+// TODO: possibly we should consolidate LuxSearcher and DocWriter methods here?
 public class LuceneSearchService implements SearchService {
     
-    private final QueryContext context;
     private final LuxSearchQueryParser parser;
-    private final Evaluator eval;
+    private Evaluator eval;
     
-    public LuceneSearchService (QueryContext context, LuxSearchQueryParser parser, Evaluator eval) {
-        this.context = context;
+    public LuceneSearchService (LuxSearchQueryParser parser) {
         this.parser = parser;
-        this.eval = eval;
     }
 
     @Override
     public Sequence search(Item queryArg, String[] sortCriteria, int start)
             throws XPathException {
-        SequenceIterator<?> iterator = context.createSearchIterator(queryArg, parser, eval, sortCriteria, start);
+        Query query = parser.parse(queryArg, eval);
+        SequenceIterator<?> iterator;
+        try {
+            iterator = new SearchResultIterator(eval, query, sortCriteria, start);
+        } catch (Exception e) {
+            throw new XPathException (e);
+        }
         return new LazySequence(iterator);
     }
 
@@ -114,6 +118,28 @@ public class LuceneSearchService implements SearchService {
         } catch (IOException e) {
             throw new XPathException("failed getting terms from field " + fieldName, e);
         }
+    }
+
+    @Override
+    public void commit() throws XPathException {
+        // callers could just use the doc writer?
+        eval.getDocWriter().commit(eval);
+    }
+
+    public LuxSearchQueryParser getParser() {
+        return parser;
+    }
+
+    public Evaluator getEvaluator() {
+        return eval;
+    }
+
+    /**
+     * Must be set before any service operations are called.
+     * @param eval
+     */
+    public void setEvaluator(Evaluator eval) {
+        this.eval = eval;
     }
 
 }

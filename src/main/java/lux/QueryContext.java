@@ -5,15 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import lux.exception.LuxException;
-import lux.query.parser.LuxSearchQueryParser;
 import lux.xml.QName;
-import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmValue;
-import net.sf.saxon.trans.XPathException;
-
-import org.apache.lucene.search.Query;
 
 /**
  * Holds external query context: variable bindings and the context item.
@@ -82,17 +76,7 @@ public class QueryContext {
     public Object getContextItem () {
         return contextItem;
     }
-    
-    public SequenceIterator<? extends Item> createSearchIterator (Item queryArg, LuxSearchQueryParser parser,
-            Evaluator eval, String [] sortCriteria, int start) throws XPathException {
-        Query query = parser.parse(queryArg, eval);
-        try {
-            return new SearchResultIterator(eval, query, sortCriteria, start);
-        } catch (Exception e) {
-            throw new XPathException (e);
-        }
-    }
-    
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

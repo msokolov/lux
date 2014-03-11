@@ -88,18 +88,6 @@
   		<version>4.10</version>
   		<scope>test</scope>
   	</dependency>
-  	<dependency>
-  		<groupId>httpunit</groupId>
-  		<artifactId>httpunit</artifactId>
-  		<version>1.6.1</version>
-  		<scope>test</scope>
-  		<exclusions>
-  		  <exclusion>
-  		    <artifactId>xercesImpl</artifactId>
-  		    <groupId>xerces</groupId>
-  		  </exclusion>
-  		</exclusions>
-  	</dependency>
     <dependency>
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>

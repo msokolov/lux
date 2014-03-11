@@ -2,14 +2,12 @@ package lux.functions;
 
 import java.util.ArrayList;
 
-import lux.Evaluator;
 import lux.TransformErrorListener;
-import lux.query.parser.LuxSearchQueryParser;
+import lux.search.SearchService;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.om.Item;
-import net.sf.saxon.om.LazySequence;
 import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
@@ -17,7 +15,7 @@ import net.sf.saxon.value.IntegerValue;
 import net.sf.saxon.value.SequenceType;
 
 /**
- * A base class for functions that execute search queries.
+ * A base class for functions that parse and execute search queries.
  */
 public abstract class SearchBase extends ExtensionFunctionDefinition {
 
@@ -45,19 +43,13 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
         return new SearchCall ();
     }
     
-    public static Evaluator getEvaluator (XPathContext context) {
-        // TODO: check thread safety of controller's error listener
-        TransformErrorListener listener = (TransformErrorListener) context.getController().getErrorListener();
-        return (Evaluator) listener.getUserData();
-    }
-    
-    public abstract SequenceIterator<? extends Item> iterate(final Item query, final LuxSearchQueryParser parser, final Evaluator eval, final String[] sortCriteria, final int start) throws XPathException;        
+    public abstract Sequence iterate(final SearchService searchService, final Item query, final String[] sortCriteria, final int start) throws XPathException;        
     
     public class SearchCall extends NamespaceAwareFunctionCall {
         
         @Override
         public Sequence call(XPathContext context, Sequence[] arguments) throws XPathException {
-            
+            long t = System.currentTimeMillis();
             if (arguments.length == 0 || arguments.length > 3) {
                 throw new XPathException ("wrong number of arguments for " + getFunctionQName());
             }
@@ -87,12 +79,23 @@ public abstract class SearchBase extends ExtensionFunctionDefinition {
                     start = (int) integerValue.longValue();
                 }
             }
-            Evaluator eval = getEvaluator(context);
-            LuxSearchQueryParser parser = new LuxSearchQueryParser(getNamespaceResolver());
-            SequenceIterator<? extends Item> searchIterator = iterate(queryArg, parser, eval, sortCriteria, start);
-            return new LazySequence(searchIterator);
+            SearchService searchService = getSearchService(context);
+            searchService.getEvaluator().getQueryStats().totalTime = System.currentTimeMillis() - t;
+            return iterate(searchService, queryArg, sortCriteria, start);
+        }
+        
+        /** provide in-scope namespace bindings to the searchService's parser */ 
+        protected SearchService getSearchService (XPathContext context) {
+            SearchService searchService = SearchBase.getSearchService(context);
+            searchService.getParser().setNamespaceResolver (getNamespaceResolver());
+            return searchService;
         }
 
+    }
+
+    public static SearchService getSearchService(XPathContext context) {
+        TransformErrorListener listener = (TransformErrorListener) context.getController().getErrorListener();
+        return (SearchService) listener.getUserData();
     }
   
 }

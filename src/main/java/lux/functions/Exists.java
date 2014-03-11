@@ -1,20 +1,13 @@
 package lux.functions;
 
-import java.io.IOException;
-
-import lux.Evaluator;
-import lux.solr.CloudSearchIterator;
+import lux.search.SearchService;
 import lux.xpath.FunCall;
+import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.SingletonIterator;
-import net.sf.saxon.tree.iter.UnfailingIterator;
 import net.sf.saxon.value.BooleanValue;
 import net.sf.saxon.value.SequenceType;
-
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.Scorer;
 
 /**
  * <code>function lux:exists($query as item()) as xs:integer</code>
@@ -44,31 +37,13 @@ public class Exists extends SearchBase {
         return true;
     }
     
-    @Override 
-    public UnfailingIterator<BooleanValue> iterate (Query query, Evaluator saxon, String[] sortCriteria, int start) throws XPathException {
-        long t = System.currentTimeMillis();
-        boolean exists = false;
-        try {
-            DocIdSetIterator iter = saxon.getSearcher().search(query);
-            exists = (iter.nextDoc() != Scorer.NO_MORE_DOCS);
-        } catch (IOException e) {
-            throw new XPathException (e);
-        }
-        saxon.getQueryStats().totalTime = System.currentTimeMillis() - t;
-        if (exists) {
-            ++ saxon.getQueryStats().docCount;
-        }
-        return SingletonIterator.makeIterator(BooleanValue.get(exists));
-    }
-
     @Override
-    protected UnfailingIterator<BooleanValue> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String[] sortCriteria, int start) throws XPathException {
-        try {
-            long count = new CloudSearchIterator (eval, query, queryParser, sortCriteria, start).count();
-            return SingletonIterator.makeIterator(BooleanValue.get(count > 0));
-        } catch (Exception e) {
-            throw new XPathException (e);
+    public Sequence iterate(SearchService searchService, Item query, String[] sortCriteria, int start) throws XPathException {
+        boolean exists = searchService.exists(query);
+        if (exists) {
+            ++ searchService.getEvaluator().getQueryStats().docCount;
         }
+        return BooleanValue.get(exists);
     }
 
 }

@@ -13,15 +13,17 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamSource;
 
 import lux.exception.LuxException;
-import lux.functions.Search;
 import lux.index.FieldRole;
 import lux.index.IndexConfiguration;
 import lux.index.XmlIndexer;
 import lux.index.analysis.DefaultAnalyzer;
 import lux.index.field.FieldDefinition;
+import lux.query.parser.LuxSearchQueryParser;
 import lux.query.parser.NodeQueryParser;
 import lux.query.parser.XmlQueryParser;
+import lux.search.LuceneSearchService;
 import lux.search.LuxSearcher;
+import lux.search.SearchService;
 import lux.xml.QName;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.event.ProxyReceiver;
@@ -40,14 +42,12 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.value.StringValue;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +60,7 @@ public class Evaluator {
     
     final Compiler compiler;
     final CachingDocReader docReader;
+    private final SearchService searchService;
     private final DocWriter docWriter;
     private final DocumentBuilder builder;
     private final TransformErrorListener errorListener;
@@ -77,9 +78,10 @@ public class Evaluator {
      * @param docWriter this writer is used to modify the index (write, delete documents).  It must 
      * be tied to the same index as the searcher.
      */
-    public Evaluator(Compiler compiler, LuxSearcher searcher, DocWriter docWriter) {
+    public Evaluator(Compiler compiler, LuxSearcher searcher, DocWriter docWriter, SearchService searchService) {
         this.compiler = compiler;
         this.searcher = searcher;
+        this.searchService = searchService;
         builder = compiler.getProcessor().newDocumentBuilder();
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
         if (searcher != null) {
@@ -90,7 +92,7 @@ public class Evaluator {
         this.docWriter = docWriter;
         queryStats = new QueryStats();
         errorListener = new TransformErrorListener();
-        errorListener.setUserData(this);
+        errorListener.setUserData(searchService);
         // TODO: move these out of here; they should be one-time setup for the Processor 
         config.setCollectionURIResolver(new LuxCollectionURIResolver());
         config.setOutputURIResolver(new LuxOutputURIResolver());
@@ -99,7 +101,19 @@ public class Evaluator {
                     compiler.getIndexConfiguration().getFieldName(FieldRole.URI)));
         }
     }
-    
+
+    /**
+     * Creates a new evaluator that uses a LuceneSearchService
+     * @param compiler queries are compiled using this
+     * @param searcher search operations required by evaluated queries are carried out using this
+     * @param docWriter this writer is used to modify the index (write, delete documents).  It must 
+     * be tied to the same index as the searcher.
+     */
+    public Evaluator(Compiler compiler, LuxSearcher searcher, DocWriter docWriter) {
+        this (compiler, searcher, docWriter, new LuceneSearchService(new LuxSearchQueryParser()));
+        ((LuceneSearchService)searchService).setEvaluator(this);
+    }
+
     /**
      * Creates a query evaluator that searches and writes to the given Directory (Lucene index).
      * The Directory is opened and locked; the Evaluator must be closed when it is no longer in use.
@@ -113,7 +127,11 @@ public class Evaluator {
     	DirectDocWriter writer = new DirectDocWriter(indexer, indexWriter);
     	Compiler compiler = new Compiler(indexer.getConfiguration());
     	LuxSearcher searcher = new LuxSearcher(DirectoryReader.open(indexWriter, true));
-    	return new Evaluator (compiler, searcher, writer);
+    	LuxSearchQueryParser parser = new LuxSearchQueryParser();
+    	LuceneSearchService searchService = new LuceneSearchService(parser);
+    	Evaluator eval = new Evaluator (compiler, searcher, writer, searchService);
+    	searchService.setEvaluator(eval);
+    	return eval;
     }
     
     /**
@@ -123,7 +141,9 @@ public class Evaluator {
      * rely on documents stored in Lucene.
      */
     public Evaluator () {
-        this (new Compiler(new IndexConfiguration()), null, null);
+        this (new Compiler(new IndexConfiguration()), null, null, new LuceneSearchService(new LuxSearchQueryParser()));
+        // we need to wire this up since it is the only way to access the Evaluator from inside an XPath function call
+        ((LuceneSearchService)searchService).setEvaluator(this);
     }
     
     /** Call this method to release the Evaluator from its role as the URI and Collection URI
@@ -195,7 +215,7 @@ public class Evaluator {
         }
         XQueryEvaluator xqueryEvaluator = prepareEvaluation(context, listener, xquery);
         try {
-            listener.setUserData(this);
+            listener.setUserData(searchService);
             xqueryEvaluator.setErrorListener(listener);
             xqueryEvaluator.setContextItem((XdmItem) context.getContextItem());
             if (context.getVariableBindings() != null) {
@@ -303,20 +323,13 @@ public class Evaluator {
         @Override
         public SequenceIterator<?> resolve(String href, String base, XPathContext context) throws XPathException {
             if (StringUtils.isEmpty(href)) {
-                return new Search().iterate(new MatchAllDocsQuery(), Evaluator.this, null, 1);
+                return searchService.search(StringValue.makeStringValue("*:*"), null, 1).iterate();
             }
             if (href.startsWith("lux:")) {
                 // Saxon doesn't actually enforce that this is a valid URI, and we don't care about that either
                 String query = href.substring(4);
-                Query q;
-                try {
-                    q = getLuxQueryParser().parse(query);
-                } catch (ParseException e) {
-                    throw new XPathException ("Failed to parse query: " + query, e);
-                }
-                LoggerFactory.getLogger(getClass()).debug("executing query: {}", q);
-
-                return new Search().iterate(q, Evaluator.this, null, 1);
+                LoggerFactory.getLogger(getClass()).debug("executing query: {}", query);
+                return searchService.search(StringValue.makeStringValue(query), null, 1).iterate();
             }
             return compiler.getDefaultCollectionURIResolver().resolve(href, base, context);
         }

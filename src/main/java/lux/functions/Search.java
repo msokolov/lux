@@ -1,14 +1,12 @@
 package lux.functions;
 
-import lux.Evaluator;
-import lux.QueryContext;
-import lux.query.parser.LuxSearchQueryParser;
 import lux.query.parser.NodeQueryParser;
 import lux.query.parser.XmlQueryParser;
+import lux.search.SearchService;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.StaticProperty;
 import net.sf.saxon.om.Item;
-import net.sf.saxon.om.SequenceIterator;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.pattern.NodeKindTest;
 import net.sf.saxon.trans.XPathException;
@@ -65,9 +63,8 @@ public class Search extends SearchBase {
      * @throws XPathException
      */
     @Override
-    public SequenceIterator<? extends Item> iterate(final Item queryArg, final LuxSearchQueryParser parser, final Evaluator eval, final String[] sortCriteria, final int start) throws XPathException {        
-        QueryContext queryContext = eval.getQueryContext();
-        return queryContext.createSearchIterator(queryArg, parser, eval, sortCriteria, start);
+    public Sequence iterate(final SearchService searchService, final Item queryArg, final String[] sortCriteria, final int start) throws XPathException {        
+        return searchService.search(queryArg, sortCriteria, start);
     }
     
 }

@@ -414,7 +414,7 @@
     </test-case>
     <test-case name="order-by-no-index-1">
       <!--  one xpath sort, one indexed sortkey -->
-      <query>for $doc in //ACT order by $doc/date, $doc/lux:key('sortkey') ascending return $doc</query>
+                              <query>for $doc in //ACT order by $doc/date, $doc/lux:key('sortkey') ascending return $doc</query>
       <expect order-by=""><query id="ACT" /></expect>
     </test-case>
     <test-case name="atomizing-empty-sequence-0">

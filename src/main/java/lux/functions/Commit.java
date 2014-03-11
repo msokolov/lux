@@ -1,6 +1,5 @@
 package lux.functions;
 
-import lux.Evaluator;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
@@ -52,8 +51,7 @@ public class Commit extends ExtensionFunctionDefinition {
         @Override
         public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
-            Evaluator eval = SearchBase.getEvaluator(context);
-            eval.getDocWriter().commit(eval);
+            SearchBase.getSearchService(context).commit();
             return EmptySequence.getInstance();
         }
         

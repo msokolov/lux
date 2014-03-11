@@ -150,6 +150,11 @@ public class HamletXPathFieldTest {
     public void testFieldValuesNoField () throws Exception {
         // no error, just return empty sequence
         assertResultSequence ("collection()[1]/lux:key('bogus')");
+        
+        // If we decide to throw an error:
+        // XdmResultSet results = eval.evaluate("collection()[1]/lux:key('bogus')");
+        // assertEquals ("lux:key() called with undefined field 'bogus'", results.getErrors().get(0).getMessage());
+
     }
     
     @Test

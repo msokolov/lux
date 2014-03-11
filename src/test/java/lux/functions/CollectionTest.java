@@ -55,7 +55,7 @@ public class CollectionTest {
     public void testParseException() throws Exception {
         XdmResultSet result = eval.evaluate("collection('lux:cat AND')/base-uri()");
         assertTrue(! result.getErrors().isEmpty());
-        assertEquals("Failed to parse query: cat AND", result.getErrors().get(0).getMessage());
+        assertTrue(result.getErrors().get(0).getMessage().startsWith("Cannot parse 'cat AND'"));
     }
     
     @Test

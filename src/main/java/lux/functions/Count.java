@@ -1,20 +1,13 @@
 package lux.functions;
 
-import java.io.IOException;
-
-import lux.Evaluator;
-import lux.query.parser.LuxSearchQueryParser;
+import lux.search.SearchService;
 import lux.xpath.FunCall;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.tree.iter.SingletonIterator;
-import net.sf.saxon.tree.iter.UnfailingIterator;
 import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
-
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.Scorer;
 
 /**
  * <code>function lux:count($query as item()) as xs:integer</code>
@@ -44,31 +37,20 @@ public class Count extends SearchBase {
         return true;
     }
     
-    @Override 
-    public UnfailingIterator<Int64Value> iterate (Item query, LuxSearchQueryParser parser, Evaluator eval, String[] sortCriteria, int start) throws XPathException {
-        int count = 0;
-        long t = System.currentTimeMillis();
-        try {
-            DocIdSetIterator counter = eval.getSearcher().search(query);
-            while (counter.nextDoc() != Scorer.NO_MORE_DOCS) {
-                ++count;
-            }
-        } catch (IOException e) {
-            throw new XPathException (e);
-        }
-        eval.getQueryStats().totalTime = System.currentTimeMillis() - t;
-        eval.getQueryStats().docCount += count;
-        return SingletonIterator.makeIterator(new Int64Value(count));
-    }
-
+    /**
+     * Count the search results
+     *
+     * @param searchService 
+     * @param queryArg the query to execute
+     * @return an iterator with the results of executing the query and applying the
+     * expression to its result.
+     * @throws XPathException
+     */
     @Override
-    protected UnfailingIterator<Int64Value> iterateDistributed(String query, QueryParser queryParser, Evaluator eval, String[] sortCriteria, int start) throws XPathException {
-        try {
-            long count = new CloudSearchIterator (eval, query, queryParser, sortCriteria, start).count();
-            return SingletonIterator.makeIterator(new Int64Value(count));
-        } catch (Exception e) {
-            throw new XPathException (e);
-        }
+    public Sequence iterate(final SearchService searchService, final Item queryArg, final String[] sortCriteria, final int start) throws XPathException {        
+        long count = searchService.count(queryArg);
+        searchService.getEvaluator().getQueryStats().docCount += count;
+        return new Int64Value(count);
     }
 
 }

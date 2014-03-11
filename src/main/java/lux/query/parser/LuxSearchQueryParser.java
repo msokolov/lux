@@ -1,11 +1,15 @@
 package lux.query.parser;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import lux.Evaluator;
+import net.sf.saxon.dom.DocumentOverNodeInfo;
 import net.sf.saxon.dom.NodeOverNodeInfo;
+import net.sf.saxon.expr.instruct.SavedNamespaceContext;
 import net.sf.saxon.lib.NamespaceConstant;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.NamespaceBinding;
 import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.trans.XPathException;
@@ -20,12 +24,16 @@ import org.w3c.dom.Element;
  */
 public class LuxSearchQueryParser {
     
-    private final NamespaceResolver namespaceResolver;
+    private NamespaceResolver namespaceResolver;
     
-    public LuxSearchQueryParser (NamespaceResolver namespaceResolver) {
-        this.namespaceResolver = namespaceResolver;
+    /**
+     * Constructs a parser with default namespace bindings
+     */
+    public LuxSearchQueryParser () {
+        // TODO: define default namespace bindings
+        this.namespaceResolver = new SavedNamespaceContext(new ArrayList<NamespaceBinding>());
     }
-    
+
     /**
      * Parses a query represented as an Item  
      * @param query the query, as an Item - if it is a node, we expect an element and handle it 
@@ -43,23 +51,22 @@ public class LuxSearchQueryParser {
     }
 
     /**
-     * Parses a query represented as XML 
+     * Parses a query represented as XML; if the node is a text node, the query is parsed as a string
      * @param query the query, encoded as an XML element using the XmlQueryParser
      * @param eval the query Evaluator
      * @return a Lucene Query
-     * @throws XPathException
+     * @throws XPathException if there is a parsing error
      */
     public Query parse(NodeInfo queryNodeInfo, Evaluator eval) throws XPathException {
-        NodeOverNodeInfo queryDocument = NodeOverNodeInfo.wrap(queryNodeInfo); 
-        if (queryDocument instanceof Element) {
+        NodeOverNodeInfo queryNode = NodeOverNodeInfo.wrap(queryNodeInfo); 
+        if (queryNode instanceof Element || queryNode instanceof DocumentOverNodeInfo) {
             try {
-                return eval.getXmlQueryParser().getQuery((Element) queryDocument);
+                return eval.getXmlQueryParser().getQuery((Element) queryNode);
             } catch (ParserException e) {
-                throw new XPathException ("Failed to parse xml query : " + e.getMessage(), e);
+                throw new XPathException (e.getMessage(), e);
             }
         }
-        // maybe it was a text node?
-        throw new XPathException("Unsupported node type " + queryDocument.getNodeType() + " passed as query");
+        return parse (queryNodeInfo.getStringValue(), eval);
     }
     
     public Query parse(String query, Evaluator eval) throws XPathException {
@@ -79,6 +86,10 @@ public class LuxSearchQueryParser {
         } catch (ParseException e) {
             throw new XPathException (e.getMessage(), e);
         }
+    }
+
+    public void setNamespaceResolver(NamespaceResolver resolver) {
+        this.namespaceResolver = resolver;
     }
 
 }

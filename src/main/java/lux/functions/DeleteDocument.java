@@ -58,7 +58,7 @@ public class DeleteDocument extends ExtensionFunctionDefinition {
         public Sequence call(XPathContext context, Sequence[] arguments)
                 throws XPathException {
             String uri = arguments[0].head().getStringValue();
-            Evaluator eval = SearchBase.getEvaluator(context);
+            Evaluator eval = SearchBase.getSearchService(context).getEvaluator();
             if (uri.equals("lux:/")) {
             	// TODO: delete directories
                 eval.getDocWriter().deleteAll();

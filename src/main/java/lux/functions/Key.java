@@ -1,31 +1,18 @@
 package lux.functions;
 
-import java.util.Collection;
-
-import lux.Evaluator;
 import lux.index.field.FieldDefinition;
-import lux.index.field.XPathField;
+import lux.search.SearchService;
 import lux.xpath.FunCall;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.om.AtomicArray;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.StructuredQName;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.EmptySequence;
-import net.sf.saxon.value.Int64Value;
 import net.sf.saxon.value.SequenceType;
-import net.sf.saxon.value.StringValue;
-
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.index.IndexableField;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.schema.SchemaField;
-import org.slf4j.LoggerFactory;
 
 /**
 * <code>function lux:key($field-name as xs:string, $node as node()) as xs:anyAtomicItem*</code>
@@ -111,90 +98,17 @@ public class Key extends ExtensionFunctionDefinition {
             if (node == null) {
                 return EmptySequence.getInstance();
             }
-            Evaluator eval = SearchBase.getEvaluator(context);
-            Document doc = (Document) node.getDocumentRoot().getUserData(Document.class.getName());
-            FieldDefinition field = eval.getCompiler().getIndexConfiguration().getField(fieldName);
+            SearchService searchService = SearchBase.getSearchService(context);
+            FieldDefinition field = searchService.getEvaluator().getCompiler().getIndexConfiguration().getField(fieldName);
             if (field == null) {
-                LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-existent field: {}", fieldName);
-            }
-            else if (field.isStored() == Field.Store.NO) {
-                LoggerFactory.getLogger(Key.class).warn("Attempt to retrieve values of non-stored field: {}", fieldName);
-            }
-            if (doc != null) {
-                return getFieldValue (doc, eval, fieldName, field);
-            } else {
-                SolrDocument solrDoc = (SolrDocument) node.getDocumentRoot().getUserData(SolrDocument.class.getName());
-                if (solrDoc != null) {
-                    return getFieldValue (solrDoc, eval, fieldName, field);
-                }
-            }
-            return EmptySequence.getInstance();
-        }
-        
-        private Sequence getFieldValue (Document doc, Evaluator eval, String fieldName, FieldDefinition field) throws XPathException {
-            // TODO refactor the repeated code here
-            if (field == null || field.getType() == FieldDefinition.Type.STRING || field.getType() == FieldDefinition.Type.TEXT) {
-                Object[] values = doc.getValues(fieldName);
-                StringValue[] valueItems = new StringValue[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    valueItems[i] = new StringValue (values[i].toString());
-                }
-                return new AtomicArray(valueItems);
-            }
-            if (field.getType() == FieldDefinition.Type.INT || field.getType() == FieldDefinition.Type.LONG) {
-                IndexableField [] fieldValues = doc.getFields(fieldName);
-                Int64Value[] valueItems = new Int64Value[fieldValues.length];
-                for (int i = 0; i < fieldValues.length; i++) {
-                    valueItems[i] = Int64Value.makeIntegerValue(fieldValues[i].numericValue().longValue());
-                }
-                return new AtomicArray(valueItems);
-            }
-            // TODO: convert Solr dates to xs:dateTime?  but the user can manage that, perhaps, for now
-            if (field.getType() == FieldDefinition.Type.SOLR_FIELD) {
-                SchemaField schemaField = ((XPathField)field).getSchemaField();
-                IndexableField [] fieldValues = doc.getFields(fieldName);
-                StringValue[] valueItems = new StringValue[fieldValues.length];
-                for (int i = 0; i < fieldValues.length; i++) {
-                    valueItems[i] = StringValue.makeStringValue(schemaField.getType().toExternal(fieldValues[i]));
-                }
-                return new AtomicArray(valueItems);
-            }
-            return EmptySequence.getInstance();
-        }
-        
-        // Get field values from a SolrDocument; used for distributed queries.  In this case the document
-        // will have resulted from a query to a remote Solr instance
-        private Sequence getFieldValue (SolrDocument doc, Evaluator eval, String fieldName, FieldDefinition field) throws XPathException {
-            Collection<?> valuesCollection = doc.getFieldValues(fieldName);
-            if (valuesCollection == null) {
                 return EmptySequence.getInstance();
+                // TODO: raise an exception!
+                // throw new XPathException ("lux:key() called with undefined field '" + fieldName + "'");
             }
-            Object[] values = valuesCollection.toArray();
-            if (field == null || field.getType() == FieldDefinition.Type.STRING || field.getType() == FieldDefinition.Type.TEXT) {
-                StringValue[] valueItems = new StringValue[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    valueItems[i] = new StringValue (values[i].toString());
-                }
-                return new AtomicArray(valueItems);
-            }
-            if (field.getType() == FieldDefinition.Type.INT || field.getType() == FieldDefinition.Type.LONG) {
-                Int64Value[] valueItems = new Int64Value[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    valueItems[i] = Int64Value.makeIntegerValue(((Number)values[i]).longValue());
-                }
-                return new AtomicArray(valueItems);
-            }
-            if (field.getType() == FieldDefinition.Type.SOLR_FIELD) {
-                StringValue[] valueItems = new StringValue[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    valueItems[i] = StringValue.makeStringValue(values[i].toString());
-                }
-                return new AtomicArray(valueItems);
-            }
-            return EmptySequence.getInstance();
+            return searchService.key(field, node);
         }
-        
     }
+
 }
 
 /* This Source Code Form is subject to the terms of the Mozilla Public

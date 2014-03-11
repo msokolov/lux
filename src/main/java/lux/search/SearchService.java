@@ -1,6 +1,8 @@
 package lux.search;
 
+import lux.Evaluator;
 import lux.index.field.FieldDefinition;
+import lux.query.parser.LuxSearchQueryParser;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NodeInfo;
 import net.sf.saxon.om.Sequence;
@@ -21,5 +23,11 @@ public interface SearchService {
     Sequence key(FieldDefinition field, NodeInfo node) throws XPathException;
     
     Sequence terms (String fieldName, String startValue) throws XPathException;
+    
+    void commit() throws XPathException;
+
+    Evaluator getEvaluator();
+
+    LuxSearchQueryParser getParser();
 
 }
