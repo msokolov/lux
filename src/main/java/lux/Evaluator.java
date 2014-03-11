@@ -82,6 +82,7 @@ public class Evaluator {
         this.compiler = compiler;
         this.searcher = searcher;
         this.searchService = searchService;
+        searchService.setEvaluator(this);
         builder = compiler.getProcessor().newDocumentBuilder();
         Configuration config = compiler.getProcessor().getUnderlyingConfiguration();
         if (searcher != null) {
@@ -111,7 +112,6 @@ public class Evaluator {
      */
     public Evaluator(Compiler compiler, LuxSearcher searcher, DocWriter docWriter) {
         this (compiler, searcher, docWriter, new LuceneSearchService(new LuxSearchQueryParser()));
-        ((LuceneSearchService)searchService).setEvaluator(this);
     }
 
     /**
@@ -142,8 +142,6 @@ public class Evaluator {
      */
     public Evaluator () {
         this (new Compiler(new IndexConfiguration()), null, null, new LuceneSearchService(new LuxSearchQueryParser()));
-        // we need to wire this up since it is the only way to access the Evaluator from inside an XPath function call
-        ((LuceneSearchService)searchService).setEvaluator(this);
     }
     
     /** Call this method to release the Evaluator from its role as the URI and Collection URI
@@ -260,7 +258,8 @@ public class Evaluator {
     }
 
     private XQueryEvaluator prepareEvaluation(QueryContext context, TransformErrorListener listener, XQueryExecutable xquery) {
-        listener.setUserData(this);
+        // the caller did this already?
+        // listener.setUserData(searchService);
         this.queryContext = context;
         XQueryEvaluator xqueryEvaluator = xquery.load();
         xqueryEvaluator.setErrorListener(listener);

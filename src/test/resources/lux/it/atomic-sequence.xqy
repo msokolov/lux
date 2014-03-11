@@ -1,1 +1,0 @@
-subsequence(for $x in collection() order by xs:int($x//@id) return $x,1,2)

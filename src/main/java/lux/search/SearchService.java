@@ -28,6 +28,8 @@ public interface SearchService {
 
     Evaluator getEvaluator();
 
+    void setEvaluator(Evaluator eval);
+
     LuxSearchQueryParser getParser();
 
 }

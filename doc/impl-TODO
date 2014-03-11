@@ -1,3 +1,10 @@
+* bugs
+** throw an error when using an undefined field
+in lux:key(), lux:field-values(), and as a sortkey
+** refactor Evaluator/SearchService
+There is a circular dependency there now. Maybe a kind of service registry
+would help avoid the need to make one of these functional components do
+double duty as a registry.  But the circularity is a separate issue.
 * features
 ** elasticsearch
 notes just feeling my way around another giant codebase
