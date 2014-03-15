@@ -13,19 +13,19 @@ recent OpenJDK JVM, but has only been tested with Oracle/Sun JVMs.
 
 ## Latest stable binary release ##
 
-* [Lux app server 1.0.1, bzip](dist/lux-appserver-1.0.1-bin.tar.bz2)
-* [Lux app server 1.0.1, gzip](dist/lux-appserver-1.0.1-bin.tar.gz)
-* [Lux app server 1.0.1, zip](dist/lux-appserver-1.0.1-bin.zip)
+* [Lux app server 1.1.0, bzip](dist/lux-appserver-1.1.0-bin.tar.bz2)
+* [Lux app server 1.1.0, gzip](dist/lux-appserver-1.1.0-bin.tar.gz)
+* [Lux app server 1.1.0, zip](dist/lux-appserver-1.1.0-bin.zip)
 
 The war-only distribution is useful if you want to run this in an existing
 J2EE web app container.
 
-* [Lux 1.0.1-enabled Solr war (web application) only](dist/lux-appserver-1.0.1.war)
+* [Lux 1.1.0-enabled Solr war (web application) only](dist/lux-appserver-1.1.0.war)
 
 Download the Lux library (jar) if you want to embed Lux in a Java
 application that will manage its own local index using Lucene (not Solr).
 
-* [Lux 1.0.1 library (jar) only](dist/lux-1.0.1.jar)
+* [Lux 1.1.0 library (jar) only](dist/lux-1.1.0.jar)
 
 We also maintain a folder of older artifacts.  The 0.10 series is being
 actively maintained in order to support users of Solr 4.2.1.  The main
@@ -46,6 +46,6 @@ following in your pom.xml:
                   <dependency>
                      <groupId>org.luxdb</groupId>
                      <artifactId>lux<artifactId>
-                     <version>1.0.1</version>
+                     <version>1.1.0</version>
                   </dependency>
 
