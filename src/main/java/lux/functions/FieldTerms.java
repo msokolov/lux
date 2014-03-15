@@ -51,6 +51,12 @@ import org.slf4j.LoggerFactory;
  * field defined by the {@link IndexConfiguration}, generally the
  * {@link XmlTextField}.
  * </p>
+ * <p>
+ * Note that only string- or text-valued fields are handled properly. FieldTerms is not schema-aware, which means that  it returns the encoded form of a field.  For string and text 
+ * fields, that is the same as the input form, but for fields that are encoded when indexed (like dates or numbers), the results
+ * here will not be usable in any straightforward way.  This behavior should not be relied upon, though: we plan to 
+ * add schema-based decoding.
+ * </p>
  */
 public class FieldTerms extends ExtensionFunctionDefinition {
 
@@ -130,7 +136,7 @@ public class FieldTerms extends ExtensionFunctionDefinition {
     /**
      * Retrieves terms from the index using Solr's TermsComponent.  Currently used only for cloud requests,
      * but in the future we may want to use it to get expose Solr's Terms functionality, which is richer 
-     * than the basic TermsEnum API in Lucene.  Be aware thoughthat this iterator retrieves terms 
+     * than the basic TermsEnum API in Lucene.  Be aware though that this iterator retrieves terms 
      * via Solr's HTTP API.
      */
     class SolrTermsIterator implements SequenceIterator<AtomicValue> {

@@ -6,6 +6,10 @@ import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.request.SolrQueryRequestBase;
 import org.apache.solr.search.SortSpec;
 
+/**
+ * exposes the processing stage so it can be manipulated by SolrURIResolver and CloudSearchIterator 
+ *
+ */
 public class CloudQueryRequest extends SolrQueryRequestBase {
 
     private int nextStage;
