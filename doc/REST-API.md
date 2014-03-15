@@ -160,6 +160,21 @@ processing unused documents.
 XQueryComponent ignores most other standard Solr query parameters, such as
 those to control sorting, faceting, highlighting, etc.
 
+### POST body encoding
+
+When submitting requests using POST, parameters must be encoded using one
+of the standard mime types for HTTP POST: either
+`application/x-www-form-urlencoded` (the default), or
+`application/multipart-form-data`.  An example POST body using
+x-www-form-urlencoded:
+
+     q=%281%2b2%29*3
+
+This would produce "6" since it's the encoded form of `(1+2)*3`
+
+Also note, LUX-72 calls for accepting unencoded queries using Content-Type:
+application/xquery.
+
 ### Result Format ###
 
 Results are marshalled using standard Solr API conventions, which are
