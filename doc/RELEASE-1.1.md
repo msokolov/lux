@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Release 1.0
+title: Release 1.1
 group: release
 pos: 3
 ---
