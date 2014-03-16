@@ -25,6 +25,7 @@ import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
+import org.apache.solr.search.DocList;
 import org.apache.solr.search.SortSpec;
 
 /**
@@ -117,7 +118,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
     }
     
     /* Make a new query request, using this.query, start calculated based on the passed-in responseBuilder
-    sorting based on sortCriteria, and fields=lux_xml.  Also: if rb asks for debug, pass that along
+     * sorting based on sortCriteria, and fields=lux_xml.  Also: if rb asks for debug, pass that along
     */
     private void doCloudSearch () {
         ResponseBuilder origRB = ((SolrQueryContext)eval.getQueryContext()).getResponseBuilder();
@@ -144,9 +145,13 @@ public class CloudSearchIterator extends SearchIteratorBase {
         SolrQueryRequest req = new CloudQueryRequest(xqueryComponent.getCore(), params, sortSpec);
         response = new SolrQueryResponse();
         xqueryComponent.getSearchHandler().handleRequest(req, response);
-        SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
+        Object docs = response.getValues().get("response");
         if (docs != null) {
-            eval.getQueryStats().docCount += docs.getNumFound();
+            if (docs instanceof DocList) {
+                eval.getQueryStats().docCount += ((DocList)docs).matches();
+            } else if (docs instanceof SolrDocumentList) {
+                eval.getQueryStats().docCount += ((SolrDocumentList)docs).getNumFound();
+            }
         }
     }
     
