@@ -15,6 +15,8 @@ public class LuxSearcher extends IndexSearcher {
 
   // a reader managed by this exclusively
   private final IndexReader indexReader;
+  
+  private final IndexSearcher wrappedSearcher;
     
   /**
    * creates a Lux searcher that searches the given {@link Directory}.
@@ -23,7 +25,8 @@ public class LuxSearcher extends IndexSearcher {
    */
   public LuxSearcher (Directory dir) throws IOException {
     super (DirectoryReader.open(dir));
-    indexReader = getIndexReader(); 
+    indexReader = getIndexReader();
+    wrappedSearcher = null;
   }
 
   /**
@@ -33,6 +36,7 @@ public class LuxSearcher extends IndexSearcher {
   public LuxSearcher (IndexSearcher searcher) {
       super (searcher.getIndexReader());
       indexReader = null;
+      wrappedSearcher = searcher;
   }
   
   /**
@@ -43,6 +47,7 @@ public class LuxSearcher extends IndexSearcher {
   public LuxSearcher (IndexReader reader) {
       super (reader);
       this.indexReader = reader;
+      wrappedSearcher = null;
   }
   
   public void close () throws IOException {
@@ -84,6 +89,13 @@ public class LuxSearcher extends IndexSearcher {
    */
   public DocIterator searchOrdered (Query query) throws IOException {
       return new DocIterator (this, query, true);
+  }
+  
+  /**
+   * @return the searcher from which this was created, or null.
+   */
+  public IndexSearcher getWrappedSearcher() {
+      return wrappedSearcher;
   }
 
 }

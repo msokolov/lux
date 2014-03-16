@@ -1,6 +1,8 @@
 package lux.solr;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import lux.Evaluator;
 import lux.SearchIteratorBase;
@@ -26,7 +28,9 @@ import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.search.DocList;
+import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.search.SortSpec;
+import org.apache.solr.util.SolrPluginUtils;
 
 /**
  * 
@@ -47,6 +51,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
     private final String xmlFieldName;
     private final String uriFieldName;
     private final String idFieldName;
+    private final HashSet<String> fieldNames;
     private String[] effectiveCriteria;
     
     /**
@@ -63,9 +68,13 @@ public class CloudSearchIterator extends SearchIteratorBase {
         this.queryParser = queryParser;
         this.query = query;
         IndexConfiguration indexConfig = eval.getCompiler().getIndexConfiguration();
-        this.xmlFieldName = indexConfig.getFieldName(FieldRole.XML_STORE);
-        this.uriFieldName = indexConfig.getFieldName(FieldRole.URI);
-        this.idFieldName = indexConfig.getFieldName(FieldRole.ID);
+        xmlFieldName = indexConfig.getFieldName(FieldRole.XML_STORE);
+        uriFieldName = indexConfig.getFieldName(FieldRole.URI);
+        idFieldName = indexConfig.getFieldName(FieldRole.ID);
+        fieldNames = new HashSet<String>();
+        fieldNames.add(xmlFieldName);
+        fieldNames.add(uriFieldName);
+        fieldNames.add(idFieldName);
     }
 
     @Override
@@ -78,45 +87,62 @@ public class CloudSearchIterator extends SearchIteratorBase {
             this.limit = 0;
             doCloudSearch();
         }
-        SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
-        if (docs == null) {
-            return 0;
-        }
-        return docs.getNumFound();
+        return getResultNumFound(response);
     }
 
     @Override
     public NodeInfo next() throws XPathException {
         for (;;) {
             if (response != null) {
-                SolrDocumentList docs = (SolrDocumentList) response.getValues().get("response");
-                if (docs == null) {
+                if (position >= getResultNumFound(response)) {
                     return null;
                 }
-                // FIXME: test pagination I think there is a bug here if w/start > 0?
-                if (position < docs.getStart() + docs.size()) {
-                    SolrDocument doc = docs.get(position++ - (int) docs.getStart());
-                    String uri = (String) doc.getFirstValue(uriFieldName);
-                    Object oxml = doc.getFirstValue(xmlFieldName);
-                    Long id = (Long) doc.getFirstValue(idFieldName);
-                    if (id == null) {
-                        // try to support migrating an old index?
-                        throw new LuxException("This index has no lux docids: it cannot support Lux on Solr Cloud");
+                Object results = response.getValues().get("response");
+                if (results == null) {
+                    return null;
+                }
+                SolrDocumentList docs;
+                if (results instanceof DocList) {
+                    try {
+                        docs = SolrPluginUtils.docListToSolrDocumentList ((DocList) results, 
+                                (SolrIndexSearcher) eval.getSearcher().getWrappedSearcher(), fieldNames, null);
+                    } catch (IOException e) {
+                        throw new XPathException (e);
                     }
-                    String xml = (String) ((oxml instanceof String) ? oxml : null);
-                    byte [] bytes = (byte[]) ((oxml instanceof byte[]) ? oxml : null);
-                    XdmNode node = eval.getDocReader().createXdmNode(id, uri, xml, bytes);
-                    DocumentInfo docNode = node.getUnderlyingNode().getDocumentRoot();
-                    docNode.setUserData(SolrDocument.class.getName(), doc);
-                    return docNode;
-                } else if (position >= docs.getNumFound()) {
-                    return null;
                 }
+                else if (results instanceof SolrDocumentList) {
+                    docs = (SolrDocumentList) results;
+                }
+                else {
+                    throw new XPathException ("Solr query response unexpectedly of type " + results.getClass().getName());
+                }
+                if (position < docs.getStart() + docs.size()) {
+                    return getNextDocument (docs);
+                }
+                // otherwise fall through and get the next page of results
             }
             doCloudSearch();
         }
     }
     
+    private NodeInfo getNextDocument (SolrDocumentList docs) {
+        // FIXME: test pagination I think there is a bug here if w/start > 0?
+        SolrDocument doc = docs.get(position++ - (int) docs.getStart());
+        String uri = (String) doc.getFirstValue(uriFieldName);
+        Object oxml = doc.getFirstValue(xmlFieldName);
+        Long id = (Long) doc.getFirstValue(idFieldName);
+        if (id == null) {
+            // try to support migrating an old index?
+            throw new LuxException("This index has no lux docids: it cannot support Lux on Solr Cloud");
+        }
+        String xml = (String) ((oxml instanceof String) ? oxml : null);
+        byte [] bytes = (byte[]) ((oxml instanceof byte[]) ? oxml : null);
+        XdmNode node = eval.getDocReader().createXdmNode(id, uri, xml, bytes);
+        DocumentInfo docNode = node.getUnderlyingNode().getDocumentRoot();
+        docNode.setUserData(SolrDocument.class.getName(), doc);
+        return docNode;
+    }
+
     /* Make a new query request, using this.query, start calculated based on the passed-in responseBuilder
      * sorting based on sortCriteria, and fields=lux_xml.  Also: if rb asks for debug, pass that along
     */
@@ -145,14 +171,19 @@ public class CloudSearchIterator extends SearchIteratorBase {
         SolrQueryRequest req = new CloudQueryRequest(xqueryComponent.getCore(), params, sortSpec);
         response = new SolrQueryResponse();
         xqueryComponent.getSearchHandler().handleRequest(req, response);
+        eval.getQueryStats().docCount += getResultNumFound(response); 
+    }
+    
+    private long getResultNumFound (SolrQueryResponse rsp) {
         Object docs = response.getValues().get("response");
         if (docs != null) {
             if (docs instanceof DocList) {
-                eval.getQueryStats().docCount += ((DocList)docs).matches();
+                return ((DocList)docs).matches();
             } else if (docs instanceof SolrDocumentList) {
-                eval.getQueryStats().docCount += ((SolrDocumentList)docs).getNumFound();
+                return ((SolrDocumentList)docs).getNumFound();
             }
         }
+        return 0;
     }
     
     private void addSortParam(ModifiableSolrParams params, SortSpec sortSpec) {
