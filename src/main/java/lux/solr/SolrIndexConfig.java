@@ -386,18 +386,19 @@ public class SolrIndexConfig implements SolrInfoMBean {
      */
     class FieldableField extends TextField {
         
-        // TODO: do we need to worry about toInternal()??
-        
         FieldableField (FieldDefinition xmlField) {
             typeName = xmlField.getName() + "-fieldable-type";
             this.analyzer = xmlField.getAnalyzer();
             this.queryAnalyzer = xmlField.getQueryAnalyzer();
+            properties &= ~STORED;
+            properties |= INDEXED|TOKENIZED;
         }
 
         @Override
         public Field createField(SchemaField field, Object val, float boost) {
             return (Field) val;
         }
+
     }
 
     public IndexConfiguration getIndexConfig() {

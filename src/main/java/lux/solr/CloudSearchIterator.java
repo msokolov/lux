@@ -145,7 +145,7 @@ public class CloudSearchIterator extends SearchIteratorBase {
 
     /* Make a new query request, using this.query, start calculated based on the passed-in responseBuilder
      * sorting based on sortCriteria, and fields=lux_xml.  Also: if rb asks for debug, pass that along
-    */
+     */
     private void doCloudSearch () {
         ResponseBuilder origRB = ((SolrQueryContext)eval.getQueryContext()).getResponseBuilder();
         ModifiableSolrParams params = new ModifiableSolrParams();
