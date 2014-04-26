@@ -114,18 +114,25 @@ install.  To add a new core:
 2. Copy the conf folder (containing schema.xml and solrconfig.xml) from an
 existing core directory (like collection1) into the new core directory:
          cp -r solr/collection1/conf/ new-core/conf/
-3. Edit solr.xml (in lux-appserver/solr) and list the new core there:
+3. Edit solr.xml
+
+    For pre-1.0 releases: Edit solr.xml (in lux-appserver/solr) and list the new core there:
       &lt;core name="new-core" instanceDir="new-core" />
+    
+    For 1.0.1-1.1.0 releases: solr.xml was removed from lux 1.0.1 - 1.1.0 due to a misunderstanding
+of the Solr core autodiscovery mechanism, which relies on a different
+solr.xml format.  You *do* need solr.xml, and it is recommended that you
+use the "new style" solr.xml that supports autodiscovery.  We will ship a
+(new-style) solr.xml with the next release, but you can patch existing lux 1\.x releases by downloading
+[solr.xml](https://github.com/msokolov/lux-appserver/tree/master/solr/solr.xml)
+to your lux-appserver/solr directory and adding an empty core.properties file to each core directory (*e.g.* collection1/core.properties).  Solr treats folders that contain core.properties files as cores.
+    
+    For later releases, you shouldn't need to fool with solr.xml, and the default collection will come with core.properties.
+
 4. restart lux
    ./lux restart
 
 The new core should appear in the solr admin on the lower left-hand side.
-
-Note: the Solr admin (in the "core admin" area) gives the impression that
-you can add a core using the web GUI, but this is not actually true.  This
-UI seems to edit solr.xml, but will not create the new core folder.  Its
-function has more to do with distributed configurations in which cores may
-migrate from host to host.
 
 ### Set up an application
 
