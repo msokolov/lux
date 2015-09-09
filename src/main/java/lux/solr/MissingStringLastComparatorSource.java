@@ -92,7 +92,17 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
   }
 
   @Override
+  public void setTopValue(Comparable value) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public int compareBottom(int doc) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int compareTop(int doc) throws IOException {
     throw new UnsupportedOperationException();
   }
 
@@ -126,7 +136,6 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
     return TermOrdValComparator_SML.createComparator(context.reader(), this);
   }
 
-  @Override
   public int compareDocToValue(int doc, Comparable docValue) {
     throw new UnsupportedOperationException();
   }
@@ -227,7 +236,6 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
       return values==null ? parent.NULL_VAL : values[slot];
     }
 
-    @Override
     public int compareDocToValue(int doc, BytesRef value) {
       int docOrd = termsIndex.getOrd(doc);
       if (docOrd == -1) {
@@ -238,7 +246,7 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
       } else if (value == null) {
         return -1;
       }
-      termsIndex.lookupOrd(docOrd, tempBR);
+      termsIndex.lookupOrd(docOrd);
       return tempBR.compareTo(value);
     }
   }
@@ -246,6 +254,11 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
   private static final class AnyOrdComparator extends PerSegmentComparator {
     public AnyOrdComparator(TermOrdValComparator_SML parent) {
       super(parent);
+    }
+
+    @Override
+    public void setTopValue(BytesRef value) {
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -276,10 +289,15 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
         if (order == NULL_ORD) {
           return bottomValue.compareTo(parent.NULL_VAL);
         } else {
-          termsIndex.lookupOrd(order, tempBR);
+          termsIndex.lookupOrd(order); //Bytes ref?
           return bottomValue.compareTo(tempBR);
         }
       }
+    }
+
+    @Override
+    public int compareTop(int doc) throws IOException {
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -294,7 +312,7 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
         if (values[slot] == null) {
           values[slot] = new BytesRef();
         }
-        termsIndex.lookupOrd(ord, values[slot]);
+        termsIndex.lookupOrd(ord);
       }
       readerGen[slot] = currentReaderGen;
     }
