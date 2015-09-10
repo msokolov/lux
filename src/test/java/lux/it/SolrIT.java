@@ -25,6 +25,7 @@ import nu.validator.htmlparser.sax.HtmlParser;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -42,6 +43,7 @@ import com.meterware.httpunit.WebResponse;
  * structures.
  * 
  */
+@Ignore
 public class SolrIT {
 
     private final String TEST_SERVER_PATH = "http://localhost:8080/collection1/testapp";
@@ -83,7 +85,7 @@ public class SolrIT {
         assertEquals (403, response.getResponseCode());
         */
     }
-    
+
     @Test
     public void testSyntaxError () throws Exception {
         String path = (TEST_SERVER_PATH + "?lux.xquery=lux/functions/transform-error.xqy");
@@ -93,14 +95,14 @@ public class SolrIT {
         String response = httpResponse.getText();
         assertTrue ("Unexpected error message:\n" + response, response.contains ("The supplied file does not appear to be a stylesheet"));
     }
-    
+
     @Test
     public void testNotFound () throws Exception {
         String path = (LUX_PATH + "notfound.xqy");
         WebResponse response = httpclient.getResponse(path);
         assertEquals (404, response.getResponseCode());
     }
-    
+
     @Test
     public void testParameterMap () throws Exception {
         String path = (TEST_SERVER_PATH + "?lux.xquery=lux/solr/test-params.xqy&p1=A&p2=B&p2=C");
@@ -112,12 +114,12 @@ public class SolrIT {
                 "<parm name=\"p1\"><value>A</value></parm>" +
         		"</params></http>";
         assertEquals (expected, response.replaceAll("\n\\s*",""));
-    
+
         path = APP_SERVER_PATH + "/lux/solr/test-params.xqy?p1=A&p2=B&p2=C";
         response = httpclient.getResponse(path).getText();
         assertEquals (expected, response.replaceAll("\n\\s*",""));
     }
-    
+
     @Test
     public void testExhaustResultSetMemory () throws Exception {
         String path = (TEST_SERVER_PATH + "?lux.xquery=lux/solr/huge-result.xqy");
@@ -131,7 +133,7 @@ public class SolrIT {
         // not right, but we can't easily influence this in Solr land
         assertEquals (httpResponse.getText(), 200, httpResponse.getResponseCode());
     }
-    
+
     @Test
     public void testResultFormat () throws Exception {
     	verifyMultiThreadedWrites(); // load test documents
@@ -139,23 +141,23 @@ public class SolrIT {
         WebResponse httpResponse = httpclient.getResponse(path);
     	String expected = "<results><doc><title id=\"1\">100</title><test>cat</test></doc><doc><title id=\"2\">99</title><test>cat</test></doc></results>";
         assertEquals (expected, httpResponse.getText());
-        
+
         path = APP_SERVER_PATH + "/lux/it/atomic-sequence.xqy?lux.contentType=text/xml";
         httpResponse = httpclient.getResponse(path);
         assertEquals (expected, httpResponse.getText());
     }
-    
+
     @Test
     public void testAttributeEncodingInJSON () throws Exception {
     	String xmlDoc = "<doc title=\"title with &lt;tag&gt; &amp; &quot;quotes&quot; in it\" />";
     	String xmlDocEnc = URLEncoder.encode(xmlDoc, "utf-8");
     	String path = (XQUERY_PATH + "?q=" + xmlDocEnc + "&wt=json&lux.contentType=text/xml");
         WebResponse httpResponse = httpclient.getResponse(path);
-        String resp = httpResponse.getText(); 
+        String resp = httpResponse.getText();
     	assertEquals ("xpath-results\":[\"element\",\"<doc title=\\\"title with &lt;tag&gt; &amp; &#34;quotes&#34; in it\\\"/>\"]}\n",
     			resp.substring(resp.indexOf("xpath-results")));
     }
-    
+
     /*
      * Ensure that we can write multiple documents in parallel.
      */
@@ -173,13 +175,13 @@ public class SolrIT {
             assertEquals (createTestDocument(i).replaceAll("\\s+", ""), response.getText().replaceAll("\\s+", ""));
         }
     }
-    
+
     class TestDocInsert implements Runnable {
-        
+
         final int id;
-        
+
         TestDocInsert (int n) { id = n; }
-        
+
         @Override public void run () {
             String insert = "let $i := lux:insert('/test/" + id + "'," + createTestDocument(id) + ") return concat('OK', $i)";
             try {
@@ -218,15 +220,15 @@ public class SolrIT {
             get ("doc('/doc/" + i + "/1/1')");
         }
     }
-    
+
     class TestDocInsertMulti implements Runnable {
-        
+
         final int id;
-        
+
         TestDocInsertMulti (int n) { id = n; }
-        
+
         @Override public void run () {
-            String insert = "let $doc := " + createTestDocument(id) + 
+            String insert = "let $doc := " + createTestDocument(id) +
                     " let $trans := lux:transform(<xsl:stylesheet version='2.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>" +
                     " <xsl:template match='*'>" +
                     "   <xsl:variable name='this' select='.' />" +
@@ -248,14 +250,14 @@ public class SolrIT {
             }
         }
     }
-    
+
     @Test
     public void testHttpPost () throws Exception {
         WebResponse resp = post ("/lux/it/echo-params.xqy", "test", "value");
         assertEquals ("value", resp.getText());
-        
+
         resp = post ("/lux/it/echo-request.xqy", "test", "value");
-        
+
         XdmNode rspDoc = parseResponseBody(resp);
         QueryContext context = new QueryContext (rspDoc);
         assertEquals ("POST", evalString("/request/@method", context));
@@ -266,7 +268,7 @@ public class SolrIT {
     public void testPostXQueryServlet () throws Exception {
         String query = IOUtils.toString(getClass().getResourceAsStream("/lux/it/echo-request.xqy"));
         WebResponse resp = postToXQuery (query, "test", "value", "wt", "lux");
-        
+
         XdmNode rspDoc = parseResponseBody(resp);
         QueryContext context = new QueryContext (rspDoc);
         assertEquals ("POST", evalString("/request/@method", context));
@@ -280,7 +282,7 @@ public class SolrIT {
         XdmNode rspDoc = eval.build(new StringReader(body), "/test.xml");
         return rspDoc;
     }
-    
+
     @Test
     public void testValidatorNu() throws SaxonApiException {
         HtmlParser parser = new HtmlParser();
@@ -291,12 +293,12 @@ public class SolrIT {
         source = new SAXSource (parser, new InputSource(new StringReader ("<html>")));
         builder.build(source);
     }
-    
+
     /*
      * Test cases for EXPath:
-     * 
+     *
      * html body
-     * 
+     *
      * multipart
      */
     @Test
@@ -339,8 +341,8 @@ public class SolrIT {
         assertEquals ("httpunit/1.5", evalString ("/request/header[@name='User-Agent']/@value", context));
         assertEquals ("", evalString ("/request/body", context));
     }
-    
-    
+
+
     @Test
     public void testPostBody () throws Exception {
         WebResponse resp = postMime ("/lux/it/echo-multipart.xqy", "<test>this is a test</test>", "text/xml");
@@ -378,23 +380,23 @@ public class SolrIT {
         }
         return buf.toString();
     }
-    
+
     /**
      * test cases:
-     * 
+     *
      * redirect (302)
      * not found (404)
      * normal (200)
-     * 
+     *
      * control mime-type (html, text) binary?
-     * 
+     *
      * @throws Exception
      */
     @Test
     public void testEXPathResponse () throws Exception {
-    
+
     }
-    
+
     @Test public void testRedirect () throws Exception {
         WebResponse rsp = httpclient.getResponse(APP_SERVER_PATH + "/lux/it/302.xqy");
         // http client follows the redirection:
@@ -403,7 +405,7 @@ public class SolrIT {
         QueryContext context = new QueryContext (rspDoc);
         assertEquals ("/collection1/testapp/lux/it/echo-request.xqy" , evalString("/request/@path", context));
     }
-    
+
     @Test public void test404 () throws Exception {
         WebResponse rsp = httpclient.getResponse(APP_SERVER_PATH + "/lux/it/404.xqy");
         assertEquals (404, rsp.getResponseCode());

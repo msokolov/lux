@@ -3,3 +3,4 @@ target/
 *~
 .idea
 lux.iml
+**/_rest_managed.json

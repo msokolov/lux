@@ -182,8 +182,6 @@ public class IndexTest {
         indexer.indexDocument(indexWriter, "/lux/reader-test.xml", 
                 getClass().getClassLoader().getResourceAsStream("lux/reader-test.xml"));
         indexWriter.close();
-//        System.out.println
-//             (String.format("indexed path-values for lux/reader-test.xml in %d bytes", dir.sizeInBytes()));
         IndexTestSupport.printAllTerms(dir, indexer);
         /*
             IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
@@ -198,8 +196,6 @@ public class IndexTest {
         indexer.storeDocument(indexWriter, "/lux/compiler/test-module.xqy", 
                 getClass().getClassLoader().getResourceAsStream("lux/compiler/test-module.xqy"));
         indexWriter.close();
-//        System.out.println
-//             (String.format("indexed path-values for test-module.xqy in %d bytes", dir.sizeInBytes()));
     }
 
     @Test @Ignore
@@ -208,8 +204,6 @@ public class IndexTest {
         IndexWriter indexWriter = indexer.newIndexWriter(dir);
         indexer.indexDocument(indexWriter, "/lux/hamlet.xml", getClass().getClassLoader().getResourceAsStream("lux/hamlet.xml"));
         indexWriter.close();
-//        System.out.println
-//             (String.format("indexed path-values for hamlet.xml in %d bytes", dir.sizeInBytes()));
         // hamlet.xml = 288815 bytes; indexed in 215040 bytes seems ok??
         // printAllTerms(new IndexTestSupport(indexer, dir));
     }
@@ -357,9 +351,6 @@ public class IndexTest {
     private IndexTestSupport buildIndex(String desc, XmlIndexer indexer) throws XMLStreamException, IOException, SaxonApiException {
         long t0 = System.currentTimeMillis();
         IndexTestSupport indexTestSupport = new IndexTestSupport ("lux/hamlet.xml", indexer, dir);
-//        System.out.println
-//             (String.format("indexed %s in %d ms %d bytes", desc,
-//                     (System.currentTimeMillis()-t0), dir.sizeInBytes()));
         return indexTestSupport;
     }
 

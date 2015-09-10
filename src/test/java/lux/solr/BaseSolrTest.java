@@ -71,7 +71,6 @@ public abstract class BaseSolrTest {
         try {
             if (solr != null) {
                 solr.rollback();
-                solrCore.close();
             }
         } catch (SolrException e) {
         }

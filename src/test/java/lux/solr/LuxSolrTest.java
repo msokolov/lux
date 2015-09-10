@@ -158,7 +158,6 @@ public class LuxSolrTest extends BaseSolrTest {
     	NamedList<?> xpathResults = (NamedList<?>) resp.getResponse().get("xpath-results"); 
     	assertEquals (
     			"<http><params>" +
-    			"<param name=\"wt\"><value>lux</value></param>" +
     			"<param name=\"qt\"><value>/testapp</value></param>" +
     			"<param name=\"test-param\"><value>test-value</value></param>" +
     			"<param name=\"wt\"><value>lux</value></param></params><context-path/></http>", 

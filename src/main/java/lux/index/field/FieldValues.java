@@ -9,6 +9,8 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexableField;
 
+import lux.index.FieldRole;
+
 public class FieldValues implements Iterable<IndexableField> {
     
     private final FieldDefinition field;
@@ -51,6 +53,9 @@ public class FieldValues implements Iterable<IndexableField> {
                 }
                 // else fall through and treat as String?
             case STRING:
+                if (fieldName.equals(FieldRole.XML_STORE.getFieldName())) {
+                    return new StoredField(fieldName, value.toString());
+                }
                 return new StringField(fieldName, value.toString(), field.isStored());
                 
             case TEXT:

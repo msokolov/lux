@@ -289,7 +289,7 @@ class TermOrdValComparator_SML extends FieldComparator<Comparable> {
         if (order == NULL_ORD) {
           return bottomValue.compareTo(parent.NULL_VAL);
         } else {
-          termsIndex.lookupOrd(order); //Bytes ref?
+          termsIndex.lookupOrd(order);
           return bottomValue.compareTo(tempBR);
         }
       }
