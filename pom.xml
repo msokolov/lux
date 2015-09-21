@@ -18,13 +18,15 @@
     <url>git@github.com:codice/lux.git</url>
     <connection>scm:git@github.com:codice/lux.git</connection>
     <developerConnection>scm:git:https://github.com/codice/lux</developerConnection>
-    <tag>lux-1.2</tag>
   </scm>
   <developers>
     <developer>
       <id>msokolov</id>
       <name>Michael Sokolov</name>
       <email>sokolov@falutin.net</email>
+    </developer>
+    <developer>
+    	<id>codice</id>
     </developer>
   </developers>
   <properties>
@@ -278,7 +280,7 @@
           </execution>
         </executions>
       </plugin>
-      <!--<plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.9</version>
@@ -290,7 +292,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin>-->
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
