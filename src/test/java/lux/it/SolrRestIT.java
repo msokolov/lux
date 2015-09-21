@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -54,6 +55,7 @@ public class SolrRestIT {
      * 
      * @throws Exception
      */
+    @Ignore
     @Test
     public void testInsertViaHttp () throws Exception {
         String delete = "<delete><query>*:*</query></delete>";

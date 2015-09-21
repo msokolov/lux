@@ -249,7 +249,7 @@ public class SolrIndexConfig implements SolrInfoMBean {
         Analyzer xmlAnalyzer = null;
         Analyzer xmlQueryAnalyzer = null;
         if (schemaField != null) {
-            xmlAnalyzer = schemaField.getType().getAnalyzer();
+            xmlAnalyzer = schemaField.getType().getIndexAnalyzer();
             xmlQueryAnalyzer = schemaField.getType().getQueryAnalyzer();
             if (xmlAnalyzer != null) {
                 for (FieldRole role : new FieldRole [ ] { FieldRole.XML_TEXT, FieldRole.ELEMENT_TEXT, FieldRole.ATTRIBUTE_TEXT }) {
@@ -388,8 +388,8 @@ public class SolrIndexConfig implements SolrInfoMBean {
         
         FieldableField (FieldDefinition xmlField) {
             typeName = xmlField.getName() + "-fieldable-type";
-            this.analyzer = xmlField.getAnalyzer();
-            this.queryAnalyzer = xmlField.getQueryAnalyzer();
+            this.setIndexAnalyzer(xmlField.getAnalyzer());
+            this.setQueryAnalyzer(xmlField.getQueryAnalyzer());
             properties &= ~STORED;
             properties |= INDEXED|TOKENIZED;
         }

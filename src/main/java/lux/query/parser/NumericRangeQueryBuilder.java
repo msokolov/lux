@@ -94,7 +94,7 @@ public class NumericRangeQueryBuilder implements QueryBuilder {
     String upperTerm = DOMUtils.getAttribute(e, "upperTerm", null);
     boolean lowerInclusive = DOMUtils.getAttribute(e, "includeLower", true);
     boolean upperInclusive = DOMUtils.getAttribute(e, "includeUpper", true);
-    int precisionStep = DOMUtils.getAttribute(e, "precisionStep", NumericUtils.PRECISION_STEP_DEFAULT);
+    int precisionStep = DOMUtils.getAttribute(e, "precisionStep", NumericUtils.PRECISION_STEP_DEFAULT_32);
 
     String type = DOMUtils.getAttribute(e, "type", "int");
     try {

@@ -4,6 +4,9 @@ title: About
 group: navbar
 pos:   1
 ---
+
+### :warning: **This fork requires java 7 to build** :warning: ###
+
 # About Lux #
 
 Lux is an open source XML search engine formed by fusing two excellent
@@ -28,6 +31,8 @@ to use Lux as a drop-in capability for indexing and querying semi-structured con
 The application server is a great way to get started with Lux and XQuery:
 it provides the ability to write a complete application in XQuery and XSLT
 with data storage backed by Lucene.
+
+
 
 ## Goals ##
 
@@ -77,7 +82,9 @@ Lux does a decent job of filtering out irrelevant documents in many cases, and p
 access (via debug-level logging statements) to the optimized queries it produces, so it is 
 easy to see where it is applying indexing optimizations, and where it is not.
 
-### SolrCloud support
+### SolrCloud support ###
+
+#### :warning: **Currently, SolrCloud support is broken in this solr-4.10.4 based release.** ####
 
 To handle huge datasets (on the order of 1TB and up), it's necessary to
 distribute documents among multiple machines. Solr provides a distributed
